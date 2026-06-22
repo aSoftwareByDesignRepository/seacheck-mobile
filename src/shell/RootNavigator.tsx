@@ -1,0 +1,29 @@
+import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
+
+import { useSettingsStore } from '../store/settingsStore';
+import { useTheme } from '../theme/ThemeContext';
+import { OnboardingScreen } from '../screens/OnboardingScreen';
+import { MainShell } from './MainShell';
+import { BootGate } from './BootGate';
+
+export function RootNavigator() {
+  const { colors, mode } = useTheme();
+  const onboardingCompleted = useSettingsStore((s) => s.onboardingCompleted);
+  const isDark = mode === 'dark' || mode === 'redNight' || mode === 'highContrast';
+
+  const navTheme = isDark
+    ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.background, card: colors.surface, text: colors.text, border: colors.border, primary: colors.primary } }
+    : { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.background, card: colors.surface, text: colors.text, border: colors.border, primary: colors.primary } };
+
+  return (
+    <BootGate>
+      {!onboardingCompleted ? (
+        <OnboardingScreen />
+      ) : (
+        <NavigationContainer theme={navTheme}>
+          <MainShell />
+        </NavigationContainer>
+      )}
+    </BootGate>
+  );
+}
