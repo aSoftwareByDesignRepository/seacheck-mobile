@@ -14,6 +14,9 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAlarmMonitor } from '../../services/alarmMonitor';
+import { useRaceCountdownMonitor } from '../../services/raceCountdownMonitor';
+import { RaceCountdownBanner } from '../racing/RaceCountdownBanner';
+import { useRaceCountdown } from '../../hooks/useRaceCountdown';
 import { CustomDownloadMapPanel } from '../downloads/CustomDownloadMapPanel';
 import { ResponsiveMapShell } from '../responsive/ResponsiveMapShell';
 import { KIEL_CENTER } from '../../map/constants';
@@ -35,6 +38,9 @@ import { MapOverlays } from './MapOverlays';
 
 export function NavigationMap() {
   useAlarmMonitor();
+  useRaceCountdownMonitor();
+  const raceCountdown = useRaceCountdown();
+  const activityProfileId = useSettingsStore((s) => s.activityProfileId);
 
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const { colors, spacing, minTouch } = useTheme();
@@ -180,6 +186,9 @@ export function NavigationMap() {
           </View>
         ) : null}
         {!customSelecting ? <MapOfflineBanner onOpenDownloads={() => navigation.navigate('Downloads')} /> : null}
+        {!customSelecting && activityProfileId === 'sailing-race' && (raceCountdown.isActive || raceCountdown.isStarted) ? (
+          <RaceCountdownBanner remainingMs={raceCountdown.remainingMs} isActive={raceCountdown.isActive} isStarted={raceCountdown.isStarted} />
+        ) : null}
         {!customSelecting ? (
           <View style={styles.layers}>
             <LayerChip label={t('map.layerBase')} active={showBase} onPress={() => setShowBase((v) => !v)} colors={colors} minTouch={minTouch} testID="map.layer.base" />

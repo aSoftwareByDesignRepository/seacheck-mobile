@@ -194,6 +194,7 @@ export function MapOverlays({ showRangeRings }: Props) {
         />
       </GeoJSONSource>
       <StartLineOverlay />
+      <LaylineOverlay />
       <PassageOverlay passageId={activePassageId} activeLegIndex={activeLegIndex} />
     </>
   );
@@ -249,6 +250,57 @@ function StartLineOverlay() {
         type="circle"
         filter={['==', ['get', 'kind'], 'start-pin']}
         paint={{ 'circle-radius': 8, 'circle-color': '#2e7d32', 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' }}
+      />
+    </GeoJSONSource>
+  );
+}
+
+function LaylineOverlay() {
+  const goToTarget = useNavigationStore((s) => s.goToTarget);
+  const wind = useSettingsStore((s) => s.raceWindDirectionTrue);
+  const tacking = useSettingsStore((s) => s.raceTackingAngleDeg);
+  const showLaylines = useSettingsStore((s) => s.raceShowLaylines);
+  const activityProfileId = useSettingsStore((s) => s.activityProfileId);
+
+  const data = useMemo(() => {
+    if (activityProfileId !== 'sailing-race' || !showLaylines || wind == null || !goToTarget) {
+      return { type: 'FeatureCollection' as const, features: [] };
+    }
+    const mark: LonLat = [goToTarget.longitude, goToTarget.latitude];
+    const { portDeg, starboardDeg } = laylineBearingsFromMark(wind, tacking);
+    const lengthNm = 3;
+    const portEnd = destinationPoint(mark, portDeg, lengthNm);
+    const starEnd = destinationPoint(mark, starboardDeg, lengthNm);
+    const features: Feature[] = [
+      {
+        type: 'Feature',
+        properties: { kind: 'layline-port' },
+        geometry: { type: 'LineString', coordinates: [mark, portEnd] },
+      },
+      {
+        type: 'Feature',
+        properties: { kind: 'layline-starboard' },
+        geometry: { type: 'LineString', coordinates: [mark, starEnd] },
+      },
+    ];
+    return { type: 'FeatureCollection' as const, features };
+  }, [activityProfileId, showLaylines, wind, tacking, goToTarget]);
+
+  if (data.features.length === 0) return null;
+
+  return (
+    <GeoJSONSource id="seacheck-laylines" data={data}>
+      <Layer
+        id="seacheck-layline-port"
+        type="line"
+        filter={['==', ['get', 'kind'], 'layline-port']}
+        paint={{ 'line-color': '#e65100', 'line-width': 2, 'line-opacity': 0.85, 'line-dasharray': [1.5, 1] }}
+      />
+      <Layer
+        id="seacheck-layline-starboard"
+        type="line"
+        filter={['==', ['get', 'kind'], 'layline-starboard']}
+        paint={{ 'line-color': '#1565c0', 'line-width': 2, 'line-opacity': 0.85, 'line-dasharray': [1.5, 1] }}
       />
     </GeoJSONSource>
   );

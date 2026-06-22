@@ -7,6 +7,7 @@ import { t } from '../../i18n';
 import { LAYOUT_PRESETS, ACTIVITY_PROFILES, getActivityProfile } from '../../settings/profiles';
 import type { LayoutPreset } from '../../settings/defaults';
 import { StartLineSection } from '../racing/StartLineSection';
+import { RacePackSection } from '../racing/RacePackSection';
 import { useLocationStore } from '../../services/locationService';
 import { useNavigationStore } from '../../store/navigationStore';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -184,6 +185,7 @@ export function MapChrome({ showRangeRings, onToggleRangeRings }: Props) {
               />
             </View>
             {activityProfileId === 'sailing-race' ? <StartLineSection waypoints={waypoints} /> : null}
+            {activityProfileId === 'sailing-race' ? <RacePackSection /> : null}
             <Pressable
               accessibilityRole="button"
               onPress={() => setSheetOpen(false)}
