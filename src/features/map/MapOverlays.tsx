@@ -8,7 +8,8 @@ import { bearingTrue, destinationPoint, distanceNm, type LonLat } from '../../li
 import { useNavigationStore } from '../../store/navigationStore';
 import { usePassageStore } from '../../store/passageStore';
 import { useWaypointStore } from '../../store/waypointStore';
-import { useLocationStore } from '../../services/locationService';
+import { laylineBearingsFromMark } from '../../lib/racing/racingGeo';
+import { useSettingsStore } from '../../store/settingsStore';
 
 type Props = {
   showRangeRings: boolean;

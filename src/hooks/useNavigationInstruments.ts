@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { formatBearing, magneticDeclinationDeg } from '../lib/geo/magnetic';
-import { bearingTrue, crossTrackErrorNm, distanceNm, legDurationHours, type LonLat } from '../lib/geo/navigation';
+import { bearingTrue, crossTrackErrorNm, distanceNm, legDurationHours, msToKnots, type LonLat } from '../lib/geo/navigation';
+import { velocityMadeGoodKn } from '../lib/racing/racingGeo';
 import { formatDistanceNm } from '../lib/geo/units';
 import { displayCog, isFixStale, useLocationStore } from '../services/locationService';
 import { useNavigationStore } from '../store/navigationStore';
