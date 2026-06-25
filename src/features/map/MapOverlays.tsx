@@ -5,6 +5,8 @@ import type { Feature, FeatureCollection, LineString, Point, Polygon } from 'geo
 import { normalizeBounds } from '../../lib/map/bounds';
 import { useCustomDownloadStore } from '../../store/customDownloadStore';
 import { bearingTrue, destinationPoint, distanceNm, type LonLat } from '../../lib/geo/navigation';
+import { formatBearing, magneticDeclinationDeg } from '../../lib/geo/magnetic';
+import { formatGotoNavLabel, legMidpoint } from '../../lib/geo/pathDistance';
 import { useNavigationStore } from '../../store/navigationStore';
 import { usePassageStore } from '../../store/passageStore';
 import { useWaypointStore } from '../../store/waypointStore';
@@ -13,7 +15,6 @@ import { RACING_PACK_V11 } from '../../lib/featureFlags';
 import { useSettingsStore } from '../../store/settingsStore';
 import { isFixStale, useLocationStore } from '../../services/locationService';
 import { useTrackStore } from '../../store/trackStore';
-import { CourseVectorOverlay } from './CourseVectorOverlay';
 
 type Props = {
   showRangeRings: boolean;
@@ -36,6 +37,8 @@ export function MapOverlays({ showRangeRings }: Props) {
   const anchorAlarm = useNavigationStore((s) => s.anchorAlarm);
   const activePassageId = usePassageStore((s) => s.activePassageId);
   const activeLegIndex = useNavigationStore((s) => s.activeLegIndex);
+  const bearingReference = useSettingsStore((s) => s.bearingReference);
+  const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const customBounds = useCustomDownloadStore((s) => {
     const a = s.cornerA;
     const b = s.cornerB;
@@ -79,7 +82,7 @@ export function MapOverlays({ showRangeRings }: Props) {
       }
     }
 
-    if (goToTarget && fix) {
+    if (goToTarget && fix && !isFixStale(fix)) {
       const line: LineString = {
         type: 'LineString',
         coordinates: [
@@ -91,6 +94,24 @@ export function MapOverlays({ showRangeRings }: Props) {
         type: 'Feature',
         properties: { kind: 'goto-line' },
         geometry: line,
+      });
+      const from: LonLat = [fix.longitude, fix.latitude];
+      const to: LonLat = [goToTarget.longitude, goToTarget.latitude];
+      const { bearingDeg, distanceNm: distNm } = navInfoToTarget(from, to);
+      const formatted = formatBearing(bearingDeg, bearingReference, magneticDeclinationDeg(fix.latitude, fix.longitude));
+      features.push({
+        type: 'Feature',
+        properties: {
+          kind: 'goto-label',
+          label: formatGotoNavLabel(formatted.value, formatted.suffix, distNm, distanceUnit),
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: legMidpoint(
+            { latitude: fix.latitude, longitude: fix.longitude },
+            { latitude: goToTarget.latitude, longitude: goToTarget.longitude },
+          ),
+        },
       });
       const pt: Point = {
         type: 'Point',
@@ -125,11 +146,10 @@ export function MapOverlays({ showRangeRings }: Props) {
     }
 
     return { type: 'FeatureCollection', features } satisfies FeatureCollection;
-  }, [fix, goToTarget, mobTarget, anchorAlarm, showRangeRings, customBounds, customCornerA]);
+  }, [fix, goToTarget, mobTarget, anchorAlarm, showRangeRings, customBounds, customCornerA, bearingReference, distanceUnit]);
 
   return (
     <>
-      <CourseVectorOverlay />
       <GeoJSONSource id="seacheck-overlays" data={geojson}>
         <Layer
           id="seacheck-range-fill"
@@ -148,6 +168,18 @@ export function MapOverlays({ showRangeRings }: Props) {
           type="line"
           filter={['==', ['get', 'kind'], 'goto-line']}
           paint={{ 'line-color': '#0073ad', 'line-width': 3, 'line-opacity': 0.85, 'line-dasharray': [2, 1.5] }}
+        />
+        <Layer
+          id="seacheck-goto-label"
+          type="symbol"
+          filter={['==', ['get', 'kind'], 'goto-label']}
+          style={{
+            textField: ['get', 'label'],
+            textSize: 13,
+            textColor: '#003d5c',
+            textHaloColor: '#ffffff',
+            textHaloWidth: 2,
+          }}
         />
         <Layer
           id="seacheck-anchor-fill"

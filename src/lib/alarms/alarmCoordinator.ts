@@ -3,6 +3,7 @@ import type * as Location from 'expo-location';
 
 import { getDatabase, type PassageRow, type WaypointRow } from '../db/database';
 import { FIX_STALE_MS } from '../geo/fixAge';
+import { classifyFixAcceptance } from '../geo/gpsFilter';
 import { loadAlarmRuntime, saveAlarmRuntime } from './alarmRuntimeState';
 import { ANCHOR_GPS_LOST_REPEAT_MS, processLocationAlarms } from './processLocationAlarms';
 import { computePassageLegs, legOverrideKey, type LegOverride } from '../passage/computeLegs';
@@ -165,8 +166,27 @@ function mapLocationToFix(loc: Location.LocationObject) {
     latitude: loc.coords.latitude,
     longitude: loc.coords.longitude,
     speedKn: loc.coords.speed != null ? loc.coords.speed * 1.94384 : null,
+    accuracyM: loc.coords.accuracy ?? null,
     timestamp: loc.timestamp ?? Date.now(),
   };
+}
+
+/**
+ * Previous fix accepted for alarm evaluation. Used to reject single-fix GNSS spikes (multipath)
+ * before they reach drag / XTE / arrival logic. Shared by foreground hook and background task
+ * via the serialized processing chain, so no concurrent mutation occurs.
+ */
+let lastAlarmFix: {
+  latitude: number;
+  longitude: number;
+  speedKn: number | null;
+  accuracyM: number | null;
+  timestamp: number;
+} | null = null;
+
+/** Test-only — clears the outlier-detection memory between cases. */
+export function resetAlarmFixHistoryForTests(): void {
+  lastAlarmFix = null;
 }
 
 async function resolveAlarmInputs(options: ProcessFixOptions): Promise<{
@@ -230,6 +250,27 @@ export async function processFixFromLocation(
       }
       return { legAdvancePromptLegIdx: null };
     }
+
+    // Reject single-fix GNSS spikes (multipath / invalid / poor accuracy) before drag/XTE/arrival
+    // evaluation so they cannot fire a false critical alarm. The raw fix is still used elsewhere
+    // for display; here only trustworthy fixes drive safety alarms.
+    const acceptance = classifyFixAcceptance(lastAlarmFix, {
+      latitude: mappedFix.latitude,
+      longitude: mappedFix.longitude,
+      timestamp: mappedFix.timestamp,
+      speedKn: mappedFix.speedKn,
+      accuracyM: mappedFix.accuracyM,
+    });
+    if (!acceptance.accepted) {
+      return { legAdvancePromptLegIdx: runtime.legAdvancePromptLegIdx };
+    }
+    lastAlarmFix = {
+      latitude: mappedFix.latitude,
+      longitude: mappedFix.longitude,
+      speedKn: mappedFix.speedKn,
+      accuracyM: mappedFix.accuracyM,
+      timestamp: mappedFix.timestamp,
+    };
 
     const { actions, runtime: nextRuntime, anchorAlarm } = processLocationAlarms({
       fix: mappedFix,
@@ -303,12 +344,4 @@ export async function isBackgroundTrackNeeded(): Promise<boolean> {
 
 export async function shouldRunBackgroundLocation(): Promise<boolean> {
   return (await isAnchorMonitoringNeeded()) || (await isBackgroundTrackNeeded());
-}
-
-/** @deprecated Use processFixFromLocation — kept for background task import stability. */
-export async function runLocationAlarmsFromFix(
-  loc: Location.LocationObject,
-  options: { allowLegAdvancePrompt: boolean; inBackground: boolean },
-): Promise<void> {
-  await processFixFromLocation(loc, options);
 }

@@ -5,10 +5,14 @@ import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 
 import { KIEL_CENTER } from '../../map/constants';
 import { boundsFromWaypoints } from '../../lib/map/passageBounds';
+import { PlanningSeamarksOverlay } from '../map/PlanningSeamarksOverlay';
+import { formatMapDistanceLabel, legMidpoint } from '../../lib/geo/pathDistance';
 import { t } from '../../i18n';
 import type { LegCoverage } from '../../lib/map/coverage';
 import type { PassageWithLegs } from '../../store/passageStore';
+import type { DistanceUnit } from '../../settings/defaults';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme } from '../../theme/ThemeContext';
 
 type Props = {
@@ -21,16 +25,22 @@ type Props = {
 export function PassageMapPreview({ detail, legCoverage, highlightedLegIndex, onLegPress }: Props) {
   const { colors, minTouch } = useTheme();
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
+  const distanceUnit = useSettingsStore((s) => s.distanceUnit);
+  const seamarkPlanning = useSettingsStore((s) => s.seamarkPlanning);
   const cameraRef = useRef<CameraRef>(null);
   const [ready, setReady] = useState(false);
   const bounds = useMemo(() => boundsFromWaypoints(detail.waypoints), [detail.waypoints]);
+  const previewZoom = 10;
 
   useEffect(() => {
     if (!ready || !bounds) return;
     cameraRef.current?.fitBounds(bounds, { padding: { top: 24, right: 24, bottom: 24, left: 24 }, duration: 0 });
   }, [ready, bounds, detail.id]);
 
-  const geojson = useMemo(() => buildPreviewGeoJson(detail, legCoverage, highlightedLegIndex), [detail, legCoverage, highlightedLegIndex]);
+  const geojson = useMemo(
+    () => buildPreviewGeoJson(detail, legCoverage, highlightedLegIndex, distanceUnit),
+    [detail, legCoverage, highlightedLegIndex, distanceUnit],
+  );
 
   if (!chartStyleUri) {
     return (
@@ -51,7 +61,16 @@ export function PassageMapPreview({ detail, legCoverage, highlightedLegIndex, on
         scaleBar={false}
         onDidFinishLoadingMap={() => setReady(true)}
       >
-        <Camera ref={cameraRef} initialViewState={{ center: bounds ? [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2] : KIEL_CENTER, zoom: 10, bearing: 0, pitch: 0 }} />
+        <Camera ref={cameraRef} initialViewState={{ center: bounds ? [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2] : KIEL_CENTER, zoom: previewZoom, bearing: 0, pitch: 0 }} />
+        {bounds ? (
+          <PlanningSeamarksOverlay
+            bounds={bounds}
+            centerLatitude={(bounds[1] + bounds[3]) / 2}
+            centerLongitude={(bounds[0] + bounds[2]) / 2}
+            zoom={previewZoom}
+            config={seamarkPlanning}
+          />
+        ) : null}
         <GeoJSONSource
           id="seacheck-passage-preview"
           data={geojson}
@@ -72,7 +91,18 @@ export function PassageMapPreview({ detail, legCoverage, highlightedLegIndex, on
             }}
           />
           <Layer
-            id="seacheck-passage-preview-wp"
+            id="seacheck-passage-preview-dist"
+            type="symbol"
+            filter={['==', ['get', 'kind'], 'preview-leg-label']}
+            style={{
+              textField: ['get', 'label'],
+              textSize: 12,
+              textColor: colors.text,
+              textHaloColor: '#ffffff',
+              textHaloWidth: 1.5,
+            }}
+          />
+          <Layer
             type="circle"
             filter={['==', ['get', 'kind'], 'preview-wp']}
             style={{
@@ -105,6 +135,7 @@ function buildPreviewGeoJson(
   detail: PassageWithLegs,
   legCoverage: LegCoverage[],
   highlightedLegIndex: number | null,
+  distanceUnit: DistanceUnit,
 ): FeatureCollection {
   const coverageByLeg = Object.fromEntries(legCoverage.map((l) => [l.legIndex, l.covered])) as Record<number, boolean>;
   const features: Feature[] = [];
@@ -126,6 +157,17 @@ function buildPreviewGeoJson(
         highlight: leg.index === highlightedLegIndex,
       },
       geometry: line,
+    });
+    features.push({
+      type: 'Feature',
+      properties: {
+        kind: 'preview-leg-label',
+        label: formatMapDistanceLabel(leg.distanceNm, distanceUnit),
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: legMidpoint(leg.from, leg.to),
+      },
     });
   }
 

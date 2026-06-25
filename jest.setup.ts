@@ -95,6 +95,7 @@ jest.mock('@maplibre/maplibre-react-native', () => {
     },
     OfflineManager: {
       getPacks: jest.fn(async () => []),
+      addListener: jest.fn(async () => {}),
       createPack: jest.fn(async (_opts: unknown, onProgress: (p: { id: string }, s: { state: string; percentage: number }) => void) => {
         const pack = {
           id: 'mock-pack',
@@ -122,6 +123,8 @@ jest.mock('@maplibre/maplibre-react-native', () => {
 
 jest.mock('@react-native-community/netinfo', () => ({
   useNetInfo: jest.fn(() => ({ isConnected: true, isInternetReachable: true })),
+  fetch: jest.fn(async () => ({ isConnected: true, isInternetReachable: true })),
+  addEventListener: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('@expo/vector-icons', () => {

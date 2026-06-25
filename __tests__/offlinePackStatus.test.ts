@@ -18,6 +18,10 @@ describe('packStateFromNative', () => {
   it('maps inactive empty pack to idle', () => {
     expect(packStateFromNative({ state: 'inactive', percentage: 0 } as never)).toBe('idle');
   });
+
+  it('maps complete at 100 percent to ready', () => {
+    expect(packStateFromNative({ state: 'inactive', percentage: 100 } as never)).toBe('ready');
+  });
 });
 
 describe('chart coverage at point', () => {

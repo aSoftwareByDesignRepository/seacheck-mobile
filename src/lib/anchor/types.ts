@@ -1,4 +1,5 @@
 export type AnchorWatchStatus = {
+  foregroundGranted: boolean;
   backgroundGranted: boolean;
   notificationsGranted: boolean;
   backgroundTaskRunning: boolean;

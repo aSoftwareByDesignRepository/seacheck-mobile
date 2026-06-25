@@ -49,3 +49,8 @@ export function resolveDisplayCog(fix: CogFixInput | null): number | null {
   if (fix.heading != null && !Number.isNaN(fix.heading)) return normalizeDeg(fix.heading);
   return null;
 }
+
+/** Boat icon + course vector bearing — same rules as instruments. */
+export function resolveBoatHeadingDeg(fix: CogFixInput | null): number | null {
+  return resolveDisplayCog(fix);
+}

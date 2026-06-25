@@ -24,13 +24,3 @@ describe('nearestWaypoint', () => {
     expect(hit?.waypoint.id).toBe('near');
   });
 });
-
-describe('useMapShellLayout split logic', () => {
-  it('shows floating strip only on phone map-forward', () => {
-    const { resolveMapShellSplit } = require('../src/features/responsive/ResponsiveMapShell');
-    expect(resolveMapShellSplit('map-forward', 'compact', false)).toEqual({ split: false, row: false });
-    expect(resolveMapShellSplit('map-forward', 'expanded', false)).toEqual({ split: true, row: true });
-    expect(resolveMapShellSplit('split', 'compact', true)).toEqual({ split: true, row: true });
-    expect(resolveMapShellSplit('coordinates', 'compact', false)).toEqual({ split: true, row: false });
-  });
-});

@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Device from 'expo-device';
 
 import { useIsEffectivelyOffline } from '../../lib/network/connectivity';
+import { useChartCoverageAtPoint } from '../../hooks/useChartCoverageAtPoint';
 import { useMapCameraFollow } from '../../hooks/useMapCameraFollow';
 import { useRaceCountdown } from '../../hooks/useRaceCountdown';
 import { CustomDownloadMapPanel } from '../downloads/CustomDownloadMapPanel';
@@ -23,18 +24,20 @@ import { ResponsiveMapShell } from '../responsive/ResponsiveMapShell';
 import { useEffectiveLayoutPreset } from '../../hooks/useEffectiveLayoutPreset';
 import { useMapBottomLayout } from '../../hooks/useMapBottomLayout';
 import { configureMapLogging } from '../../map/mapLogging';
-import { KIEL_CENTER } from '../../map/constants';
 import { formatCoordinates } from '../../map/coords';
 import { t } from '../../i18n';
 import type { RootTabParamList } from '../../navigation/types';
-import { useLocationStore } from '../../services/locationService';
+import { useLocationStore, isFixStale } from '../../services/locationService';
 import { useCustomDownloadStore } from '../../store/customDownloadStore';
 import { useFeedbackStore } from '../../store/feedbackStore';
+import { useConfirmStore } from '../../store/confirmStore';
 import { useNavigationStore } from '../../store/navigationStore';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useTrackStore } from '../../store/trackStore';
 import { boundsFromLonLat } from '../../lib/map/passageBounds';
 import { buildMapChartAccessibilityLabel } from '../../lib/map/mapAccessibility';
+import { resolveBoatHeadingDeg } from '../../lib/geo/cog';
+import { resolveMapInitialCenter, shouldPauseFollowOnRegionChange } from '../../lib/map/mapCameraFollow';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useWaypointStore } from '../../store/waypointStore';
 import { useTheme } from '../../theme/ThemeContext';
@@ -42,16 +45,17 @@ import { Button } from '../../ui/Button';
 import { ActionSheet } from '../../ui/ActionSheet';
 import { AnchorWatchLimitedSheet } from './AnchorWatchLimitedSheet';
 import { ExpoLocationPuck } from './ExpoLocationPuck';
+import { CourseVectorOverlay } from './CourseVectorOverlay';
 import { MapBottomDock } from './MapBottomDock';
 import { MapChrome } from './MapChrome';
 import { MapInstruments } from './MapInstruments';
 import { MapTopChrome } from './MapTopChrome';
 import { MobNavigateBackOverlay } from './MobNavigateBackOverlay';
-import { ScreenLockOverlay } from './ScreenLockOverlay';
 import { SeamarkDetailSheet } from './SeamarkDetailSheet';
 import { TrackPointMapDetailSheet } from './TrackPointMapDetailSheet';
 import { WaypointMapDetailSheet } from './WaypointMapDetailSheet';
 import { MapOverlays } from './MapOverlays';
+import { PlanningSeamarksOverlay } from './PlanningSeamarksOverlay';
 import { mapChromeInsets } from './mapChromeInsets';
 import { nearestTrackPoint } from '../../lib/geo/nearestTrackPoint';
 import { nearestWaypoint } from '../../lib/geo/nearestWaypoint';
@@ -76,6 +80,7 @@ export function NavigationMap() {
   const tracks = useTrackStore((s) => s.tracks);
   const followMode = useSettingsStore((s) => s.followMode);
   const mapFollowZoom = useSettingsStore((s) => s.mapFollowZoom);
+  const seamarkPlanning = useSettingsStore((s) => s.seamarkPlanning);
   const mapCourseUp = useSettingsStore((s) => s.mapCourseUp);
   const keepAwakeUnderway = useSettingsStore((s) => s.keepAwakeUnderway);
   const coordFormat = useSettingsStore((s) => s.coordFormat);
@@ -103,12 +108,20 @@ export function NavigationMap() {
   const [waypointHit, setWaypointHit] = useState<WaypointRow | null>(null);
   const [trackPointHit, setTrackPointHit] = useState<TrackPointRow | null>(null);
   const [seamarkLoading, setSeamarkLoading] = useState(false);
-  const [mapCenter, setMapCenter] = useState({ latitude: KIEL_CENTER[1], longitude: KIEL_CENTER[0] });
+  const initialMapCenter = useMemo(
+    () => resolveMapInitialCenter(fix ?? lastGoodFix),
+    [fix?.latitude, fix?.longitude, lastGoodFix?.latitude, lastGoodFix?.longitude],
+  );
+  const [mapCenter, setMapCenter] = useState(() => ({
+    latitude: initialMapCenter[1],
+    longitude: initialMapCenter[0],
+  }));
   const [mapZoom, setMapZoom] = useState<number | null>(null);
   const [chartRetryBusy, setChartRetryBusy] = useState(false);
   const [mapStyleLoaded, setMapStyleLoaded] = useState(false);
   const [longPressAction, setLongPressAction] = useState<{ lat: number; lon: number; coordLabel: string } | null>(null);
   const isOffline = useIsEffectivelyOffline();
+  const chartCoverage = useChartCoverageAtPoint(mapCenter.latitude, mapCenter.longitude);
   const showScaleBar = Platform.OS === 'ios' || Device.isDevice;
   const onlineTilesAvailable = !isOffline || hasReadyPack;
   const boatFix = fix ?? lastGoodFix;
@@ -125,6 +138,11 @@ export function NavigationMap() {
         zoom: mapZoom,
         boatLatitude: boatFix?.latitude ?? null,
         boatLongitude: boatFix?.longitude ?? null,
+        boatHeadingDeg: boatFix ? resolveBoatHeadingDeg(boatFix) : null,
+        boatStale: isFixStale(fix),
+        isOffline: offlineHydrated && isOffline,
+        hasReadyPack,
+        chartCovered: offlineHydrated && hasReadyPack ? chartCoverage.covered : undefined,
       }),
     [
       mapCenter.latitude,
@@ -136,6 +154,14 @@ export function NavigationMap() {
       mapZoom,
       boatFix?.latitude,
       boatFix?.longitude,
+      boatFix?.heading,
+      boatFix?.cogDeg,
+      boatFix?.speedKn,
+      fix?.timestamp,
+      isOffline,
+      offlineHydrated,
+      hasReadyPack,
+      chartCoverage.covered,
     ],
   );
 
@@ -187,10 +213,11 @@ export function NavigationMap() {
 
   useMapCameraFollow({
     cameraRef,
-    enabled: followActive && followMode && Boolean(fix),
+    enabled: followActive && followMode && Boolean(boatFix),
+    mapReady: mapStyleLoaded,
     courseUp: mapCourseUp,
     followZoom: mapFollowZoom,
-    fix,
+    fix: boatFix,
   });
 
   async function handleMapTap(lon: number, lat: number) {
@@ -235,6 +262,23 @@ export function NavigationMap() {
     setLongPressAction({ lat, lon, coordLabel: formatCoordinates(coordFormat, lat, lon) });
   }
 
+  function handleLongPressAnchor(lat: number, lon: number) {
+    void (async () => {
+      const anchorActive = useNavigationStore.getState().anchorAlarm?.active;
+      if (anchorActive) {
+        const confirmed = await useConfirmStore.getState().requestConfirm({
+          title: t('map.anchorReplaceTitle'),
+          message: t('map.anchorReplaceBody'),
+          confirmLabel: t('map.anchorReplaceConfirm'),
+          cancelLabel: t('common.dismiss'),
+          destructive: true,
+        });
+        if (!confirmed) return;
+      }
+      await activateAnchorAlarmAt(lat, lon, undefined, { replace: true });
+    })();
+  }
+
   const mapOverlays = !customSelecting ? (
     <>
       <View pointerEvents="box-none" style={[styles.topOverlay, { top: mapBottom.top, left: mapBottom.left, right: mapBottom.right }]}>
@@ -242,12 +286,14 @@ export function NavigationMap() {
           actionColumnWidth={mapBottom.actionColumnWidth}
           onOpenDownloads={() => navigation.navigate('Downloads')}
           onOpenSettings={() => navigation.navigate('Settings')}
+          onOpenPassage={() => navigation.navigate('Passage')}
           showRecenter={showRecenter}
           onRecenter={() => setFollowActive(true)}
           viewportLatitude={mapCenter.latitude}
           viewportLongitude={mapCenter.longitude}
           activityProfileId={activityProfileId}
           raceCountdown={raceCountdown}
+          showPassageFollow={isMinimalLayout}
         />
       </View>
       {!isMinimalLayout ? (
@@ -265,17 +311,14 @@ export function NavigationMap() {
       <Text style={{ color: colors.textMuted }}>{t('boot.loading')}</Text>
     </View>
   ) : chartStyleUri ? (
-    <View
-      style={styles.map}
-      pointerEvents={screenLocked ? 'none' : 'auto'}
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel={mapAccessibilityLabel}
-      accessibilityHint={t('map.chartA11yHint')}
-    >
+    <View style={styles.map} pointerEvents={screenLocked ? 'none' : 'box-none'}>
       <Map
         ref={mapRef}
         style={StyleSheet.absoluteFill}
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={mapAccessibilityLabel}
+        accessibilityHint={t('map.chartA11yHint')}
         mapStyle={chartStyleUri}
         attribution
         attributionPosition={{
@@ -294,8 +337,10 @@ export function NavigationMap() {
         }}
       onDidFinishLoadingStyle={() => setMapStyleLoaded(true)}
       onDidFailLoadingMap={() => setMapStyleLoaded(false)}
-      onRegionWillChange={() => {
-        if (followMode) setFollowActive(false);
+      onRegionWillChange={(e) => {
+        if (shouldPauseFollowOnRegionChange(e.nativeEvent.userInteraction, followMode)) {
+          setFollowActive(false);
+        }
       }}
       onRegionDidChange={(e) => {
         const [lon, lat] = e.nativeEvent.center;
@@ -327,11 +372,28 @@ export function NavigationMap() {
         void handleMapTap(lon, lat);
       }}
     >
-      <Camera ref={cameraRef} initialViewState={{ center: KIEL_CENTER, zoom: 11 }} />
+      <Camera
+        ref={cameraRef}
+        initialViewState={{
+          center: initialMapCenter,
+          zoom: followMode ? mapFollowZoom : 11,
+        }}
+      />
+      <CourseVectorOverlay />
       <ExpoLocationPuck />
+      <PlanningSeamarksOverlay
+        centerLatitude={mapCenter.latitude}
+        centerLongitude={mapCenter.longitude}
+        zoom={mapZoom ?? mapFollowZoom}
+        config={seamarkPlanning}
+      />
       <MapOverlays showRangeRings={showRangeRings} />
     </Map>
-      {mapOverlays}
+      {!customSelecting ? (
+        <View pointerEvents="box-none" style={styles.mapOverlayLayer}>
+          {mapOverlays}
+        </View>
+      ) : null}
     </View>
   ) : (
     <View style={[styles.map, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.md }]} accessibilityRole="alert">
@@ -354,7 +416,7 @@ export function NavigationMap() {
     <View style={[styles.root, { backgroundColor: colors.background }]} testID="screen.map">
       <ResponsiveMapShell
         map={mapNode}
-        panel={<MapInstruments fix={fix} embedded />}
+        panel={<MapInstruments fix={fix} />}
       />
 
       {customSelecting ? (
@@ -368,7 +430,7 @@ export function NavigationMap() {
         </>
       ) : null}
 
-      {isMinimalLayout && !customSelecting && !mobTarget ? (
+      {isMinimalLayout && !customSelecting && !mobTarget && !screenLocked ? (
         <MapBottomDock
           fix={fix}
           showRangeRings={showRangeRings}
@@ -412,7 +474,7 @@ export function NavigationMap() {
                 {
                   label: t('map.anchorHere'),
                   testID: 'map.longPress.anchor',
-                  onPress: () => void activateAnchorAlarmAt(longPressAction.lat, longPressAction.lon),
+                  onPress: () => handleLongPressAnchor(longPressAction.lat, longPressAction.lon),
                 },
                 {
                   label: t('map.dropWaypointConfirm'),
@@ -434,8 +496,6 @@ export function NavigationMap() {
           <Text style={{ color: colors.textMuted }}>{t('map.seamarkLoading')}</Text>
         </View>
       ) : null}
-
-      {screenLocked ? <ScreenLockOverlay onUnlock={() => void setScreenLocked(false)} /> : null}
     </View>
   );
 }
@@ -443,6 +503,7 @@ export function NavigationMap() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   map: { flex: 1, minHeight: 0, overflow: 'hidden' },
+  mapOverlayLayer: { ...StyleSheet.absoluteFill, zIndex: 50, elevation: 50 },
   topOverlay: { position: 'absolute', zIndex: 20 },
   hint: { borderWidth: 1, borderRadius: 12, padding: 10 },
   hintText: { fontSize: 13, lineHeight: 18, textAlign: 'center' },

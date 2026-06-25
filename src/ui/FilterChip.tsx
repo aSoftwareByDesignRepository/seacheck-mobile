@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
 import { t } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
+import { filterChipStyle, filterChipText } from './chipTokens';
 
 type Props = {
   label: string;
@@ -21,26 +22,14 @@ export function FilterChip({ label, selected, onPress, testID }: Props) {
       accessibilityHint={selected ? t('common.filterSelectedHint') : t('common.filterUnselectedHint')}
       onPress={onPress}
       style={[
-        styles.chip,
+        filterChipStyle(minTouch),
         {
-          minHeight: minTouch,
           backgroundColor: selected ? colors.primary : colors.surface,
           borderColor: colors.border,
         },
       ]}
     >
-      <Text style={[styles.text, { color: selected ? colors.primaryText : colors.text }]}>{label}</Text>
+      <Text style={[filterChipText, { color: selected ? colors.primaryText : colors.text }]}>{label}</Text>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  chip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    justifyContent: 'center',
-  },
-  text: { fontSize: 14, fontWeight: '700' },
-});

@@ -3,7 +3,11 @@ import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { refreshAnchorWatchPromptIfNeeded } from '../../lib/anchor/activateAnchorAlarm';
-import { requestBackgroundLocationAccess, openSystemSettings } from '../../lib/permissions/locationPermissions';
+import {
+  openSystemSettings,
+  requestBackgroundLocationAccess,
+  requestForegroundLocationAccess,
+} from '../../lib/permissions/locationPermissions';
 import { requestBatteryOptimizationExemption, openBatteryOptimizationSettings } from '../../lib/permissions/batteryOptimization';
 import { t } from '../../i18n';
 import {
@@ -15,22 +19,23 @@ import { useNavigationStore } from '../../store/navigationStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { typography } from '../../theme/tokens';
 import { BottomSheet } from '../../ui/BottomSheet';
+import { ANCHOR_WATCH_SHEET_PRIORITY } from '../../ui/sheetHost';
 import { Button } from '../../ui/Button';
 import { ButtonStack } from '../../ui/Screen';
 
 export function AnchorWatchLimitedSheet() {
   const { colors, spacing, minTouch } = useTheme();
   const prompt = useNavigationStore((s) => s.anchorWatchPrompt);
-  const setPrompt = useNavigationStore((s) => s.setAnchorWatchPrompt);
+  const dismissPrompt = useNavigationStore((s) => s.dismissAnchorWatchPrompt);
 
   useEffect(() => {
-    if (!prompt?.backgroundGranted || prompt.backgroundTaskRunning) return;
+    if (!prompt?.foregroundGranted || !prompt.backgroundGranted || prompt.backgroundTaskRunning) return;
     void syncBackgroundLocationMonitoring().then(() => refreshAnchorWatchPromptIfNeeded());
-  }, [prompt?.backgroundGranted, prompt?.backgroundTaskRunning]);
+  }, [prompt?.foregroundGranted, prompt?.backgroundGranted, prompt?.backgroundTaskRunning]);
 
   if (!prompt) return null;
 
-  const close = () => setPrompt(null);
+  const close = () => dismissPrompt();
 
   async function afterFixStep() {
     await syncBackgroundLocationMonitoring();
@@ -44,11 +49,33 @@ export function AnchorWatchLimitedSheet() {
       title={t('map.anchorWatchLimitedTitle')}
       subtitle={t('map.anchorWatchLimitedBody')}
       scrollable
+      priority={ANCHOR_WATCH_SHEET_PRIORITY}
       testID="anchorWatch.limited"
       footer={<Button label={t('common.close')} variant="ghost" onPress={close} testID="anchorWatch.close" style={{ minHeight: minTouch }} />}
     >
       <View style={{ gap: spacing.md }}>
-        {!prompt.backgroundGranted ? (
+        {!prompt.foregroundGranted ? (
+          <View style={[styles.block, { borderColor: colors.border, backgroundColor: colors.background }]}>
+            <Text style={[styles.blockTitle, { color: colors.text }]}>{t('permissions.foregroundLabel')}</Text>
+            <Text style={[styles.blockBody, { color: colors.textMuted }]}>{t('permissions.foregroundNeededBody')}</Text>
+            <ButtonStack>
+              <Button
+                label={t('onboarding.locationForeground')}
+                variant="secondary"
+                onPress={() => {
+                  void requestForegroundLocationAccess().then(async (result) => {
+                    if (result.status !== Location.PermissionStatus.GRANTED) {
+                      if (result.blocked) await openSystemSettings();
+                    }
+                    await afterFixStep();
+                  });
+                }}
+                testID="anchorWatch.foreground"
+              />
+            </ButtonStack>
+          </View>
+        ) : null}
+        {prompt.foregroundGranted && !prompt.backgroundGranted ? (
           <View style={[styles.block, { borderColor: colors.border, backgroundColor: colors.background }]}>
             <Text style={[styles.blockTitle, { color: colors.text }]}>{t('permissions.backgroundLabel')}</Text>
             <Text style={[styles.blockBody, { color: colors.textMuted }]}>{t('permissions.backgroundNeededBody')}</Text>
@@ -57,8 +84,10 @@ export function AnchorWatchLimitedSheet() {
                 label={t('permissions.enableBackground')}
                 variant="secondary"
                 onPress={() => {
-                  void requestBackgroundLocationAccess({ enableBackgroundTracks: false }).then(async (s) => {
-                    if (s !== Location.PermissionStatus.GRANTED) await openSystemSettings();
+                  void requestBackgroundLocationAccess({ enableBackgroundTracks: false }).then(async (result) => {
+                    if (result.status !== Location.PermissionStatus.GRANTED && result.blocked) {
+                      await openSystemSettings();
+                    }
                     await afterFixStep();
                   });
                 }}
@@ -104,7 +133,7 @@ export function AnchorWatchLimitedSheet() {
             </ButtonStack>
           </View>
         ) : null}
-        {prompt.backgroundGranted && !prompt.backgroundTaskRunning ? (
+        {prompt.foregroundGranted && prompt.backgroundGranted && !prompt.backgroundTaskRunning ? (
           <View style={[styles.block, { borderColor: colors.border, backgroundColor: colors.background }]}>
             <Text style={[styles.blockTitle, { color: colors.text }]}>{t('settings.backgroundGpsTitle')}</Text>
             <Text style={[styles.blockBody, { color: colors.textMuted }]}>{t('settings.backgroundGpsStopped')}</Text>

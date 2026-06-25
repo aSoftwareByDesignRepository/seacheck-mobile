@@ -19,11 +19,12 @@ import { SectionHeader } from '../../ui/SectionHeader';
 const CUSTOM_DELTA = 0.12;
 
 type Props = {
-  busyId?: string | null;
-  onBusyChange?: (id: string | null) => void;
+  downloadLocked?: boolean;
+  actionBusyId?: string | null;
+  onActionBusyChange?: (id: string | null) => void;
 };
 
-export function CustomDownloadSection({ busyId, onBusyChange }: Props) {
+export function CustomDownloadSection({ downloadLocked = false, actionBusyId, onActionBusyChange }: Props) {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const { colors, spacing, minTouch } = useTheme();
   const fix = useLocationStore((s) => s.fix);
@@ -58,6 +59,10 @@ export function CustomDownloadSection({ busyId, onBusyChange }: Props) {
       showError(t('downloads.customNoGpsBody'));
       return;
     }
+    if (useOfflinePackStore.getState().activeDownloadRegionId) {
+      showError(t('downloads.errorDownloadBusy'));
+      return;
+    }
     const allowed = await ensureDownloadAllowed();
     if (!allowed) {
       showInfo(t('downloads.cellularCancelledBody'));
@@ -68,12 +73,16 @@ export function CustomDownloadSection({ busyId, onBusyChange }: Props) {
       lon: posFix.longitude.toFixed(2),
     });
     setBusy(true);
-    onBusyChange?.('custom_quick');
+    onActionBusyChange?.('custom_quick');
     try {
       await startCustomDownload(name, quickBounds, 10, 14);
+      showInfo(t('downloads.customStartedBody'));
+    } catch (err) {
+      showError(err instanceof Error ? err.message : t('downloads.downloadFailed'));
     } finally {
       setBusy(false);
-      onBusyChange?.(null);
+      const stillDownloading = useOfflinePackStore.getState().activeDownloadRegionId != null;
+      if (!stillDownloading) onActionBusyChange?.(null);
     }
   }
 
@@ -95,7 +104,7 @@ export function CustomDownloadSection({ busyId, onBusyChange }: Props) {
           variant="secondary"
           onPress={() => void handleQuickDownload()}
           loading={busy}
-          disabled={busy || busyId != null || !quickBounds || !quickValid}
+          disabled={busy || downloadLocked || actionBusyId != null || !quickBounds || !quickValid}
           testID="downloads.custom.quick"
         />
       </View>

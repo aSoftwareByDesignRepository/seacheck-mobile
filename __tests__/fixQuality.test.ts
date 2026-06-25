@@ -1,6 +1,7 @@
 import {
   ANCHOR_SOG_MIN_DRIFT_NM,
   isFixQualityOk,
+  isSafetyFixOk,
   isValidCoordinate,
   normalizeFixTimestamp,
 } from '../src/lib/geo/fixQuality';
@@ -30,6 +31,12 @@ describe('fixQuality', () => {
 
   it('accepts fresh accurate fixes', () => {
     expect(isFixQualityOk(freshFix())).toBe(true);
+    expect(isSafetyFixOk(freshFix())).toBe(true);
+  });
+
+  it('rejects safety actions when horizontal accuracy is unknown', () => {
+    expect(isFixQualityOk(freshFix({ accuracyM: null }))).toBe(true);
+    expect(isSafetyFixOk(freshFix({ accuracyM: null }))).toBe(false);
   });
 
   it('normalizes missing timestamps', () => {

@@ -1,14 +1,38 @@
 import { useEffect, useState } from 'react';
 
-import { getBarometerState, startBarometerSampling, subscribeBarometer } from '../services/barometerService';
+import {
+  getBarometerState,
+  startBarometerSampling,
+  stopBarometerSampling,
+  subscribeBarometer,
+  type BarometerStateSnapshot,
+} from '../services/barometerService';
 
-export function useBarometer() {
-  const [state, setState] = useState(getBarometerState);
+const INACTIVE: BarometerStateSnapshot = {
+  available: false,
+  readings: [],
+  trend: { currentHpa: null, delta3h: null, trend: 'unknown' },
+  hydrated: true,
+};
+
+/** Pressure trend — only samples when `enabled` (Settings → Barometer). */
+export function useBarometer(enabled: boolean) {
+  const [state, setState] = useState(() => (enabled ? getBarometerState() : INACTIVE));
 
   useEffect(() => {
-    void startBarometerSampling();
-    return subscribeBarometer(setState);
-  }, []);
+    if (!enabled) {
+      stopBarometerSampling();
+      setState(INACTIVE);
+      return;
+    }
 
-  return state;
+    void startBarometerSampling();
+    const unsub = subscribeBarometer(setState);
+    return () => {
+      unsub();
+      stopBarometerSampling();
+    };
+  }, [enabled]);
+
+  return enabled ? state : INACTIVE;
 }

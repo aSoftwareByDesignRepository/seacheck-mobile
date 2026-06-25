@@ -1,6 +1,5 @@
 import { PropsWithChildren, ReactNode, useCallback, useEffect, useId, useRef } from 'react';
 
-import { useTheme } from '../theme/ThemeContext';
 import { BottomSheetChrome, useSheetHost } from './sheetHost';
 
 type Props = PropsWithChildren<{
@@ -11,6 +10,8 @@ type Props = PropsWithChildren<{
   scrollable?: boolean;
   testID?: string;
   footer?: ReactNode;
+  /** Higher priority sheets render above lower ones in the single modal host. */
+  priority?: number;
 }>;
 
 type SheetContentProps = Pick<Props, 'onClose' | 'title' | 'subtitle' | 'scrollable' | 'testID' | 'footer' | 'children'>;
@@ -25,8 +26,8 @@ export function BottomSheet({
   testID,
   footer,
   children,
+  priority = 0,
 }: Props) {
-  useTheme().minTouch;
   const id = useId();
   const { register, invalidate, unregister } = useSheetHost();
   const contentRef = useRef<SheetContentProps>({
@@ -71,14 +72,14 @@ export function BottomSheet({
 
     // Defer registration one frame so the opening tap cannot land on the backdrop.
     const frame = requestAnimationFrame(() => {
-      register(id, 0, renderSheet, closeSheet);
+      register(id, priority, renderSheet, closeSheet);
     });
 
     return () => {
       cancelAnimationFrame(frame);
       unregister(id);
     };
-  }, [visible, id, register, unregister, renderSheet, closeSheet]);
+  }, [visible, id, priority, register, unregister, renderSheet, closeSheet]);
 
   useEffect(() => {
     if (!visible) return;

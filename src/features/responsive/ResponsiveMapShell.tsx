@@ -86,21 +86,6 @@ export function ResponsiveMapShell({ map, panel }: Props) {
   );
 }
 
-/** @deprecated Prefer useMapShellLayout() — kept for tests importing layout logic. */
-export function resolveMapShellSplit(
-  layoutPreset: string,
-  formFactor: string,
-  isLandscape: boolean,
-): { split: boolean; row: boolean } {
-  const split =
-    layoutPreset === 'split' ||
-    layoutPreset === 'coordinates' ||
-    (layoutPreset === 'map-forward' && formFactor === 'expanded') ||
-    (layoutPreset === 'instruments-forward' && formFactor !== 'compact' && isLandscape);
-  const row = split && (formFactor !== 'compact' || isLandscape);
-  return { split, row };
-}
-
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   row: { flexDirection: 'row' },
@@ -109,6 +94,6 @@ const styles = StyleSheet.create({
   mapRegion: { flex: 1, minHeight: 0 },
   mapWide: { flex: 0.55, minHeight: 0 },
   panelNarrow: { flex: 0.45, minHeight: 0 },
-  coordsPanel: { flexShrink: 0, maxHeight: '46%', minHeight: 180 },
-  panelStack: { flexShrink: 0, maxHeight: '46%' },
+  coordsPanel: { flexShrink: 0, maxHeight: '56%', minHeight: 220 },
+  panelStack: { flexShrink: 0, maxHeight: '56%', minHeight: 220 },
 });

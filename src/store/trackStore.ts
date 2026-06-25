@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 import { create } from 'zustand';
 
 import { getDatabase, newId, type TrackPointRow, type TrackRow } from '../lib/db/database';
+import { computePathDistanceNm } from '../lib/geo/pathDistance';
 import type { LonLat } from '../lib/geo/navigation';
 import { t } from '../i18n';
 import { registerTrackLiveTrail } from '../services/trackLiveTrail';
@@ -22,8 +23,8 @@ function buildDefaultTrackName(): string {
 const MAX_LIVE_TRAIL = 2000;
 const MAX_LIVE_INSPECT = 500;
 
-async function syncBackgroundTrackRecording(trackId: string | null): Promise<void> {
-  const { syncBackgroundTrackRecording: sync } = await import('../services/backgroundLocationService');
+async function syncRecordingBackgroundGps(trackId: string | null): Promise<void> {
+  const { syncRecordingBackgroundGps: sync } = await import('../services/backgroundLocationService');
   await sync(trackId);
 }
 
@@ -46,8 +47,10 @@ type TrackStore = {
   mapPreviewTrackId: string | null;
   mapPreviewLine: LonLat[];
   mapPreviewPoints: TrackPointRow[];
+  mapPreviewDistanceNm: number | null;
   setMapPreviewTrack: (id: string | null) => Promise<void>;
   getPoints: (id: string) => Promise<TrackPointRow[]>;
+  getTrackDistanceNm: (id: string) => Promise<number>;
 };
 
 export const useTrackStore = create<TrackStore>((set, get) => ({
@@ -59,6 +62,7 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
   mapPreviewTrackId: null,
   mapPreviewLine: [],
   mapPreviewPoints: [],
+  mapPreviewDistanceNm: null,
 
   hydrate: async () => {
     const db = await getDatabase();
@@ -67,7 +71,7 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
     const recordingTrackId = open?.id ?? null;
     set({ hydrated: true, tracks, recordingTrackId });
     if (recordingTrackId) {
-      await syncBackgroundTrackRecording(recordingTrackId);
+      await syncRecordingBackgroundGps(recordingTrackId);
       const points = await get().getPoints(recordingTrackId);
       set({
         liveTrail: points.map((p) => [p.longitude, p.latitude] as LonLat),
@@ -88,7 +92,7 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
     await db.runAsync('INSERT INTO tracks (id, name, started_at, ended_at) VALUES (?, ?, ?, ?)', row.id, row.name, row.started_at, row.ended_at);
     set({ tracks: [row, ...get().tracks], recordingTrackId: row.id, liveTrail: [], liveInspectPoints: [] });
     await useNavigationStore.getState().resetSessionDistance();
-    await syncBackgroundTrackRecording(row.id);
+    await syncRecordingBackgroundGps(row.id);
     return row.id;
   },
 
@@ -102,7 +106,7 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
       recordingTrackId: null,
       tracks: get().tracks.map((t) => (t.id === id ? { ...t, ended_at: ended } : t)),
     });
-    await syncBackgroundTrackRecording(null);
+    await syncRecordingBackgroundGps(null);
   },
 
   appendPoint: async ({ latitude, longitude, sog_ms, cog_deg }) => {
@@ -158,15 +162,16 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
       mapPreviewTrackId: wasPreview ? null : get().mapPreviewTrackId,
       mapPreviewLine: wasPreview ? [] : get().mapPreviewLine,
       mapPreviewPoints: wasPreview ? [] : get().mapPreviewPoints,
+      mapPreviewDistanceNm: wasPreview ? null : get().mapPreviewDistanceNm,
     });
     if (wasRecording) {
-      await syncBackgroundTrackRecording(null);
+      await syncRecordingBackgroundGps(null);
     }
   },
 
   setMapPreviewTrack: async (id) => {
     if (!id) {
-      set({ mapPreviewTrackId: null, mapPreviewLine: [], mapPreviewPoints: [] });
+      set({ mapPreviewTrackId: null, mapPreviewLine: [], mapPreviewPoints: [], mapPreviewDistanceNm: null });
       return;
     }
     const points = await get().getPoints(id);
@@ -174,7 +179,13 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
       mapPreviewTrackId: id,
       mapPreviewLine: points.map((p) => [p.longitude, p.latitude] as LonLat),
       mapPreviewPoints: points,
+      mapPreviewDistanceNm: computePathDistanceNm(points),
     });
+  },
+
+  getTrackDistanceNm: async (id) => {
+    const points = await get().getPoints(id);
+    return computePathDistanceNm(points);
   },
 
   getPoints: async (id) => {

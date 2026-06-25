@@ -1,7 +1,11 @@
 import {
+  DEFAULT_ANCHOR_RADIUS_NM,
   DEFAULT_COURSE_VECTOR_MINUTES,
+  DEFAULT_COURSE_VECTOR_SCALE,
   DEFAULT_FOLLOW_ZOOM,
+  type AnchorRadiusNm,
   type CourseVectorMinutes,
+  type CourseVectorVisualScale,
   type FollowZoomLevel,
 } from '../lib/settings/mapSettings';
 
@@ -15,12 +19,20 @@ export const CRUISE_PASSAGE_DEFAULTS = {
   mapCourseUp: true,
   mapShowCourseVector: true,
   mapCourseVectorMinutes: DEFAULT_COURSE_VECTOR_MINUTES as CourseVectorMinutes,
+  mapCourseVectorScale: DEFAULT_COURSE_VECTOR_SCALE as CourseVectorVisualScale,
   mapFollowZoom: DEFAULT_FOLLOW_ZOOM as FollowZoomLevel,
+  anchorRadiusNm: DEFAULT_ANCHOR_RADIUS_NM as AnchorRadiusNm,
   followMode: true,
   keepAwakeUnderway: true,
+  /** Off by default — pressure sensor is optional and not on all devices. */
+  barometerEnabled: false,
+  /** Accuracy-weighted position smoothing for map display — alarms always use raw GPS. */
+  gpsSmoothPosition: true,
 };
 
-export type { CourseVectorMinutes, FollowZoomLevel };
+export { DEFAULT_SEAMARK_PLANNING, type SeamarkPlanningConfig } from '../lib/settings/seamarkSettings';
+
+export type { AnchorRadiusNm, CourseVectorMinutes, CourseVectorVisualScale, FollowZoomLevel };
 
 export type SogUnit = 'kn' | 'mph' | 'kmh' | 'ms';
 export type DistanceUnit = 'nm' | 'km' | 'sm';

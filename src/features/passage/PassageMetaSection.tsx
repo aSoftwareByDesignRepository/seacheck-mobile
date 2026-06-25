@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { UtcDeparturePickerModal } from './UtcDeparturePickerModal';
+import { PassageRouteSummary } from './PassageRouteSummary';
 import { t } from '../../i18n';
 import type { PassageWithLegs } from '../../store/passageStore';
 import { useTheme } from '../../theme/ThemeContext';
@@ -45,6 +46,7 @@ export function PassageMetaSection({
       <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
         {t('passage.metaTitle')}
       </Text>
+      <PassageRouteSummary detail={detail} />
       <Text style={[styles.label, { color: colors.textMuted }]}>{t('passage.nameLabel')}</Text>
       <FieldInput
         value={name}
@@ -61,7 +63,8 @@ export function PassageMetaSection({
         onChangeText={setDefaultSog}
         onEndEditing={() => {
           const parsed = Number.parseFloat(defaultSog.replace(',', '.'));
-          if (Number.isFinite(parsed)) onDefaultSogChange(parsed);
+          if (Number.isFinite(parsed) && parsed > 0) onDefaultSogChange(parsed);
+          else setDefaultSog(String(detail.default_sog_kn));
         }}
         accessibilityLabel={t('passage.defaultSogLabel')}
         keyboardType="number-pad"

@@ -3,6 +3,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { t } from '../../i18n';
 import type { PassageLeg, PassageWithLegs } from '../../store/passageStore';
+import { useSettingsStore } from '../../store/settingsStore';
+import { formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
+import type { DistanceUnit } from '../../settings/defaults';
 import { useTheme } from '../../theme/ThemeContext';
 import { FieldInput } from '../../ui/Screen';
 
@@ -14,11 +17,13 @@ type Props = {
   onLegNoteChange: (leg: PassageLeg, note: string) => void;
 };
 
-function formatLegMeta(leg: PassageLeg): string {
+function formatLegMeta(leg: PassageLeg, unit: DistanceUnit): string {
+  const unitLabel = distanceUnitLabel(unit);
   const base = t('passage.legMeta', {
     brg: Math.round(leg.bearingDeg),
-    dist: leg.distanceNm.toFixed(1),
-    cum: leg.cumulativeNm.toFixed(1),
+    dist: formatDistanceNm(leg.distanceNm, unit),
+    cum: formatDistanceNm(leg.cumulativeNm, unit),
+    unit: unitLabel,
     hours: leg.durationHours.toFixed(1),
   });
   if (!leg.etaUtc) return base;
@@ -89,6 +94,8 @@ function LegNoteField({ leg, expanded, onExpand, onCommit }: { leg: PassageLeg; 
 
 export function PassageLegTable({ detail, highlightedLegIndex, onHighlightLeg, onLegSogChange, onLegNoteChange }: Props) {
   const { colors, spacing, minTouch } = useTheme();
+  const distanceUnit = useSettingsStore((s) => s.distanceUnit);
+  const unitLabel = distanceUnitLabel(distanceUnit);
   const [expandedNoteLeg, setExpandedNoteLeg] = useState<number | null>(null);
 
   if (detail.waypoints.length < 2) {
@@ -127,7 +134,7 @@ export function PassageLegTable({ detail, highlightedLegIndex, onHighlightLeg, o
                 <Text style={[styles.legTitle, { color: colors.text }]}>
                   {leg.from.name} → {leg.to.name}
                 </Text>
-                <Text style={[styles.legMeta, { color: colors.textMuted }]}>{formatLegMeta(leg)}</Text>
+                <Text style={[styles.legMeta, { color: colors.textMuted }]}>{formatLegMeta(leg, distanceUnit)}</Text>
               </View>
             </Pressable>
             <LegSogField leg={leg} onCommit={(sogKn) => onLegSogChange(leg, sogKn)} />
@@ -141,7 +148,11 @@ export function PassageLegTable({ detail, highlightedLegIndex, onHighlightLeg, o
         );
       })}
       <Text style={[styles.total, { color: colors.text, marginTop: spacing.md }]}>
-        {t('passage.total', { nm: detail.totalNm.toFixed(1), hours: detail.totalHours.toFixed(1) })}
+        {t('passage.total', {
+          distance: formatDistanceNm(detail.totalNm, distanceUnit),
+          unit: unitLabel,
+          hours: detail.totalHours.toFixed(1),
+        })}
       </Text>
     </View>
   );

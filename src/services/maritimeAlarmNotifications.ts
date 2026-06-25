@@ -9,6 +9,7 @@ const ALARM_CHANNEL_ID = 'maritime-alarms-v2';
 
 let handlerRegistered = false;
 let permissionStatus: MaritimeNotificationPermission = 'unknown';
+let notificationCanAskAgain = true;
 
 function isPermissionGranted(status: Notifications.NotificationPermissionsStatus): boolean {
   return status.granted || status.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
@@ -18,9 +19,14 @@ export function getMaritimeNotificationPermission(): MaritimeNotificationPermiss
   return permissionStatus;
 }
 
+export function getMaritimeNotificationCanAskAgain(): boolean {
+  return notificationCanAskAgain;
+}
+
 export async function refreshMaritimeNotificationPermission(): Promise<MaritimeNotificationPermission> {
   try {
     const current = await Notifications.getPermissionsAsync();
+    notificationCanAskAgain = current.canAskAgain ?? true;
     if (isPermissionGranted(current)) {
       permissionStatus = 'granted';
     } else if (current.status === 'denied') {
@@ -30,6 +36,7 @@ export async function refreshMaritimeNotificationPermission(): Promise<MaritimeN
     }
   } catch {
     permissionStatus = 'denied';
+    notificationCanAskAgain = false;
   }
   return permissionStatus;
 }
@@ -37,15 +44,17 @@ export async function refreshMaritimeNotificationPermission(): Promise<MaritimeN
 export async function ensureMaritimeAlarmNotifications(): Promise<boolean> {
   await refreshMaritimeNotificationPermission();
   if (permissionStatus === 'granted') return true;
-  if (permissionStatus === 'denied') return false;
+  if (permissionStatus === 'denied' && !notificationCanAskAgain) return false;
 
   try {
     const requested = await Notifications.requestPermissionsAsync({
       ios: { allowAlert: true, allowBadge: false, allowSound: true },
     });
+    notificationCanAskAgain = requested.canAskAgain ?? true;
     permissionStatus = isPermissionGranted(requested) ? 'granted' : 'denied';
   } catch {
     permissionStatus = 'denied';
+    notificationCanAskAgain = false;
   }
   return permissionStatus === 'granted';
 }
@@ -111,4 +120,5 @@ export async function showMaritimeAlarmNotification(title: string, body: string)
 export function resetMaritimeAlarmNotificationsForTests(): void {
   handlerRegistered = false;
   permissionStatus = 'unknown';
+  notificationCanAskAgain = true;
 }

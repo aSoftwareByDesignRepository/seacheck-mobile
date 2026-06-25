@@ -1,6 +1,6 @@
 import { bearingTrue, distanceNm, type LonLat } from '../geo/navigation';
 import { fetchIsEffectivelyOffline } from '../network/connectivity';
-import { fetchWithTimeout } from '../network/fetchWithTimeout';
+import { fetchOverpass } from './overpassClient';
 
 export type SeamarkHit = {
   name: string;
@@ -12,7 +12,6 @@ export type SeamarkHit = {
   rawTags: Record<string, string>;
 };
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 const SEARCH_RADIUS_M = 40;
 
 type OverpassElement = {
@@ -65,15 +64,7 @@ export async function queryOverpassSeamark(lat: number, lon: number): Promise<Se
 );
 out center tags;`;
 
-  const response = await fetchWithTimeout(
-    OVERPASS_URL,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(query)}`,
-    },
-    15_000,
-  );
+  const response = await fetchOverpass(query, 15_000);
   if (!response.ok) return null;
 
   const payload = (await response.json()) as { elements?: OverpassElement[] };

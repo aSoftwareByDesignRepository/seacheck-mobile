@@ -13,6 +13,9 @@ export const ALL_BOTTOM_TABS: TabName[] = [...PRIMARY_BOTTOM_TABS, ...OVERFLOW_B
 /** Minimum width (px) to show all six tabs with labels without clipping. */
 export const FULL_TAB_BAR_WIDTH = 480;
 
+/** Side navigation rail width — keep in sync with AdaptiveTabBar rail styles. */
+export const RAIL_WIDTH = 88;
+
 export function resolveBottomTabLayout(width: number): { visible: TabName[]; overflow: TabName[] } {
   if (width >= FULL_TAB_BAR_WIDTH) {
     return { visible: ALL_BOTTOM_TABS, overflow: [] };

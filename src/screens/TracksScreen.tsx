@@ -1,24 +1,27 @@
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import * as Location from 'expo-location';
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MasterDetailLayout } from '../features/responsive/MasterDetailLayout';
 import { TrackDetailPanel } from '../features/tracks/TrackDetailPanel';
-import { requestBackgroundLocationAccess, requestForegroundLocationAccess } from '../lib/permissions/locationPermissions';
+import { openSystemSettings, requestBackgroundLocationAccess, requestForegroundLocationAccess } from '../lib/permissions/locationPermissions';
 import { t } from '../i18n';
 import type { RootTabParamList } from '../navigation/types';
 import { requestConfirm } from '../store/confirmStore';
 import { useFeedbackStore } from '../store/feedbackStore';
-import { isBackgroundTrackTaskRunning } from '../services/trackRecordingService';
+import { isBackgroundLocationRunning } from '../services/backgroundLocationService';
 import { useLocationStore } from '../services/locationService';
 import type { TrackPointRow } from '../lib/db/database';
 import { useSettingsStore } from '../store/settingsStore';
+import { formatDistanceNm, distanceUnitLabel } from '../lib/geo/units';
 import { useTrackStore } from '../store/trackStore';
 import { useTheme } from '../theme/ThemeContext';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { Screen } from '../ui/Screen';
+import { SelectHint } from '../ui/SelectHint';
 import { StatusBadge } from '../ui/StatusBadge';
 
 export function TracksScreen() {
@@ -31,9 +34,11 @@ export function TracksScreen() {
   const deleteTrack = useTrackStore((s) => s.deleteTrack);
   const exportGpx = useTrackStore((s) => s.exportGpx);
   const getPoints = useTrackStore((s) => s.getPoints);
+  const getTrackDistanceNm = useTrackStore((s) => s.getTrackDistanceNm);
   const setMapPreviewTrack = useTrackStore((s) => s.setMapPreviewTrack);
   const mapPreviewTrackId = useTrackStore((s) => s.mapPreviewTrackId);
   const backgroundTrackRecording = useSettingsStore((s) => s.backgroundTrackRecording);
+  const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const fix = useLocationStore((s) => s.fix);
   const permission = useLocationStore((s) => s.permission);
   const showError = useFeedbackStore((s) => s.showError);
@@ -41,6 +46,7 @@ export function TracksScreen() {
   const [backgroundActive, setBackgroundActive] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedPoints, setSelectedPoints] = useState<TrackPointRow[]>([]);
+  const [distanceSummaries, setDistanceSummaries] = useState<Record<string, number>>({});
 
   const useBackgroundPipeline = backgroundTrackRecording && permission === 'background';
   const selected = tracks.find((t) => t.id === selectedId) ?? null;
@@ -58,15 +64,28 @@ export function TracksScreen() {
   }, [selectedId, tracks, loadPoints]);
 
   useEffect(() => {
+    void Promise.all(
+      tracks.map(async (track) => {
+        const nm = await getTrackDistanceNm(track.id);
+        return { id: track.id, nm };
+      }),
+    ).then((rows) => {
+      const map: Record<string, number> = {};
+      for (const row of rows) map[row.id] = row.nm;
+      setDistanceSummaries(map);
+    });
+  }, [tracks, getTrackDistanceNm]);
+
+  useEffect(() => {
     if (!recordingTrackId) {
       setBackgroundActive(false);
       return;
     }
     void startWatching();
     const poll = setInterval(() => {
-      void isBackgroundTrackTaskRunning().then(setBackgroundActive);
+      void isBackgroundLocationRunning().then(setBackgroundActive);
     }, 3000);
-    void isBackgroundTrackTaskRunning().then(setBackgroundActive);
+    void isBackgroundLocationRunning().then(setBackgroundActive);
     return () => clearInterval(poll);
   }, [recordingTrackId, startWatching]);
 
@@ -80,14 +99,16 @@ export function TracksScreen() {
     const ok = await startWatching();
     if (!ok) {
       const fg = await requestForegroundLocationAccess();
-      if (fg !== 'granted') {
+      if (fg.status !== Location.PermissionStatus.GRANTED) {
+        if (fg.blocked) await openSystemSettings();
         showError(t('tracks.locationRequiredBody'));
         return;
       }
     }
     if (backgroundTrackRecording) {
       const bg = await requestBackgroundLocationAccess();
-      if (bg !== 'granted') {
+      if (bg.status !== Location.PermissionStatus.GRANTED) {
+        if (bg.blocked) await openSystemSettings();
         showError(t('tracks.backgroundDeniedBody'));
       }
     }
@@ -176,6 +197,14 @@ export function TracksScreen() {
               <Text style={[styles.meta, { color: colors.textMuted }]}>
                 {new Date(item.started_at).toLocaleString()} · {item.ended_at ? t('tracks.completed') : t('tracks.open')}
               </Text>
+              {distanceSummaries[item.id] != null && distanceSummaries[item.id] > 0 ? (
+                <Text style={[styles.distance, { color: colors.textMuted }]}>
+                  {t('tracks.listDistance', {
+                    distance: formatDistanceNm(distanceSummaries[item.id], distanceUnit),
+                    unit: distanceUnitLabel(distanceUnit),
+                  })}
+                </Text>
+              ) : null}
             </View>
             {item.id === recordingTrackId ? <StatusBadge label={t('tracks.recording')} variant="warning" /> : null}
           </Pressable>
@@ -196,9 +225,7 @@ export function TracksScreen() {
       onDelete={() => confirmDelete(selected.id, selected.name)}
     />
   ) : (
-    <View style={[styles.hintBox, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-      <Text style={{ color: colors.textMuted, textAlign: 'center', lineHeight: 22 }}>{t('tracks.selectHint')}</Text>
-    </View>
+    <SelectHint testID="tracks.selectHint">{t('tracks.selectHint')}</SelectHint>
   );
 
   return (
@@ -214,5 +241,5 @@ const styles = StyleSheet.create({
   row: { borderWidth: 1, borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
   name: { fontSize: 17, fontWeight: '700', marginBottom: 4 },
   meta: { fontSize: 14, lineHeight: 20 },
-  hintBox: { borderWidth: 1, borderRadius: 14, padding: 24, minHeight: 120, justifyContent: 'center' },
+  distance: { fontSize: 14, lineHeight: 20, fontWeight: '700', marginTop: 2, fontVariant: ['tabular-nums'] },
 });

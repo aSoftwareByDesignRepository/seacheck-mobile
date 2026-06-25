@@ -1,8 +1,11 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { ScreenLockOverlay } from '../features/map/ScreenLockOverlay';
 import { AdaptiveTabBar } from '../navigation/AdaptiveTabBar';
+import { RAIL_WIDTH } from '../navigation/tabBarLayout';
 import { TabOverflowMenu } from '../navigation/TabOverflowMenu';
 import { useResumeBackgroundSync } from '../hooks/useResumeBackgroundSync';
 import { useAppLocationWatch } from '../hooks/useAppLocationWatch';
@@ -17,11 +20,11 @@ import { PassageScreen } from '../screens/PassageScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { TracksScreen } from '../screens/TracksScreen';
 import { WaypointsScreen } from '../screens/WaypointsScreen';
+import { useNavigationStore } from '../store/navigationStore';
+import { useTabOverflowStore } from '../navigation/tabOverflowStore';
 import { useTheme } from '../theme/ThemeContext';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
-
-const RAIL_WIDTH = 88;
 
 export function MainShell() {
   const { colors, mode } = useTheme();
@@ -30,8 +33,15 @@ export function MainShell() {
   useMaritimeMonitors();
   useForegroundTrackRecording();
   const { formFactor, isLandscape } = useFormFactor();
+  const screenLocked = useNavigationStore((s) => s.screenLocked);
+  const setScreenLocked = useNavigationStore((s) => s.setScreenLocked);
+  const setMenuOpen = useTabOverflowStore((s) => s.setMenuOpen);
   const isDark = mode === 'dark' || mode === 'redNight' || mode === 'highContrast';
   const useRail = formFactor !== 'compact' && isLandscape;
+
+  useEffect(() => {
+    if (screenLocked) setMenuOpen(false);
+  }, [screenLocked, setMenuOpen]);
 
   return (
     <View style={styles.root}>
@@ -74,6 +84,9 @@ export function MainShell() {
         <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t('tabs.settings'), tabBarButtonTestID: 'tab.settings' }} />
       </Tab.Navigator>
       <TabOverflowMenu />
+      {screenLocked ? (
+        <ScreenLockOverlay onUnlock={() => void setScreenLocked(false)} />
+      ) : null}
     </View>
   );
 }

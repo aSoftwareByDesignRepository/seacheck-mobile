@@ -1,13 +1,13 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
 import { t } from '../i18n';
 import { BottomSheet } from '../ui/BottomSheet';
 import { SheetMenuRow } from '../ui/SheetSection';
-import { navigateToTab, tabLabel, TAB_ICONS, type TabName } from './tabBarHelpers';
+import { navigateToTab, tabLabel, TAB_ICONS } from './tabBarHelpers';
+import { resolveBottomTabLayout, type TabName } from './tabBarLayout';
 import { useTabOverflowStore } from './tabOverflowStore';
-import { resolveBottomTabLayout } from './tabBarLayout';
 
 /** Overflow tab destinations — rendered outside the tab bar so the sheet host stays stable. */
 export function TabOverflowMenu() {
@@ -17,6 +17,12 @@ export function TabOverflowMenu() {
   const { width } = useWindowDimensions();
 
   const overflow = useMemo(() => resolveBottomTabLayout(width).overflow, [width]);
+
+  useEffect(() => {
+    if (overflow.length === 0 && menuOpen) {
+      setMenuOpen(false);
+    }
+  }, [overflow.length, menuOpen, setMenuOpen]);
 
   if (!tabBarProps || overflow.length === 0) return null;
 
@@ -46,7 +52,7 @@ export function TabOverflowMenu() {
               key={name}
               label={label}
               icon={TAB_ICONS[name]}
-              selected={focused || activeName === name}
+              selected={focused}
               onPress={() => selectOverflowTab(name)}
               testID={`tab.${name.toLowerCase()}`}
             />

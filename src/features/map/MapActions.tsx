@@ -1,11 +1,20 @@
-import * as Clipboard from 'expo-clipboard';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { activateAnchorAlarmAt } from '../../lib/anchor/activateAnchorAlarm';
-import { COURSE_VECTOR_MINUTE_OPTIONS } from '../../lib/settings/mapSettings';
-import { isFixQualityOk } from '../../lib/geo/fixQuality';
-import { buildMaydayMessage } from '../../lib/emergency/maydayMessage';
+import {
+  ANCHOR_RADIUS_NM_OPTIONS,
+  COURSE_VECTOR_MINUTE_OPTIONS,
+  COURSE_VECTOR_SCALE_OPTIONS,
+  type AnchorRadiusNm,
+} from '../../lib/settings/mapSettings';
+import { courseVectorScaleLabelKey } from '../../lib/settings/courseVectorLabels';
+import { isSafetyFixOk } from '../../lib/geo/fixQuality';
+import {
+  copyMaydayToClipboard,
+  maydayCopyFeedbackKey,
+  maydayUnavailableMessage,
+} from '../../lib/emergency/copyMaydayClipboard';
 import { t } from '../../i18n';
 import { StartLineSection } from '../racing/StartLineSection';
 import { RacePackSection } from '../racing/RacePackSection';
@@ -39,6 +48,8 @@ export function MapActions({
   const activityProfileId = useSettingsStore((s) => s.activityProfileId);
   const mapShowCourseVector = useSettingsStore((s) => s.mapShowCourseVector);
   const mapCourseVectorMinutes = useSettingsStore((s) => s.mapCourseVectorMinutes);
+  const mapCourseVectorScale = useSettingsStore((s) => s.mapCourseVectorScale);
+  const anchorRadiusNm = useSettingsStore((s) => s.anchorRadiusNm);
   const patchSettings = useSettingsStore((s) => s.patchSettings);
   const vessel = useSettingsStore((s) => s.vessel);
   const coordFormat = useSettingsStore((s) => s.coordFormat);
@@ -49,6 +60,7 @@ export function MapActions({
   const createWaypoint = useWaypointStore((s) => s.create);
   const waypoints = useWaypointStore((s) => s.items);
   const clearAnchorAlarm = useNavigationStore((s) => s.clearAnchorAlarm);
+  const patchAnchorRadiusNm = useNavigationStore((s) => s.patchAnchorRadiusNm);
   const anchorAlarm = useNavigationStore((s) => s.anchorAlarm);
   const setScreenLocked = useNavigationStore((s) => s.setScreenLocked);
 
@@ -57,6 +69,7 @@ export function MapActions({
   const [mobProgress, setMobProgress] = useState(0);
   const mobTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const mobStart = useRef<number | null>(null);
+  const mobBusy = useRef(false);
 
   const clearMobTimer = useCallback(() => {
     if (mobTimer.current) clearInterval(mobTimer.current);
@@ -65,7 +78,34 @@ export function MapActions({
     setMobProgress(0);
   }, []);
 
+  useEffect(() => () => clearMobTimer(), [clearMobTimer]);
+
+  const completeMobDrop = useCallback(async () => {
+    if (mobBusy.current) return;
+    if (!fix || !isSafetyFixOk(fix)) {
+      showError(t('map.mobNoGpsBody'));
+      return;
+    }
+    mobBusy.current = true;
+    try {
+      await dropMob(fix.latitude, fix.longitude);
+      await createWaypoint({
+        name: t('waypoints.types.mob'),
+        latitude: fix.latitude,
+        longitude: fix.longitude,
+        type: 'mob',
+      });
+      showSuccess(t('map.mobDroppedBody'));
+    } catch {
+      showError(t('map.mobDropFailed'));
+      await useNavigationStore.getState().clearMob().catch(() => {});
+    } finally {
+      mobBusy.current = false;
+    }
+  }, [fix, dropMob, createWaypoint, showError, showSuccess]);
+
   const onMobPressIn = useCallback(() => {
+    if (mobBusy.current) return;
     mobStart.current = Date.now();
     mobTimer.current = setInterval(() => {
       if (!mobStart.current) return;
@@ -73,35 +113,45 @@ export function MapActions({
       setMobProgress(Math.min(1, elapsed / MOB_HOLD_MS));
       if (elapsed >= MOB_HOLD_MS) {
         clearMobTimer();
-        if (fix && isFixQualityOk(fix)) {
-          void dropMob(fix.latitude, fix.longitude).then(() =>
-            createWaypoint({ name: t('waypoints.types.mob'), latitude: fix.latitude, longitude: fix.longitude, type: 'mob' }),
-          );
-          showSuccess(t('map.mobDroppedBody'));
-        } else {
-          showError(t('map.mobNoGpsBody'));
-        }
+        void completeMobDrop();
       }
     }, 50);
-  }, [clearMobTimer, dropMob, createWaypoint, fix, showError, showSuccess]);
+  }, [clearMobTimer, completeMobDrop]);
 
   const onMobPressOut = useCallback(() => {
+    const startedAt = mobStart.current;
+    if (startedAt && Date.now() - startedAt < MOB_HOLD_MS) {
+      showInfo(t('map.mobHold'));
+    }
     clearMobTimer();
-  }, [clearMobTimer]);
+  }, [clearMobTimer, showInfo]);
 
   async function copyEmergencyMessage() {
-    const posFix = fix ?? useLocationStore.getState().lastGoodFix;
-    const text = buildMaydayMessage(vessel, posFix, coordFormat);
-    await Clipboard.setStringAsync(text);
-    showInfo(t('settings.emergencyCopy'));
+    const quality = await copyMaydayToClipboard(vessel, coordFormat);
+    if (quality === 'unavailable') {
+      showError(maydayUnavailableMessage());
+      return;
+    }
+    const key = maydayCopyFeedbackKey(quality);
+    if (quality === 'fresh') showSuccess(t(key));
+    else showInfo(t(key));
+  }
+
+  async function setAnchorRadius(nm: AnchorRadiusNm) {
+    if (anchorRadiusNm === nm && !anchorAlarm?.active) return;
+    await patchSettings({ anchorRadiusNm: nm });
+    if (anchorAlarm?.active) {
+      await patchAnchorRadiusNm(nm);
+      showInfo(t('map.anchorRadiusUpdated', { nm: nm.toFixed(2) }));
+    }
   }
 
   async function activateAnchorAlarm() {
-    if (!fix || !isFixQualityOk(fix)) {
+    if (!fix || !isSafetyFixOk(fix)) {
       showError(t('map.anchorNoGpsBody'));
       return;
     }
-    await activateAnchorAlarmAt(fix.latitude, fix.longitude);
+    await activateAnchorAlarmAt(fix.latitude, fix.longitude, anchorRadiusNm);
   }
 
   async function toggleAnchor() {
@@ -158,17 +208,42 @@ export function MapActions({
       </View>
 
       <BottomSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} title={t('map.mapTools')} scrollable testID="map.tools.sheet">
-        <SheetSection label={t('map.extrasLabel')} first>
+        <SheetSection label={t('map.anchorWatchLabel')} first>
+          <Text style={[styles.sectionHint, { color: colors.textMuted }]}>{t('map.anchorWatchMonitoringHint')}</Text>
+          <Text style={[styles.sectionHint, { color: colors.textMuted }]}>{t('map.anchorRadiusHint')}</Text>
           <View style={styles.chipRow}>
-            <FilterChip label={t('map.rangeRings')} selected={showRangeRings} onPress={onToggleRangeRings} testID="map.rangeRings" />
+            {ANCHOR_RADIUS_NM_OPTIONS.map((nm) => (
+              <FilterChip
+                key={nm}
+                label={t('map.anchorRadiusOption', { nm: nm.toFixed(2) })}
+                selected={Math.abs((anchorAlarm?.active ? anchorAlarm.radiusNm : anchorRadiusNm) - nm) < 0.001}
+                onPress={() => void setAnchorRadius(nm)}
+                testID={`map.anchorRadius.${nm}`}
+              />
+            ))}
+          </View>
+          {anchorAlarm?.active ? (
+            <Text style={[styles.sectionHint, { color: colors.success }]} accessibilityRole="text">
+              {t('map.anchorRadiusActive', { nm: anchorAlarm.radiusNm.toFixed(2) })}
+            </Text>
+          ) : null}
+        </SheetSection>
+        <SheetSection label={t('map.courseVector')}>
+          <Text style={[styles.sectionHint, { color: colors.textMuted }]}>{t('settings.courseVectorHint')}</Text>
+          <View style={styles.chipRow}>
             <FilterChip
               label={t('map.courseVector')}
               selected={mapShowCourseVector}
               onPress={() => void patchSettings({ mapShowCourseVector: !mapShowCourseVector })}
               testID="map.courseVector"
             />
-            {mapShowCourseVector ? (
-              <>
+          </View>
+          {mapShowCourseVector ? (
+            <>
+              <Text style={[styles.sectionHint, { color: colors.textMuted }]} accessibilityRole="text">
+                {t('settings.courseVectorMinutesHint')}
+              </Text>
+              <View style={styles.chipRow}>
                 {COURSE_VECTOR_MINUTE_OPTIONS.map((min) => (
                   <FilterChip
                     key={min}
@@ -178,8 +253,27 @@ export function MapActions({
                     testID={`map.courseVectorMinutes.${min}`}
                   />
                 ))}
-              </>
-            ) : null}
+              </View>
+              <Text style={[styles.sectionHint, { color: colors.textMuted }]} accessibilityRole="text">
+                {t('settings.courseVectorScaleHint')}
+              </Text>
+              <View style={styles.chipRow}>
+                {COURSE_VECTOR_SCALE_OPTIONS.map((scale) => (
+                  <FilterChip
+                    key={scale}
+                    label={t(courseVectorScaleLabelKey(scale))}
+                    selected={mapCourseVectorScale === scale}
+                    onPress={() => void patchSettings({ mapCourseVectorScale: scale })}
+                    testID={`map.courseVectorScale.${scale}`}
+                  />
+                ))}
+              </View>
+            </>
+          ) : null}
+        </SheetSection>
+        <SheetSection label={t('map.extrasLabel')}>
+          <View style={styles.chipRow}>
+            <FilterChip label={t('map.rangeRings')} selected={showRangeRings} onPress={onToggleRangeRings} testID="map.rangeRings" />
             <FilterChip label={t('map.emergencyCopy')} selected={false} onPress={() => void copyEmergencyMessage()} testID="map.emergencyCopy" />
             <FilterChip
               label={t('map.screenLock')}
@@ -206,13 +300,18 @@ export function MapActions({
         visible={anchorClearOpen}
         onClose={() => setAnchorClearOpen(false)}
         title={t('map.anchorClearTitle')}
-        message={t('map.anchorClearBody')}
+        message={t('map.anchorClearBody', { nm: (anchorAlarm?.radiusNm ?? anchorRadiusNm).toFixed(2) })}
         options={[
           {
             label: t('map.anchorClearConfirm'),
             destructive: true,
             onPress: () => void clearAnchorAlarm(),
             testID: 'map.anchorClearConfirm',
+          },
+          {
+            label: t('common.dismiss'),
+            onPress: () => {},
+            testID: 'map.anchorClearCancel',
           },
         ]}
         testID="map.anchorClear"
@@ -228,4 +327,5 @@ const styles = StyleSheet.create({
   mobBtn: { overflow: 'hidden' },
   mobProgress: { position: 'absolute', left: 0, bottom: 0, height: 4, opacity: 0.9 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  sectionHint: { fontSize: 14, lineHeight: 20, fontWeight: '500' },
 });

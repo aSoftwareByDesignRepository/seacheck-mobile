@@ -33,3 +33,43 @@ describe('buildMapChartAccessibilityLabel', () => {
     expect(label).toContain('54.32');
   });
 });
+
+describe('buildMapChartAccessibilityLabel offline context', () => {
+  const base = {
+    centerLatitude: 54.32,
+    centerLongitude: 10.14,
+    coordFormat: 'decimal' as const,
+    followMode: true,
+    followActive: true,
+    screenLocked: false,
+  };
+
+  it('announces offline without charts', () => {
+    const label = buildMapChartAccessibilityLabel({
+      ...base,
+      isOffline: true,
+      hasReadyPack: false,
+    });
+    expect(label).toContain('Offline with no downloaded charts');
+  });
+
+  it('announces offline uncovered viewport', () => {
+    const label = buildMapChartAccessibilityLabel({
+      ...base,
+      isOffline: true,
+      hasReadyPack: true,
+      chartCovered: false,
+    });
+    expect(label).toContain('outside downloaded chart coverage');
+  });
+
+  it('announces offline covered viewport', () => {
+    const label = buildMapChartAccessibilityLabel({
+      ...base,
+      isOffline: true,
+      hasReadyPack: true,
+      chartCovered: true,
+    });
+    expect(label).toContain('using downloaded charts');
+  });
+});

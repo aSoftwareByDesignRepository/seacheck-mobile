@@ -1,12 +1,10 @@
 import type { LngLatBounds } from '@maplibre/maplibre-react-native';
 
 import { fetchIsEffectivelyOnline } from '../network/connectivity';
-import { fetchWithTimeout } from '../network/fetchWithTimeout';
 import { getDatabase, withDatabaseTransaction } from '../db/database';
 import type { SeamarkHit } from './querySeamark';
 import { distanceNm, type LonLat } from '../geo/navigation';
-
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+import { fetchOverpass } from './overpassClient';
 const PICK_RADIUS_M = 40;
 const MAX_INDEX_ELEMENTS = 25_000;
 
@@ -63,15 +61,7 @@ export async function indexSeamarksForPack(packId: string, bounds: LngLatBounds)
 );
 out center tags;`;
 
-  const response = await fetchWithTimeout(
-    OVERPASS_URL,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(query)}`,
-    },
-    60_000,
-  );
+  const response = await fetchOverpass(query, 60_000);
   if (!response.ok) throw new Error(`overpass_${response.status}`);
 
   const payload = (await response.json()) as { elements?: OverpassElement[] };

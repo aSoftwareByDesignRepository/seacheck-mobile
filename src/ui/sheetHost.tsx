@@ -4,7 +4,6 @@ import {
   ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useSyncExternalStore,
@@ -20,6 +19,12 @@ import { Button } from './Button';
 /** Global confirms sit above ordinary sheets in the single modal host. */
 export const CONFIRM_SHEET_PRIORITY = 1000;
 
+/** Anchor-watch guidance sits above routine map tool sheets. */
+export const ANCHOR_WATCH_SHEET_PRIORITY = 100;
+
+/** Global feedback overlays open sheets without replacing them. */
+export const FEEDBACK_SHEET_ID = '__global_feedback__';
+
 /** Ignore backdrop / back dismiss briefly after open — avoids the opening tap closing the sheet. */
 export const SHEET_BACKDROP_GUARD_MS = 400;
 
@@ -27,12 +32,16 @@ type SheetHostEntry = {
   id: string;
   priority: number;
   sequence: number;
+  openedAt: number;
   onClose: () => void;
   render: () => ReactNode;
 };
 
 type SheetHostSnapshot = {
   top: SheetHostEntry | null;
+  /** Highest-priority sheet excluding the feedback overlay entry. */
+  sheetTop: SheetHostEntry | null;
+  feedback: SheetHostEntry | null;
   hasEntries: boolean;
 };
 
@@ -48,9 +57,10 @@ const SheetHostContext = createContext<SheetHostApi | null>(null);
 /** Backdrop dismiss — guarded; explicit close buttons call onClose directly. */
 const SheetBackdropDismissContext = createContext<(() => void) | null>(null);
 
-function pickTop(entries: Map<string, SheetHostEntry>): SheetHostEntry | null {
+function pickTop(entries: Map<string, SheetHostEntry>, excludeId?: string): SheetHostEntry | null {
   let top: SheetHostEntry | null = null;
   for (const entry of entries.values()) {
+    if (excludeId && entry.id === excludeId) continue;
     if (
       !top ||
       entry.priority > top.priority ||
@@ -67,11 +77,16 @@ function createSheetHostStore() {
   let sequence = 0;
   const listeners = new Set<() => void>();
 
-  const snapshot: SheetHostSnapshot = { top: null, hasEntries: false };
+  let snapshot: SheetHostSnapshot = { top: null, sheetTop: null, feedback: null, hasEntries: false };
 
   function emit() {
-    snapshot.top = pickTop(entries);
-    snapshot.hasEntries = entries.size > 0;
+    const feedback = entries.get(FEEDBACK_SHEET_ID) ?? null;
+    snapshot = {
+      top: pickTop(entries),
+      sheetTop: pickTop(entries, FEEDBACK_SHEET_ID),
+      feedback,
+      hasEntries: entries.size > 0,
+    };
     listeners.forEach((listener) => listener());
   }
 
@@ -85,7 +100,7 @@ function createSheetHostStore() {
     },
     register(id: string, priority: number, render: () => ReactNode, onClose: () => void) {
       sequence += 1;
-      entries.set(id, { id, priority, sequence, render, onClose });
+      entries.set(id, { id, priority, sequence, openedAt: Date.now(), render, onClose });
       emit();
     },
     update(id: string, render: () => ReactNode, onClose: () => void) {
@@ -152,21 +167,20 @@ function useSheetHostSnapshot(): SheetHostSnapshot {
   return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 }
 
-function SheetHostModal() {
-  const { top, hasEntries } = useSheetHostSnapshot();
-  const openedAtRef = useRef(0);
+export function useSheetHostSnapshotPublic(): SheetHostSnapshot {
+  return useSheetHostSnapshot();
+}
 
-  useEffect(() => {
-    if (top) openedAtRef.current = Date.now();
-  }, [top?.id, top?.sequence]);
+function SheetHostModal() {
+  const { sheetTop, feedback, hasEntries } = useSheetHostSnapshot();
 
   const requestBackdropDismiss = useCallback(() => {
-    if (!top) return;
-    if (Date.now() - openedAtRef.current < SHEET_BACKDROP_GUARD_MS) return;
-    top.onClose();
-  }, [top]);
+    if (!sheetTop) return;
+    if (Date.now() - sheetTop.openedAt < SHEET_BACKDROP_GUARD_MS) return;
+    sheetTop.onClose();
+  }, [sheetTop]);
 
-  if (!hasEntries || !top) return null;
+  if (!hasEntries) return null;
 
   return (
     <Modal
@@ -176,9 +190,16 @@ function SheetHostModal() {
       onRequestClose={requestBackdropDismiss}
       statusBarTranslucent
     >
-      <SheetBackdropDismissContext.Provider value={requestBackdropDismiss}>
-        {top.render()}
-      </SheetBackdropDismissContext.Provider>
+      {sheetTop ? (
+        <SheetBackdropDismissContext.Provider value={requestBackdropDismiss}>
+          {sheetTop.render()}
+        </SheetBackdropDismissContext.Provider>
+      ) : null}
+      {feedback ? (
+        <View style={styles.feedbackOverlay} pointerEvents="box-none">
+          {feedback.render()}
+        </View>
+      ) : null}
     </Modal>
   );
 }
@@ -236,9 +257,8 @@ export function BottomSheetChrome({
     <Pressable
       style={styles.backdrop}
       onPress={backdropDismiss}
-      accessibilityRole="button"
-      accessibilityLabel={t('common.dismiss')}
-      accessibilityHint={t('ui.sheetBackdropHint')}
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
     >
       <Pressable
         style={[
@@ -279,6 +299,7 @@ export function SheetDismissFooter({ onClose, testID }: { onClose: () => void; t
 }
 
 const styles = StyleSheet.create({
+  feedbackOverlay: { ...StyleSheet.absoluteFill, zIndex: 2, elevation: 12 },
   backdrop: { flex: 1, backgroundColor: sheet.backdrop, justifyContent: 'flex-end' },
   sheet: {
     borderTopLeftRadius: radius.lg,

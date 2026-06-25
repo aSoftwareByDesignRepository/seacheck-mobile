@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Camera, GeoJSONSource, Layer, Map, type CameraRef } from '@maplibre/maplibre-react-native';
 import type { Feature, FeatureCollection } from 'geojson';
 
@@ -45,9 +45,13 @@ export function RegionPackMapPreview({ pack }: Props) {
   if (!chartStyleUri) {
     return (
       <View
-        style={[styles.placeholder, { backgroundColor: colors.background }]}
+        style={[styles.placeholder, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        accessibilityRole="summary"
         accessibilityLabel={t('passage.mapPreviewOffline')}
-      />
+      >
+        <Text style={[styles.placeholderTitle, { color: colors.text }]}>{t('downloads.previewUnavailableTitle')}</Text>
+        <Text style={[styles.placeholderBody, { color: colors.textMuted }]}>{t('passage.mapPreviewOffline')}</Text>
+      </View>
     );
   }
 
@@ -67,5 +71,14 @@ export function RegionPackMapPreview({ pack }: Props) {
 const styles = StyleSheet.create({
   wrap: { borderRadius: 14, overflow: 'hidden', marginTop: 8 },
   map: { flex: 1, minHeight: 200 },
-  placeholder: { minHeight: 200, borderRadius: 14 },
+  placeholder: {
+    minHeight: 200,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+    justifyContent: 'center',
+    gap: 8,
+  },
+  placeholderTitle: { fontSize: 16, fontWeight: '700' },
+  placeholderBody: { fontSize: 14, lineHeight: 20 },
 });

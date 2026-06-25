@@ -1,4 +1,4 @@
-import { ANCHOR_SOG_MIN_DRIFT_NM } from '../geo/fixQuality';
+import { ANCHOR_SOG_MIN_DRIFT_NM, MAX_ALARM_ACCURACY_M } from '../geo/fixQuality';
 import { bearingTrue, crossTrackErrorNm, distanceNm, type LonLat } from '../geo/navigation';
 import { t } from '../../i18n';
 import type { PassageWithLegs } from '../../store/passageStore';
@@ -21,7 +21,18 @@ export type LocationFixInput = {
   latitude: number;
   longitude: number;
   speedKn: number | null;
+  /** Horizontal accuracy (m). Drag evaluation is skipped when worse than MAX_ALARM_ACCURACY_M. */
+  accuracyM?: number | null;
 };
+
+/**
+ * Anchor drag must not fire on low-confidence fixes. Unknown accuracy is treated as acceptable
+ * (matches isFixAccuracyOk) because the coordinator already rejects outlier spikes upstream.
+ */
+function isAccuracyTrustworthyForDrag(accuracyM: number | null | undefined): boolean {
+  if (accuracyM == null || !Number.isFinite(accuracyM)) return true;
+  return accuracyM <= MAX_ALARM_ACCURACY_M;
+}
 
 export type AlarmAction =
   | { type: 'trigger'; severity: 'warning' | 'critical'; message: string }
@@ -56,7 +67,11 @@ export function processLocationAlarms(input: AlarmProcessInput): AlarmProcessOut
   const actions: AlarmAction[] = [];
   const pos: LonLat = [input.fix.longitude, input.fix.latitude];
 
-  if (anchorAlarm?.active) {
+  if (anchorAlarm?.active && !isAccuracyTrustworthyForDrag(input.fix.accuracyM)) {
+    // Low-confidence fix: do not evaluate drag (avoids false critical alarms from GPS noise).
+    // Streak is reset so a burst of poor fixes cannot accumulate a phantom SOG drag.
+    runtime.anchorSogStreak = 0;
+  } else if (anchorAlarm?.active) {
     const drift = distanceNm([anchorAlarm.longitude, anchorAlarm.latitude], pos);
     const sogKn = input.fix.speedKn;
     const sogKnown = sogKn != null && Number.isFinite(sogKn);

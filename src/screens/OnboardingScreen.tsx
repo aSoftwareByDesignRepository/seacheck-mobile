@@ -4,8 +4,9 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
+  openSystemSettings,
   permissionStatusLabel,
-  readLocationPermissionStatuses,
+  readLocationPermissionSnapshot,
   requestBackgroundLocationAccess,
   requestForegroundLocationAccess,
 } from '../lib/permissions/locationPermissions';
@@ -40,17 +41,27 @@ export function OnboardingScreen() {
   const [step, setStep] = useState<Step>('disclaimer');
   const [foregroundStatus, setForegroundStatus] = useState<Location.PermissionStatus | null>(null);
   const [backgroundStatus, setBackgroundStatus] = useState<Location.PermissionStatus | null>(null);
+  const [foregroundCanAskAgain, setForegroundCanAskAgain] = useState(true);
+  const [backgroundCanAskAgain, setBackgroundCanAskAgain] = useState(true);
   const [busy, setBusy] = useState(false);
   const [resumeChecked, setResumeChecked] = useState(false);
 
   const foregroundGranted = foregroundStatus === Location.PermissionStatus.GRANTED;
   const backgroundGranted = backgroundStatus === Location.PermissionStatus.GRANTED;
+  const foregroundBlocked =
+    foregroundStatus === Location.PermissionStatus.DENIED && !foregroundCanAskAgain;
+  const backgroundBlocked =
+    foregroundGranted &&
+    backgroundStatus === Location.PermissionStatus.DENIED &&
+    !backgroundCanAskAgain;
 
   const refreshPermissionStatuses = useCallback(async () => {
-    const statuses = await readLocationPermissionStatuses();
-    setForegroundStatus(statuses.foreground);
-    setBackgroundStatus(statuses.background);
-    return statuses;
+    const snapshot = await readLocationPermissionSnapshot();
+    setForegroundStatus(snapshot.foreground);
+    setBackgroundStatus(snapshot.background);
+    setForegroundCanAskAgain(snapshot.foregroundCanAskAgain);
+    setBackgroundCanAskAgain(snapshot.backgroundCanAskAgain);
+    return snapshot;
   }, []);
 
   useEffect(() => {
@@ -72,21 +83,37 @@ export function OnboardingScreen() {
   }, [batteryGuidanceAcknowledged, step]);
 
   async function handleForegroundLocation() {
+    if (foregroundBlocked) {
+      await openSystemSettings();
+      await refreshPermissionStatuses();
+      return;
+    }
     setBusy(true);
     try {
-      const status = await requestForegroundLocationAccess();
-      setForegroundStatus(status);
+      const result = await requestForegroundLocationAccess();
+      setForegroundStatus(result.status);
+      setForegroundCanAskAgain(!result.blocked);
+      if (result.blocked) await openSystemSettings();
     } finally {
       setBusy(false);
     }
   }
 
   async function handleBackgroundLocation() {
+    if (backgroundBlocked) {
+      await openSystemSettings();
+      await refreshPermissionStatuses();
+      return;
+    }
     setBusy(true);
     try {
-      const status = await requestBackgroundLocationAccess();
-      setBackgroundStatus(status);
-      setForegroundStatus(Location.PermissionStatus.GRANTED);
+      const result = await requestBackgroundLocationAccess();
+      setBackgroundStatus(result.status);
+      setBackgroundCanAskAgain(!result.blocked);
+      if (result.status === Location.PermissionStatus.GRANTED) {
+        setForegroundStatus(Location.PermissionStatus.GRANTED);
+      }
+      if (result.blocked) await openSystemSettings();
     } finally {
       setBusy(false);
     }
@@ -188,10 +215,16 @@ export function OnboardingScreen() {
             {foregroundGranted ? (
               <Text style={[styles.hint, { color: colors.textMuted }]}>{t('onboarding.locationReady')}</Text>
             ) : null}
+            {foregroundBlocked ? (
+              <Text style={[styles.hint, { color: colors.textMuted }]}>{t('permissions.foregroundBlockedHint')}</Text>
+            ) : null}
+            {backgroundBlocked ? (
+              <Text style={[styles.hint, { color: colors.textMuted }]}>{t('permissions.backgroundBlockedHint')}</Text>
+            ) : null}
             <View style={[styles.actions, { minHeight: minTouch }]}>
               {!foregroundGranted ? (
                 <Button
-                  label={t('onboarding.locationForeground')}
+                  label={foregroundBlocked ? t('permissions.openSettings') : t('onboarding.locationForeground')}
                   onPress={() => void handleForegroundLocation()}
                   loading={busy}
                   testID="onboarding.location.foreground"
@@ -199,11 +232,11 @@ export function OnboardingScreen() {
               ) : null}
               {!backgroundGranted ? (
                 <Button
-                  label={t('onboarding.locationBackground')}
+                  label={backgroundBlocked ? t('permissions.openSettings') : t('onboarding.locationBackground')}
                   variant="secondary"
                   onPress={() => void handleBackgroundLocation()}
                   loading={busy}
-                  disabled={!foregroundGranted && foregroundStatus !== null}
+                  disabled={!foregroundGranted && foregroundStatus !== null && !foregroundBlocked}
                   testID="onboarding.location.background"
                 />
               ) : null}

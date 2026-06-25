@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { TrackPointRow, TrackRow } from '../../lib/db/database';
-import { distanceNm } from '../../lib/geo/navigation';
+import { computePathDistanceNm } from '../../lib/geo/pathDistance';
 import { formatDistanceNm } from '../../lib/geo/units';
 import { t } from '../../i18n';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -34,14 +34,7 @@ export function TrackDetailPanel({ track, points, onExport, onDelete, onShowOnMa
   const [distanceNmTotal, setDistanceNmTotal] = useState(0);
 
   useEffect(() => {
-    let total = 0;
-    for (let i = 1; i < points.length; i++) {
-      total += distanceNm(
-        [points[i - 1].longitude, points[i - 1].latitude],
-        [points[i].longitude, points[i].latitude],
-      );
-    }
-    setDistanceNmTotal(total);
+    setDistanceNmTotal(computePathDistanceNm(points));
   }, [points]);
 
   const endedAt = track.ended_at ?? Date.now();

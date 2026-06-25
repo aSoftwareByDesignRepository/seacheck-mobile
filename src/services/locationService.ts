@@ -2,9 +2,25 @@ import * as Location from 'expo-location';
 import { create } from 'zustand';
 
 import { computeGpsCogDeg, resolveDisplayCog } from '../lib/geo/cog';
+import {
+  buildDisplayFix,
+  classifyFixAcceptance,
+  smoothGpsPosition,
+  type FixAcceptanceReason,
+  type GpsSmoothState,
+} from '../lib/geo/gpsFilter';
+import { FOREGROUND_NAVIGATION_OPTIONS } from '../lib/geo/gpsLocationOptions';
+import {
+  mapSnapshotToPermissionState,
+  readLocationPermissionSnapshot,
+  type LocationPermissionSnapshot,
+  type LocationPermissionState,
+} from '../lib/permissions/locationPermissionState';
 import { distanceNm, msToKnots } from '../lib/geo/navigation';
 import { FIX_STALE_MS } from '../lib/geo/fixAge';
-import { normalizeFixTimestamp } from '../lib/geo/fixQuality';
+import { isFixQualityOk, isValidCoordinate, normalizeFixTimestamp } from '../lib/geo/fixQuality';
+
+export type { LocationPermissionState } from '../lib/permissions/locationPermissionState';
 
 export type LocationFix = {
   latitude: number;
@@ -19,27 +35,35 @@ export type LocationFix = {
   timestamp: number;
 };
 
-export type LocationPermissionState = 'undetermined' | 'foreground' | 'background' | 'denied';
+type StartWatchingOptions = {
+  /** When false, never shows the OS permission dialog (boot / resume). Default true. */
+  requestIfUndetermined?: boolean;
+};
 
 type LocationStore = {
   permission: LocationPermissionState;
+  foregroundCanAskAgain: boolean;
+  backgroundCanAskAgain: boolean;
+  reducedAccuracy: boolean;
+  /** Latest raw GPS fix — always updated when coordinates are valid. */
   fix: LocationFix | null;
+  /** Map/instruments position — accuracy-smoothed when enabled; falls back to accepted raw. */
+  displayFix: LocationFix | null;
+  /** Last accepted fix that passed quality gates — used when current fix is stale. */
   lastGoodFix: LocationFix | null;
+  /** Why the latest raw fix was not used for navigation smoothing. */
+  fixAcceptance: FixAcceptanceReason | null;
   error: string | null;
   watching: boolean;
   refreshPermission: () => Promise<void>;
-  startWatching: () => Promise<boolean>;
+  applyPermissionSnapshot: (snapshot: LocationPermissionSnapshot) => void;
+  startWatching: (options?: StartWatchingOptions) => Promise<boolean>;
   stopWatching: () => void;
 };
 
 let subscription: Location.LocationSubscription | null = null;
-let lastFixForDerived: LocationFix | null = null;
-
-export function applyBackgroundLocationFix(loc: Location.LocationObject): LocationFix {
-  const fix = enrichFix(mapLocation(loc));
-  useLocationStore.setState({ fix, lastGoodFix: fix, error: null });
-  return fix;
-}
+let lastAcceptedFix: LocationFix | null = null;
+let smoothState: GpsSmoothState | null = null;
 
 function mapLocation(loc: Location.LocationObject): Omit<LocationFix, 'cogDeg'> {
   return {
@@ -54,75 +78,156 @@ function mapLocation(loc: Location.LocationObject): Omit<LocationFix, 'cogDeg'> 
   };
 }
 
-function enrichFix(raw: Omit<LocationFix, 'cogDeg'>): LocationFix {
-  let cogDeg: number | null = null;
-  if (lastFixForDerived) {
-    cogDeg = computeGpsCogDeg(lastFixForDerived, raw);
-  }
-  const fix: LocationFix = {
-    ...raw,
-    cogDeg: cogDeg ?? lastFixForDerived?.cogDeg ?? null,
-  };
+type ProcessedFix = {
+  fix: LocationFix;
+  displayFix: LocationFix | null;
+  lastGoodFix: LocationFix | null;
+  fixAcceptance: FixAcceptanceReason | null;
+};
 
-  if (lastFixForDerived) {
-    const seg = distanceNm(
-      [lastFixForDerived.longitude, lastFixForDerived.latitude],
-      [fix.longitude, fix.latitude],
-    );
-    if (seg > 0.001 && seg < 2 && (fix.speedKn ?? 0) > 0.3) {
-      void import('../store/navigationStore').then(({ useNavigationStore }) => {
-        void useNavigationStore.getState().addSessionDistanceNm(seg);
-      });
+function processRawFix(raw: Omit<LocationFix, 'cogDeg'>, smoothEnabled: boolean): ProcessedFix | null {
+  if (!isValidCoordinate(raw.latitude, raw.longitude)) {
+    return null;
+  }
+
+  const acceptance = classifyFixAcceptance(lastAcceptedFix, raw);
+  const cogDeg =
+    acceptance.accepted && lastAcceptedFix
+      ? (computeGpsCogDeg(lastAcceptedFix, raw) ?? lastAcceptedFix.cogDeg)
+      : (lastAcceptedFix?.cogDeg ?? null);
+
+  const fix: LocationFix = { ...raw, cogDeg };
+
+  let displayFix: LocationFix | null = null;
+  let lastGoodFix: LocationFix | null = lastAcceptedFix;
+
+  if (acceptance.accepted) {
+    if (lastAcceptedFix) {
+      const seg = distanceNm(
+        [lastAcceptedFix.longitude, lastAcceptedFix.latitude],
+        [fix.longitude, fix.latitude],
+      );
+      if (seg > 0.001 && seg < 2 && (fix.speedKn ?? 0) > 0.3) {
+        void import('../store/navigationStore').then(({ useNavigationStore }) => {
+          if (useNavigationStore.getState().anchorAlarm?.active) return;
+          void useNavigationStore.getState().addSessionDistanceNm(seg);
+        });
+      }
     }
+
+    lastAcceptedFix = fix;
+    smoothState = smoothEnabled ? smoothGpsPosition(smoothState, fix) : null;
+    displayFix = smoothEnabled && smoothState ? buildDisplayFix(fix, smoothState, true) : fix;
+
+    if (isFixQualityOk(fix)) {
+      lastGoodFix = fix;
+    }
+  } else if (lastAcceptedFix) {
+    displayFix =
+      smoothEnabled && smoothState
+        ? buildDisplayFix(lastAcceptedFix, smoothState, true)
+        : lastAcceptedFix;
+    lastGoodFix = isFixQualityOk(lastAcceptedFix) ? lastAcceptedFix : lastGoodFix;
   }
 
-  lastFixForDerived = fix;
-  return fix;
+  return {
+    fix,
+    displayFix: displayFix ?? lastGoodFix,
+    lastGoodFix: lastGoodFix ?? (isFixQualityOk(fix) ? fix : null),
+    fixAcceptance: acceptance.accepted ? null : acceptance.reason,
+  };
 }
 
-async function resolvePermission(): Promise<LocationPermissionState> {
-  const fg = await Location.getForegroundPermissionsAsync();
-  if (fg.status !== 'granted') return fg.status === 'denied' ? 'denied' : 'undetermined';
-  const bg = await Location.getBackgroundPermissionsAsync();
-  if (bg.status === 'granted') return 'background';
-  return 'foreground';
+function enrichAndStore(raw: Omit<LocationFix, 'cogDeg'>, smoothEnabled: boolean): ProcessedFix | null {
+  return processRawFix(raw, smoothEnabled);
+}
+
+function applyProcessedToStore(processed: ProcessedFix | null, set: (partial: Partial<LocationStore>) => void): void {
+  if (!processed) return;
+  set({
+    fix: processed.fix,
+    displayFix: processed.displayFix,
+    lastGoodFix: processed.lastGoodFix ?? processed.displayFix,
+    fixAcceptance: processed.fixAcceptance,
+    error: null,
+  });
+}
+
+export function applyBackgroundLocationFix(loc: Location.LocationObject): LocationFix | null {
+  const { useSettingsStore } = require('../store/settingsStore') as typeof import('../store/settingsStore');
+  const smoothEnabled = useSettingsStore.getState().gpsSmoothPosition;
+  const processed = enrichAndStore(mapLocation(loc), smoothEnabled);
+  applyProcessedToStore(processed, (partial) => useLocationStore.setState(partial));
+  return processed?.fix ?? null;
+}
+
+function snapshotToStorePartial(snapshot: LocationPermissionSnapshot): Pick<
+  LocationStore,
+  'permission' | 'foregroundCanAskAgain' | 'backgroundCanAskAgain' | 'reducedAccuracy'
+> {
+  return {
+    permission: mapSnapshotToPermissionState(snapshot),
+    foregroundCanAskAgain: snapshot.foregroundCanAskAgain,
+    backgroundCanAskAgain: snapshot.backgroundCanAskAgain,
+    reducedAccuracy: snapshot.reducedAccuracy,
+  };
 }
 
 export const useLocationStore = create<LocationStore>((set, get) => ({
   permission: 'undetermined',
+  foregroundCanAskAgain: true,
+  backgroundCanAskAgain: true,
+  reducedAccuracy: false,
   fix: null,
+  displayFix: null,
   lastGoodFix: null,
+  fixAcceptance: null,
   error: null,
   watching: false,
 
   refreshPermission: async () => {
-    set({ permission: await resolvePermission() });
+    set(snapshotToStorePartial(await readLocationPermissionSnapshot()));
   },
 
-  startWatching: async () => {
+  applyPermissionSnapshot: (snapshot) => {
+    set(snapshotToStorePartial(snapshot));
+  },
+
+  startWatching: async (options) => {
     if (get().watching) return true;
+    const requestIfUndetermined = options?.requestIfUndetermined !== false;
     try {
       let fg = await Location.getForegroundPermissionsAsync();
-      if (fg.status === Location.PermissionStatus.UNDETERMINED) {
+      if (fg.status === Location.PermissionStatus.UNDETERMINED && requestIfUndetermined) {
         fg = await Location.requestForegroundPermissionsAsync();
       }
+      set(snapshotToStorePartial(await readLocationPermissionSnapshot()));
       if (fg.status !== Location.PermissionStatus.GRANTED) {
-        set({ permission: 'denied', error: 'permission_denied' });
+        set({ error: 'permission_denied' });
         return false;
       }
-      set({ permission: await resolvePermission(), error: null, watching: true });
+      set({ error: null, watching: true });
       subscription?.remove();
       subscription = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.BestForNavigation,
-          timeInterval: 1000,
-          distanceInterval: 1,
-        },
+        FOREGROUND_NAVIGATION_OPTIONS,
         (loc) => {
-          const fix = enrichFix(mapLocation(loc));
-          set({ fix, lastGoodFix: fix, error: null });
+          const { useSettingsStore } = require('../store/settingsStore') as typeof import('../store/settingsStore');
+          const smoothEnabled = useSettingsStore.getState().gpsSmoothPosition;
+          const processed = enrichAndStore(mapLocation(loc), smoothEnabled);
+          applyProcessedToStore(processed, set);
         },
       );
+      void Location.getCurrentPositionAsync(FOREGROUND_NAVIGATION_OPTIONS)
+        .then((loc) => {
+          if (!get().watching) return;
+          const { useSettingsStore } = require('../store/settingsStore') as typeof import('../store/settingsStore');
+          const smoothEnabled = useSettingsStore.getState().gpsSmoothPosition;
+          const processed = enrichAndStore(mapLocation(loc), smoothEnabled);
+          applyProcessedToStore(processed, set);
+        })
+        .catch((error) => {
+          console.warn('[locationService] seed fix failed', error);
+        });
       return true;
     } catch (error) {
       console.warn('[locationService] startWatching failed', error);
@@ -136,10 +241,31 @@ export const useLocationStore = create<LocationStore>((set, get) => ({
   stopWatching: () => {
     subscription?.remove();
     subscription = null;
-    lastFixForDerived = null;
-    set({ watching: false });
+    lastAcceptedFix = null;
+    smoothState = null;
+    set({ watching: false, fixAcceptance: null });
   },
 }));
+
+/** Position for map, course vector, and coordinates — smoothed when available. */
+export function resolveMapDisplayFix(
+  fix: LocationFix | null,
+  displayFix: LocationFix | null,
+  lastGoodFix: LocationFix | null,
+  stale: boolean,
+): LocationFix | null {
+  if (!stale && displayFix) return displayFix;
+  if (!stale && fix) return fix;
+  return lastGoodFix;
+}
+
+/** Hook — map/instrument position with optional accuracy smoothing. */
+export function useMapDisplayFix(): LocationFix | null {
+  const fix = useLocationStore((s) => s.fix);
+  const displayFix = useLocationStore((s) => s.displayFix);
+  const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
+  return resolveMapDisplayFix(fix, displayFix, lastGoodFix, isFixStale(fix));
+}
 
 export function isFixStale(fix: LocationFix | null, maxAgeMs = FIX_STALE_MS): boolean {
   if (!fix) return true;

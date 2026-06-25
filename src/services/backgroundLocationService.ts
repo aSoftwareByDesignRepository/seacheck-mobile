@@ -2,42 +2,39 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 
 import { t } from '../i18n';
-import { isAnchorMonitoringNeeded, isBackgroundTrackNeeded, shouldRunBackgroundLocation } from './locationAlarmRunner';
+import { backgroundNavigationOptions } from '../lib/geo/gpsLocationOptions';
+import {
+  isAnchorMonitoringNeeded,
+  isBackgroundTrackNeeded,
+  shouldRunBackgroundLocation,
+} from '../lib/alarms/alarmCoordinator';
 import { TRACK_LOCATION_TASK } from './trackLocationTaskConstants';
 
 const BG_MODE_KEY = 'seacheck.location.bgMode';
 
 function anchorMonitoringOptions(): Location.LocationTaskOptions {
   return {
-    accuracy: Location.Accuracy.BestForNavigation,
-    timeInterval: 5_000,
-    distanceInterval: 2,
-    showsBackgroundLocationIndicator: true,
-    activityType: Location.ActivityType.OtherNavigation,
-    pausesUpdatesAutomatically: false,
-    foregroundService: {
+    ...backgroundNavigationOptions({
       notificationTitle: t('location.backgroundAnchorTitle'),
       notificationBody: t('location.backgroundAnchorBody'),
       notificationColor: '#0073ad',
       killServiceOnDestroy: false,
-    },
+    }),
+    timeInterval: 5_000,
+    distanceInterval: 2,
   };
 }
 
 function trackRecordingOptions(): Location.LocationTaskOptions {
   return {
-    accuracy: Location.Accuracy.BestForNavigation,
-    timeInterval: 10_000,
-    distanceInterval: 3,
-    showsBackgroundLocationIndicator: true,
-    activityType: Location.ActivityType.OtherNavigation,
-    pausesUpdatesAutomatically: false,
-    foregroundService: {
+    ...backgroundNavigationOptions({
       notificationTitle: t('tracks.backgroundNotificationTitle'),
       notificationBody: t('tracks.backgroundNotificationBody'),
       notificationColor: '#0073ad',
       killServiceOnDestroy: false,
-    },
+    }),
+    timeInterval: 10_000,
+    distanceInterval: 3,
   };
 }
 
@@ -49,7 +46,9 @@ export async function isBackgroundLocationRunning(): Promise<boolean> {
   }
 }
 
-async function startBackgroundLocationUpdates(options: Location.LocationTaskOptions): Promise<{ ok: true } | { ok: false; reason: string }> {
+async function startBackgroundLocationUpdates(
+  options: Location.LocationTaskOptions,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
   const bg = await Location.getBackgroundPermissionsAsync();
   if (bg.status !== 'granted') {
     return { ok: false, reason: 'background_denied' };
@@ -109,15 +108,14 @@ export async function syncBackgroundLocationMonitoring(): Promise<{ ok: boolean;
   }
 
   if (!track && anchor) {
-    /* Anchor-only monitoring failed — caller may warn user */
     return { ok: false, reason: result.reason };
   }
 
   return { ok: false, reason: result.reason };
 }
 
-/** @deprecated Use syncBackgroundLocationMonitoring */
-export async function syncBackgroundTrackRecording(trackId: string | null): Promise<void> {
+/** Persist the active recording id, then reconcile the unified background GPS task. */
+export async function syncRecordingBackgroundGps(trackId: string | null): Promise<void> {
   const { persistRecordingTrackId } = await import('./trackBackgroundTask');
   await persistRecordingTrackId(trackId);
   await syncBackgroundLocationMonitoring();

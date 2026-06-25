@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useFormFactor } from '../../hooks/useFormFactor';
@@ -8,6 +8,7 @@ import { magneticDeclinationDeg } from '../../lib/geo/magnetic';
 import { formatSog } from '../../lib/geo/units';
 import { formatLegElapsed } from '../../lib/racing/legTimer';
 import { t } from '../../i18n';
+import { useConfirmStore } from '../../store/confirmStore';
 import { isFixStale, useLocationStore } from '../../services/locationService';
 import { useNavigationStore } from '../../store/navigationStore';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -23,6 +24,7 @@ export function MobNavigateBackOverlay() {
   const mobDroppedAtMs = useNavigationStore((s) => s.mobDroppedAtMs);
   const clearMob = useNavigationStore((s) => s.clearMob);
   const fix = useLocationStore((s) => s.fix);
+  const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
   const bearingReference = useSettingsStore((s) => s.bearingReference);
   const sogUnit = useSettingsStore((s) => s.sogUnit);
   const nav = useNavigationInstruments();
@@ -39,14 +41,26 @@ export function MobNavigateBackOverlay() {
   if (!mobTarget) return null;
 
   const stale = isFixStale(fix);
-  const declination = fix ? magneticDeclinationDeg(fix.latitude, fix.longitude) : 0;
+  const navFix = fix && !stale ? fix : lastGoodFix;
+  const declination = navFix ? magneticDeclinationDeg(navFix.latitude, navFix.longitude) : 0;
   const brg = nav.bearingToTarget != null ? `${Math.round(nav.bearingToTarget)}° ${nav.bearingSuffix}` : '—';
   const dist =
     nav.distanceToTargetNm != null
       ? `${nav.distanceToTargetNm.toFixed(2)} NM`
       : '—';
-  const sog = stale ? '—' : formatSog(fix?.speedMs ?? null, sogUnit);
-  const cog = stale ? '—' : formatCogDisplay(fix, bearingReference, declination);
+  const sog = !navFix || stale ? '—' : formatSog(fix?.speedMs ?? null, sogUnit);
+  const cog = !navFix || stale ? '—' : formatCogDisplay(fix, bearingReference, declination);
+
+  async function confirmClearMob() {
+    const confirmed = await useConfirmStore.getState().requestConfirm({
+      title: t('map.mobClearTitle'),
+      message: t('map.mobClearBody'),
+      confirmLabel: t('map.mobClearConfirm'),
+      cancelLabel: t('common.dismiss'),
+      destructive: true,
+    });
+    if (confirmed) await clearMob();
+  }
 
   return (
     <View
@@ -82,7 +96,7 @@ export function MobNavigateBackOverlay() {
       <Button
         label={t('map.mobClear')}
         variant="secondary"
-        onPress={() => void clearMob()}
+        onPress={() => void confirmClearMob()}
         testID="map.mobClear"
         style={{ minHeight: minTouch, marginTop: spacing.lg }}
       />

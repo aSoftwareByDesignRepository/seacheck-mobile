@@ -22,6 +22,9 @@ export function InstrumentCell({ label, value, unit, hero, heroSize = 28, access
         <Text
           style={[hero ? styles.hero : styles.value, { color: colors.text, fontSize: hero ? heroSize : 20 }]}
           accessibilityLabel={accessibilityLabel ?? `${label} ${value}${unit ? ` ${unit}` : ''}`}
+          numberOfLines={1}
+          adjustsFontSizeToFit={hero}
+          minimumFontScale={0.8}
         >
           {value}
         </Text>
@@ -45,7 +48,7 @@ export function InstrumentCell({ label, value, unit, hero, heroSize = 28, access
 }
 
 const styles = StyleSheet.create({
-  cell: { flex: 1, minWidth: 72 },
+  cell: { flex: 1, minWidth: 0, flexShrink: 1, maxWidth: '100%' },
   label: { fontSize: 12, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 },
   valueRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 },
   hero: { fontWeight: '800', fontVariant: ['tabular-nums'] },

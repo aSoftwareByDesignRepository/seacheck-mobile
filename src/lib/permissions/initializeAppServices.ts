@@ -20,6 +20,7 @@ export async function initializeAppServices(options: InitOptions = {}): Promise<
     }
     const { useLocationStore } = await import('../../services/locationService');
     await useLocationStore.getState().refreshPermission();
+    await useLocationStore.getState().startWatching({ requestIfUndetermined: false });
     const { syncBackgroundLocationMonitoring } = await import('../../services/backgroundLocationService');
     const sync = await syncBackgroundLocationMonitoring();
     if (!sync.ok) {

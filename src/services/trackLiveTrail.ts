@@ -5,7 +5,7 @@ type LiveTrailSink = {
 
 let sink: LiveTrailSink | null = null;
 
-/** Registered by trackStore — avoids trackRecordingService importing the store. */
+/** Registered by trackStore — keeps live trail updates out of the background GPS task module. */
 export function registerTrackLiveTrail(next: LiveTrailSink | null): void {
   sink = next;
 }

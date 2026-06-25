@@ -1,18 +1,24 @@
+import { useCallback, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TAB_BAR_CONTENT_HEIGHT } from '../features/map/mapChromeLayout';
+import { useFormFactor } from '../hooks/useFormFactor';
 import { t } from '../i18n';
-import { useFeedbackStore } from '../store/feedbackStore';
+import { useFeedbackStore, type FeedbackKind } from '../store/feedbackStore';
 import { useTheme } from '../theme/ThemeContext';
+import { FEEDBACK_SHEET_ID, useSheetHost, useSheetHostSnapshotPublic } from './sheetHost';
 
-export function GlobalFeedback() {
-  const message = useFeedbackStore((s) => s.message);
-  const kind = useFeedbackStore((s) => s.kind);
-  const clear = useFeedbackStore((s) => s.clear);
+type BannerProps = {
+  message: string;
+  kind: FeedbackKind;
+  onDismiss: () => void;
+  bottomOffset: number;
+  horizontalInset: number;
+};
+
+function FeedbackBanner({ message, kind, onDismiss, bottomOffset, horizontalInset }: BannerProps) {
   const { colors, spacing, minTouch } = useTheme();
-  const insets = useSafeAreaInsets();
-  if (!message || !kind) return null;
 
   const palette =
     kind === 'error'
@@ -21,8 +27,6 @@ export function GlobalFeedback() {
         ? { bg: colors.warningBg, border: colors.warningBorder, text: colors.warningText }
         : { bg: colors.successBg, border: colors.border, text: colors.success };
 
-  const bottomOffset = insets.bottom + TAB_BAR_CONTENT_HEIGHT + spacing.sm;
-
   return (
     <View
       pointerEvents="box-none"
@@ -30,13 +34,16 @@ export function GlobalFeedback() {
     >
       <View
         testID="feedback.banner"
-        style={[styles.wrap, { backgroundColor: palette.bg, borderColor: palette.border, marginHorizontal: spacing.lg }]}
+        style={[
+          styles.wrap,
+          { backgroundColor: palette.bg, borderColor: palette.border, marginHorizontal: horizontalInset },
+        ]}
         accessibilityRole="alert"
         accessibilityLiveRegion={kind === 'error' ? 'assertive' : 'polite'}
       >
         <Text style={[styles.text, { color: palette.text }]}>{message}</Text>
         <Pressable
-          onPress={clear}
+          onPress={onDismiss}
           accessibilityRole="button"
           accessibilityLabel={t('common.dismiss')}
           style={[styles.dismiss, { minHeight: minTouch }]}
@@ -45,6 +52,57 @@ export function GlobalFeedback() {
         </Pressable>
       </View>
     </View>
+  );
+}
+
+export function GlobalFeedback() {
+  const message = useFeedbackStore((s) => s.message);
+  const kind = useFeedbackStore((s) => s.kind);
+  const clear = useFeedbackStore((s) => s.clear);
+  const { spacing } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { formFactor, isLandscape } = useFormFactor();
+  const { register, unregister } = useSheetHost();
+  const { sheetTop } = useSheetHostSnapshotPublic();
+
+  const hasBottomTabBar = formFactor === 'compact' || !isLandscape;
+  const bottomOffset = insets.bottom + (hasBottomTabBar ? TAB_BAR_CONTENT_HEIGHT : 0) + spacing.sm;
+  const horizontalInset = spacing.lg;
+
+  const renderOverlay = useCallback(() => {
+    if (!message || !kind) return null;
+    return (
+      <FeedbackBanner
+        message={message}
+        kind={kind}
+        onDismiss={clear}
+        bottomOffset={bottomOffset}
+        horizontalInset={horizontalInset}
+      />
+    );
+  }, [message, kind, clear, bottomOffset, horizontalInset]);
+
+  const elevateOverSheets = Boolean(message && kind && sheetTop);
+
+  useEffect(() => {
+    if (!elevateOverSheets) {
+      unregister(FEEDBACK_SHEET_ID);
+      return;
+    }
+    register(FEEDBACK_SHEET_ID, 0, renderOverlay, clear);
+    return () => unregister(FEEDBACK_SHEET_ID);
+  }, [elevateOverSheets, register, unregister, renderOverlay, clear]);
+
+  if (!message || !kind || elevateOverSheets) return null;
+
+  return (
+    <FeedbackBanner
+      message={message}
+      kind={kind}
+      onDismiss={clear}
+      bottomOffset={bottomOffset}
+      horizontalInset={horizontalInset}
+    />
   );
 }
 

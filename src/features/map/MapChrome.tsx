@@ -40,5 +40,5 @@ export function MapChrome({
 }
 
 const styles = StyleSheet.create({
-  actions: { position: 'absolute', zIndex: 40 },
+  actions: { position: 'absolute', zIndex: 40, elevation: 40 },
 });

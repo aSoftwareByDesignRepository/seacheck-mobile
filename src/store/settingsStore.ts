@@ -3,19 +3,24 @@ import { create } from 'zustand';
 
 import {
   CRUISE_PASSAGE_DEFAULTS,
+  DEFAULT_SEAMARK_PLANNING,
   type BearingReference,
   type CoordFormat,
+  type AnchorRadiusNm,
   type CourseVectorMinutes,
+  type CourseVectorVisualScale,
   type DistanceUnit,
   type FollowZoomLevel,
   type LayoutPreset,
   type PanelSide,
+  type SeamarkPlanningConfig,
   type SogUnit,
 } from '../settings/defaults';
 import { layoutContextKey, type LayoutContext } from '../lib/settings/layoutPreferences';
 import { enqueuePersist } from '../lib/persist/asyncPersistQueue';
 import { getActivityProfile, normalizeActivityProfileId } from '../settings/profiles';
-import { normalizeCourseVectorMinutes, normalizeFollowZoom } from '../lib/settings/mapSettings';
+import { normalizeAnchorRadiusNm, normalizeCourseVectorMinutes, normalizeCourseVectorScale, normalizeFollowZoom } from '../lib/settings/mapSettings';
+import { normalizeSeamarkPlanning } from '../lib/settings/seamarkSettings';
 
 const STORAGE_KEY = 'seacheck.settings.v1';
 
@@ -41,9 +46,14 @@ type PersistPayload = {
   mapCourseUp: boolean;
   mapShowCourseVector: boolean;
   mapCourseVectorMinutes: CourseVectorMinutes;
+  mapCourseVectorScale: CourseVectorVisualScale;
   mapFollowZoom: FollowZoomLevel;
+  seamarkPlanning: SeamarkPlanningConfig;
+  anchorRadiusNm: AnchorRadiusNm;
   followMode: boolean;
   keepAwakeUnderway: boolean;
+  barometerEnabled: boolean;
+  gpsSmoothPosition: boolean;
   backgroundTrackRecording: boolean;
   alarmSoundEnabled: boolean;
   alarmHapticEnabled: boolean;
@@ -85,9 +95,14 @@ async function persist(state: SettingsState) {
     mapCourseUp: state.mapCourseUp,
     mapShowCourseVector: state.mapShowCourseVector,
     mapCourseVectorMinutes: state.mapCourseVectorMinutes,
+    mapCourseVectorScale: state.mapCourseVectorScale,
     mapFollowZoom: state.mapFollowZoom,
+    seamarkPlanning: state.seamarkPlanning,
+    anchorRadiusNm: state.anchorRadiusNm,
     followMode: state.followMode,
     keepAwakeUnderway: state.keepAwakeUnderway,
+    barometerEnabled: state.barometerEnabled,
+    gpsSmoothPosition: state.gpsSmoothPosition,
     backgroundTrackRecording: state.backgroundTrackRecording,
     alarmSoundEnabled: state.alarmSoundEnabled,
     alarmHapticEnabled: state.alarmHapticEnabled,
@@ -118,6 +133,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   layoutPreset: 'map-forward',
   layoutOverrides: {},
   ...CRUISE_PASSAGE_DEFAULTS,
+  seamarkPlanning: DEFAULT_SEAMARK_PLANNING,
   vessel: emptyVessel,
   raceWindDirectionTrue: null,
   raceTackingAngleDeg: 45,
@@ -152,9 +168,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           mapCourseUp: parsed.mapCourseUp ?? CRUISE_PASSAGE_DEFAULTS.mapCourseUp,
           mapShowCourseVector: parsed.mapShowCourseVector ?? CRUISE_PASSAGE_DEFAULTS.mapShowCourseVector,
           mapCourseVectorMinutes: normalizeCourseVectorMinutes(parsed.mapCourseVectorMinutes),
+          mapCourseVectorScale: normalizeCourseVectorScale(parsed.mapCourseVectorScale),
           mapFollowZoom: normalizeFollowZoom(parsed.mapFollowZoom),
+          seamarkPlanning: normalizeSeamarkPlanning(parsed.seamarkPlanning),
+          anchorRadiusNm: normalizeAnchorRadiusNm(parsed.anchorRadiusNm),
           followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode,
           keepAwakeUnderway: parsed.keepAwakeUnderway ?? CRUISE_PASSAGE_DEFAULTS.keepAwakeUnderway,
+          barometerEnabled: parsed.barometerEnabled ?? CRUISE_PASSAGE_DEFAULTS.barometerEnabled,
+          gpsSmoothPosition: parsed.gpsSmoothPosition ?? CRUISE_PASSAGE_DEFAULTS.gpsSmoothPosition,
           backgroundTrackRecording: Boolean(parsed.backgroundTrackRecording),
           alarmSoundEnabled: parsed.alarmSoundEnabled ?? true,
           alarmHapticEnabled: parsed.alarmHapticEnabled ?? true,

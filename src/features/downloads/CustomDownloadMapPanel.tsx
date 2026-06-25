@@ -51,6 +51,10 @@ export function CustomDownloadMapPanel() {
       showError(t(`downloads.customInvalid.${code}` as 'downloads.customInvalid.too_small'));
       return;
     }
+    if (useOfflinePackStore.getState().activeDownloadRegionId) {
+      showError(t('downloads.errorDownloadBusy'));
+      return;
+    }
     setBusy(true);
     try {
       const allowed = await ensureDownloadAllowed();
@@ -62,6 +66,8 @@ export function CustomDownloadMapPanel() {
       await startCustomDownload(name, bounds, minZoom, maxZoom);
       cancelSelecting();
       showInfo(t('downloads.customStartedBody'));
+    } catch (err) {
+      showError(err instanceof Error ? err.message : t('downloads.downloadFailed'));
     } finally {
       setBusy(false);
     }

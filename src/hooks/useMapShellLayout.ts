@@ -1,4 +1,4 @@
-import { useFormFactor } from './useFormFactor';
+import { useFormFactor, type FormFactor } from './useFormFactor';
 import { useEffectiveLayoutPreset } from './useEffectiveLayoutPreset';
 import type { LayoutPreset } from '../settings/defaults';
 
@@ -12,17 +12,25 @@ export type MapShellLayout = {
   coordinatesEmphasis: boolean;
 };
 
-export function useMapShellLayout(): MapShellLayout {
-  const { formFactor, isLandscape } = useFormFactor();
-  const layoutPreset = useEffectiveLayoutPreset();
-
+/** Pure layout split rules — shared by ResponsiveMapShell and tests. */
+export function resolveMapShellLayout(
+  layoutPreset: LayoutPreset,
+  formFactor: FormFactor,
+  isLandscape: boolean,
+): Pick<MapShellLayout, 'split' | 'row'> {
   const split =
     layoutPreset === 'split' ||
     layoutPreset === 'coordinates' ||
     (layoutPreset === 'map-forward' && formFactor === 'expanded') ||
     (layoutPreset === 'instruments-forward' && formFactor !== 'compact' && isLandscape);
-
   const row = split && (formFactor !== 'compact' || isLandscape);
+  return { split, row };
+}
+
+export function useMapShellLayout(): MapShellLayout {
+  const { formFactor, isLandscape } = useFormFactor();
+  const layoutPreset = useEffectiveLayoutPreset();
+  const { split, row } = resolveMapShellLayout(layoutPreset, formFactor, isLandscape);
 
   return {
     layoutPreset,

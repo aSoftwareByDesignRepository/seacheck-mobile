@@ -11,6 +11,7 @@ import { PassageMetaSection } from '../features/passage/PassageMetaSection';
 import { PassageWaypointSection } from '../features/passage/PassageWaypointSection';
 import { usePassageCoverage } from '../hooks/usePassageCoverage';
 import { useFormFactor } from '../hooks/useFormFactor';
+import { formatDistanceNm, distanceUnitLabel } from '../lib/geo/units';
 import { t } from '../i18n';
 import type { RootTabParamList } from '../navigation/types';
 import type { PassageLeg, PassageWithLegs } from '../store/passageStore';
@@ -18,10 +19,12 @@ import { usePassageStore } from '../store/passageStore';
 import { requestConfirm } from '../store/confirmStore';
 import { useFeedbackStore } from '../store/feedbackStore';
 import { useWaypointStore } from '../store/waypointStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { useTheme } from '../theme/ThemeContext';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { Screen } from '../ui/Screen';
+import { SelectHint } from '../ui/SelectHint';
 import { StatusBadge } from '../ui/StatusBadge';
 
 export function PassageScreen() {
@@ -47,11 +50,12 @@ export function PassageScreen() {
   const waypoints = useWaypointStore((s) => s.items);
   const showInfo = useFeedbackStore((s) => s.showInfo);
   const showError = useFeedbackStore((s) => s.showError);
+  const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<PassageWithLegs | null>(null);
   const [editorPane, setEditorPane] = useState<'table' | 'map'>('table');
   const [highlightedLegIndex, setHighlightedLegIndex] = useState<number | null>(null);
-  const [summaries, setSummaries] = useState<Record<string, { legs: number; nm: number }>>({});
+  const [summaries, setSummaries] = useState<Record<string, { legs: number; nm: number; waypoints: number }>>({});
   const coverage = usePassageCoverage(detail?.waypoints ?? []);
 
   const loadDetail = useCallback(
@@ -66,11 +70,11 @@ export function PassageScreen() {
     void Promise.all(
       passages.map(async (p) => {
         const d = await getPassageDetail(p.id);
-        return { id: p.id, legs: d?.legs.length ?? 0, nm: d?.totalNm ?? 0 };
+        return { id: p.id, legs: d?.legs.length ?? 0, nm: d?.totalNm ?? 0, waypoints: d?.waypoints.length ?? 0 };
       }),
     ).then((rows) => {
-      const map: Record<string, { legs: number; nm: number }> = {};
-      for (const r of rows) map[r.id] = { legs: r.legs, nm: r.nm };
+      const map: Record<string, { legs: number; nm: number; waypoints: number }> = {};
+      for (const r of rows) map[r.id] = { legs: r.legs, nm: r.nm, waypoints: r.waypoints };
       setSummaries(map);
     });
   }, [passages, getPassageDetail]);
@@ -217,7 +221,11 @@ export function PassageScreen() {
               <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
               {meta ? (
                 <Text style={[styles.meta, { color: colors.textMuted }]}>
-                  {t('passage.listMeta', { legs: meta.legs, nm: meta.nm.toFixed(1) })}
+                  {t('passage.listMeta', {
+                    legs: meta.legs,
+                    distance: formatDistanceNm(meta.nm, distanceUnit),
+                    unit: distanceUnitLabel(distanceUnit),
+                  })}
                 </Text>
               ) : null}
               {item.id === activePassageId ? <StatusBadge label={t('passage.active')} variant="success" /> : null}
@@ -228,9 +236,9 @@ export function PassageScreen() {
               ) : (
                 <Button
                   label={t('passage.activate')}
-                  disabled={!meta || meta.legs < 1}
+                  disabled={!meta || meta.waypoints < 2}
                   onPress={() => {
-                    if (!meta || meta.legs < 1) {
+                    if (!meta || meta.waypoints < 2) {
                       showError(t('passage.activateNeedTwo'));
                       return;
                     }
@@ -285,9 +293,9 @@ export function PassageScreen() {
         ) : (
           <Button
             label={t('passage.activate')}
-            disabled={detail.legs.length < 1}
+            disabled={detail.waypoints.length < 2}
             onPress={() => {
-              if (detail.legs.length < 1) {
+              if (detail.waypoints.length < 2) {
                 showError(t('passage.activateNeedTwo'));
                 return;
               }
@@ -303,7 +311,7 @@ export function PassageScreen() {
       </View>
     </>
   ) : (
-    <Text style={{ color: colors.textMuted, textAlign: 'center', lineHeight: 22, padding: 16 }}>{t('passage.selectHint')}</Text>
+    <SelectHint testID="passage.selectHint">{t('passage.selectHint')}</SelectHint>
   );
 
   return (

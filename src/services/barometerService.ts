@@ -17,6 +17,8 @@ type BarometerState = {
   hydrated: boolean;
 };
 
+export type BarometerStateSnapshot = BarometerState;
+
 type BarometerSensor = typeof import('expo-sensors').Barometer;
 
 let sampleTimer: ReturnType<typeof setInterval> | null = null;

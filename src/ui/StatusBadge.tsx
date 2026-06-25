@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useTheme } from '../theme/ThemeContext';
+import { statusBadgeStyle, statusBadgeText } from './chipTokens';
 
 type Variant = 'success' | 'warning' | 'danger' | 'neutral';
 
@@ -21,13 +22,11 @@ export function StatusBadge({ label, variant = 'neutral' }: Props) {
           : { bg: colors.surface, text: colors.textMuted, border: colors.border };
 
   return (
-    <View style={[styles.badge, { backgroundColor: palette.bg, borderColor: palette.border }]} accessibilityRole="text">
-      <Text style={[styles.text, { color: palette.text }]}>{label}</Text>
+    <View
+      style={[statusBadgeStyle(), { backgroundColor: palette.bg, borderColor: palette.border }]}
+      accessibilityRole="text"
+    >
+      <Text style={[statusBadgeText, { color: palette.text }]}>{label}</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  badge: { alignSelf: 'flex-start', borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
-  text: { fontSize: 12, fontWeight: '700' },
-});

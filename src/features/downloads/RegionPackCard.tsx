@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { estimateDownloadKb, estimateTileCount, formatStorageSize } from '../../map/tileMath';
-import { REGION_PACKS, type RegionPackDefinition } from '../../map/regionPacks';
+import { type RegionPackDefinition } from '../../map/regionPacks';
 import { t } from '../../i18n';
 import type { RegionPackStatus } from '../../store/offlinePackStore';
 import { useTheme } from '../../theme/ThemeContext';
@@ -12,12 +12,13 @@ type Props = {
   status: RegionPackStatus;
   onDownload: () => void;
   onDelete: () => void;
+  onCancel?: () => void;
   busy: boolean;
   onSelect?: () => void;
   selected?: boolean;
 };
 
-export function RegionPackCard({ pack, status, onDownload, onDelete, busy, onSelect, selected }: Props) {
+export function RegionPackCard({ pack, status, onDownload, onDelete, onCancel, busy, onSelect, selected }: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const tileEstimate = estimateTileCount(pack.bounds, pack.minZoom, pack.maxZoom);
   const sizeLabel = formatStorageSize(estimateDownloadKb(tileEstimate));
@@ -43,11 +44,27 @@ export function RegionPackCard({ pack, status, onDownload, onDelete, busy, onSel
           ? colors.primary
           : colors.textMuted;
 
+  const seamarkLabel =
+    status.state !== 'ready'
+      ? null
+      : status.seamarksIndexing
+        ? t('downloads.seamarksIndexing')
+        : status.seamarksIndexed
+          ? t('downloads.seamarksReady')
+          : t('downloads.seamarksPending');
+
+  const downloadLabel =
+    status.state === 'downloading'
+      ? t('downloads.downloading')
+      : status.state === 'error'
+        ? t('downloads.retryDownload')
+        : t('downloads.download');
+
   return (
     <View
       style={[styles.card, { backgroundColor: colors.surface, borderColor: selected ? colors.primary : colors.border, marginBottom: spacing.lg }]}
       testID={`downloads.pack.${pack.id}`}
-      accessibilityLabel={`${name}. ${stateLabel}`}
+      accessibilityLabel={`${name}. ${stateLabel}${seamarkLabel ? `. ${seamarkLabel}` : ''}${status.error ? `. ${status.error}` : ''}`}
     >
       <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
         {name}
@@ -59,7 +76,16 @@ export function RegionPackCard({ pack, status, onDownload, onDelete, busy, onSel
       <Text style={[styles.state, { color: stateColor }]} accessibilityLiveRegion="polite">
         {stateLabel}
       </Text>
-      {status.error ? <Text style={[styles.error, { color: colors.danger }]}>{status.error}</Text> : null}
+      {seamarkLabel ? (
+        <Text style={[styles.meta, { color: colors.textMuted }]} accessibilityLiveRegion="polite">
+          {seamarkLabel}
+        </Text>
+      ) : null}
+      {status.error ? (
+        <Text style={[styles.error, { color: colors.danger }]} accessibilityLiveRegion="polite">
+          {status.error}
+        </Text>
+      ) : null}
       <View style={[styles.actions, { minHeight: minTouch }]}>
         {onSelect ? (
           <Button
@@ -78,14 +104,21 @@ export function RegionPackCard({ pack, status, onDownload, onDelete, busy, onSel
             disabled={busy}
             testID={`downloads.delete.${pack.id}`}
           />
+        ) : status.state === 'downloading' ? (
+          <>
+            <Button label={downloadLabel} onPress={onDownload} disabled loading testID={`downloads.download.${pack.id}`} />
+            {onCancel ? (
+              <Button
+                label={t('downloads.cancelDownload')}
+                variant="secondary"
+                onPress={onCancel}
+                disabled={busy}
+                testID={`downloads.cancel.${pack.id}`}
+              />
+            ) : null}
+          </>
         ) : (
-          <Button
-            label={status.state === 'downloading' ? t('downloads.downloading') : t('downloads.download')}
-            onPress={onDownload}
-            disabled={busy || status.state === 'downloading'}
-            loading={status.state === 'downloading'}
-            testID={`downloads.download.${pack.id}`}
-          />
+          <Button label={downloadLabel} onPress={onDownload} disabled={busy} testID={`downloads.download.${pack.id}`} />
         )}
       </View>
     </View>
@@ -98,6 +131,6 @@ const styles = StyleSheet.create({
   body: { fontSize: 14, lineHeight: 20, marginBottom: 8 },
   meta: { fontSize: 13, marginBottom: 8 },
   state: { fontSize: 14, fontWeight: '700', marginBottom: 12 },
-  error: { fontSize: 13, marginBottom: 8 },
+  error: { fontSize: 13, marginBottom: 8, lineHeight: 18 },
   actions: { gap: 8 },
 });

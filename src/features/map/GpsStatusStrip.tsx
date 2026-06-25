@@ -4,17 +4,20 @@ import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useBatteryLevel } from '../../hooks/useBatteryLevel';
 import { useFixAge } from '../../hooks/useFixAge';
 import { getAnchorWatchStatus } from '../../lib/anchor/activateAnchorAlarm';
-import { openSystemSettings } from '../../lib/permissions/locationPermissions';
+import { MAX_ALARM_ACCURACY_M } from '../../lib/geo/fixQuality';
+import { openSystemSettings, requestForegroundLocationAccess } from '../../lib/permissions/locationPermissions';
 import { t } from '../../i18n';
 import { useNavigationStore } from '../../store/navigationStore';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useLocationStore } from '../../services/locationService';
 import { useTheme } from '../../theme/ThemeContext';
+import { chipRow, touchChipStyle, touchChipText } from '../../ui/chipTokens';
 
 type Props = {
   onOpenSettings?: () => void;
   showRecenter?: boolean;
   onRecenter?: () => void;
-  /** Inside horizontal scroll — no outer margin, chips stay on one row. */
+  /** Inside horizontal scroll — chips stay on one row and scroll when needed. */
   compact?: boolean;
 };
 
@@ -23,6 +26,10 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
   const keepAwake = useSettingsStore((s) => s.keepAwakeUnderway);
   const followMode = useSettingsStore((s) => s.followMode);
   const anchorAlarm = useNavigationStore((s) => s.anchorAlarm);
+  const fix = useLocationStore((s) => s.fix);
+  const fixAcceptance = useLocationStore((s) => s.fixAcceptance);
+  const permission = useLocationStore((s) => s.permission);
+  const foregroundCanAskAgain = useLocationStore((s) => s.foregroundCanAskAgain);
   const { ageSec, isAging, isStale, permissionDenied } = useFixAge();
   const batteryPct = useBatteryLevel(keepAwake && followMode);
   const [anchorWatchLimited, setAnchorWatchLimited] = useState(false);
@@ -60,7 +67,31 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
   const showBattery = keepAwake && followMode && batteryPct != null;
   const showAnchorLimited = anchorAlarm?.active && anchorWatchLimited;
   const showBatteryRestricted = anchorAlarm?.active && batteryRestricted;
-  if (!showGps && !showBattery && !showAnchorLimited && !showBatteryRestricted && !anchorGpsSuspended && !showRecenter) {
+
+  const accuracyM = fix?.accuracyM != null && Number.isFinite(fix.accuracyM) ? Math.round(fix.accuracyM) : null;
+  const showOutlier = fixAcceptance === 'outlier' && !isStale && !permissionDenied;
+  const showPoorAccuracy =
+    fixAcceptance === 'poor_accuracy' || (accuracyM != null && accuracyM > MAX_ALARM_ACCURACY_M);
+  const showAccuracyChip =
+    !permissionDenied &&
+    !isStale &&
+    !showOutlier &&
+    accuracyM != null &&
+    (accuracyM > 30 || fixAcceptance === 'poor_accuracy');
+  const showAccuracyGood =
+    !permissionDenied && !isStale && !showOutlier && accuracyM != null && accuracyM <= 30 && !showPoorAccuracy;
+
+  if (
+    !showGps &&
+    !showBattery &&
+    !showAnchorLimited &&
+    !showBatteryRestricted &&
+    !anchorGpsSuspended &&
+    !showRecenter &&
+    !showOutlier &&
+    !showAccuracyChip &&
+    !showAccuracyGood
+  ) {
     return null;
   }
 
@@ -78,26 +109,36 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
 
   function onGpsPress() {
     if (permissionDenied) {
-      void openSystemSettings();
+      if (foregroundCanAskAgain) {
+        void requestForegroundLocationAccess();
+      } else {
+        void openSystemSettings();
+      }
+      return;
+    }
+    if (permission === 'undetermined') {
+      void requestForegroundLocationAccess();
       return;
     }
     onOpenSettings?.();
   }
 
+  function chipColors(bg: string, border: string) {
+    return touchChipStyle(minTouch, { backgroundColor: bg, borderColor: border });
+  }
+
   return (
-    <View style={[styles.row, compact ? styles.rowCompact : null]} testID="map.gpsStatus">
+    <View style={[compact ? chipRow.rowScroll : chipRow.row, !compact ? styles.rowSpaced : null]} testID="map.gpsStatus">
       {showRecenter ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('map.recenter')}
           accessibilityHint={t('map.recenterHint')}
           onPress={onRecenter}
-          style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.primary, minHeight: minTouch }]}
+          style={chipColors(colors.surface, colors.primary)}
           testID="map.recenter"
         >
-          <Text style={[styles.chipText, { color: colors.primary }]} numberOfLines={1}>
-            {t('map.recenterChip')}
-          </Text>
+          <Text style={[touchChipText, { color: colors.primary }]}>{t('map.recenterChip')}</Text>
         </Pressable>
       ) : null}
       {showBatteryRestricted ? (
@@ -105,12 +146,10 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           accessibilityRole="button"
           accessibilityLabel={t('map.batteryOptimizationChip')}
           onPress={onOpenSettings}
-          style={[styles.chip, { backgroundColor: colors.warningBg, borderColor: colors.warningBorder, minHeight: minTouch }]}
+          style={chipColors(colors.warningBg, colors.warningBorder)}
           testID="map.gpsStatus.batteryOpt"
         >
-          <Text style={[styles.chipText, { color: colors.warningText }]} numberOfLines={1}>
-            {t('map.batteryOptimizationShort')}
-          </Text>
+          <Text style={[touchChipText, { color: colors.warningText }]}>{t('map.batteryOptimizationShort')}</Text>
         </Pressable>
       ) : null}
       {showAnchorLimited ? (
@@ -118,11 +157,43 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           accessibilityRole="button"
           accessibilityLabel={t('map.anchorWatchLimitedChip')}
           onPress={onOpenSettings}
-          style={[styles.chip, { backgroundColor: colors.warningBg, borderColor: colors.warningBorder, minHeight: minTouch }]}
+          style={chipColors(colors.warningBg, colors.warningBorder)}
           testID="map.gpsStatus.anchorLimited"
         >
-          <Text style={[styles.chipText, { color: colors.warningText }]} numberOfLines={1}>
-            {t('map.anchorWatchLimitedShort')}
+          <Text style={[touchChipText, { color: colors.warningText }]}>{t('map.anchorWatchLimitedShort')}</Text>
+        </Pressable>
+      ) : null}
+      {showOutlier ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('map.gpsOutlierChip')}
+          accessibilityHint={t('map.gpsOutlierHint')}
+          onPress={onOpenSettings}
+          style={chipColors(colors.warningBg, colors.warningBorder)}
+          testID="map.gpsStatus.outlier"
+        >
+          <Text style={[touchChipText, { color: colors.warningText }]}>{t('map.gpsOutlierShort')}</Text>
+        </Pressable>
+      ) : null}
+      {showAccuracyGood ? (
+        <View
+          style={chipColors(colors.surface, colors.border)}
+          accessibilityLabel={t('map.gpsAccuracyGood', { m: accuracyM })}
+          testID="map.gpsStatus.accuracy"
+        >
+          <Text style={[touchChipText, { color: colors.text }]}>{t('map.gpsAccuracyShort', { m: accuracyM })}</Text>
+        </View>
+      ) : null}
+      {showAccuracyChip && !showAccuracyGood ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('map.gpsAccuracyWarn', { m: accuracyM ?? '—' })}
+          onPress={onOpenSettings}
+          style={chipColors(colors.warningBg, colors.warningBorder)}
+          testID="map.gpsStatus.accuracy"
+        >
+          <Text style={[touchChipText, { color: colors.warningText }]}>
+            {t('map.gpsAccuracyShort', { m: accuracyM ?? '—' })}
           </Text>
         </Pressable>
       ) : null}
@@ -132,23 +203,19 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           accessibilityLabel={gpsLabel}
           accessibilityHint={permissionDenied ? t('permissions.openSettings') : undefined}
           onPress={onGpsPress}
-          style={[styles.chip, { backgroundColor: gpsPalette.bg, borderColor: gpsPalette.border, minHeight: minTouch }]}
+          style={chipColors(gpsPalette.bg, gpsPalette.border)}
           testID="map.gpsStatus.gps"
         >
-          <Text style={[styles.chipText, { color: gpsPalette.text }]} numberOfLines={1}>
-            {gpsLabel}
-          </Text>
+          <Text style={[touchChipText, { color: gpsPalette.text }]}>{gpsLabel}</Text>
         </Pressable>
       ) : null}
       {showBattery ? (
         <View
-          style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border, minHeight: minTouch }]}
+          style={chipColors(colors.surface, colors.border)}
           accessibilityLabel={t('map.batteryLevel', { pct: batteryPct })}
           testID="map.gpsStatus.battery"
         >
-          <Text style={[styles.chipText, { color: colors.text }]} numberOfLines={1}>
-            {t('map.batteryLevel', { pct: batteryPct })}
-          </Text>
+          <Text style={[touchChipText, { color: colors.text }]}>{t('map.batteryLevel', { pct: batteryPct })}</Text>
         </View>
       ) : null}
     </View>
@@ -156,16 +223,5 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  rowCompact: { flexWrap: 'nowrap', marginBottom: 0, gap: 8 },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    justifyContent: 'center',
-    flexShrink: 0,
-    maxWidth: 280,
-  },
-  chipText: { fontSize: 13, fontWeight: '700', lineHeight: 18 },
+  rowSpaced: { marginBottom: 8 },
 });

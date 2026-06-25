@@ -5,6 +5,20 @@ import { t } from '../../i18n';
 import { ensureMaritimeAlarmNotifications } from '../../services/maritimeAlarmNotifications';
 import { useLocationStore } from '../../services/locationService';
 import { useSettingsStore } from '../../store/settingsStore';
+import {
+  isLocationPermissionBlocked,
+  readLocationPermissionSnapshot,
+  type LocationAccessResult,
+  type LocationPermissionSnapshot,
+} from './locationPermissionState';
+
+export type { LocationAccessResult, LocationPermissionSnapshot } from './locationPermissionState';
+export {
+  isLocationPermissionBlocked,
+  isReducedLocationAccuracy,
+  mapSnapshotToPermissionState,
+  readLocationPermissionSnapshot,
+} from './locationPermissionState';
 
 export function permissionStatusLabel(status: Location.PermissionStatus | string): string {
   switch (status) {
@@ -19,61 +33,73 @@ export function permissionStatusLabel(status: Location.PermissionStatus | string
   }
 }
 
+async function syncLocationPermissionStore(): Promise<LocationPermissionSnapshot> {
+  const snapshot = await readLocationPermissionSnapshot();
+  await useLocationStore.getState().applyPermissionSnapshot(snapshot);
+  return snapshot;
+}
+
+async function onBackgroundLocationGranted(options?: { enableBackgroundTracks?: boolean }): Promise<void> {
+  if (options?.enableBackgroundTracks === true) {
+    await useSettingsStore.getState().patchSettings({ backgroundTrackRecording: true });
+  }
+  try {
+    void ensureMaritimeAlarmNotifications();
+    const { initializeAppServices } = await import('./initializeAppServices');
+    await initializeAppServices();
+  } catch (error) {
+    console.warn('[locationPermissions] background sync failed', error);
+  }
+}
+
 /** Request foreground location; updates store permission state. */
-export async function requestForegroundLocationAccess(): Promise<Location.PermissionStatus> {
+export async function requestForegroundLocationAccess(): Promise<LocationAccessResult> {
+  const current = await Location.getForegroundPermissionsAsync();
+  if (current.status === Location.PermissionStatus.GRANTED) {
+    await syncLocationPermissionStore();
+    return { status: current.status, blocked: false };
+  }
+  if (isLocationPermissionBlocked(current)) {
+    await syncLocationPermissionStore();
+    return { status: current.status, blocked: true };
+  }
+
   const result = await Location.requestForegroundPermissionsAsync();
-  await useLocationStore.getState().refreshPermission();
-  return result.status;
+  await syncLocationPermissionStore();
+  return { status: result.status, blocked: isLocationPermissionBlocked(result) };
 }
 
 /**
  * Request background location (requires foreground granted on Android).
- * Enables background track recording when granted.
+ * Enables background track recording when granted and `enableBackgroundTracks` is true.
  */
-export async function requestBackgroundLocationAccess(options?: { enableBackgroundTracks?: boolean }): Promise<Location.PermissionStatus> {
-  const fg = await Location.getForegroundPermissionsAsync();
-  if (fg.status !== Location.PermissionStatus.GRANTED) {
-    const fgResult = await requestForegroundLocationAccess();
-    if (fgResult !== Location.PermissionStatus.GRANTED) {
-      return fgResult;
-    }
+export async function requestBackgroundLocationAccess(options?: {
+  enableBackgroundTracks?: boolean;
+}): Promise<LocationAccessResult> {
+  const fgResult = await requestForegroundLocationAccess();
+  if (fgResult.status !== Location.PermissionStatus.GRANTED) {
+    return fgResult;
+  }
+
+  const current = await Location.getBackgroundPermissionsAsync();
+  if (current.status === Location.PermissionStatus.GRANTED) {
+    await onBackgroundLocationGranted(options);
+    await syncLocationPermissionStore();
+    return { status: current.status, blocked: false };
+  }
+  if (isLocationPermissionBlocked(current)) {
+    await syncLocationPermissionStore();
+    return { status: current.status, blocked: true };
   }
 
   const result = await Location.requestBackgroundPermissionsAsync();
-  await useLocationStore.getState().refreshPermission();
-
+  await syncLocationPermissionStore();
   if (result.status === Location.PermissionStatus.GRANTED) {
-    if (options?.enableBackgroundTracks === true) {
-      await useSettingsStore.getState().patchSettings({ backgroundTrackRecording: true });
-    }
-    try {
-      void ensureMaritimeAlarmNotifications();
-      const { initializeAppServices } = await import('./initializeAppServices');
-      await initializeAppServices();
-    } catch (error) {
-      console.warn('[locationPermissions] background sync failed', error);
-    }
+    await onBackgroundLocationGranted(options);
   }
-
-  return result.status;
+  return { status: result.status, blocked: isLocationPermissionBlocked(result) };
 }
 
 export async function openSystemSettings(): Promise<void> {
   await Linking.openSettings();
-}
-
-export async function hasBackgroundLocationAccess(): Promise<boolean> {
-  const bg = await Location.getBackgroundPermissionsAsync();
-  return bg.status === Location.PermissionStatus.GRANTED;
-}
-
-export async function readLocationPermissionStatuses(): Promise<{
-  foreground: Location.PermissionStatus;
-  background: Location.PermissionStatus;
-}> {
-  const [foreground, background] = await Promise.all([
-    Location.getForegroundPermissionsAsync(),
-    Location.getBackgroundPermissionsAsync(),
-  ]);
-  return { foreground: foreground.status, background: background.status };
 }

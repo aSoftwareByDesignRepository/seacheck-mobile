@@ -1,6 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { computeAnchorDriftNm } from '../../lib/anchor/anchorDrift';
 import { useBarometer } from '../../hooks/useBarometer';
 import { useFormFactor } from '../../hooks/useFormFactor';
 import { useMapShellLayout } from '../../hooks/useMapShellLayout';
@@ -16,7 +17,7 @@ import { t } from '../../i18n';
 import { nextCoordFormat, coordFormatTitleKey } from '../../lib/settings/coordFormats';
 import { computeLeeway } from '../../lib/geo/leeway';
 import { pulseUiAcknowledgement } from '../../services/alarmFeedbackService';
-import { isFixStale, isLowSog, displayCog, displayHeading, type LocationFix, useLocationStore } from '../../services/locationService';
+import { isFixStale, isLowSog, displayCog, displayHeading, type LocationFix, useLocationStore, useMapDisplayFix } from '../../services/locationService';
 import { useFeedbackStore } from '../../store/feedbackStore';
 import { useNavigationStore } from '../../store/navigationStore';
 import { usePassageStore } from '../../store/passageStore';
@@ -25,11 +26,11 @@ import { useTheme } from '../../theme/ThemeContext';
 import { InstrumentCell } from '../../ui/InstrumentCell';
 import { StatusBadge } from '../../ui/StatusBadge';
 import { MapCoordinatesCard } from './MapCoordinatesCard';
+import { PassageNavHero } from './PassageNavHero';
+import { BarometerInstrument } from './BarometerInstrument';
 
 type Props = {
   fix: LocationFix | null;
-  /** @deprecated Panel is always embedded in the map shell layout. */
-  embedded?: boolean;
 };
 
 export function MapInstruments({ fix }: Props) {
@@ -49,12 +50,14 @@ export function MapInstruments({ fix }: Props) {
   const anchorAlarm = useNavigationStore((s) => s.anchorAlarm);
   const activePassageId = usePassageStore((s) => s.activePassageId);
   const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
+  const mapDisplayFix = useMapDisplayFix();
   const nav = useNavigationInstruments();
   const legTimerMs = useLegTimerMs();
-  const barometer = useBarometer();
+  const barometerEnabled = useSettingsStore((s) => s.barometerEnabled);
+  const barometer = useBarometer(barometerEnabled);
 
   const stale = isFixStale(fix);
-  const coordFix = fix && !stale ? fix : lastGoodFix;
+  const coordFix = mapDisplayFix ?? (fix && !stale ? fix : lastGoodFix);
   const isRace = activityProfileId === 'sailing-race';
   const declination = coordFix ? magneticDeclinationDeg(coordFix.latitude, coordFix.longitude) : 0;
   const cogText = !coordFix ? '—' : stale ? '—' : formatCogDisplay(fix, bearingReference, declination);
@@ -76,16 +79,44 @@ export function MapInstruments({ fix }: Props) {
   }
 
   const showNavRow = Boolean(goToTarget && coordFix && !stale);
+  const showNavHero = Boolean(goToTarget);
   const showXte = nav.xteNm != null && !stale;
   const showSession = true;
   const showPassageMeta = Boolean(activePassageId && nav.remainingNm != null && !stale);
   const showLegTimer = isRace && activePassageId && legTimerMs != null;
   const showLegIndex = nav.activeLegNumber != null && nav.totalLegs != null;
-  const showBarometer = barometer.available && barometer.trend.currentHpa != null;
+  const showBarometer = barometerEnabled && barometer.available && barometer.trend.currentHpa != null;
   const leeway = !stale ? computeLeeway(fix?.speedKn ?? null, displayHeading(fix), displayCog(fix)) : null;
   const distanceLabel = distanceUnitLabel(distanceUnit);
   const sessionDistText = formatDistanceNm(nav.sessionDistanceNm, distanceUnit);
   const remainingDistText = nav.remainingNm != null ? formatDistanceNm(nav.remainingNm, distanceUnit) : null;
+  const anchorDriftNm =
+    anchorAlarm?.active && coordFix ? computeAnchorDriftNm(anchorAlarm, coordFix) : null;
+  const anchorDriftText =
+    anchorDriftNm != null ? formatDistanceNm(anchorDriftNm, distanceUnit) : null;
+  const anchorLimitText =
+    anchorAlarm?.active ? formatDistanceNm(anchorAlarm.radiusNm, distanceUnit) : null;
+
+  const passageNavHero =
+    showNavHero && goToTarget ? (
+      <PassageNavHero
+        nextWaypointName={goToTarget.name}
+        bearing={nav.bearingToTarget}
+        bearingSuffix={nav.bearingSuffix}
+        distanceNm={nav.distanceToTargetNm}
+        distanceUnit={distanceUnit}
+        etaUtc={nav.etaUtc}
+        xteNm={activePassageId ? nav.xteNm : null}
+        xteSide={nav.xteSide}
+        legNumber={nav.activeLegNumber ?? 0}
+        totalLegs={nav.totalLegs ?? 0}
+        isMob={goToTarget.kind === 'mob'}
+        heroSize={instrumentHeroSize}
+        stale={stale && Boolean(fix)}
+      />
+    ) : null;
+
+  const barometerBlock = showBarometer ? <BarometerInstrument trend={barometer.trend} /> : null;
 
   const statusBadges = (
     <View style={[styles.badgeRow, { gap: spacing.sm }]}>
@@ -102,6 +133,23 @@ export function MapInstruments({ fix }: Props) {
       ) : null}
     </View>
   );
+
+  const anchorDriftRow =
+    anchorAlarm?.active && anchorDriftText && anchorLimitText ? (
+      <View style={styles.row}>
+        <InstrumentCell
+          label={t('map.anchorDrift')}
+          value={anchorDriftText}
+          unit={`/ ${anchorLimitText}`}
+          accessibilityLabel={t('map.anchorDriftA11y', {
+            drift: anchorDriftText,
+            limit: anchorLimitText,
+          })}
+          testID="map.anchorDrift"
+        />
+        <View style={{ flex: 1 }} />
+      </View>
+    ) : null;
 
   const coordsBlock =
     coordinatesEmphasis && coordFix ? (
@@ -138,6 +186,9 @@ export function MapInstruments({ fix }: Props) {
   const panelBody = isRace ? (
     <>
       {statusBadges}
+      {anchorDriftRow}
+      {barometerBlock}
+      {passageNavHero}
       {coordinatesEmphasis ? coordsBlock : null}
       <View style={styles.row}>
         <InstrumentCell label={t('map.sog')} value={sogText} unit={sogUnit} hero heroSize={instrumentHeroSize} />
@@ -149,7 +200,7 @@ export function MapInstruments({ fix }: Props) {
           heroSize={instrumentHeroSize}
         />
       </View>
-      {showNavRow ? (
+      {!passageNavHero && showNavRow ? (
         <View style={styles.row}>
           <InstrumentCell
             label={t('race.brgToMark')}
@@ -191,15 +242,7 @@ export function MapInstruments({ fix }: Props) {
         ) : (
           <InstrumentCell label={t('map.accuracy')} value={fix?.accuracyM != null && !stale ? `±${Math.round(fix.accuracyM)}` : '—'} unit="m" />
         )}
-        {showBarometer ? (
-          <InstrumentCell
-            label={t('barometer.label')}
-            value={barometer.trend.currentHpa!.toFixed(1)}
-            unit={`hPa · ${t(`barometer.trend.${barometer.trend.trend}` as 'barometer.trend.steady')}`}
-          />
-        ) : (
-          <View style={{ flex: 1 }} />
-        )}
+        <View style={{ flex: 1 }} />
       </View>
       {!coordinatesEmphasis ? coordsBlock : null}
       <InstrumentCell label={t('map.distanceRun')} value={sessionDistText} unit={distanceLabel} />
@@ -207,6 +250,8 @@ export function MapInstruments({ fix }: Props) {
   ) : coordinatesEmphasis ? (
     <>
       {statusBadges}
+      {barometerBlock}
+      {passageNavHero}
       {coordsBlock}
       <View style={styles.row}>
         <InstrumentCell label={t('map.sog')} value={sogText} unit={sogUnit} hero heroSize={instrumentHeroSize} />
@@ -218,21 +263,7 @@ export function MapInstruments({ fix }: Props) {
           heroSize={instrumentHeroSize}
         />
       </View>
-      {showNavRow ? (
-        <View style={styles.row}>
-          <InstrumentCell
-            label={goToTarget?.kind === 'mob' ? t('map.brgMob') : t('map.brgTo')}
-            value={nav.bearingToTarget != null ? String(Math.round(nav.bearingToTarget)) : '—'}
-            unit={nav.bearingSuffix}
-          />
-          <InstrumentCell
-            label={t('map.distTo')}
-            value={nav.distanceToTargetNm != null ? nav.distanceToTargetNm.toFixed(1) : '—'}
-            unit={distanceUnit === 'nm' ? 'NM' : distanceUnit === 'km' ? 'km' : 'SM'}
-          />
-        </View>
-      ) : null}
-      {showXte ? (
+      {showXte && !passageNavHero ? (
         <View style={styles.row}>
           <InstrumentCell label={t('map.xte')} value={nav.xteNm!.toFixed(2)} unit={`NM ${nav.xteSide ?? ''}`} />
           {nav.activeLegLabel ? <InstrumentCell label={t('map.leg')} value={nav.activeLegLabel} /> : null}
@@ -251,27 +282,15 @@ export function MapInstruments({ fix }: Props) {
   ) : (
     <>
       {statusBadges}
+      {anchorDriftRow}
+      {barometerBlock}
+      {passageNavHero}
       <View style={styles.row}>
         <InstrumentCell label={courseLabel} value={cogText.split(' ')[0]} unit={cogText.includes(' ') ? cogText.split(' ')[1] : undefined} hero heroSize={instrumentHeroSize} />
         <InstrumentCell label={t('map.sog')} value={sogText} unit={sogUnit} hero heroSize={instrumentHeroSize} />
         <InstrumentCell label={t('map.accuracy')} value={fix?.accuracyM != null && !stale ? `±${Math.round(fix.accuracyM)}` : '—'} unit="m" />
       </View>
-      {showNavRow ? (
-        <View style={styles.row}>
-          <InstrumentCell
-            label={goToTarget?.kind === 'mob' ? t('map.brgMob') : t('map.brgTo')}
-            value={nav.bearingToTarget != null ? String(Math.round(nav.bearingToTarget)) : '—'}
-            unit={nav.bearingSuffix}
-          />
-          <InstrumentCell
-            label={t('map.distTo')}
-            value={nav.distanceToTargetNm != null ? nav.distanceToTargetNm.toFixed(1) : '—'}
-            unit={distanceUnit === 'nm' ? 'NM' : distanceUnit === 'km' ? 'km' : 'SM'}
-          />
-          <InstrumentCell label={t('map.eta')} value={nav.etaUtc ?? '—'} />
-        </View>
-      ) : null}
-      {showXte ? (
+      {showXte && !passageNavHero ? (
         <View style={styles.row}>
           <InstrumentCell label={t('map.xte')} value={nav.xteNm!.toFixed(2)} unit={`NM ${nav.xteSide ?? ''}`} />
           {nav.activeLegLabel ? <InstrumentCell label={t('map.leg')} value={nav.activeLegLabel} /> : null}
@@ -293,17 +312,7 @@ export function MapInstruments({ fix }: Props) {
           unit={leeway.side === 'none' ? '°' : `° ${leeway.side === 'port' ? t('map.leewayPort') : t('map.leewayStarboard')}`}
         />
       ) : null}
-      {showBarometer ? (
-        <InstrumentCell
-          label={t('barometer.label')}
-          value={barometer.trend.currentHpa!.toFixed(1)}
-          unit={
-            barometer.trend.delta3h != null
-              ? `${barometer.trend.delta3h >= 0 ? '+' : ''}${barometer.trend.delta3h.toFixed(1)} / 3h`
-              : 'hPa'
-          }
-        />
-      ) : fix?.altitudeM != null && !stale ? (
+      {fix?.altitudeM != null && !stale ? (
         <InstrumentCell label={t('map.gpsAlt')} value={Math.round(fix.altitudeM).toString()} unit="m" />
       ) : null}
       {coordsBlock}
@@ -333,10 +342,10 @@ export function MapInstruments({ fix }: Props) {
 }
 
 const styles = StyleSheet.create({
-  panel: { borderTopWidth: 1, flexShrink: 1, minHeight: 0 },
+  panel: { borderTopWidth: 1, flex: 1, flexShrink: 1, minHeight: 0 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 14 },
-  badgeRow: { flexDirection: 'row', flexWrap: 'wrap' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, minWidth: 0 },
   coordsInline: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, justifyContent: 'center' },
   coordsInlineText: { fontSize: 15, fontWeight: '600', lineHeight: 22, textAlign: 'center', fontVariant: ['tabular-nums'] },
   staleHint: { fontSize: 12, lineHeight: 16, textAlign: 'center', marginTop: 4 },

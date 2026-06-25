@@ -1,7 +1,6 @@
-import { AccessibilityInfo } from 'react-native';
 import { create } from 'zustand';
 
-type FeedbackKind = 'success' | 'error' | 'info';
+export type FeedbackKind = 'success' | 'error' | 'info';
 
 type FeedbackState = {
   message: string | null;
@@ -20,7 +19,6 @@ const TOAST_MS = 4500;
 function showMessage(kind: FeedbackKind, message: string, set: (partial: Partial<FeedbackState>) => void) {
   if (hideTimer) clearTimeout(hideTimer);
   set({ message, kind });
-  void AccessibilityInfo.announceForAccessibility(message);
   const timeout = kind === 'error' ? ERROR_DISMISS_MS : TOAST_MS;
   hideTimer = setTimeout(() => {
     hideTimer = null;

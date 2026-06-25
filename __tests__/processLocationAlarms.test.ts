@@ -24,6 +24,66 @@ describe('processLocationAlarms', () => {
     expect(result.anchorAlarm?.triggered).toBe(true);
   });
 
+  it('does not fire anchor drag on a low-confidence (poor accuracy) fix', () => {
+    const result = processLocationAlarms({
+      fix: { latitude: 54.01, longitude: 10.01, speedKn: 0, accuracyM: 120 },
+      anchorAlarm: { active: true, latitude: 54, longitude: 10, radiusNm: 0.05, triggered: false },
+      goToTarget: null,
+      alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },
+      activePassageId: null,
+      activeLegIndex: 0,
+      passageDetail: null,
+      legAdvanceAuto: false,
+      allowLegAdvancePrompt: true,
+      runtime: freshAlarmRuntime(),
+    });
+
+    expect(result.actions.some((a) => a.type === 'trigger')).toBe(false);
+    expect(result.anchorAlarm?.triggered).toBe(false);
+  });
+
+  it('still fires anchor drag when accuracy is within the alarm limit', () => {
+    const result = processLocationAlarms({
+      fix: { latitude: 54.01, longitude: 10.01, speedKn: 0, accuracyM: 15 },
+      anchorAlarm: { active: true, latitude: 54, longitude: 10, radiusNm: 0.05, triggered: false },
+      goToTarget: null,
+      alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },
+      activePassageId: null,
+      activeLegIndex: 0,
+      passageDetail: null,
+      legAdvanceAuto: false,
+      allowLegAdvancePrompt: true,
+      runtime: freshAlarmRuntime(),
+    });
+
+    expect(result.actions.some((a) => a.type === 'trigger' && a.severity === 'critical')).toBe(true);
+    expect(result.anchorAlarm?.triggered).toBe(true);
+  });
+
+  it('does not accumulate SOG drag streak across poor-accuracy fixes', () => {
+    let runtime = freshAlarmRuntime();
+    const anchor = { active: true, latitude: 54, longitude: 10, radiusNm: 0.05, triggered: false };
+
+    // Alternate good/poor fixes with drag-speed SOG: the poor fix must reset the streak,
+    // so the alarm never reaches the sustained threshold.
+    for (let i = 0; i < 10; i++) {
+      const out = processLocationAlarms({
+        fix: { latitude: 54.0001, longitude: 10.0001, speedKn: ANCHOR_SOG_KN + 0.2, accuracyM: i % 2 === 0 ? 15 : 200 },
+        anchorAlarm: anchor,
+        goToTarget: null,
+        alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },
+        activePassageId: null,
+        activeLegIndex: 0,
+        passageDetail: null,
+        legAdvanceAuto: false,
+        allowLegAdvancePrompt: true,
+        runtime,
+      });
+      runtime = out.runtime;
+      expect(out.actions.length).toBe(0);
+    }
+  });
+
   it('fires anchor drag after sustained SOG at anchor', () => {
     let runtime = freshAlarmRuntime();
     const anchor = { active: true, latitude: 54, longitude: 10, radiusNm: 0.05, triggered: false };

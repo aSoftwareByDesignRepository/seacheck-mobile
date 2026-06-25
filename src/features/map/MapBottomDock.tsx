@@ -80,7 +80,7 @@ export function MapBottomDock({
 
 const styles = StyleSheet.create({
   host: { position: 'absolute', zIndex: 30 },
-  dockRow: { flexDirection: 'row', alignItems: 'flex-end' },
+  dockRow: { flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap', gap: 8 },
   instruments: { flex: 1, flexDirection: 'row', minWidth: 0 },
   chip: { borderWidth: 1, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 12, alignItems: 'center', minWidth: 0 },
   label: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },

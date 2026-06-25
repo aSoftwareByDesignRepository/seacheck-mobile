@@ -12,8 +12,13 @@ function isWifiLike(type: string | undefined): boolean {
 export async function ensureDownloadAllowed(): Promise<boolean> {
   if (!useSettingsStore.getState().downloadWifiOnly) return true;
 
-  const state = await NetInfo.fetch();
-  if (isWifiLike(state.type)) return true;
+  try {
+    const state = await NetInfo.fetch();
+    if (isWifiLike(state.type)) return true;
+  } catch {
+    /* If connectivity check fails, allow download rather than blocking silently. */
+    return true;
+  }
 
   return requestConfirm({
     title: t('downloads.cellularWarnTitle'),

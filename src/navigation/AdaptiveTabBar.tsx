@@ -5,18 +5,26 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { t } from '../i18n';
-import { ALL_BOTTOM_TABS, resolveBottomTabLayout, type TabName } from '../navigation/tabBarLayout';
+import { ALL_BOTTOM_TABS, FULL_TAB_BAR_WIDTH, RAIL_WIDTH, resolveBottomTabLayout, type TabName } from '../navigation/tabBarLayout';
 import { navigateToTab, tabLabel, TAB_ICONS } from '../navigation/tabBarHelpers';
 import { useTabOverflowStore } from '../navigation/tabOverflowStore';
 import { useTheme } from '../theme/ThemeContext';
 
 /** Side navigation rail for tablet landscape (plan §6.7). */
-function NavigationRail({ state, navigation }: BottomTabBarProps) {
+function NavigationRail({ state, descriptors, navigation }: BottomTabBarProps) {
   const { colors, minTouch } = useTheme();
   const insets = useSafeAreaInsets();
+  const setMenuOpen = useTabOverflowStore((s) => s.setMenuOpen);
+  const syncTabBarProps = useTabOverflowStore((s) => s.syncTabBarProps);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    syncTabBarProps({ state, descriptors, navigation });
+  }, [state, descriptors, navigation, setMenuOpen, syncTabBarProps]);
 
   return (
     <View
+      accessibilityRole="tablist"
       style={[styles.rail, { backgroundColor: colors.surface, borderRightColor: colors.border, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 8 }]}
       testID="nav.rail"
     >
@@ -132,12 +140,12 @@ function CompactTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { colors, minTouch } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const showLabels = width >= 380;
   const menuOpen = useTabOverflowStore((s) => s.menuOpen);
   const setMenuOpen = useTabOverflowStore((s) => s.setMenuOpen);
   const syncTabBarProps = useTabOverflowStore((s) => s.syncTabBarProps);
 
   const { visible, overflow } = useMemo(() => resolveBottomTabLayout(width), [width]);
+  const showLabels = overflow.length === 0 ? width >= 380 : width >= FULL_TAB_BAR_WIDTH;
   const activeName = state.routes[state.index]?.name as TabName | undefined;
   const overflowActive = activeName != null && overflow.includes(activeName);
 
@@ -153,6 +161,7 @@ function CompactTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   return (
     <View
+      accessibilityRole="tablist"
       style={[
         styles.tabBar,
         {
@@ -179,13 +188,19 @@ function CompactTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               label={label}
               focused={focused}
               showLabel={showLabels}
-              onPress={() => navigateToTab(name, state, navigation)}
+              onPress={() => {
+                setMenuOpen(false);
+                navigateToTab(name, state, navigation);
+              }}
               testID={`tab.${name.toLowerCase()}`}
             />
           );
         })}
         {overflow.length > 0 ? (
-          <MoreTabButton focused={overflowActive || menuOpen} onPress={() => setMenuOpen(true)} />
+          <MoreTabButton
+            focused={overflowActive || menuOpen}
+            onPress={() => setMenuOpen(menuOpen ? false : true)}
+          />
         ) : null}
       </View>
     </View>
@@ -199,10 +214,10 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { variant?: 'rail' | '
 }
 
 const styles = StyleSheet.create({
-  rail: { width: 88, borderRightWidth: 1, paddingHorizontal: 6 },
+  rail: { width: RAIL_WIDTH, borderRightWidth: 1, paddingHorizontal: 6 },
   railScroll: { gap: 4, paddingBottom: 8 },
   railItem: { borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 4, gap: 4 },
-  railLabel: { fontSize: 10, fontWeight: '700', textAlign: 'center' },
+  railLabel: { fontSize: 12, fontWeight: '700', textAlign: 'center' },
   tabBar: { borderTopWidth: StyleSheet.hairlineWidth },
   tabRow: { flexDirection: 'row', alignItems: 'stretch' },
   tabItem: {

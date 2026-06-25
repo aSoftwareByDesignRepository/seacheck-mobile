@@ -18,6 +18,7 @@ import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { FilterChip } from '../ui/FilterChip';
 import { Screen, FieldInput } from '../ui/Screen';
+import { SelectHint } from '../ui/SelectHint';
 import { StatusBadge } from '../ui/StatusBadge';
 
 const FILTER_TYPES: (WaypointType | 'all')[] = ['all', 'harbour', 'anchorage', 'mark', 'hazard', 'mob', 'generic'];
@@ -148,9 +149,7 @@ export function WaypointsScreen() {
       onDelete={() => confirmDelete(selected)}
     />
   ) : (
-    <View style={[styles.hintBox, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-      <Text style={{ color: colors.textMuted, textAlign: 'center', lineHeight: 22 }}>{t('waypoints.selectHint')}</Text>
-    </View>
+    <SelectHint testID="waypoints.selectHint">{t('waypoints.selectHint')}</SelectHint>
   );
 
   return (
@@ -167,5 +166,4 @@ const styles = StyleSheet.create({
   rowMain: { flex: 1 },
   name: { fontSize: 17, fontWeight: '700', marginBottom: 4 },
   coords: { fontSize: 14, lineHeight: 20 },
-  hintBox: { borderWidth: 1, borderRadius: 14, padding: 24, minHeight: 120, justifyContent: 'center' },
 });

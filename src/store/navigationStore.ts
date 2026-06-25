@@ -46,7 +46,6 @@ type PersistPayload = {
   sessionDistanceNm: number;
   sessionStartedAtMs: number | null;
   alarmLimits: AlarmLimits;
-  screenLocked: boolean;
   legTimerStartedAtMs: number | null;
   startLine: StartLine | null;
   raceStartAtMs: number | null;
@@ -54,14 +53,19 @@ type PersistPayload = {
 
 type NavigationState = PersistPayload & {
   hydrated: boolean;
+  /** Session-only — never persisted (avoids reopening locked after cold start). */
+  screenLocked: boolean;
   /** Ephemeral UI — anchor watch setup prompt after setting alarm with limited background. */
   anchorWatchPrompt: AnchorWatchStatus | null;
+  anchorWatchPromptDismissed: boolean;
   setAnchorWatchPrompt: (status: AnchorWatchStatus | null) => void;
+  dismissAnchorWatchPrompt: () => void;
   hydrate: () => Promise<void>;
   setGoTo: (target: NavigationTarget | null) => Promise<void>;
   dropMob: (lat: number, lon: number) => Promise<NavigationTarget>;
   clearMob: () => Promise<void>;
   setAnchorAlarm: (lat: number, lon: number, radiusNm: number) => Promise<void>;
+  patchAnchorRadiusNm: (radiusNm: number) => Promise<void>;
   clearAnchorAlarm: () => Promise<void>;
   setAnchorTriggered: (triggered: boolean) => Promise<void>;
   setActiveLegIndex: (index: number) => Promise<void>;
@@ -96,7 +100,6 @@ async function persist(state: NavigationState) {
     sessionDistanceNm: state.sessionDistanceNm,
     sessionStartedAtMs: state.sessionStartedAtMs,
     alarmLimits: state.alarmLimits,
-    screenLocked: state.screenLocked,
     legTimerStartedAtMs: state.legTimerStartedAtMs,
     startLine: state.startLine,
     raceStartAtMs: state.raceStartAtMs,
@@ -147,8 +150,15 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
   startLine: null,
   raceStartAtMs: null,
   anchorWatchPrompt: null,
+  anchorWatchPromptDismissed: false,
 
-  setAnchorWatchPrompt: (status) => set({ anchorWatchPrompt: status }),
+  setAnchorWatchPrompt: (status) =>
+    set({
+      anchorWatchPrompt: status,
+      anchorWatchPromptDismissed: status ? false : get().anchorWatchPromptDismissed,
+    }),
+
+  dismissAnchorWatchPrompt: () => set({ anchorWatchPrompt: null, anchorWatchPromptDismissed: true }),
 
   hydrate: async () => {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -168,7 +178,6 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
             xteNm: Math.max(0.001, Number(parsed.alarmLimits?.xteNm) || DEFAULT_LIMITS.xteNm),
             arrivalNm: Math.max(0.001, Number(parsed.alarmLimits?.arrivalNm) || DEFAULT_LIMITS.arrivalNm),
           },
-          screenLocked: Boolean(parsed.screenLocked),
           legTimerStartedAtMs: typeof parsed.legTimerStartedAtMs === 'number' ? parsed.legTimerStartedAtMs : null,
           startLine: parsed.startLine ?? null,
           raceStartAtMs: typeof parsed.raceStartAtMs === 'number' ? parsed.raceStartAtMs : null,
@@ -236,6 +245,16 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     }
   },
 
+  patchAnchorRadiusNm: async (radiusNm) => {
+    const current = get().anchorAlarm;
+    if (!current?.active) return;
+    const next = Math.max(0.01, radiusNm);
+    if (current.radiusNm === next) return;
+    set({ anchorAlarm: { ...current, radiusNm: next, triggered: false } });
+    await persist(get());
+    await resetAlarmRuntime();
+  },
+
   clearAnchorAlarm: async () => {
     set({ anchorAlarm: null });
     await persist(get());
@@ -275,7 +294,6 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
 
   setScreenLocked: async (locked) => {
     set({ screenLocked: locked });
-    await persist(get());
   },
 
   patchAlarmLimits: async (patch) => {

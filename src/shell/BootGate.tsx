@@ -2,8 +2,7 @@ import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { t } from '../i18n';
-import { applyLocalePreference, loadStoredLocale } from '../i18n';
+import { t, applyLocalePreference, loadStoredLocale } from '../i18n';
 import { useNavigationStore } from '../store/navigationStore';
 import { useOfflinePackStore } from '../store/offlinePackStore';
 import { usePassageStore } from '../store/passageStore';
@@ -12,7 +11,29 @@ import { useTrackStore } from '../store/trackStore';
 import { useWaypointStore } from '../store/waypointStore';
 import { useTheme } from '../theme/ThemeContext';
 
-const OPTIONAL_BOOT_TASKS = new Set(['barometer', 'offline']);
+const OPTIONAL_BOOT_TASKS = new Set(['offline']);
+
+const BOOT_WARNING_KEYS: Record<string, string> = {
+  offline: 'boot.partialWarningOffline',
+  waypoints: 'boot.partialWarningWaypoints',
+  passages: 'boot.partialWarningPassages',
+  tracks: 'boot.partialWarningTracks',
+  navigation: 'boot.partialWarningNavigation',
+  locale: 'boot.partialWarningLocale',
+  'navigation-reconcile': 'boot.partialWarningNavigation',
+};
+
+function bootWarningMessage(warnings: string[]): string {
+  if (warnings.length === 1) {
+    const key = BOOT_WARNING_KEYS[warnings[0]];
+    if (key) return t(key as 'boot.partialWarningOffline');
+  }
+  const labels = warnings.map((w) => {
+    const key = BOOT_WARNING_KEYS[w];
+    return key ? t(key as 'boot.partialWarningOffline') : w;
+  });
+  return t('boot.partialWarningMultiple', { items: labels.join(' · ') });
+}
 
 async function runStartupHydrate(): Promise<string[]> {
   const warnings: string[] = [];
@@ -25,7 +46,6 @@ async function runStartupHydrate(): Promise<string[]> {
     { name: 'passages', run: () => usePassageStore.getState().hydrate() },
     { name: 'tracks', run: () => useTrackStore.getState().hydrate() },
     { name: 'navigation', run: () => useNavigationStore.getState().hydrate() },
-    { name: 'barometer', run: () => import('../services/barometerService').then((m) => m.hydrateBarometer()) },
   ];
 
   const results = await Promise.allSettled(tasks.map((task) => task.run()));
@@ -68,6 +88,9 @@ async function runStartupHydrate(): Promise<string[]> {
     console.warn('[BootGate] navigation reconcile failed', error);
     warnings.push('navigation-reconcile');
   }
+
+  const { ensureSeamarkIndexQueueListening } = await import('../lib/seamarks/seamarkIndexQueue');
+  ensureSeamarkIndexQueueListening();
 
   return warnings;
 }
@@ -147,7 +170,7 @@ export function BootGate({ children }: PropsWithChildren) {
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
         >
-          <Text style={[styles.warnText, { color: colors.warningText, flex: 1 }]}>{t('boot.partialWarning')}</Text>
+          <Text style={[styles.warnText, { color: colors.warningText, flex: 1 }]}>{bootWarningMessage(bootWarnings)}</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('common.dismiss')}

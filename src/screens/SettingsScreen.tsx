@@ -1,16 +1,22 @@
-import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Application from 'expo-application';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { useFormFactor } from '../hooks/useFormFactor';
 import { useEffectiveLayoutPreset, useLayoutContext } from '../hooks/useEffectiveLayoutPreset';
 import { useBatteryOptimization } from '../hooks/useBatteryOptimization';
+import { parseAlarmLimitNm } from '../lib/alarms/alarmLimits';
 import { RACING_PACK_V11 } from '../lib/featureFlags';
-import { COURSE_VECTOR_MINUTE_OPTIONS, FOLLOW_ZOOM_OPTIONS } from '../lib/settings/mapSettings';
-import { buildMaydayMessage } from '../lib/emergency/maydayMessage';
+import { COURSE_VECTOR_MINUTE_OPTIONS, COURSE_VECTOR_SCALE_OPTIONS, FOLLOW_ZOOM_OPTIONS } from '../lib/settings/mapSettings';
+import { courseVectorScaleLabelKey } from '../lib/settings/courseVectorLabels';
+import {
+  copyMaydayToClipboard,
+  maydayCopyFeedbackKey,
+  maydayUnavailableMessage,
+} from '../lib/emergency/copyMaydayClipboard';
 import { openBatteryOptimizationSettings, requestBatteryOptimizationExemption } from '../lib/permissions/batteryOptimization';
-import { openSystemSettings, requestBackgroundLocationAccess } from '../lib/permissions/locationPermissions';
+import { openSystemSettings, requestBackgroundLocationAccess, requestForegroundLocationAccess } from '../lib/permissions/locationPermissions';
 import { MAP_ATTRIBUTION } from '../map/constants';
 import type { PanelSide } from '../settings/defaults';
 import { ACTIVITY_PROFILES, LAYOUT_PRESETS } from '../settings/profiles';
@@ -19,13 +25,14 @@ import { useNavigationStore } from '../store/navigationStore';
 import { useFeedbackStore } from '../store/feedbackStore';
 import { useLocationStore } from '../services/locationService';
 import { syncBackgroundLocationMonitoring, isBackgroundLocationRunning } from '../services/backgroundLocationService';
-import { ensureMaritimeAlarmNotifications, getMaritimeNotificationPermission } from '../services/maritimeAlarmNotifications';
+import { ensureMaritimeAlarmNotifications, getMaritimeNotificationPermission, openMaritimeNotificationSettings, getMaritimeNotificationCanAskAgain } from '../services/maritimeAlarmNotifications';
 import { useSettingsStore } from '../store/settingsStore';
 import { type ThemeMode, useTheme } from '../theme/ThemeContext';
 import { Button } from '../ui/Button';
 import { CoordFormatPicker } from '../ui/CoordFormatPicker';
 import { FilterChip } from '../ui/FilterChip';
 import { RacePackSection } from '../features/racing/RacePackSection';
+import { SeamarkPlanningSettingsGroup } from '../features/settings/SeamarkPlanningSettingsGroup';
 import { ButtonStack, Card, FieldGroup, FieldInput, Screen, SettingsGroup } from '../ui/Screen';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ToggleRow } from '../ui/ToggleRow';
@@ -46,9 +53,13 @@ export function SettingsScreen() {
   const mapCourseUp = useSettingsStore((s) => s.mapCourseUp);
   const mapShowCourseVector = useSettingsStore((s) => s.mapShowCourseVector);
   const mapCourseVectorMinutes = useSettingsStore((s) => s.mapCourseVectorMinutes);
+  const mapCourseVectorScale = useSettingsStore((s) => s.mapCourseVectorScale);
   const mapFollowZoom = useSettingsStore((s) => s.mapFollowZoom);
+  const seamarkPlanning = useSettingsStore((s) => s.seamarkPlanning);
   const followMode = useSettingsStore((s) => s.followMode);
+  const gpsSmoothPosition = useSettingsStore((s) => s.gpsSmoothPosition);
   const keepAwakeUnderway = useSettingsStore((s) => s.keepAwakeUnderway);
+  const barometerEnabled = useSettingsStore((s) => s.barometerEnabled);
   const backgroundTrackRecording = useSettingsStore((s) => s.backgroundTrackRecording);
   const alarmSoundEnabled = useSettingsStore((s) => s.alarmSoundEnabled);
   const alarmHapticEnabled = useSettingsStore((s) => s.alarmHapticEnabled);
@@ -64,12 +75,30 @@ export function SettingsScreen() {
   const patchAlarmLimits = useNavigationStore((s) => s.patchAlarmLimits);
   const refreshPermission = useLocationStore((s) => s.refreshPermission);
   const permission = useLocationStore((s) => s.permission);
+  const foregroundCanAskAgain = useLocationStore((s) => s.foregroundCanAskAgain);
+  const backgroundCanAskAgain = useLocationStore((s) => s.backgroundCanAskAgain);
+  const reducedAccuracy = useLocationStore((s) => s.reducedAccuracy);
   const showSuccess = useFeedbackStore((s) => s.showSuccess);
   const showInfo = useFeedbackStore((s) => s.showInfo);
+  const showError = useFeedbackStore((s) => s.showError);
   const [draft, setDraft] = useState(vessel);
+  const [xteDraft, setXteDraft] = useState(String(alarmLimits.xteNm));
+  const [arrivalDraft, setArrivalDraft] = useState(String(alarmLimits.arrivalNm));
   const [notificationPermission, setNotificationPermission] = useState(getMaritimeNotificationPermission());
   const [backgroundGpsRunning, setBackgroundGpsRunning] = useState(false);
   const batteryStatus = useBatteryOptimization(Platform.OS === 'android');
+  const appVersion = Application.nativeApplicationVersion ?? '0.1.0';
+
+  useFocusEffect(
+    useCallback(() => {
+      setDraft(vessel);
+    }, [vessel]),
+  );
+
+  useEffect(() => {
+    setXteDraft(String(alarmLimits.xteNm));
+    setArrivalDraft(String(alarmLimits.arrivalNm));
+  }, [alarmLimits.xteNm, alarmLimits.arrivalNm]);
 
   const refreshBackgroundStatus = useCallback(async () => {
     await refreshPermission();
@@ -92,19 +121,48 @@ export function SettingsScreen() {
     showSuccess(t('common.save'));
   }
 
+  function commitAlarmLimit(field: 'xteNm' | 'arrivalNm', draft: string, setDraft: (v: string) => void) {
+    const current = alarmLimits[field];
+    const next = parseAlarmLimitNm(draft, current);
+    setDraft(String(next));
+    if (next !== current) void patchAlarmLimits({ [field]: next });
+  }
+
   async function copyMayday() {
-    const fix = useLocationStore.getState().fix ?? useLocationStore.getState().lastGoodFix;
-    const text = buildMaydayMessage(draft, fix, coordFormat);
-    await Clipboard.setStringAsync(text);
-    showInfo(t('settings.emergencyCopy'));
+    const quality = await copyMaydayToClipboard(draft, coordFormat);
+    if (quality === 'unavailable') {
+      showError(maydayUnavailableMessage());
+      return;
+    }
+    const key = maydayCopyFeedbackKey(quality);
+    if (quality === 'fresh') showSuccess(t(key));
+    else showInfo(t(key));
+  }
+
+  async function requestForegroundLocation() {
+    const result = await requestForegroundLocationAccess();
+    await refreshBackgroundStatus();
+    if (result.status === 'granted') {
+      showSuccess(t('permissions.foregroundGrantedHint'));
+      return;
+    }
+    if (result.blocked) {
+      showInfo(t('permissions.foregroundBlockedHint'));
+    } else {
+      showInfo(t('permissions.foregroundDeniedHint'));
+    }
   }
 
   async function requestBackgroundLocation() {
-    const status = await requestBackgroundLocationAccess();
+    const result = await requestBackgroundLocationAccess();
     await syncBackgroundLocationMonitoring();
     await refreshBackgroundStatus();
-    if (status !== 'granted') {
-      showInfo(t('permissions.backgroundDeniedHint'));
+    if (result.status !== 'granted') {
+      if (result.blocked) {
+        showInfo(t('permissions.backgroundBlockedHint'));
+      } else {
+        showInfo(t('permissions.backgroundDeniedHint'));
+      }
     } else {
       showSuccess(t('permissions.backgroundGrantedHint'));
     }
@@ -124,9 +182,20 @@ export function SettingsScreen() {
   async function requestAlarmNotifications() {
     const ok = await ensureMaritimeAlarmNotifications();
     setNotificationPermission(getMaritimeNotificationPermission());
-    if (ok) showSuccess(t('settings.alarmNotificationsGranted'));
-    else showInfo(t('settings.alarmNotificationsDenied'));
+    if (ok) {
+      showSuccess(t('settings.alarmNotificationsGranted'));
+      return;
+    }
+    if (getMaritimeNotificationPermission() === 'denied' && !getMaritimeNotificationCanAskAgain()) {
+      await openMaritimeNotificationSettings();
+    }
+    showInfo(t('settings.alarmNotificationsDenied'));
   }
+
+  const foregroundGranted = permission === 'foreground' || permission === 'background';
+  const backgroundGranted = permission === 'background';
+  const foregroundBlocked = permission === 'denied' && !foregroundCanAskAgain;
+  const backgroundBlocked = foregroundGranted && !backgroundGranted && !backgroundCanAskAgain;
 
   const permissionLabel =
     permission === 'background'
@@ -222,19 +291,34 @@ export function SettingsScreen() {
           minTouch={minTouch}
         />
         {mapShowCourseVector ? (
-          <SettingsGroup title={t('settings.courseVectorMinutes')} hint={t('settings.courseVectorMinutesHint')}>
-            <View style={styles.chipRow}>
-              {COURSE_VECTOR_MINUTE_OPTIONS.map((min) => (
-                <FilterChip
-                  key={min}
-                  label={t('settings.courseVectorMinutesOption', { min })}
-                  selected={mapCourseVectorMinutes === min}
-                  onPress={() => void patchSettings({ mapCourseVectorMinutes: min })}
-                  testID={`settings.courseVectorMinutes.${min}`}
-                />
-              ))}
-            </View>
-          </SettingsGroup>
+          <>
+            <SettingsGroup title={t('settings.courseVectorMinutes')} hint={t('settings.courseVectorMinutesHint')}>
+              <View style={styles.chipRow}>
+                {COURSE_VECTOR_MINUTE_OPTIONS.map((min) => (
+                  <FilterChip
+                    key={min}
+                    label={t('settings.courseVectorMinutesOption', { min })}
+                    selected={mapCourseVectorMinutes === min}
+                    onPress={() => void patchSettings({ mapCourseVectorMinutes: min })}
+                    testID={`settings.courseVectorMinutes.${min}`}
+                  />
+                ))}
+              </View>
+            </SettingsGroup>
+            <SettingsGroup title={t('settings.courseVectorScale')} hint={t('settings.courseVectorScaleHint')}>
+              <View style={styles.chipRow}>
+                {COURSE_VECTOR_SCALE_OPTIONS.map((scale) => (
+                  <FilterChip
+                    key={scale}
+                    label={t(courseVectorScaleLabelKey(scale))}
+                    selected={mapCourseVectorScale === scale}
+                    onPress={() => void patchSettings({ mapCourseVectorScale: scale })}
+                    testID={`settings.courseVectorScale.${scale}`}
+                  />
+                ))}
+              </View>
+            </SettingsGroup>
+          </>
         ) : null}
         <SettingsGroup title={t('settings.followZoom')} hint={t('settings.followZoomHint')}>
           <View style={styles.chipRow}>
@@ -258,6 +342,24 @@ export function SettingsScreen() {
           minTouch={minTouch}
         />
         <ToggleRow
+          label={t('settings.gpsSmoothPosition')}
+          hint={t('settings.gpsSmoothPositionHint')}
+          value={gpsSmoothPosition}
+          onChange={(v) => void patchSettings({ gpsSmoothPosition: v })}
+          testID="settings.gpsSmoothPosition"
+          colors={colors}
+          minTouch={minTouch}
+        />
+        <ToggleRow
+          label={t('settings.barometerEnabled')}
+          hint={t('settings.barometerEnabledHint')}
+          value={barometerEnabled}
+          onChange={(v) => void patchSettings({ barometerEnabled: v })}
+          testID="settings.barometerEnabled"
+          colors={colors}
+          minTouch={minTouch}
+        />
+        <ToggleRow
           label={t('settings.gloveMode')}
           hint={t('settings.gloveModeHint')}
           value={gloveMode}
@@ -267,6 +369,11 @@ export function SettingsScreen() {
           minTouch={minTouch}
         />
       </SettingsGroup>
+
+      <SeamarkPlanningSettingsGroup
+        config={seamarkPlanning}
+        onChange={(next) => void patchSettings({ seamarkPlanning: next })}
+      />
 
       <SettingsGroup title={t('settings.panelSide')}>
         <View style={styles.chipRow}>
@@ -359,9 +466,27 @@ export function SettingsScreen() {
           {backgroundGpsLabel}
         </Text>
         <Text style={[styles.bodyText, { color: colors.textMuted }]}>{t('settings.anchorBackgroundHint')}</Text>
+        {reducedAccuracy && foregroundGranted ? (
+          <Text style={[styles.bodyText, { color: colors.warningText }]} accessibilityLiveRegion="polite">
+            {t('permissions.reducedAccuracyHint')}
+          </Text>
+        ) : null}
         <ButtonStack>
-          {permission === 'denied' ? (
-            <Button label={t('permissions.openSettings')} variant="secondary" onPress={() => void openSystemSettings()} testID="settings.location.open" />
+          {!foregroundGranted ? (
+            <Button
+              label={foregroundBlocked ? t('permissions.openSettings') : t('onboarding.locationForeground')}
+              variant="secondary"
+              onPress={() => void (foregroundBlocked ? openSystemSettings() : requestForegroundLocation())}
+              testID="settings.location.foreground"
+            />
+          ) : null}
+          {foregroundGranted && !backgroundGranted ? (
+            <Button
+              label={backgroundBlocked ? t('permissions.openSettings') : t('settings.requestBackgroundLocation')}
+              variant="secondary"
+              onPress={() => void (backgroundBlocked ? openSystemSettings() : requestBackgroundLocation())}
+              testID="settings.location.background"
+            />
           ) : null}
           {Platform.OS === 'android' ? (
             <>
@@ -369,7 +494,6 @@ export function SettingsScreen() {
               <Button label={t('settings.openBatterySettings')} variant="ghost" onPress={() => void openBatteryOptimizationSettings()} testID="settings.battery.open" />
             </>
           ) : null}
-          <Button label={t('settings.requestBackgroundLocation')} variant="secondary" onPress={() => void requestBackgroundLocation()} testID="settings.location.background" />
         </ButtonStack>
         <SettingsGroup title={t('settings.underwayGpsTitle')}>
           <ToggleRow label={t('settings.keepAwake')} value={keepAwakeUnderway} onChange={(v) => void patchSettings({ keepAwakeUnderway: v })} testID="settings.keepAwake" colors={colors} minTouch={minTouch} />
@@ -404,22 +528,18 @@ export function SettingsScreen() {
         <SettingsGroup title={t('settings.alarmLimitsTitle')}>
           <FieldGroup label={t('settings.alarmXteNm')}>
             <FieldInput
-              value={String(alarmLimits.xteNm)}
-              onChangeText={(v) => {
-                const n = Number.parseFloat(v.replace(',', '.'));
-                if (Number.isFinite(n) && n > 0) void patchAlarmLimits({ xteNm: n });
-              }}
+              value={xteDraft}
+              onChangeText={setXteDraft}
+              onEndEditing={() => commitAlarmLimit('xteNm', xteDraft, setXteDraft)}
               keyboardType="number-pad"
               accessibilityLabel={t('settings.alarmXteNm')}
             />
           </FieldGroup>
           <FieldGroup label={t('settings.alarmArrivalNm')}>
             <FieldInput
-              value={String(alarmLimits.arrivalNm)}
-              onChangeText={(v) => {
-                const n = Number.parseFloat(v.replace(',', '.'));
-                if (Number.isFinite(n) && n > 0) void patchAlarmLimits({ arrivalNm: n });
-              }}
+              value={arrivalDraft}
+              onChangeText={setArrivalDraft}
+              onEndEditing={() => commitAlarmLimit('arrivalNm', arrivalDraft, setArrivalDraft)}
               keyboardType="number-pad"
               accessibilityLabel={t('settings.alarmArrivalNm')}
             />
@@ -447,7 +567,7 @@ export function SettingsScreen() {
       <Card>
         <Text style={[styles.bodyText, { color: colors.textMuted }]}>{t('settings.disclaimerBody')}</Text>
         <Text style={[styles.bodyText, { color: colors.textMuted }]}>{MAP_ATTRIBUTION}</Text>
-        <Text style={[styles.version, { color: colors.text }]}>{t('settings.version', { v: '0.1.0' })}</Text>
+        <Text style={[styles.version, { color: colors.text }]}>{t('settings.version', { v: appVersion })}</Text>
       </Card>
     </Screen>
   );

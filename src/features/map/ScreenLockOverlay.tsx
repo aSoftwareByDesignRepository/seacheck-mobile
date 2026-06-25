@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { t } from '../../i18n';
@@ -41,14 +41,18 @@ export function ScreenLockOverlay({ onUnlock }: Props) {
     clearTimer();
   }, [clearTimer]);
 
+  useEffect(() => () => clearTimer(), [clearTimer]);
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={t('map.unlockScreen')}
       accessibilityHint={t('map.unlockScreenHint')}
+      accessibilityViewIsModal
+      accessibilityValue={progress > 0 ? { text: `${Math.round(progress * 100)}%` } : undefined}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
-      style={[styles.overlay, { backgroundColor: `${colors.background}E6`, minHeight: minTouch }]}
+      style={[styles.overlay, { backgroundColor: `${colors.background}F2`, minHeight: minTouch }]}
       testID="map.screenLockOverlay"
     >
       <Text style={[styles.title, { color: colors.text }]}>{t('map.screenLocked')}</Text>
@@ -63,7 +67,7 @@ export function ScreenLockOverlay({ onUnlock }: Props) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFill, zIndex: 200, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  overlay: { ...StyleSheet.absoluteFill, zIndex: 1000, elevation: 1000, alignItems: 'center', justifyContent: 'center', padding: 24 },
   title: { fontSize: 22, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
   hint: { fontSize: 16, textAlign: 'center', marginBottom: 16 },
   progressTrack: { width: '60%', maxWidth: 280, height: 6, borderRadius: 3, borderWidth: 1, overflow: 'hidden' },

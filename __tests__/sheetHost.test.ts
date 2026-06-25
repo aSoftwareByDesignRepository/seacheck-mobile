@@ -1,4 +1,4 @@
-import { CONFIRM_SHEET_PRIORITY, createSheetHostStoreForTests } from '../src/ui/sheetHost';
+import { CONFIRM_SHEET_PRIORITY, createSheetHostStoreForTests, FEEDBACK_SHEET_ID } from '../src/ui/sheetHost';
 
 describe('sheetHost store', () => {
   it('picks highest priority entry as top', () => {
@@ -19,9 +19,12 @@ describe('sheetHost store', () => {
   it('invalidate keeps entries registered', () => {
     const store = createSheetHostStoreForTests();
     store.register('a', 0, () => null, () => {});
-    expect(store.getSnapshot().hasEntries).toBe(true);
+    const before = store.getSnapshot();
     store.invalidate();
-    expect(store.getSnapshot().top?.id).toBe('a');
+    const after = store.getSnapshot();
+    expect(after.hasEntries).toBe(true);
+    expect(after.top?.id).toBe('a');
+    expect(after).not.toBe(before);
   });
 
   it('prefers newer entry at equal priority', () => {
@@ -29,5 +32,15 @@ describe('sheetHost store', () => {
     store.register('first', 0, () => null, () => {});
     store.register('second', 0, () => null, () => {});
     expect(store.getSnapshot().top?.id).toBe('second');
+  });
+
+  it('keeps sheetTop when feedback overlay is registered', () => {
+    const store = createSheetHostStoreForTests();
+    store.register('tools', 0, () => null, () => {});
+    store.register(FEEDBACK_SHEET_ID, 0, () => null, () => {});
+    const snap = store.getSnapshot();
+    expect(snap.sheetTop?.id).toBe('tools');
+    expect(snap.feedback?.id).toBe(FEEDBACK_SHEET_ID);
+    expect(snap.top?.id).toBe(FEEDBACK_SHEET_ID);
   });
 });
