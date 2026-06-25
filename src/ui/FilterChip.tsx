@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
+import { t } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
 
 type Props = {
@@ -15,7 +16,9 @@ export function FilterChip({ label, selected, onPress, testID }: Props) {
     <Pressable
       testID={testID}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ selected }}
+      accessibilityHint={selected ? t('common.filterSelectedHint') : t('common.filterUnselectedHint')}
       onPress={onPress}
       style={[
         styles.chip,

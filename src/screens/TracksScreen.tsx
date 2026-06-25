@@ -1,10 +1,18 @@
-import * as Location from 'expo-location';
-import { useEffect, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useCallback, useEffect, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { MasterDetailLayout } from '../features/responsive/MasterDetailLayout';
+import { TrackDetailPanel } from '../features/tracks/TrackDetailPanel';
+import { requestBackgroundLocationAccess, requestForegroundLocationAccess } from '../lib/permissions/locationPermissions';
 import { t } from '../i18n';
+import type { RootTabParamList } from '../navigation/types';
+import { requestConfirm } from '../store/confirmStore';
+import { useFeedbackStore } from '../store/feedbackStore';
 import { isBackgroundTrackTaskRunning } from '../services/trackRecordingService';
-import { displayCog, isFixStale, useLocationStore } from '../services/locationService';
+import { useLocationStore } from '../services/locationService';
+import type { TrackPointRow } from '../lib/db/database';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTrackStore } from '../store/trackStore';
 import { useTheme } from '../theme/ThemeContext';
@@ -14,6 +22,7 @@ import { Screen } from '../ui/Screen';
 import { StatusBadge } from '../ui/StatusBadge';
 
 export function TracksScreen() {
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const { colors, spacing, minTouch } = useTheme();
   const tracks = useTrackStore((s) => s.tracks);
   const recordingTrackId = useTrackStore((s) => s.recordingTrackId);
@@ -21,14 +30,32 @@ export function TracksScreen() {
   const stopRecording = useTrackStore((s) => s.stopRecording);
   const deleteTrack = useTrackStore((s) => s.deleteTrack);
   const exportGpx = useTrackStore((s) => s.exportGpx);
-  const appendPoint = useTrackStore((s) => s.appendPoint);
+  const getPoints = useTrackStore((s) => s.getPoints);
+  const setMapPreviewTrack = useTrackStore((s) => s.setMapPreviewTrack);
+  const mapPreviewTrackId = useTrackStore((s) => s.mapPreviewTrackId);
   const backgroundTrackRecording = useSettingsStore((s) => s.backgroundTrackRecording);
   const fix = useLocationStore((s) => s.fix);
   const permission = useLocationStore((s) => s.permission);
+  const showError = useFeedbackStore((s) => s.showError);
   const startWatching = useLocationStore((s) => s.startWatching);
   const [backgroundActive, setBackgroundActive] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedPoints, setSelectedPoints] = useState<TrackPointRow[]>([]);
 
   const useBackgroundPipeline = backgroundTrackRecording && permission === 'background';
+  const selected = tracks.find((t) => t.id === selectedId) ?? null;
+
+  const loadPoints = useCallback(
+    async (id: string) => {
+      setSelectedPoints(await getPoints(id));
+    },
+    [getPoints],
+  );
+
+  useEffect(() => {
+    if (selectedId) void loadPoints(selectedId);
+    else setSelectedPoints([]);
+  }, [selectedId, tracks, loadPoints]);
 
   useEffect(() => {
     if (!recordingTrackId) {
@@ -43,46 +70,41 @@ export function TracksScreen() {
     return () => clearInterval(poll);
   }, [recordingTrackId, startWatching]);
 
-  useEffect(() => {
-    if (!recordingTrackId || useBackgroundPipeline) return;
-    const id = setInterval(() => {
-      const current = useLocationStore.getState().fix;
-      if (!current || isFixStale(current, 5000)) return;
-      void appendPoint({
-        latitude: current.latitude,
-        longitude: current.longitude,
-        sog_ms: current.speedMs,
-        cog_deg: displayCog(current),
-      });
-    }, 2000);
-    return () => clearInterval(id);
-  }, [recordingTrackId, useBackgroundPipeline, appendPoint]);
-
   async function toggleRecording() {
     if (recordingTrackId) {
+      const prevId = recordingTrackId;
       await stopRecording();
+      if (selectedId === prevId) void loadPoints(prevId);
       return;
     }
     const ok = await startWatching();
     if (!ok) {
-      Alert.alert(t('tracks.locationRequiredTitle'), t('tracks.locationRequiredBody'));
-      return;
-    }
-    if (backgroundTrackRecording) {
-      const bg = await Location.requestBackgroundPermissionsAsync();
-      await useLocationStore.getState().refreshPermission();
-      if (bg.status !== 'granted') {
-        Alert.alert(t('tracks.backgroundDeniedTitle'), t('tracks.backgroundDeniedBody'));
+      const fg = await requestForegroundLocationAccess();
+      if (fg !== 'granted') {
+        showError(t('tracks.locationRequiredBody'));
+        return;
       }
     }
-    await startRecording();
+    if (backgroundTrackRecording) {
+      const bg = await requestBackgroundLocationAccess();
+      if (bg !== 'granted') {
+        showError(t('tracks.backgroundDeniedBody'));
+      }
+    }
+    const id = await startRecording();
+    setSelectedId(id);
   }
 
-  function confirmDelete(id: string, name: string) {
-    Alert.alert(t('tracks.deleteTitle'), name, [
-      { text: t('common.dismiss'), style: 'cancel' },
-      { text: t('tracks.delete'), style: 'destructive', onPress: () => void deleteTrack(id) },
-    ]);
+  async function confirmDelete(id: string, name: string) {
+    const ok = await requestConfirm({
+      title: t('tracks.deleteTitle'),
+      message: name,
+      confirmLabel: t('tracks.delete'),
+      destructive: true,
+    });
+    if (!ok) return;
+    await deleteTrack(id);
+    if (selectedId === id) setSelectedId(null);
   }
 
   const recordingModeLabel = recordingTrackId
@@ -91,52 +113,97 @@ export function TracksScreen() {
       : t('tracks.recordingForeground')
     : null;
 
-  return (
-    <Screen testID="screen.tracks" title={t('tabs.tracks')} subtitle={t('tracks.subtitle')}>
-      <View style={{ marginBottom: spacing.lg, minHeight: minTouch }}>
-        {recordingTrackId ? (
-          <StatusBadge label={t('tracks.recording')} variant="warning" />
-        ) : (
-          <StatusBadge label={t('tracks.idle')} variant="neutral" />
-        )}
-        {recordingModeLabel ? (
-          <Text style={[styles.modeLine, { color: colors.textMuted, marginTop: spacing.sm }]}>{recordingModeLabel}</Text>
-        ) : null}
-        <Button
-          label={recordingTrackId ? t('tracks.stop') : t('tracks.start')}
-          onPress={() => void toggleRecording()}
-          variant={recordingTrackId ? 'danger' : 'primary'}
-          style={{ marginTop: spacing.md }}
-          testID="tracks.toggle"
-        />
-        {fix ? (
-          <Text style={[styles.fixLine, { color: colors.textMuted, marginTop: spacing.sm }]}>
-            {t('tracks.lastFix', { lat: fix.latitude.toFixed(4), lon: fix.longitude.toFixed(4) })}
-          </Text>
-        ) : null}
-      </View>
-
-      {tracks.length === 0 ? (
-        <EmptyState testID="tracks.empty" icon="timeline" title={t('tracks.emptyTitle')} body={t('tracks.emptyBody')} />
+  const controls = (
+    <View style={{ marginBottom: spacing.lg, minHeight: minTouch }}>
+      {recordingTrackId ? (
+        <StatusBadge label={t('tracks.recording')} variant="warning" />
       ) : (
-        <FlatList
-          data={tracks}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-          renderItem={({ item }) => (
-            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: spacing.md }]}>
+        <StatusBadge label={t('tracks.idle')} variant="neutral" />
+      )}
+      {recordingModeLabel ? (
+        <Text style={[styles.modeLine, { color: colors.textMuted, marginTop: spacing.sm }]}>{recordingModeLabel}</Text>
+      ) : null}
+      <Button
+        label={recordingTrackId ? t('tracks.stop') : t('tracks.start')}
+        onPress={() => void toggleRecording()}
+        variant={recordingTrackId ? 'danger' : 'primary'}
+        style={{ marginTop: spacing.md }}
+        testID="tracks.toggle"
+      />
+      {fix ? (
+        <Text style={[styles.fixLine, { color: colors.textMuted, marginTop: spacing.sm }]}>
+          {t('tracks.lastFix', { lat: fix.latitude.toFixed(4), lon: fix.longitude.toFixed(4) })}
+        </Text>
+      ) : null}
+    </View>
+  );
+
+  if (tracks.length === 0) {
+    return (
+      <Screen testID="screen.tracks" title={t('tabs.tracks')} subtitle={t('tracks.subtitle')}>
+        {controls}
+        <EmptyState testID="tracks.empty" icon="timeline" title={t('tracks.emptyTitle')} body={t('tracks.emptyBody')} />
+      </Screen>
+    );
+  }
+
+  const listPane = (
+    <View>
+      {controls}
+      <FlatList
+        data={tracks}
+        keyExtractor={(item) => item.id}
+        scrollEnabled={false}
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() => setSelectedId(item.id)}
+            accessibilityRole="button"
+            accessibilityLabel={item.name}
+            accessibilityState={{ selected: selectedId === item.id }}
+            style={[
+              styles.row,
+              {
+                backgroundColor: selectedId === item.id ? colors.successBg : colors.surface,
+                borderColor: selectedId === item.id ? colors.success : colors.border,
+                marginBottom: spacing.sm,
+                minHeight: minTouch,
+              },
+            ]}
+            testID={`tracks.row.${item.id}`}
+          >
+            <View style={{ flex: 1 }}>
               <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
               <Text style={[styles.meta, { color: colors.textMuted }]}>
                 {new Date(item.started_at).toLocaleString()} · {item.ended_at ? t('tracks.completed') : t('tracks.open')}
               </Text>
-              <View style={styles.actions}>
-                <Button label={t('tracks.exportGpx')} variant="secondary" onPress={() => void exportGpx(item.id)} testID={`tracks.export.${item.id}`} />
-                <Button label={t('tracks.delete')} variant="danger" onPress={() => confirmDelete(item.id, item.name)} testID={`tracks.delete.${item.id}`} />
-              </View>
             </View>
-          )}
-        />
-      )}
+            {item.id === recordingTrackId ? <StatusBadge label={t('tracks.recording')} variant="warning" /> : null}
+          </Pressable>
+        )}
+      />
+    </View>
+  );
+
+  const detailPane = selected ? (
+    <TrackDetailPanel
+      track={selected}
+      points={selectedPoints}
+      showingOnMap={mapPreviewTrackId === selected.id}
+      onShowOnMap={() => {
+        void setMapPreviewTrack(selected.id).then(() => navigation.navigate('Map'));
+      }}
+      onExport={() => void exportGpx(selected.id)}
+      onDelete={() => confirmDelete(selected.id, selected.name)}
+    />
+  ) : (
+    <View style={[styles.hintBox, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+      <Text style={{ color: colors.textMuted, textAlign: 'center', lineHeight: 22 }}>{t('tracks.selectHint')}</Text>
+    </View>
+  );
+
+  return (
+    <Screen testID="screen.tracks" title={t('tabs.tracks')} subtitle={t('tracks.subtitle')}>
+      <MasterDetailLayout master={listPane} detail={detailPane} />
     </Screen>
   );
 }
@@ -144,8 +211,8 @@ export function TracksScreen() {
 const styles = StyleSheet.create({
   fixLine: { fontSize: 13 },
   modeLine: { fontSize: 13, lineHeight: 18 },
-  card: { borderWidth: 1, borderRadius: 14, padding: 16 },
+  row: { borderWidth: 1, borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
   name: { fontSize: 17, fontWeight: '700', marginBottom: 4 },
-  meta: { fontSize: 14, marginBottom: 12 },
-  actions: { gap: 8 },
+  meta: { fontSize: 14, lineHeight: 20 },
+  hintBox: { borderWidth: 1, borderRadius: 14, padding: 24, minHeight: 120, justifyContent: 'center' },
 });

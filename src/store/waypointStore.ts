@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 
-import { getDatabase, newId, type WaypointRow, type WaypointType } from '../lib/db/database';
+import { getDatabase, newId, withDatabaseTransaction, type WaypointRow, type WaypointType } from '../lib/db/database';
+import { t } from '../i18n';
+import { useNavigationStore, waypointToTarget } from './navigationStore';
+import { usePassageStore } from './passageStore';
 
 type WaypointStore = {
   hydrated: boolean;
@@ -10,6 +13,21 @@ type WaypointStore = {
   update: (id: string, patch: Partial<Pick<WaypointRow, 'name' | 'latitude' | 'longitude' | 'type' | 'note'>>) => Promise<void>;
   remove: (id: string) => Promise<void>;
 };
+
+async function syncNavigationAfterWaypointChange(id: string, next: WaypointRow | null) {
+  const nav = useNavigationStore.getState();
+  if (nav.goToTarget?.id === id && nav.goToTarget.kind === 'waypoint') {
+    if (next) {
+      await nav.setGoTo(waypointToTarget(next));
+    } else {
+      await nav.setGoTo(null);
+    }
+  }
+  const start = nav.startLine;
+  if (start && (start.pinAWaypointId === id || start.pinBWaypointId === id)) {
+    await nav.clearStartLine();
+  }
+}
 
 export const useWaypointStore = create<WaypointStore>((set, get) => ({
   hydrated: false,
@@ -24,7 +42,7 @@ export const useWaypointStore = create<WaypointStore>((set, get) => ({
   create: async (input) => {
     const row: WaypointRow = {
       id: newId('wp'),
-      name: input.name.trim() || 'Waypoint',
+      name: input.name.trim() || t('waypoints.defaultName'),
       latitude: input.latitude,
       longitude: input.longitude,
       type: input.type ?? 'generic',
@@ -61,11 +79,24 @@ export const useWaypointStore = create<WaypointStore>((set, get) => ({
       id,
     );
     set({ items: get().items.map((w) => (w.id === id ? next : w)) });
+    await syncNavigationAfterWaypointChange(id, next);
   },
 
   remove: async (id) => {
-    const db = await getDatabase();
-    await db.runAsync('DELETE FROM waypoints WHERE id = ?', id);
+    await withDatabaseTransaction(async (db) => {
+      await db.runAsync('DELETE FROM passage_waypoints WHERE waypoint_id = ?', id);
+      await db.runAsync(
+        'DELETE FROM passage_leg_overrides WHERE from_waypoint_id = ? OR to_waypoint_id = ?',
+        id,
+        id,
+      );
+      await db.runAsync('DELETE FROM waypoints WHERE id = ?', id);
+    });
     set({ items: get().items.filter((w) => w.id !== id) });
+    await syncNavigationAfterWaypointChange(id, null);
+    const activePassageId = usePassageStore.getState().activePassageId;
+    if (activePassageId) {
+      await usePassageStore.getState().syncActivePassageNavigation(activePassageId);
+    }
   },
 }));

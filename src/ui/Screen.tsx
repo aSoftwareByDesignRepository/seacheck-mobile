@@ -79,10 +79,60 @@ export function Card({ children, style }: PropsWithChildren<{ style?: object }>)
           borderColor: colors.border,
           padding: spacing.lg,
           marginBottom: spacing.lg,
+          gap: spacing.md,
         },
         style,
       ]}
     >
+      {children}
+    </View>
+  );
+}
+
+/** Vertical stack for full-width buttons with consistent spacing. */
+export function ButtonStack({ children }: PropsWithChildren) {
+  const { spacing } = useTheme();
+  return <View style={{ gap: spacing.sm, width: '100%' }}>{children}</View>;
+}
+
+type SettingsGroupProps = PropsWithChildren<{
+  title: string;
+  hint?: string;
+  first?: boolean;
+}>;
+
+/** Labelled block inside a settings card — separated from siblings by a divider. */
+export function SettingsGroup({ title, hint, first, children }: SettingsGroupProps) {
+  const { colors, spacing } = useTheme();
+  return (
+    <View
+      style={[
+        styles.settingsGroup,
+        {
+          gap: spacing.sm,
+          marginTop: first ? 0 : spacing.lg,
+          paddingTop: first ? 0 : spacing.lg,
+          borderTopColor: colors.border,
+          borderTopWidth: first ? 0 : StyleSheet.hairlineWidth,
+        },
+      ]}
+    >
+      <Text style={[styles.settingsGroupTitle, { color: colors.textMuted }]}>{title}</Text>
+      {hint ? <Text style={[styles.settingsGroupHint, { color: colors.textMuted }]}>{hint}</Text> : null}
+      <View style={{ gap: spacing.sm }}>{children}</View>
+    </View>
+  );
+}
+
+type FieldGroupProps = PropsWithChildren<{
+  label: string;
+}>;
+
+export function FieldGroup({ label, children }: FieldGroupProps) {
+  const { spacing } = useTheme();
+  return (
+    <View style={{ gap: spacing.xs }}>
+      <FieldLabel>{label}</FieldLabel>
       {children}
     </View>
   );
@@ -179,6 +229,9 @@ const styles = StyleSheet.create({
   retry: { marginTop: 12, minHeight: 48, justifyContent: 'center' },
   retryText: { fontWeight: '600', fontSize: 16 },
   card: { borderRadius: 16, borderWidth: 1 },
-  label: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
-  input: { borderWidth: 1, borderRadius: 12, fontSize: 16, marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: '600' },
+  input: { borderWidth: 1, borderRadius: 12, fontSize: 16 },
+  settingsGroup: { width: '100%' },
+  settingsGroupTitle: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  settingsGroupHint: { fontSize: 13, lineHeight: 18, marginTop: -2 },
 });

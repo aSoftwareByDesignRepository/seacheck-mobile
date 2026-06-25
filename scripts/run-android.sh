@@ -19,6 +19,12 @@ metro_listening() {
 
 cd "$ROOT"
 
+if command -v adb >/dev/null 2>&1; then
+  if adb devices 2>/dev/null | awk 'NR>1 && $2=="device" { found=1 } END { exit !found }'; then
+    adb reverse "tcp:$PORT" "tcp:$PORT" >/dev/null 2>&1 || true
+  fi
+fi
+
 if metro_listening; then
   echo "==> Metro already on port $PORT — reusing it (no second bundler)"
   exec env CI=1 npx expo run:android --port "$PORT" "$@"

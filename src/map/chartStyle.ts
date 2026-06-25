@@ -66,12 +66,21 @@ export function chartStyleFileUri(): string {
 export async function ensureChartStyleFile(): Promise<string> {
   const dir = chartStyleDirectory();
   const uri = chartStyleFileUri();
-  const dirInfo = await FileSystem.getInfoAsync(dir);
-  if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+  try {
+    const dirInfo = await FileSystem.getInfoAsync(dir);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+    }
+    const spec = JSON.stringify(buildChartStyleSpec());
+    const existing = await FileSystem.readAsStringAsync(uri).catch(() => null);
+    if (existing !== spec) {
+      await FileSystem.writeAsStringAsync(uri, spec);
+    }
+    return uri;
+  } catch (error) {
+    console.error('[chartStyle] ensureChartStyleFile failed', error);
+    throw error;
   }
-  await FileSystem.writeAsStringAsync(uri, JSON.stringify(buildChartStyleSpec()));
-  return uri;
 }
 
 export { MAP_ATTRIBUTION };

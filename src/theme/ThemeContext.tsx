@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PropsWithChildren, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
+import { useSettingsStore } from '../store/settingsStore';
+
 export type ThemeMode = 'system' | 'light' | 'dark' | 'redNight' | 'highContrast';
 
 type ThemeColors = {
@@ -118,6 +120,7 @@ const MODES: ThemeMode[] = ['system', 'light', 'dark', 'redNight', 'highContrast
 
 export function ThemeProvider({ children }: PropsWithChildren) {
   const systemScheme = useColorScheme();
+  const gloveMode = useSettingsStore((s) => s.gloveMode);
   const [mode, setModeState] = useState<ThemeMode>('system');
 
   useEffect(() => {
@@ -137,13 +140,13 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       mode,
       colors,
       spacing,
-      minTouch: 48,
+      minTouch: gloveMode ? 56 : 48,
       setMode: (nextMode) => {
         setModeState(nextMode);
         void AsyncStorage.setItem(STORAGE_KEY, nextMode);
       },
     }),
-    [mode, colors],
+    [mode, colors, gloveMode],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

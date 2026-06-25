@@ -1,7 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
+import { resetAlarmRuntime } from '../lib/alarms/alarmRuntimeState';
+import type { AnchorWatchStatus } from '../lib/anchor/types';
 import type { WaypointRow } from '../lib/db/database';
+import { isValidCoordinate } from '../lib/geo/fixQuality';
+import { enqueuePersist } from '../lib/persist/asyncPersistQueue';
+import { t } from '../i18n';
+import { ensureMaritimeAlarmNotifications } from '../services/maritimeAlarmNotifications';
 
 const STORAGE_KEY = 'seacheck.navigation.v1';
 
@@ -34,9 +40,11 @@ export type StartLine = {
 type PersistPayload = {
   goToTarget: NavigationTarget | null;
   mobTarget: NavigationTarget | null;
+  mobDroppedAtMs: number | null;
   anchorAlarm: AnchorAlarmState | null;
   activeLegIndex: number;
   sessionDistanceNm: number;
+  sessionStartedAtMs: number | null;
   alarmLimits: AlarmLimits;
   screenLocked: boolean;
   legTimerStartedAtMs: number | null;
@@ -46,6 +54,9 @@ type PersistPayload = {
 
 type NavigationState = PersistPayload & {
   hydrated: boolean;
+  /** Ephemeral UI — anchor watch setup prompt after setting alarm with limited background. */
+  anchorWatchPrompt: AnchorWatchStatus | null;
+  setAnchorWatchPrompt: (status: AnchorWatchStatus | null) => void;
   hydrate: () => Promise<void>;
   setGoTo: (target: NavigationTarget | null) => Promise<void>;
   dropMob: (lat: number, lon: number) => Promise<NavigationTarget>;
@@ -56,6 +67,7 @@ type NavigationState = PersistPayload & {
   setActiveLegIndex: (index: number) => Promise<void>;
   addSessionDistanceNm: (nm: number) => Promise<void>;
   resetSessionDistance: () => Promise<void>;
+  ensureSessionStarted: () => Promise<void>;
   setScreenLocked: (locked: boolean) => Promise<void>;
   patchAlarmLimits: (patch: Partial<AlarmLimits>) => Promise<void>;
   resetLegTimer: () => Promise<void>;
@@ -64,7 +76,7 @@ type NavigationState = PersistPayload & {
   setRaceStartAt: (ms: number | null) => Promise<void>;
 };
 
-const DEFAULT_LIMITS: AlarmLimits = { xteNm: 0.25, arrivalNm: 0.1 };
+const DEFAULT_LIMITS: AlarmLimits = { xteNm: 0.05, arrivalNm: 0.1 };
 
 const defaultAnchor: AnchorAlarmState = {
   active: false,
@@ -78,30 +90,65 @@ async function persist(state: NavigationState) {
   const payload: PersistPayload = {
     goToTarget: state.goToTarget,
     mobTarget: state.mobTarget,
+    mobDroppedAtMs: state.mobDroppedAtMs,
     anchorAlarm: state.anchorAlarm,
     activeLegIndex: state.activeLegIndex,
     sessionDistanceNm: state.sessionDistanceNm,
+    sessionStartedAtMs: state.sessionStartedAtMs,
     alarmLimits: state.alarmLimits,
     screenLocked: state.screenLocked,
     legTimerStartedAtMs: state.legTimerStartedAtMs,
     startLine: state.startLine,
     raceStartAtMs: state.raceStartAtMs,
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  await enqueuePersist(STORAGE_KEY, () => AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(payload)));
+}
+
+function sanitizeAnchorAlarm(raw: unknown): AnchorAlarmState | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const a = raw as Partial<AnchorAlarmState>;
+  if (!a.active) return null;
+  if (!isValidCoordinate(a.latitude ?? NaN, a.longitude ?? NaN)) return null;
+  return {
+    active: true,
+    latitude: a.latitude!,
+    longitude: a.longitude!,
+    radiusNm: Math.max(0.01, Number(a.radiusNm) || 0.05),
+    triggered: Boolean(a.triggered),
+  };
+}
+
+function sanitizeNavigationTarget(raw: unknown): NavigationTarget | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const target = raw as Partial<NavigationTarget>;
+  if (!target.id || !target.name || !isValidCoordinate(target.latitude ?? NaN, target.longitude ?? NaN)) return null;
+  if (target.kind !== 'waypoint' && target.kind !== 'mob') return null;
+  return {
+    id: target.id,
+    name: target.name,
+    latitude: target.latitude!,
+    longitude: target.longitude!,
+    kind: target.kind,
+  };
 }
 
 export const useNavigationStore = create<NavigationState>((set, get) => ({
   hydrated: false,
   goToTarget: null,
   mobTarget: null,
+  mobDroppedAtMs: null,
   anchorAlarm: null,
   activeLegIndex: 0,
   sessionDistanceNm: 0,
+  sessionStartedAtMs: null,
   alarmLimits: DEFAULT_LIMITS,
   screenLocked: false,
   legTimerStartedAtMs: null,
   startLine: null,
   raceStartAtMs: null,
+  anchorWatchPrompt: null,
+
+  setAnchorWatchPrompt: (status) => set({ anchorWatchPrompt: status }),
 
   hydrate: async () => {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -109,19 +156,25 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
       try {
         const parsed = JSON.parse(raw) as Partial<PersistPayload>;
         set({
-          goToTarget: parsed.goToTarget ?? null,
-          mobTarget: parsed.mobTarget ?? null,
-          anchorAlarm: parsed.anchorAlarm ?? null,
-          activeLegIndex: parsed.activeLegIndex ?? 0,
-          sessionDistanceNm: parsed.sessionDistanceNm ?? 0,
-          alarmLimits: { ...DEFAULT_LIMITS, ...(parsed.alarmLimits ?? {}) },
+          goToTarget: sanitizeNavigationTarget(parsed.goToTarget),
+          mobTarget: sanitizeNavigationTarget(parsed.mobTarget),
+          mobDroppedAtMs: typeof parsed.mobDroppedAtMs === 'number' ? parsed.mobDroppedAtMs : null,
+          anchorAlarm: sanitizeAnchorAlarm(parsed.anchorAlarm),
+          activeLegIndex: Math.max(0, Number(parsed.activeLegIndex) || 0),
+          sessionDistanceNm: Math.max(0, Number(parsed.sessionDistanceNm) || 0),
+          sessionStartedAtMs: typeof parsed.sessionStartedAtMs === 'number' ? parsed.sessionStartedAtMs : null,
+          alarmLimits: {
+            ...DEFAULT_LIMITS,
+            xteNm: Math.max(0.001, Number(parsed.alarmLimits?.xteNm) || DEFAULT_LIMITS.xteNm),
+            arrivalNm: Math.max(0.001, Number(parsed.alarmLimits?.arrivalNm) || DEFAULT_LIMITS.arrivalNm),
+          },
           screenLocked: Boolean(parsed.screenLocked),
-          legTimerStartedAtMs: parsed.legTimerStartedAtMs ?? null,
+          legTimerStartedAtMs: typeof parsed.legTimerStartedAtMs === 'number' ? parsed.legTimerStartedAtMs : null,
           startLine: parsed.startLine ?? null,
-          raceStartAtMs: parsed.raceStartAtMs ?? null,
+          raceStartAtMs: typeof parsed.raceStartAtMs === 'number' ? parsed.raceStartAtMs : null,
         });
-      } catch {
-        /* defaults */
+      } catch (error) {
+        console.warn('[navigationStore] hydrate failed', error);
       }
     }
     set({ hydrated: true });
@@ -133,14 +186,18 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
   },
 
   dropMob: async (lat, lon) => {
+    if (!isValidCoordinate(lat, lon)) {
+      throw new Error('invalid_mob_coordinates');
+    }
+    const now = Date.now();
     const target: NavigationTarget = {
-      id: `mob_${Date.now()}`,
-      name: 'MOB',
+      id: `mob_${now}`,
+      name: t('map.mobShort'),
       latitude: lat,
       longitude: lon,
       kind: 'mob',
     };
-    set({ mobTarget: target, goToTarget: target });
+    set({ mobTarget: target, goToTarget: target, mobDroppedAtMs: now });
     await persist(get());
     return target;
   },
@@ -149,6 +206,7 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     const { goToTarget, mobTarget } = get();
     set({
       mobTarget: null,
+      mobDroppedAtMs: null,
       goToTarget: goToTarget?.kind === 'mob' ? null : goToTarget,
     });
     await persist(get());
@@ -165,11 +223,25 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
       },
     });
     await persist(get());
+    await resetAlarmRuntime();
+    try {
+      void ensureMaritimeAlarmNotifications();
+      const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
+      const sync = await syncBackgroundLocationMonitoring();
+      if (!sync.ok) {
+        console.warn('[navigationStore] anchor alarm background sync failed', sync.reason);
+      }
+    } catch (error) {
+      console.warn('[navigationStore] anchor alarm background sync failed', error);
+    }
   },
 
   clearAnchorAlarm: async () => {
     set({ anchorAlarm: null });
     await persist(get());
+    await resetAlarmRuntime();
+    const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
+    await syncBackgroundLocationMonitoring();
   },
 
   setAnchorTriggered: async (triggered) => {
@@ -191,7 +263,13 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
   },
 
   resetSessionDistance: async () => {
-    set({ sessionDistanceNm: 0 });
+    set({ sessionDistanceNm: 0, sessionStartedAtMs: Date.now() });
+    await persist(get());
+  },
+
+  ensureSessionStarted: async () => {
+    if (get().sessionStartedAtMs != null) return;
+    set({ sessionStartedAtMs: Date.now() });
     await persist(get());
   },
 

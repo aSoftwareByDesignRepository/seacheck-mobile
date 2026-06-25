@@ -56,15 +56,28 @@ let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (!dbPromise) {
-    dbPromise = openAndMigrate();
+    dbPromise = openAndMigrate().catch((error) => {
+      dbPromise = null;
+      throw error;
+    });
   }
   return dbPromise;
+}
+
+export async function withDatabaseTransaction<T>(fn: (db: SQLite.SQLiteDatabase) => Promise<T>): Promise<T> {
+  const db = await getDatabase();
+  let result!: T;
+  await db.withTransactionAsync(async () => {
+    result = await fn(db);
+  });
+  return result;
 }
 
 async function openAndMigrate(): Promise<SQLite.SQLiteDatabase> {
   const db = await SQLite.openDatabaseAsync('seacheck.db');
   await db.execAsync(`
     PRAGMA journal_mode = WAL;
+    PRAGMA foreign_keys = ON;
     CREATE TABLE IF NOT EXISTS waypoints (
       id TEXT PRIMARY KEY NOT NULL,
       name TEXT NOT NULL,
@@ -116,6 +129,17 @@ async function openAndMigrate(): Promise<SQLite.SQLiteDatabase> {
       FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
     );
     CREATE INDEX IF NOT EXISTS idx_track_points_track ON track_points(track_id, recorded_at);
+    CREATE TABLE IF NOT EXISTS seamarks (
+      id TEXT NOT NULL,
+      pack_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      tags_json TEXT NOT NULL DEFAULT '{}',
+      PRIMARY KEY (pack_id, id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_seamarks_lat_lon ON seamarks(latitude, longitude);
   `);
   return db;
 }

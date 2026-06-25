@@ -9,6 +9,7 @@ import { BootGate } from './BootGate';
 export function RootNavigator() {
   const { colors, mode } = useTheme();
   const onboardingCompleted = useSettingsStore((s) => s.onboardingCompleted);
+  const settingsHydrated = useSettingsStore((s) => s.hydrated);
   const isDark = mode === 'dark' || mode === 'redNight' || mode === 'highContrast';
 
   const navTheme = isDark
@@ -17,7 +18,7 @@ export function RootNavigator() {
 
   return (
     <BootGate>
-      {!onboardingCompleted ? (
+      {!settingsHydrated ? null : !onboardingCompleted ? (
         <OnboardingScreen />
       ) : (
         <NavigationContainer theme={navTheme}>

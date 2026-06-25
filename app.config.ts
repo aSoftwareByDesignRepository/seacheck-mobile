@@ -1,5 +1,7 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
+const isProductionBuild = process.env.SEACHECK_APP_VARIANT === 'production';
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'SeaCheck',
@@ -26,7 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSLocationWhenInUseUsageDescription:
         'SeaCheck shows your position on the chart and underway instruments (COG, SOG, bearing).',
       NSLocationAlwaysAndWhenInUseUsageDescription:
-        'SeaCheck records your track while the app is in the background during a passage.',
+        'SeaCheck monitors anchor alarms and records tracks while the app is in the background.',
       UIBackgroundModes: ['location'],
     },
   },
@@ -47,10 +49,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'FOREGROUND_SERVICE_LOCATION',
       'POST_NOTIFICATIONS',
       'WAKE_LOCK',
+      'REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
     ],
   },
   plugins: [
-    'expo-dev-client',
+    ...(isProductionBuild ? [] : (['expo-dev-client'] as const)),
     'expo-localization',
     [
       'expo-location',
@@ -58,7 +61,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         locationWhenInUsePermission:
           'SeaCheck shows your position on the chart and underway instruments (COG, SOG, bearing).',
         locationAlwaysAndWhenInUsePermission:
-          'SeaCheck records your track while the app is in the background during a passage.',
+          'SeaCheck monitors anchor alarms and records tracks while the app is in the background.',
         isIosBackgroundLocationEnabled: true,
         isAndroidBackgroundLocationEnabled: true,
         isAndroidForegroundServiceEnabled: true,
@@ -67,7 +70,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-sqlite',
     'expo-sharing',
     'expo-audio',
-    'expo-haptics',
+    'expo-font',
+    'expo-asset',
+    [
+      'expo-notifications',
+      {
+        icon: './assets/android-icon-monochrome.png',
+        color: '#0073ad',
+      },
+    ],
     ['@maplibre/maplibre-react-native', { android: {}, ios: { metalEnabled: true } }],
   ],
   extra: {

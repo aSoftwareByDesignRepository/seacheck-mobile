@@ -3,6 +3,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+echo "==> Expo native dependency alignment"
+npx expo install --check
+
 echo "==> Typecheck"
 npm run typecheck
 

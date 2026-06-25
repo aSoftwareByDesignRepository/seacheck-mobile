@@ -9,6 +9,9 @@ describe('CRUISE_PASSAGE_DEFAULTS', () => {
       bearingReference: 'true',
       coordFormat: 'ddm',
       mapCourseUp: true,
+      mapShowCourseVector: true,
+      mapCourseVectorMinutes: 6,
+      mapFollowZoom: 13,
       followMode: true,
       keepAwakeUnderway: true,
     });

@@ -1,32 +1,38 @@
-import { useEffect, useRef } from 'react';
-import { Alert } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
+import type * as Location from 'expo-location';
 
-import { bearingTrue, crossTrackErrorNm, distanceNm, type LonLat } from '../lib/geo/navigation';
+import { bearingTrue } from '../lib/geo/navigation';
+import { processFixFromLocation } from '../lib/alarms/alarmCoordinator';
 import { t } from '../i18n';
-import { triggerMaritimeAlarm } from './alarmFeedbackService';
+import { requestConfirm } from '../store/confirmStore';
 import { useNavigationStore } from '../store/navigationStore';
 import { usePassageStore } from '../store/passageStore';
 import type { PassageWithLegs } from '../store/passageStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { isFixStale, useLocationStore } from './locationService';
 
-/** Monitors anchor drag, arrival, and XTE alarms while GPS updates. */
+/** Foreground alarm UI — delegates processing to AlarmCoordinator; shows leg-advance prompts only here. */
 export function useAlarmMonitor() {
   const fix = useLocationStore((s) => s.fix);
   const anchorAlarm = useNavigationStore((s) => s.anchorAlarm);
   const goToTarget = useNavigationStore((s) => s.goToTarget);
   const alarmLimits = useNavigationStore((s) => s.alarmLimits);
   const activePassageId = usePassageStore((s) => s.activePassageId);
+  const passages = usePassageStore((s) => s.passages);
   const activeLegIndex = useNavigationStore((s) => s.activeLegIndex);
   const legAdvanceAuto = useSettingsStore((s) => s.legAdvanceAuto);
-  const setAnchorTriggered = useNavigationStore((s) => s.setAnchorTriggered);
 
   const passageDetailRef = useRef<PassageWithLegs | null>(null);
-  const lastPosRef = useRef<LonLat | null>(null);
-  const arrivalFiredRef = useRef<string | null>(null);
-  const xteFiredRef = useRef(false);
-  const legAdvancePromptRef = useRef<number | null>(null);
-  const lastCriticalPulseRef = useRef(0);
+  const legPromptShownRef = useRef<number | null>(null);
+  const [appActive, setAppActive] = useState(AppState.currentState === 'active');
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      setAppActive(state === 'active');
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     if (!activePassageId) {
@@ -36,105 +42,65 @@ export function useAlarmMonitor() {
     void usePassageStore.getState().getPassageDetail(activePassageId).then((d) => {
       passageDetailRef.current = d;
     });
-  }, [activePassageId, activeLegIndex]);
+  }, [activePassageId, activeLegIndex, passages]);
 
   useEffect(() => {
-    if (!fix || isFixStale(fix)) return;
-    const pos: LonLat = [fix.longitude, fix.latitude];
+    if (!appActive || !fix) return;
+    if (isFixStale(fix) && !anchorAlarm?.active) return;
 
-    if (lastPosRef.current) {
-      const seg = distanceNm(lastPosRef.current, pos);
-      if (seg > 0.001 && seg < 2 && (fix.speedKn ?? 0) > 0.3) {
-        void useNavigationStore.getState().addSessionDistanceNm(seg);
+    void processFixFromLocation(
+      {
+        coords: {
+          latitude: fix.latitude,
+          longitude: fix.longitude,
+          speed: fix.speedMs,
+          heading: fix.heading,
+          accuracy: fix.accuracyM,
+          altitude: fix.altitudeM,
+        },
+        timestamp: fix.timestamp,
+      } as Location.LocationObject,
+      {
+        inBackground: false,
+        allowLegAdvancePrompt: true,
+        liveState: {
+          anchorAlarm,
+          goToTarget,
+          alarmLimits,
+          activeLegIndex,
+          activePassageId,
+          passageDetail: passageDetailRef.current,
+          legAdvanceAuto,
+        },
+      },
+    ).then(({ legAdvancePromptLegIdx }) => {
+      const detail = passageDetailRef.current;
+      if (
+        detail &&
+        legAdvancePromptLegIdx != null &&
+        legAdvancePromptLegIdx !== legPromptShownRef.current &&
+        !legAdvanceAuto &&
+        detail.legs[legAdvancePromptLegIdx]
+      ) {
+        legPromptShownRef.current = legAdvancePromptLegIdx;
+        const leg = detail.legs[legAdvancePromptLegIdx];
+        void requestConfirm({
+          title: t('alarms.legAdvanceTitle'),
+          message: t('alarms.legAdvanceBody', {
+            name: leg.to.name,
+            bearing: Math.round(bearingTrue([fix.longitude, fix.latitude], [leg.to.longitude, leg.to.latitude])),
+          }),
+          confirmLabel: t('alarms.legAdvanceConfirm'),
+          cancelLabel: t('alarms.legAdvanceLater'),
+        }).then((confirmed) => {
+          if (confirmed) {
+            void usePassageStore.getState().setPassageActiveLeg(legAdvancePromptLegIdx + 1);
+          }
+        });
+      } else if (legAdvancePromptLegIdx == null) {
+        legPromptShownRef.current = null;
       }
-    }
-    lastPosRef.current = pos;
-
-    if (anchorAlarm?.active) {
-      const drift = distanceNm([anchorAlarm.longitude, anchorAlarm.latitude], pos);
-      if (drift > anchorAlarm.radiusNm) {
-        if (!anchorAlarm.triggered) {
-          void setAnchorTriggered(true);
-          lastCriticalPulseRef.current = Date.now();
-          void triggerMaritimeAlarm(
-            'critical',
-            `${t('alarms.anchorDragTitle')}: ${t('alarms.anchorDragBody', { nm: drift.toFixed(2) })}`,
-          );
-        } else if (Date.now() - lastCriticalPulseRef.current > 45_000) {
-          lastCriticalPulseRef.current = Date.now();
-          void triggerMaritimeAlarm(
-            'critical',
-            `${t('alarms.anchorDragTitle')}: ${t('alarms.anchorDragBody', { nm: drift.toFixed(2) })}`,
-          );
-        }
-      } else if (anchorAlarm.triggered) {
-        void setAnchorTriggered(false);
-      }
-    }
-
-    const target = goToTarget;
-    if (target) {
-      const dist = distanceNm(pos, [target.longitude, target.latitude]);
-      if (dist <= alarmLimits.arrivalNm && arrivalFiredRef.current !== target.id) {
-        arrivalFiredRef.current = target.id;
-        void triggerMaritimeAlarm(
-          'warning',
-          `${t('alarms.arrivalTitle')}: ${t('alarms.arrivalBody', { name: target.name, nm: dist.toFixed(2) })}`,
-        );
-      } else if (dist > alarmLimits.arrivalNm * 2) {
-        arrivalFiredRef.current = null;
-      }
-    }
-
-    const detail = passageDetailRef.current;
-    if (detail && detail.legs.length > 0 && activePassageId) {
-      const legIdx = Math.min(activeLegIndex, detail.legs.length - 1);
-      const leg = detail.legs[legIdx];
-      const xte = Math.abs(
-        crossTrackErrorNm(
-          pos,
-          [leg.from.longitude, leg.from.latitude],
-          [leg.to.longitude, leg.to.latitude],
-        ),
-      );
-      if (xte > alarmLimits.xteNm) {
-        if (!xteFiredRef.current) {
-          xteFiredRef.current = true;
-          void triggerMaritimeAlarm(
-            'warning',
-            `${t('alarms.xteTitle')}: ${t('alarms.xteBody', { nm: xte.toFixed(2) })}`,
-          );
-        }
-      } else {
-        xteFiredRef.current = false;
-      }
-
-      const distToWp = distanceNm(pos, [leg.to.longitude, leg.to.latitude]);
-      if (distToWp <= alarmLimits.arrivalNm && legIdx < detail.legs.length - 1) {
-        if (legAdvanceAuto) {
-          void usePassageStore.getState().setPassageActiveLeg(legIdx + 1);
-          legAdvancePromptRef.current = null;
-        } else if (legAdvancePromptRef.current !== legIdx) {
-          legAdvancePromptRef.current = legIdx;
-          Alert.alert(
-            t('alarms.legAdvanceTitle'),
-            t('alarms.legAdvanceBody', { name: leg.to.name, bearing: Math.round(bearingTrue(pos, [leg.to.longitude, leg.to.latitude])) }),
-            [
-              { text: t('alarms.legAdvanceLater'), style: 'cancel' },
-              {
-                text: t('alarms.legAdvanceConfirm'),
-                onPress: () => {
-                  void usePassageStore.getState().setPassageActiveLeg(legIdx + 1);
-                  void triggerMaritimeAlarm('warning', t('alarms.legAdvanced', { name: leg.to.name }));
-                },
-              },
-            ],
-          );
-        }
-      } else if (distToWp > alarmLimits.arrivalNm * 2) {
-        legAdvancePromptRef.current = null;
-      }
-    }
+    });
   }, [
     fix,
     anchorAlarm,
@@ -143,6 +109,6 @@ export function useAlarmMonitor() {
     activePassageId,
     activeLegIndex,
     legAdvanceAuto,
-    setAnchorTriggered,
+    appActive,
   ]);
 }

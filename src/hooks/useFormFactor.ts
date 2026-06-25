@@ -10,8 +10,7 @@ export function useFormFactor(): {
   instrumentHeroSize: number;
 } {
   const { width, height } = useWindowDimensions();
-  const shortSide = Math.min(width, height);
-  const formFactor: FormFactor = shortSide >= 840 ? 'expanded' : shortSide >= 600 ? 'medium' : 'compact';
+  const formFactor: FormFactor = width >= 840 ? 'expanded' : width >= 600 ? 'medium' : 'compact';
   const instrumentHeroSize = formFactor === 'expanded' ? 36 : formFactor === 'medium' ? 32 : 28;
   return {
     formFactor,

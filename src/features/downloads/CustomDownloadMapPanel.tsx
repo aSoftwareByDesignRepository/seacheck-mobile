@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ensureDownloadAllowed } from '../../lib/network/downloadPolicy';
 import { validateDownloadBounds } from '../../lib/map/bounds';
 import { estimateDownloadKb, estimateTileCount, formatStorageSize } from '../../map/tileMath';
 import { t } from '../../i18n';
 import { useCustomDownloadStore } from '../../store/customDownloadStore';
+import { useFeedbackStore } from '../../store/feedbackStore';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
@@ -24,6 +26,8 @@ export function CustomDownloadMapPanel() {
   const setZoomRange = useCustomDownloadStore((s) => s.setZoomRange);
   const cancelSelecting = useCustomDownloadStore((s) => s.cancelSelecting);
   const startCustomDownload = useOfflinePackStore((s) => s.startCustomDownload);
+  const showError = useFeedbackStore((s) => s.showError);
+  const showInfo = useFeedbackStore((s) => s.showInfo);
   const [busy, setBusy] = useState(false);
 
   const bounds = getBounds();
@@ -44,15 +48,20 @@ export function CustomDownloadMapPanel() {
   async function handleDownload() {
     if (!bounds || !validation?.ok) {
       const code = validation && !validation.ok ? validation.code : 'too_small';
-      Alert.alert(t('downloads.customInvalidTitle'), t(`downloads.customInvalid.${code}` as 'downloads.customInvalid.too_small'));
+      showError(t(`downloads.customInvalid.${code}` as 'downloads.customInvalid.too_small'));
       return;
     }
     setBusy(true);
     try {
+      const allowed = await ensureDownloadAllowed();
+      if (!allowed) {
+        showInfo(t('downloads.cellularCancelledBody'));
+        return;
+      }
       const name = packName.trim() || t('downloads.customDefaultName', { lat: bounds[1].toFixed(2), lon: bounds[0].toFixed(2) });
       await startCustomDownload(name, bounds, minZoom, maxZoom);
       cancelSelecting();
-      Alert.alert(t('downloads.customStartedTitle'), t('downloads.customStartedBody'));
+      showInfo(t('downloads.customStartedBody'));
     } finally {
       setBusy(false);
     }

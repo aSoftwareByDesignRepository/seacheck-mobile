@@ -47,6 +47,15 @@ export function formatDistanceNm(distanceNm: number | null | undefined, unit: Di
   return distanceFromNm(distanceNm, unit).toFixed(digits);
 }
 
+/** Average speed from cumulative distance and elapsed time. */
+export function avgSpeedFromSession(distanceNm: number, elapsedMs: number, unit: SogUnit): string {
+  if (elapsedMs <= 0 || distanceNm <= 0) return '—';
+  const hours = elapsedMs / 3_600_000;
+  const kn = distanceNm / hours;
+  const ms = (kn * 1852) / 3600;
+  return formatSog(ms, unit);
+}
+
 export function distanceUnitLabel(unit: DistanceUnit): string {
   switch (unit) {
     case 'nm':

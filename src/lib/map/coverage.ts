@@ -61,6 +61,11 @@ function pointCoveredByPacks(lat: number, lon: number, packs: CoveragePack[]): s
   return hits;
 }
 
+/** Public helper — whether lat/lon falls inside any ready offline pack (with buffer). */
+export function pointCoveredByReadyPacks(lat: number, lon: number, packs: CoveragePack[]): string[] {
+  return pointCoveredByPacks(lat, lon, packs);
+}
+
 export function assessPassageCoverage(
   waypoints: { name: string; latitude: number; longitude: number }[],
   packs: CoveragePack[],

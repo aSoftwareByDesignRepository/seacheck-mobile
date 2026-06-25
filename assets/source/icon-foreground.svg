@@ -1,9 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" aria-hidden="true">
-  <g transform="translate(512 500) scale(19.5) translate(-16 -15.5)" fill="#ffffff" stroke="#ffffff">
-    <path fill="none" stroke-width="2.15" stroke-linecap="round" d="M8.25 15.25a7.75 7.75 0 0 1 15.5 0"/>
-    <rect x="6.5" y="15.5" width="4.25" height="9.75" rx="2.125" stroke="none"/>
-    <rect x="21.25" y="15.5" width="4.25" height="9.75" rx="2.125" stroke="none"/>
-    <rect x="13.875" y="10.25" width="4.25" height="15" rx="2.125" stroke="none"/>
+  <defs>
+    <linearGradient id="north" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#0073ad"/>
+      <stop offset="100%" stop-color="#4dabf7"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(512 512)">
+    <circle r="248" fill="none" stroke="#ffffff" stroke-width="5" opacity="0.22"/>
+    <circle r="198" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.38"/>
+    <g fill="#ffffff" opacity="0.72">
+      <polygon points="0,-258 20,-20 0,0 -20,-20" transform="rotate(45)"/>
+      <polygon points="0,-258 20,-20 0,0 -20,-20" transform="rotate(135)"/>
+      <polygon points="0,-258 20,-20 0,0 -20,-20" transform="rotate(225)"/>
+      <polygon points="0,-258 20,-20 0,0 -20,-20" transform="rotate(315)"/>
+    </g>
+    <g fill="#ffffff">
+      <polygon points="0,-276 36,-34 0,0 -36,-34" transform="rotate(90)"/>
+      <polygon points="0,-276 36,-34 0,0 -36,-34" transform="rotate(180)"/>
+      <polygon points="0,-276 36,-34 0,0 -36,-34" transform="rotate(270)"/>
+    </g>
+    <polygon points="0,-276 36,-34 0,0 -36,-34" fill="url(#north)"/>
+    <circle r="40" fill="#ffffff"/>
+    <circle r="18" fill="#0b1622"/>
   </g>
 </svg>

@@ -27,7 +27,11 @@ jest.mock('expo-location', () => ({
   requestForegroundPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
   requestBackgroundPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
   watchPositionAsync: jest.fn(async () => ({ remove: jest.fn() })),
+  hasStartedLocationUpdatesAsync: jest.fn(async () => false),
+  startLocationUpdatesAsync: jest.fn(async () => {}),
+  stopLocationUpdatesAsync: jest.fn(async () => {}),
   Accuracy: { BestForNavigation: 6 },
+  ActivityType: { OtherNavigation: 3 },
 }));
 
 jest.mock('expo-haptics', () => ({
@@ -42,12 +46,23 @@ jest.mock('expo-audio', () => ({
   setAudioModeAsync: jest.fn(async () => {}),
 }));
 
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  getPermissionsAsync: jest.fn(async () => ({ granted: true, status: 'granted' })),
+  requestPermissionsAsync: jest.fn(async () => ({ granted: true, status: 'granted' })),
+  scheduleNotificationAsync: jest.fn(async () => 'alarm-id'),
+  setNotificationChannelAsync: jest.fn(async () => {}),
+  AndroidImportance: { HIGH: 4, DEFAULT: 3 },
+  AndroidNotificationPriority: { HIGH: 'high' },
+  IosAuthorizationStatus: { PROVISIONAL: 2 },
+}));
+
 jest.mock('expo-sqlite', () => ({
   openDatabaseAsync: jest.fn(async () => ({
     execAsync: jest.fn(async () => {}),
     getAllAsync: jest.fn(async () => []),
     getFirstAsync: jest.fn(async () => null),
-    runAsync: jest.fn(async () => {}),
+    runAsync: jest.fn(async () => ({ lastInsertRowId: 1, changes: 1 })),
   })),
 }));
 

@@ -21,6 +21,7 @@ export function SectionHeader({ title, description, first }: Props) {
           borderBottomColor: colors.border,
         },
       ]}
+      accessibilityLabel={description ? `${title}. ${description}` : title}
     >
       <View style={styles.titleRow}>
         <View style={[styles.accent, { backgroundColor: colors.primary }]} accessibilityElementsHidden importantForAccessibility="no" />

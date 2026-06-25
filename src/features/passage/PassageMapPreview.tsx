@@ -5,6 +5,7 @@ import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 
 import { KIEL_CENTER } from '../../map/constants';
 import { boundsFromWaypoints } from '../../lib/map/passageBounds';
+import { t } from '../../i18n';
 import type { LegCoverage } from '../../lib/map/coverage';
 import type { PassageWithLegs } from '../../store/passageStore';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
@@ -32,7 +33,12 @@ export function PassageMapPreview({ detail, legCoverage, highlightedLegIndex, on
   const geojson = useMemo(() => buildPreviewGeoJson(detail, legCoverage, highlightedLegIndex), [detail, legCoverage, highlightedLegIndex]);
 
   if (!chartStyleUri) {
-    return <View style={[styles.placeholder, { backgroundColor: colors.background }]} accessibilityLabel="Map preview unavailable without offline charts" />;
+    return (
+      <View
+        style={[styles.placeholder, { backgroundColor: colors.background }]}
+        accessibilityLabel={t('passage.mapPreviewOffline')}
+      />
+    );
   }
 
   return (

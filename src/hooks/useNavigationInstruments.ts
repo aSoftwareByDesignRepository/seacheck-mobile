@@ -21,6 +21,9 @@ export type NavigationInstruments = {
   activeLegLabel: string | null;
   activeLegNumber: number | null;
   totalLegs: number | null;
+  remainingNm: number | null;
+  etaDestUtc: string | null;
+  plannedEtaDestUtc: string | null;
   vmgKn: number | null;
   bearingToMarkTrue: number | null;
 };
@@ -36,6 +39,8 @@ export function useNavigationInstruments(): NavigationInstruments {
   const [legLabel, setLegLabel] = useState<string | null>(null);
   const [legNumbers, setLegNumbers] = useState<{ current: number; total: number } | null>(null);
   const [xte, setXte] = useState<{ nm: number; side: 'L' | 'R' } | null>(null);
+  const [remainingNm, setRemainingNm] = useState<number | null>(null);
+  const [plannedEtaDestUtc, setPlannedEtaDestUtc] = useState<string | null>(null);
 
   const stale = isFixStale(fix);
   const pos: LonLat | null = fix ? [fix.longitude, fix.latitude] : null;
@@ -59,13 +64,22 @@ export function useNavigationInstruments(): NavigationInstruments {
         ? new Date(Date.now() + legDurationHours(dist, sogKn) * 3_600_000).toISOString().slice(11, 16) + ' UTC'
         : null;
     return { bearing: formatted.value, suffix: formatted.suffix, dist, eta, vmgKn: vmg, bearingToMarkTrue: trueBearing };
-  }, [pos, goToTarget, stale, bearingReference, declination, fix?.speedKn, fix?.speedMs]);
+  }, [pos, goToTarget, stale, bearingReference, declination, fix]);
+
+  const etaDestUtc = useMemo(() => {
+    if (remainingNm == null || stale || !fix) return null;
+    const sogKn = fix.speedKn ?? msToKnots(fix.speedMs) ?? 0;
+    if (sogKn <= 0.5) return null;
+    return new Date(Date.now() + legDurationHours(remainingNm, sogKn) * 3_600_000).toISOString().slice(11, 16) + ' UTC';
+  }, [remainingNm, stale, fix?.speedKn, fix?.speedMs]);
 
   useEffect(() => {
     if (!activePassageId || !pos || stale) {
       setLegLabel(null);
       setLegNumbers(null);
       setXte(null);
+      setRemainingNm(null);
+      setPlannedEtaDestUtc(null);
       return;
     }
     void getPassageDetail(activePassageId).then((detail) => {
@@ -73,6 +87,8 @@ export function useNavigationInstruments(): NavigationInstruments {
         setLegLabel(null);
         setLegNumbers(null);
         setXte(null);
+        setRemainingNm(null);
+        setPlannedEtaDestUtc(null);
         return;
       }
       const idx = Math.min(activeLegIndex, detail.legs.length - 1);
@@ -85,6 +101,15 @@ export function useNavigationInstruments(): NavigationInstruments {
         [leg.to.longitude, leg.to.latitude],
       );
       setXte({ nm: Math.abs(xteVal), side: xteVal >= 0 ? 'R' : 'L' });
+
+      const distToLegEnd = distanceNm(pos, [leg.to.longitude, leg.to.latitude]);
+      let rem = distToLegEnd;
+      for (let i = idx + 1; i < detail.legs.length; i++) {
+        rem += detail.legs[i].distanceNm;
+      }
+      setRemainingNm(rem);
+      const lastLeg = detail.legs[detail.legs.length - 1];
+      setPlannedEtaDestUtc(lastLeg.etaUtc ? lastLeg.etaUtc.slice(11, 16) + ' UTC' : null);
     });
   }, [activePassageId, activeLegIndex, pos, stale, getPassageDetail]);
 
@@ -100,6 +125,9 @@ export function useNavigationInstruments(): NavigationInstruments {
     activeLegLabel: legLabel,
     activeLegNumber: legNumbers?.current ?? null,
     totalLegs: legNumbers?.total ?? null,
+    remainingNm,
+    etaDestUtc,
+    plannedEtaDestUtc,
     vmgKn: targetInfo?.vmgKn ?? null,
     bearingToMarkTrue: targetInfo?.bearingToMarkTrue ?? null,
   };

@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" aria-hidden="true">
   <defs>
-    <linearGradient id="bg" x1="10%" y1="6%" x2="90%" y2="94%">
-      <stop offset="0%" stop-color="#2d3f6e"/>
-      <stop offset="45%" stop-color="#1a1a2e"/>
+    <linearGradient id="bg" x1="12%" y1="8%" x2="88%" y2="92%">
+      <stop offset="0%" stop-color="#0d5a7a"/>
+      <stop offset="42%" stop-color="#0b2538"/>
       <stop offset="100%" stop-color="#0b1622"/>
     </linearGradient>
-    <radialGradient id="shine" cx="34%" cy="20%" r="58%">
-      <stop offset="0%" stop-color="#4dabf7" stop-opacity="0.28"/>
-      <stop offset="55%" stop-color="#4dabf7" stop-opacity="0.06"/>
-      <stop offset="100%" stop-color="#4dabf7" stop-opacity="0"/>
+    <radialGradient id="shine" cx="32%" cy="16%" r="56%">
+      <stop offset="0%" stop-color="#0073ad" stop-opacity="0.34"/>
+      <stop offset="55%" stop-color="#0073ad" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#0073ad" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="1024" height="1024" fill="url(#bg)"/>
   <rect width="1024" height="1024" fill="url(#shine)"/>
+  <g opacity="0.12" stroke="#4dabf7" stroke-width="2">
+    <line x1="128" y1="256" x2="896" y2="256"/>
+    <line x1="128" y1="512" x2="896" y2="512"/>
+    <line x1="128" y1="768" x2="896" y2="768"/>
+    <line x1="256" y1="128" x2="256" y2="896"/>
+    <line x1="512" y1="128" x2="512" y2="896"/>
+    <line x1="768" y1="128" x2="768" y2="896"/>
+  </g>
 </svg>

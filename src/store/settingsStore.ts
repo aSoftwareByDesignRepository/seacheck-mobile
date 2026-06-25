@@ -5,10 +5,17 @@ import {
   CRUISE_PASSAGE_DEFAULTS,
   type BearingReference,
   type CoordFormat,
+  type CourseVectorMinutes,
   type DistanceUnit,
+  type FollowZoomLevel,
   type LayoutPreset,
+  type PanelSide,
   type SogUnit,
 } from '../settings/defaults';
+import { layoutContextKey, type LayoutContext } from '../lib/settings/layoutPreferences';
+import { enqueuePersist } from '../lib/persist/asyncPersistQueue';
+import { getActivityProfile, normalizeActivityProfileId } from '../settings/profiles';
+import { normalizeCourseVectorMinutes, normalizeFollowZoom } from '../lib/settings/mapSettings';
 
 const STORAGE_KEY = 'seacheck.settings.v1';
 
@@ -22,13 +29,19 @@ export type VesselProfile = {
 type PersistPayload = {
   onboardingCompleted: boolean;
   batteryGuidanceAcknowledged: boolean;
+  downloadHintDismissed: boolean;
   activityProfileId: string;
+  /** @deprecated Use layoutOverrides + resolveLayoutPreset — kept for migration only */
   layoutPreset: LayoutPreset;
+  layoutOverrides: Record<string, LayoutPreset>;
   sogUnit: SogUnit;
   distanceUnit: DistanceUnit;
   bearingReference: BearingReference;
   coordFormat: CoordFormat;
   mapCourseUp: boolean;
+  mapShowCourseVector: boolean;
+  mapCourseVectorMinutes: CourseVectorMinutes;
+  mapFollowZoom: FollowZoomLevel;
   followMode: boolean;
   keepAwakeUnderway: boolean;
   backgroundTrackRecording: boolean;
@@ -40,6 +53,9 @@ type PersistPayload = {
   raceTackingAngleDeg: number;
   raceTargetSogKn: number | null;
   raceShowLaylines: boolean;
+  downloadWifiOnly: boolean;
+  gloveMode: boolean;
+  panelSide: PanelSide;
 };
 
 type SettingsState = PersistPayload & {
@@ -47,21 +63,29 @@ type SettingsState = PersistPayload & {
   hydrate: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
   acknowledgeBatteryGuidance: () => Promise<void>;
+  dismissDownloadHint: () => Promise<void>;
   updateVessel: (patch: Partial<VesselProfile>) => Promise<void>;
   patchSettings: (patch: Partial<PersistPayload>) => Promise<void>;
+  setLayoutOverride: (preset: LayoutPreset, ctx: LayoutContext) => Promise<void>;
+  applyActivityProfile: (profileId: string) => Promise<void>;
 };
 
 async function persist(state: SettingsState) {
   const payload: PersistPayload = {
     onboardingCompleted: state.onboardingCompleted,
     batteryGuidanceAcknowledged: state.batteryGuidanceAcknowledged,
+    downloadHintDismissed: state.downloadHintDismissed,
     activityProfileId: state.activityProfileId,
     layoutPreset: state.layoutPreset,
+    layoutOverrides: state.layoutOverrides,
     sogUnit: state.sogUnit,
     distanceUnit: state.distanceUnit,
     bearingReference: state.bearingReference,
     coordFormat: state.coordFormat,
     mapCourseUp: state.mapCourseUp,
+    mapShowCourseVector: state.mapShowCourseVector,
+    mapCourseVectorMinutes: state.mapCourseVectorMinutes,
+    mapFollowZoom: state.mapFollowZoom,
     followMode: state.followMode,
     keepAwakeUnderway: state.keepAwakeUnderway,
     backgroundTrackRecording: state.backgroundTrackRecording,
@@ -73,8 +97,11 @@ async function persist(state: SettingsState) {
     raceTackingAngleDeg: state.raceTackingAngleDeg,
     raceTargetSogKn: state.raceTargetSogKn,
     raceShowLaylines: state.raceShowLaylines,
+    downloadWifiOnly: state.downloadWifiOnly,
+    gloveMode: state.gloveMode,
+    panelSide: state.panelSide,
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  await enqueuePersist(STORAGE_KEY, () => AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(payload)));
 }
 
 const emptyVessel: VesselProfile = { name: '', callSign: '', mmsi: '', homePort: '' };
@@ -83,33 +110,49 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   hydrated: false,
   onboardingCompleted: false,
   batteryGuidanceAcknowledged: false,
+  downloadHintDismissed: false,
   backgroundTrackRecording: false,
   alarmSoundEnabled: true,
   alarmHapticEnabled: true,
   legAdvanceAuto: false,
   layoutPreset: 'map-forward',
+  layoutOverrides: {},
   ...CRUISE_PASSAGE_DEFAULTS,
   vessel: emptyVessel,
   raceWindDirectionTrue: null,
   raceTackingAngleDeg: 45,
   raceTargetSogKn: null,
   raceShowLaylines: true,
+  downloadWifiOnly: true,
+  gloveMode: false,
+  panelSide: 'auto',
 
   hydrate: async () => {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (raw) {
       try {
-        const parsed = JSON.parse(raw) as Partial<PersistPayload>;
+        const parsed = JSON.parse(raw) as Partial<PersistPayload & { layoutOverrides?: Record<string, LayoutPreset> }>;
+        const legacyPreset = parsed.layoutPreset ?? 'map-forward';
+        const layoutOverrides = parsed.layoutOverrides ?? {};
+        if (Object.keys(layoutOverrides).length === 0 && parsed.layoutPreset) {
+          layoutOverrides[layoutContextKey({ profileId: parsed.activityProfileId ?? 'cruise-passage', bucket: 'compact', isLandscape: false })] =
+            legacyPreset;
+        }
         set({
           onboardingCompleted: Boolean(parsed.onboardingCompleted),
           batteryGuidanceAcknowledged: Boolean(parsed.batteryGuidanceAcknowledged),
-          activityProfileId: parsed.activityProfileId ?? CRUISE_PASSAGE_DEFAULTS.activityProfileId,
-          layoutPreset: parsed.layoutPreset ?? 'map-forward',
+          downloadHintDismissed: Boolean(parsed.downloadHintDismissed),
+          activityProfileId: normalizeActivityProfileId(parsed.activityProfileId),
+          layoutPreset: legacyPreset,
+          layoutOverrides,
           sogUnit: parsed.sogUnit ?? CRUISE_PASSAGE_DEFAULTS.sogUnit,
           distanceUnit: parsed.distanceUnit ?? CRUISE_PASSAGE_DEFAULTS.distanceUnit,
           bearingReference: parsed.bearingReference ?? CRUISE_PASSAGE_DEFAULTS.bearingReference,
           coordFormat: parsed.coordFormat ?? CRUISE_PASSAGE_DEFAULTS.coordFormat,
           mapCourseUp: parsed.mapCourseUp ?? CRUISE_PASSAGE_DEFAULTS.mapCourseUp,
+          mapShowCourseVector: parsed.mapShowCourseVector ?? CRUISE_PASSAGE_DEFAULTS.mapShowCourseVector,
+          mapCourseVectorMinutes: normalizeCourseVectorMinutes(parsed.mapCourseVectorMinutes),
+          mapFollowZoom: normalizeFollowZoom(parsed.mapFollowZoom),
           followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode,
           keepAwakeUnderway: parsed.keepAwakeUnderway ?? CRUISE_PASSAGE_DEFAULTS.keepAwakeUnderway,
           backgroundTrackRecording: Boolean(parsed.backgroundTrackRecording),
@@ -121,6 +164,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           raceTackingAngleDeg: parsed.raceTackingAngleDeg ?? 45,
           raceTargetSogKn: parsed.raceTargetSogKn ?? null,
           raceShowLaylines: parsed.raceShowLaylines ?? true,
+          downloadWifiOnly: parsed.downloadWifiOnly ?? true,
+          gloveMode: Boolean(parsed.gloveMode),
+          panelSide: parsed.panelSide === 'port' || parsed.panelSide === 'starboard' ? parsed.panelSide : 'auto',
         });
       } catch {
         /* defaults */
@@ -130,12 +176,23 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   completeOnboarding: async () => {
-    set({ onboardingCompleted: true, ...CRUISE_PASSAGE_DEFAULTS, layoutPreset: 'map-forward', vessel: get().vessel });
+    set({
+      onboardingCompleted: true,
+      ...CRUISE_PASSAGE_DEFAULTS,
+      layoutPreset: 'map-forward',
+      layoutOverrides: {},
+      vessel: get().vessel,
+    });
     await persist(get());
   },
 
   acknowledgeBatteryGuidance: async () => {
     set({ batteryGuidanceAcknowledged: true });
+    await persist(get());
+  },
+
+  dismissDownloadHint: async () => {
+    set({ downloadHintDismissed: true });
     await persist(get());
   },
 
@@ -146,6 +203,26 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   patchSettings: async (patch) => {
     set(patch);
+    await persist(get());
+  },
+
+  setLayoutOverride: async (preset, ctx) => {
+    const key = layoutContextKey(ctx);
+    set({
+      layoutPreset: preset,
+      layoutOverrides: { ...get().layoutOverrides, [key]: preset },
+    });
+    await persist(get());
+  },
+
+  applyActivityProfile: async (profileId) => {
+    const profile = getActivityProfile(profileId);
+    if (!profile) return;
+    set({
+      activityProfileId: profile.id,
+      sogUnit: profile.sogUnit,
+      distanceUnit: profile.distanceUnit,
+    });
     await persist(get());
   },
 }));

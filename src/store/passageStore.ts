@@ -4,8 +4,9 @@ import { create } from 'zustand';
 
 import { useNavigationStore } from './navigationStore';
 
-import { getDatabase, newId, type PassageLegOverrideRow, type PassageRow, type WaypointRow } from '../lib/db/database';
+import { getDatabase, newId, withDatabaseTransaction, type PassageLegOverrideRow, type PassageRow, type WaypointRow } from '../lib/db/database';
 import { buildPassageRouteGpx, buildPassageSummaryText } from '../lib/gpx/gpx';
+import { t } from '../i18n';
 import {
   clampPlannedSogKn,
   computePassageLegs,
@@ -30,6 +31,7 @@ type PassageStore = {
   hydrate: () => Promise<void>;
   createPassage: (name: string) => Promise<PassageRow>;
   deletePassage: (id: string) => Promise<void>;
+  duplicatePassage: (id: string) => Promise<PassageRow>;
   addWaypointToPassage: (passageId: string, waypointId: string) => Promise<void>;
   removeWaypointFromPassage: (passageId: string, waypointId: string) => Promise<void>;
   reorderWaypointInPassage: (passageId: string, fromIndex: number, toIndex: number) => Promise<void>;
@@ -37,6 +39,7 @@ type PassageStore = {
   setLegOverride: (passageId: string, fromWaypointId: string, toWaypointId: string, patch: LegOverride) => Promise<void>;
   activatePassage: (id: string) => Promise<void>;
   deactivatePassage: () => Promise<void>;
+  syncActivePassageNavigation: (passageId: string) => Promise<void>;
   setPassageActiveLeg: (legIndex: number, options?: { resetTimer?: boolean }) => Promise<void>;
   getPassageDetail: (id: string) => Promise<PassageWithLegs | null>;
   exportPassageGpx: (id: string) => Promise<void>;
@@ -108,10 +111,10 @@ async function persistLegOverride(
   );
 }
 
-async function rewriteWaypointOrder(passageId: string, orderedIds: string[]): Promise<void> {
-  const db = await getDatabase();
+async function rewriteWaypointOrder(passageId: string, orderedIds: string[], db?: Awaited<ReturnType<typeof getDatabase>>): Promise<void> {
+  const conn = db ?? (await getDatabase());
   for (let i = 0; i < orderedIds.length; i++) {
-    await db.runAsync(
+    await conn.runAsync(
       'UPDATE passage_waypoints SET sort_order = ? WHERE passage_id = ? AND waypoint_id = ?',
       i,
       passageId,
@@ -135,7 +138,7 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
   createPassage: async (name) => {
     const row: PassageRow = {
       id: newId('pass'),
-      name: name.trim() || 'Passage',
+      name: name.trim() || t('passage.defaultName'),
       planned_departure: null,
       default_sog_kn: 5,
       is_active: 0,
@@ -156,16 +159,54 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
   },
 
   deletePassage: async (id) => {
-    const db = await getDatabase();
-    await db.runAsync('DELETE FROM passages WHERE id = ?', id);
+    const wasActive = get().activePassageId === id;
+    await withDatabaseTransaction(async (db) => {
+      await db.runAsync('DELETE FROM passage_leg_overrides WHERE passage_id = ?', id);
+      await db.runAsync('DELETE FROM passage_waypoints WHERE passage_id = ?', id);
+      await db.runAsync('DELETE FROM passages WHERE id = ?', id);
+    });
     set({
       passages: get().passages.filter((p) => p.id !== id),
-      activePassageId: get().activePassageId === id ? null : get().activePassageId,
+      activePassageId: wasActive ? null : get().activePassageId,
     });
+    if (wasActive) {
+      const nav = useNavigationStore.getState();
+      await nav.setGoTo(null);
+      await nav.setActiveLegIndex(0);
+    }
+  },
+
+  duplicatePassage: async (id) => {
+    const detail = await get().getPassageDetail(id);
+    if (!detail) throw new Error('passage_not_found');
+    const copyName = `${detail.name} (${t('passage.duplicateSuffix')})`;
+    const row = await get().createPassage(copyName);
+    for (const wp of detail.waypoints) {
+      await get().addWaypointToPassage(row.id, wp.id);
+    }
+    await get().setPassageMeta(row.id, {
+      planned_departure: detail.planned_departure,
+      default_sog_kn: detail.default_sog_kn,
+    });
+    for (const leg of detail.legs) {
+      if (leg.note || leg.sogKn !== detail.default_sog_kn) {
+        await get().setLegOverride(row.id, leg.from.id, leg.to.id, {
+          sogKn: leg.sogKn,
+          note: leg.note,
+        });
+      }
+    }
+    return row;
   },
 
   addWaypointToPassage: async (passageId, waypointId) => {
     const db = await getDatabase();
+    const existing = await db.getFirstAsync<{ c: number }>(
+      'SELECT COUNT(*) as c FROM passage_waypoints WHERE passage_id = ? AND waypoint_id = ?',
+      passageId,
+      waypointId,
+    );
+    if (existing?.c) return;
     const countRow = await db.getFirstAsync<{ c: number }>(
       'SELECT COUNT(*) as c FROM passage_waypoints WHERE passage_id = ?',
       passageId,
@@ -180,13 +221,22 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
   },
 
   removeWaypointFromPassage: async (passageId, waypointId) => {
-    const db = await getDatabase();
-    await db.runAsync('DELETE FROM passage_waypoints WHERE passage_id = ? AND waypoint_id = ?', passageId, waypointId);
-    const remaining = await loadPassageWaypoints(passageId);
-    await rewriteWaypointOrder(
-      passageId,
-      remaining.map((w) => w.id),
-    );
+    await withDatabaseTransaction(async (db) => {
+      await db.runAsync('DELETE FROM passage_waypoints WHERE passage_id = ? AND waypoint_id = ?', passageId, waypointId);
+      const remaining = await db.getAllAsync<WaypointRow>(
+        `SELECT w.* FROM waypoints w
+         INNER JOIN passage_waypoints pw ON pw.waypoint_id = w.id
+         WHERE pw.passage_id = ?
+         ORDER BY pw.sort_order ASC`,
+        passageId,
+      );
+      await rewriteWaypointOrder(
+        passageId,
+        remaining.map((w) => w.id),
+        db,
+      );
+    });
+    await get().syncActivePassageNavigation(passageId);
   },
 
   reorderWaypointInPassage: async (passageId, fromIndex, toIndex) => {
@@ -200,6 +250,7 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
       passageId,
       next.map((w) => w.id),
     );
+    await get().syncActivePassageNavigation(passageId);
   },
 
   setPassageMeta: async (id, patch) => {
@@ -231,13 +282,19 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
   },
 
   activatePassage: async (id) => {
-    const db = await getDatabase();
-    await db.runAsync('UPDATE passages SET is_active = 0');
-    await db.runAsync('UPDATE passages SET is_active = 1 WHERE id = ?', id);
+    const detail = await get().getPassageDetail(id);
+    if (!detail || detail.waypoints.length < 2) {
+      throw new Error('passage_need_two_waypoints');
+    }
+    await withDatabaseTransaction(async (db) => {
+      await db.runAsync('UPDATE passages SET is_active = 0');
+      await db.runAsync('UPDATE passages SET is_active = 1 WHERE id = ?', id);
+    });
     set({
       activePassageId: id,
       passages: get().passages.map((p) => ({ ...p, is_active: p.id === id ? 1 : 0 })),
     });
+    await useNavigationStore.getState().resetSessionDistance();
     await get().setPassageActiveLeg(0);
   },
 
@@ -268,6 +325,21 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
       activePassageId: null,
       passages: get().passages.map((p) => ({ ...p, is_active: 0 })),
     });
+    const nav = useNavigationStore.getState();
+    await nav.setGoTo(null);
+    await nav.setActiveLegIndex(0);
+  },
+
+  syncActivePassageNavigation: async (passageId) => {
+    if (get().activePassageId !== passageId) return;
+    const detail = await get().getPassageDetail(passageId);
+    if (!detail || detail.waypoints.length < 2) {
+      await get().deactivatePassage();
+      return;
+    }
+    const nav = useNavigationStore.getState();
+    const nextIdx = Math.min(nav.activeLegIndex, detail.legs.length - 1);
+    await get().setPassageActiveLeg(nextIdx, { resetTimer: false });
   },
 
   getPassageDetail: async (id) => {

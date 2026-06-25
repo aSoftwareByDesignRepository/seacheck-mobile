@@ -1,7 +1,7 @@
 import { clampPlannedSogKn, computePassageLegs, legOverrideKey } from '../src/lib/passage/computeLegs';
 import type { WaypointRow } from '../src/lib/db/database';
 import { buildPassageRouteGpx, buildPassageSummaryText } from '../src/lib/gpx/gpx';
-import { boundsFromWaypoints } from '../src/lib/map/passageBounds';
+import { boundsFromWaypoints, boundsFromLonLat } from '../src/lib/map/passageBounds';
 
 function wp(id: string, name: string, lat: number, lon: number): WaypointRow {
   return { id, name, latitude: lat, longitude: lon, type: 'harbour', note: '', created_at: 0 };
@@ -81,6 +81,18 @@ describe('boundsFromWaypoints', () => {
     const bounds = boundsFromWaypoints([
       { latitude: 54, longitude: 10 },
       { latitude: 55, longitude: 12 },
+    ]);
+    expect(bounds).not.toBeNull();
+    expect(bounds![0]).toBeLessThan(10);
+    expect(bounds![2]).toBeGreaterThan(12);
+  });
+});
+
+describe('boundsFromLonLat', () => {
+  it('returns padded bounds for a track line', () => {
+    const bounds = boundsFromLonLat([
+      [10, 54],
+      [12, 55],
     ]);
     expect(bounds).not.toBeNull();
     expect(bounds![0]).toBeLessThan(10);

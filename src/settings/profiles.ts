@@ -1,6 +1,6 @@
 import type { LayoutPreset } from '../settings/defaults';
 
-export type ActivityProfileId = 'cruise-passage' | 'sailing-race' | 'hiking' | 'cycling' | 'anchor-camp';
+export type ActivityProfileId = 'cruise-passage' | 'sailing-race';
 
 export type ActivityProfile = {
   id: ActivityProfileId;
@@ -10,16 +10,23 @@ export type ActivityProfile = {
   distanceUnit: 'nm' | 'km';
 };
 
+/** Maritime activity profiles shown in Settings. */
 export const ACTIVITY_PROFILES: ActivityProfile[] = [
   { id: 'cruise-passage', labelKey: 'profiles.cruisePassage', defaultLayout: 'map-forward', sogUnit: 'kn', distanceUnit: 'nm' },
   { id: 'sailing-race', labelKey: 'profiles.sailingRace', defaultLayout: 'instruments-forward', sogUnit: 'kn', distanceUnit: 'nm' },
-  { id: 'hiking', labelKey: 'profiles.hiking', defaultLayout: 'map-forward', sogUnit: 'kmh', distanceUnit: 'km' },
-  { id: 'cycling', labelKey: 'profiles.cycling', defaultLayout: 'split', sogUnit: 'kmh', distanceUnit: 'km' },
-  { id: 'anchor-camp', labelKey: 'profiles.anchorCamp', defaultLayout: 'instruments-forward', sogUnit: 'kn', distanceUnit: 'nm' },
 ];
 
-export const LAYOUT_PRESETS: LayoutPreset[] = ['map-forward', 'instruments-forward', 'split', 'minimal'];
+export const LAYOUT_PRESETS: LayoutPreset[] = ['map-forward', 'instruments-forward', 'split', 'minimal', 'coordinates'];
+
+const DEFAULT_PROFILE_ID: ActivityProfileId = 'cruise-passage';
+
+/** Maps legacy or removed profile ids to a maritime default. */
+export function normalizeActivityProfileId(id: string | undefined): ActivityProfileId {
+  if (id === 'sailing-race') return 'sailing-race';
+  if (id === 'cruise-passage') return 'cruise-passage';
+  return DEFAULT_PROFILE_ID;
+}
 
 export function getActivityProfile(id: string): ActivityProfile | undefined {
-  return ACTIVITY_PROFILES.find((p) => p.id === id);
+  return ACTIVITY_PROFILES.find((p) => p.id === normalizeActivityProfileId(id));
 }

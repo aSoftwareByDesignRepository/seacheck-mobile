@@ -1,49 +1,158 @@
 import * as Location from 'expo-location';
-import { useState } from 'react';
-import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  permissionStatusLabel,
+  readLocationPermissionStatuses,
+  requestBackgroundLocationAccess,
+  requestForegroundLocationAccess,
+} from '../lib/permissions/locationPermissions';
+import { openBatteryOptimizationSettings, requestBatteryOptimizationExemption } from '../lib/permissions/batteryOptimization';
+import { ensureMaritimeAlarmNotifications } from '../services/maritimeAlarmNotifications';
 import { t } from '../i18n';
+import { requestConfirm } from '../store/confirmStore';
+import { useFeedbackStore } from '../store/feedbackStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTheme } from '../theme/ThemeContext';
 import { Button } from '../ui/Button';
+import { OnboardingStepIndicator } from '../ui/OnboardingStepIndicator';
 import { Card } from '../ui/Screen';
 
 type Step = 'disclaimer' | 'location' | 'battery' | 'finish';
+
+function resumeStep(
+  foreground: Location.PermissionStatus | null,
+  batteryGuidanceAcknowledged: boolean,
+): Step {
+  if (batteryGuidanceAcknowledged) return 'finish';
+  if (foreground === Location.PermissionStatus.GRANTED) return 'battery';
+  return 'disclaimer';
+}
 
 export function OnboardingScreen() {
   const { colors, spacing, minTouch } = useTheme();
   const completeOnboarding = useSettingsStore((s) => s.completeOnboarding);
   const acknowledgeBatteryGuidance = useSettingsStore((s) => s.acknowledgeBatteryGuidance);
+  const batteryGuidanceAcknowledged = useSettingsStore((s) => s.batteryGuidanceAcknowledged);
+  const showError = useFeedbackStore((s) => s.showError);
   const [step, setStep] = useState<Step>('disclaimer');
-  const [locationStatus, setLocationStatus] = useState<string | null>(null);
+  const [foregroundStatus, setForegroundStatus] = useState<Location.PermissionStatus | null>(null);
+  const [backgroundStatus, setBackgroundStatus] = useState<Location.PermissionStatus | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resumeChecked, setResumeChecked] = useState(false);
 
-  async function requestForegroundLocation() {
+  const foregroundGranted = foregroundStatus === Location.PermissionStatus.GRANTED;
+  const backgroundGranted = backgroundStatus === Location.PermissionStatus.GRANTED;
+
+  const refreshPermissionStatuses = useCallback(async () => {
+    const statuses = await readLocationPermissionStatuses();
+    setForegroundStatus(statuses.foreground);
+    setBackgroundStatus(statuses.background);
+    return statuses;
+  }, []);
+
+  useEffect(() => {
+    void (async () => {
+      const statuses = await refreshPermissionStatuses();
+      setStep(resumeStep(statuses.foreground, batteryGuidanceAcknowledged));
+      setResumeChecked(true);
+    })();
+  }, [batteryGuidanceAcknowledged, refreshPermissionStatuses]);
+
+  useEffect(() => {
+    if (step !== 'location' || !foregroundGranted) return;
+    setStep('battery');
+  }, [foregroundGranted, step]);
+
+  useEffect(() => {
+    if (step !== 'battery' || !batteryGuidanceAcknowledged) return;
+    setStep('finish');
+  }, [batteryGuidanceAcknowledged, step]);
+
+  async function handleForegroundLocation() {
     setBusy(true);
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationStatus(status);
+      const status = await requestForegroundLocationAccess();
+      setForegroundStatus(status);
     } finally {
       setBusy(false);
     }
   }
 
-  async function requestBackgroundLocation() {
+  async function handleBackgroundLocation() {
     setBusy(true);
     try {
-      const { status } = await Location.requestBackgroundPermissionsAsync();
-      setLocationStatus(status);
+      const status = await requestBackgroundLocationAccess();
+      setBackgroundStatus(status);
+      setForegroundStatus(Location.PermissionStatus.GRANTED);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function acceptDisclaimer() {
+    const statuses = await refreshPermissionStatuses();
+    setStep(statuses.foreground === Location.PermissionStatus.GRANTED ? 'battery' : 'location');
+  }
+
+  async function continueFromLocation() {
+    if (foregroundStatus !== Location.PermissionStatus.GRANTED) {
+      const proceedForeground = await requestConfirm({
+        title: t('permissions.foregroundNeededTitle'),
+        message: t('permissions.foregroundNeededBody'),
+        confirmLabel: t('onboarding.locationForeground'),
+        cancelLabel: t('onboarding.locationSkip'),
+      });
+      if (proceedForeground) void handleForegroundLocation();
+      else setStep('battery');
+      return;
+    }
+    setStep('battery');
   }
 
   async function openBatterySettings() {
     await acknowledgeBatteryGuidance();
     if (Platform.OS === 'android') {
-      await Linking.openSettings();
+      try {
+        await requestBatteryOptimizationExemption();
+      } catch {
+        await openBatteryOptimizationSettings();
+      }
     }
+  }
+
+  async function handleFinish() {
+    setBusy(true);
+    try {
+      await ensureMaritimeAlarmNotifications();
+      await completeOnboarding();
+      try {
+        const { initializeAppServices } = await import('../lib/permissions/initializeAppServices');
+        await initializeAppServices({ requestNotifications: true });
+      } catch (error) {
+        console.warn('[OnboardingScreen] post-onboarding services failed', error);
+      }
+    } catch (error) {
+      console.error('[OnboardingScreen] finish failed', error);
+      showError(t('boot.failedBody'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!resumeChecked) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} testID="screen.onboarding">
+        <View style={[styles.content, { padding: spacing.xl }]}>
+          <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
+            {t('onboarding.title')}
+          </Text>
+          <Text style={[styles.body, { color: colors.textMuted, textAlign: 'center' }]}>{t('boot.loading')}</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -52,12 +161,13 @@ export function OnboardingScreen() {
         <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
           {t('onboarding.title')}
         </Text>
+        <OnboardingStepIndicator current={step} />
 
         {step === 'disclaimer' ? (
           <Card>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('onboarding.disclaimerTitle')}</Text>
             <Text style={[styles.body, { color: colors.textMuted }]}>{t('onboarding.disclaimerBody')}</Text>
-            <Button label={t('onboarding.acceptDisclaimer')} onPress={() => setStep('location')} testID="onboarding.disclaimer.continue" />
+            <Button label={t('onboarding.acceptDisclaimer')} onPress={() => void acceptDisclaimer()} testID="onboarding.disclaimer.continue" />
           </Card>
         ) : null}
 
@@ -65,26 +175,45 @@ export function OnboardingScreen() {
           <Card>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('onboarding.locationTitle')}</Text>
             <Text style={[styles.body, { color: colors.textMuted }]}>{t('onboarding.locationBody')}</Text>
-            {locationStatus ? (
-              <Text style={[styles.status, { color: colors.textMuted }]} accessibilityLiveRegion="polite">
-                {locationStatus}
+            {foregroundStatus ? (
+              <Text style={[styles.status, { color: colors.text }]} accessibilityLiveRegion="polite">
+                {t('permissions.foregroundLabel')}: {permissionStatusLabel(foregroundStatus)}
               </Text>
             ) : null}
+            {backgroundStatus ? (
+              <Text style={[styles.status, { color: colors.text }]} accessibilityLiveRegion="polite">
+                {t('permissions.backgroundLabel')}: {permissionStatusLabel(backgroundStatus)}
+              </Text>
+            ) : null}
+            {foregroundGranted ? (
+              <Text style={[styles.hint, { color: colors.textMuted }]}>{t('onboarding.locationReady')}</Text>
+            ) : null}
             <View style={[styles.actions, { minHeight: minTouch }]}>
-              <Button
-                label={t('onboarding.locationForeground')}
-                onPress={() => void requestForegroundLocation()}
-                loading={busy}
-                testID="onboarding.location.foreground"
-              />
-              <Button
-                label={t('onboarding.locationBackground')}
-                variant="secondary"
-                onPress={() => void requestBackgroundLocation()}
-                loading={busy}
-                testID="onboarding.location.background"
-              />
-              <Button label={t('common.continue')} onPress={() => setStep('battery')} testID="onboarding.location.continue" />
+              {!foregroundGranted ? (
+                <Button
+                  label={t('onboarding.locationForeground')}
+                  onPress={() => void handleForegroundLocation()}
+                  loading={busy}
+                  testID="onboarding.location.foreground"
+                />
+              ) : null}
+              {!backgroundGranted ? (
+                <Button
+                  label={t('onboarding.locationBackground')}
+                  variant="secondary"
+                  onPress={() => void handleBackgroundLocation()}
+                  loading={busy}
+                  disabled={!foregroundGranted && foregroundStatus !== null}
+                  testID="onboarding.location.background"
+                />
+              ) : null}
+              {!foregroundGranted && foregroundStatus === null ? (
+                <Text style={[styles.hint, { color: colors.textMuted }]}>{t('onboarding.locationOrderHint')}</Text>
+              ) : null}
+              <Button label={t('common.continue')} onPress={() => void continueFromLocation()} testID="onboarding.location.continue" />
+              {!foregroundGranted ? (
+                <Button label={t('onboarding.locationSkip')} variant="secondary" onPress={() => setStep('battery')} testID="onboarding.location.skip" />
+              ) : null}
             </View>
           </Card>
         ) : null}
@@ -96,7 +225,7 @@ export function OnboardingScreen() {
             <View style={[styles.actions, { minHeight: minTouch }]}>
               {Platform.OS === 'android' ? (
                 <Button
-                  label={t('settings.openBatterySettings')}
+                  label={t('settings.exemptBatteryPrompt')}
                   variant="secondary"
                   onPress={() => void openBatterySettings()}
                   testID="onboarding.battery.settings"
@@ -116,12 +245,10 @@ export function OnboardingScreen() {
 
         {step === 'finish' ? (
           <Card>
-            <Text style={[styles.body, { color: colors.textMuted, marginBottom: 16 }]}>{t('onboarding.downloadReminder')}</Text>
-            <Button
-              label={t('onboarding.finish')}
-              onPress={() => void completeOnboarding()}
-              testID="onboarding.finish"
-            />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('onboarding.notificationsTitle')}</Text>
+            <Text style={[styles.body, { color: colors.textMuted }]}>{t('onboarding.notificationsBody')}</Text>
+            <Text style={[styles.body, { color: colors.textMuted }]}>{t('onboarding.downloadReminder')}</Text>
+            <Button label={t('onboarding.finish')} onPress={() => void handleFinish()} loading={busy} testID="onboarding.finish" />
           </Card>
         ) : null}
       </View>
@@ -132,9 +259,10 @@ export function OnboardingScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { flex: 1, justifyContent: 'center' },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24, textAlign: 'center' },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
-  body: { fontSize: 15, lineHeight: 22, marginBottom: 20 },
-  status: { fontSize: 14, marginBottom: 12 },
+  body: { fontSize: 15, lineHeight: 22, marginBottom: 16 },
+  status: { fontSize: 14, marginBottom: 8, fontWeight: '600' },
+  hint: { fontSize: 13, lineHeight: 18, textAlign: 'center' },
   actions: { gap: 12 },
 });

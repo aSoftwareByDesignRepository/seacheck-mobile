@@ -55,6 +55,36 @@ export const REGION_PACKS: RegionPackDefinition[] = [
     layers: ['base', 'seamarks'],
     priority: 'P0',
   },
+  {
+    id: 'baltic-central',
+    nameKey: 'downloads.packs.balticCentral.name',
+    descriptionKey: 'downloads.packs.balticCentral.description',
+    bounds: [16.5, 56.0, 20.5, 58.5],
+    minZoom: 8,
+    maxZoom: 14,
+    layers: ['base', 'seamarks'],
+    priority: 'P1',
+  },
+  {
+    id: 'baltic-east',
+    nameKey: 'downloads.packs.balticEast.name',
+    descriptionKey: 'downloads.packs.balticEast.description',
+    bounds: [22.0, 59.0, 27.0, 60.8],
+    minZoom: 8,
+    maxZoom: 14,
+    layers: ['base', 'seamarks'],
+    priority: 'P2',
+  },
+  {
+    id: 'baltic-north',
+    nameKey: 'downloads.packs.balticNorth.name',
+    descriptionKey: 'downloads.packs.balticNorth.description',
+    bounds: [19.0, 59.0, 22.5, 61.5],
+    minZoom: 8,
+    maxZoom: 14,
+    layers: ['base', 'seamarks'],
+    priority: 'P2',
+  },
 ];
 
 export function getRegionPack(id: string): RegionPackDefinition | undefined {

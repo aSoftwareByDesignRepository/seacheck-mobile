@@ -9,7 +9,11 @@ import { useNavigationStore } from '../../store/navigationStore';
 import { usePassageStore } from '../../store/passageStore';
 import { useWaypointStore } from '../../store/waypointStore';
 import { laylineBearingsFromMark } from '../../lib/racing/racingGeo';
+import { RACING_PACK_V11 } from '../../lib/featureFlags';
 import { useSettingsStore } from '../../store/settingsStore';
+import { isFixStale, useLocationStore } from '../../services/locationService';
+import { useTrackStore } from '../../store/trackStore';
+import { CourseVectorOverlay } from './CourseVectorOverlay';
 
 type Props = {
   showRangeRings: boolean;
@@ -125,6 +129,7 @@ export function MapOverlays({ showRangeRings }: Props) {
 
   return (
     <>
+      <CourseVectorOverlay />
       <GeoJSONSource id="seacheck-overlays" data={geojson}>
         <Layer
           id="seacheck-range-fill"
@@ -142,7 +147,7 @@ export function MapOverlays({ showRangeRings }: Props) {
           id="seacheck-goto-line"
           type="line"
           filter={['==', ['get', 'kind'], 'goto-line']}
-          paint={{ 'line-color': '#0073ad', 'line-width': 3, 'line-opacity': 0.85 }}
+          paint={{ 'line-color': '#0073ad', 'line-width': 3, 'line-opacity': 0.85, 'line-dasharray': [2, 1.5] }}
         />
         <Layer
           id="seacheck-anchor-fill"
@@ -196,6 +201,10 @@ export function MapOverlays({ showRangeRings }: Props) {
       <StartLineOverlay />
       <LaylineOverlay />
       <PassageOverlay passageId={activePassageId} activeLegIndex={activeLegIndex} />
+      <WaypointsOverlay />
+      <TrackTrailOverlay />
+      <SavedTrackOverlay />
+      <StaleFixOverlay />
     </>
   );
 }
@@ -263,7 +272,7 @@ function LaylineOverlay() {
   const activityProfileId = useSettingsStore((s) => s.activityProfileId);
 
   const data = useMemo(() => {
-    if (activityProfileId !== 'sailing-race' || !showLaylines || wind == null || !goToTarget) {
+    if (!RACING_PACK_V11 || activityProfileId !== 'sailing-race' || !showLaylines || wind == null || !goToTarget) {
       return { type: 'FeatureCollection' as const, features: [] };
     }
     const mark: LonLat = [goToTarget.longitude, goToTarget.latitude];
@@ -388,4 +397,157 @@ export function navInfoToTarget(
     bearingDeg: bearingTrue(from, to),
     distanceNm: distanceNm(from, to),
   };
+}
+
+const WP_COLORS: Record<string, string> = {
+  harbour: '#0073ad',
+  anchorage: '#0d7a4a',
+  mark: '#e65100',
+  hazard: '#ba1b1b',
+  mob: '#ba1b1b',
+  generic: '#486581',
+};
+
+function WaypointsOverlay() {
+  const waypoints = useWaypointStore((s) => s.items);
+  const goToId = useNavigationStore((s) => s.goToTarget?.id);
+
+  const data = useMemo(() => {
+    const features: Feature[] = waypoints.map((wp) => ({
+      type: 'Feature',
+      properties: { kind: 'saved-wp', wpType: wp.type, selected: wp.id === goToId },
+      geometry: { type: 'Point', coordinates: [wp.longitude, wp.latitude] },
+    }));
+    return { type: 'FeatureCollection' as const, features };
+  }, [waypoints, goToId]);
+
+  if (data.features.length === 0) return null;
+
+  return (
+    <GeoJSONSource id="seacheck-waypoints" data={data}>
+      <Layer
+        id="seacheck-saved-wp"
+        type="circle"
+        filter={['==', ['get', 'kind'], 'saved-wp']}
+        paint={{
+          'circle-radius': ['case', ['get', 'selected'], 10, 7],
+          'circle-color': [
+            'match',
+            ['get', 'wpType'],
+            'harbour', WP_COLORS.harbour,
+            'anchorage', WP_COLORS.anchorage,
+            'mark', WP_COLORS.mark,
+            'hazard', WP_COLORS.hazard,
+            'mob', WP_COLORS.mob,
+            WP_COLORS.generic,
+          ],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+          'circle-opacity': 0.95,
+        }}
+      />
+    </GeoJSONSource>
+  );
+}
+
+function SavedTrackOverlay() {
+  const mapPreviewLine = useTrackStore((s) => s.mapPreviewLine);
+  const mapPreviewTrackId = useTrackStore((s) => s.mapPreviewTrackId);
+
+  const data = useMemo(() => {
+    if (!mapPreviewTrackId || mapPreviewLine.length < 2) {
+      return { type: 'FeatureCollection' as const, features: [] };
+    }
+    return {
+      type: 'FeatureCollection' as const,
+      features: [
+        {
+          type: 'Feature' as const,
+          properties: { kind: 'saved-track' },
+          geometry: { type: 'LineString' as const, coordinates: mapPreviewLine },
+        },
+      ],
+    };
+  }, [mapPreviewLine, mapPreviewTrackId]);
+
+  if (data.features.length === 0) return null;
+
+  return (
+    <GeoJSONSource id="seacheck-saved-track" data={data}>
+      <Layer
+        id="seacheck-saved-track-line"
+        type="line"
+        filter={['==', ['get', 'kind'], 'saved-track']}
+        paint={{ 'line-color': '#00838f', 'line-width': 4, 'line-opacity': 0.85 }}
+      />
+    </GeoJSONSource>
+  );
+}
+
+function TrackTrailOverlay() {
+  const liveTrail = useTrackStore((s) => s.liveTrail);
+  const recording = useTrackStore((s) => s.recordingTrackId);
+
+  const data = useMemo(() => {
+    if (!recording || liveTrail.length < 2) {
+      return { type: 'FeatureCollection' as const, features: [] };
+    }
+    return {
+      type: 'FeatureCollection' as const,
+      features: [
+        {
+          type: 'Feature' as const,
+          properties: { kind: 'track-trail' },
+          geometry: { type: 'LineString' as const, coordinates: liveTrail },
+        },
+      ],
+    };
+  }, [liveTrail, recording]);
+
+  if (data.features.length === 0) return null;
+
+  return (
+    <GeoJSONSource id="seacheck-track-trail" data={data}>
+      <Layer
+        id="seacheck-track-trail-line"
+        type="line"
+        filter={['==', ['get', 'kind'], 'track-trail']}
+        paint={{ 'line-color': '#7b1fa2', 'line-width': 3, 'line-opacity': 0.75 }}
+      />
+    </GeoJSONSource>
+  );
+}
+
+function StaleFixOverlay() {
+  const fix = useLocationStore((s) => s.fix);
+  const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
+  const stale = isFixStale(fix);
+  const show = stale && lastGoodFix;
+
+  const data = useMemo(() => {
+    if (!show || !lastGoodFix) return { type: 'FeatureCollection' as const, features: [] };
+    return {
+      type: 'FeatureCollection' as const,
+      features: [
+        {
+          type: 'Feature' as const,
+          properties: { kind: 'stale-fix' },
+          geometry: { type: 'Point' as const, coordinates: [lastGoodFix.longitude, lastGoodFix.latitude] },
+        },
+      ],
+    };
+  }, [show, lastGoodFix]);
+
+  if (data.features.length === 0) return null;
+
+  return (
+    <GeoJSONSource id="seacheck-stale-fix" data={data}>
+      <Layer
+        id="seacheck-stale-fix-point"
+        type="circle"
+        filter={['==', ['get', 'kind'], 'stale-fix']}
+        paint={{ 'circle-radius': 12, 'circle-color': '#486581', 'circle-opacity': 0.45, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' }}
+      />
+    </GeoJSONSource>
+  );
 }

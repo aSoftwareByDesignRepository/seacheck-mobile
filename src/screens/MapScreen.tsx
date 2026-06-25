@@ -1,5 +1,10 @@
 import { NavigationMap } from '../features/map/NavigationMap';
+import { ErrorBoundary } from '../shell/ErrorBoundary';
 
 export function MapScreen() {
-  return <NavigationMap />;
+  return (
+    <ErrorBoundary>
+      <NavigationMap />
+    </ErrorBoundary>
+  );
 }

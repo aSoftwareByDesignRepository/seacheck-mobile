@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { UtcDeparturePickerModal } from './UtcDeparturePickerModal';
 import { t } from '../../i18n';
 import type { PassageWithLegs } from '../../store/passageStore';
 import { useTheme } from '../../theme/ThemeContext';
@@ -11,14 +12,23 @@ type Props = {
   detail: PassageWithLegs;
   onNameChange: (name: string) => void;
   onDefaultSogChange: (sogKn: number) => void;
+  onDepartureChange: (utcMs: number | null) => void;
   onDepartureNow: () => void;
   onClearDeparture: () => void;
 };
 
-export function PassageMetaSection({ detail, onNameChange, onDefaultSogChange, onDepartureNow, onClearDeparture }: Props) {
+export function PassageMetaSection({
+  detail,
+  onNameChange,
+  onDefaultSogChange,
+  onDepartureChange,
+  onDepartureNow,
+  onClearDeparture,
+}: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const [name, setName] = useState(detail.name);
   const [defaultSog, setDefaultSog] = useState(String(detail.default_sog_kn));
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     setName(detail.name);
@@ -55,17 +65,25 @@ export function PassageMetaSection({ detail, onNameChange, onDefaultSogChange, o
         }}
         accessibilityLabel={t('passage.defaultSogLabel')}
         keyboardType="number-pad"
-        placeholder="5.0"
+        placeholder={t('passage.defaultSogPlaceholder')}
       />
       <Text style={[styles.label, { color: colors.textMuted, marginTop: spacing.sm }]}>{t('passage.departureLabel')}</Text>
       <Text style={[styles.departure, { color: colors.text }]} accessibilityLiveRegion="polite">
         {departureLabel}
       </Text>
       <View style={[styles.row, { marginTop: spacing.sm }]}>
+        <Button label={t('passage.departurePick')} variant="secondary" onPress={() => setPickerOpen(true)} testID="passage.departurePick" />
         <Button label={t('passage.departureNow')} variant="secondary" onPress={onDepartureNow} testID="passage.departureNow" />
         <Button label={t('passage.departureClear')} variant="secondary" onPress={onClearDeparture} testID="passage.departureClear" />
       </View>
       <Text style={[styles.hint, { color: colors.textMuted }]}>{t('passage.departureHint')}</Text>
+
+      <UtcDeparturePickerModal
+        visible={pickerOpen}
+        utcMs={detail.planned_departure}
+        onClose={() => setPickerOpen(false)}
+        onConfirm={(ms) => onDepartureChange(ms)}
+      />
     </View>
   );
 }

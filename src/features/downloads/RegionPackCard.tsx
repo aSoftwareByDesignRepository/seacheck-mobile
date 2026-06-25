@@ -13,9 +13,11 @@ type Props = {
   onDownload: () => void;
   onDelete: () => void;
   busy: boolean;
+  onSelect?: () => void;
+  selected?: boolean;
 };
 
-export function RegionPackCard({ pack, status, onDownload, onDelete, busy }: Props) {
+export function RegionPackCard({ pack, status, onDownload, onDelete, busy, onSelect, selected }: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const tileEstimate = estimateTileCount(pack.bounds, pack.minZoom, pack.maxZoom);
   const sizeLabel = formatStorageSize(estimateDownloadKb(tileEstimate));
@@ -43,19 +45,31 @@ export function RegionPackCard({ pack, status, onDownload, onDelete, busy }: Pro
 
   return (
     <View
-      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: spacing.lg }]}
+      style={[styles.card, { backgroundColor: colors.surface, borderColor: selected ? colors.primary : colors.border, marginBottom: spacing.lg }]}
       testID={`downloads.pack.${pack.id}`}
+      accessibilityLabel={`${name}. ${stateLabel}`}
     >
-      <Text style={[styles.title, { color: colors.text }]}>{name}</Text>
+      <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
+        {name}
+      </Text>
       <Text style={[styles.body, { color: colors.textMuted }]}>{description}</Text>
       <Text style={[styles.meta, { color: colors.textMuted }]}>
-        z{pack.minZoom}–{pack.maxZoom} · ~{sizeLabel} · {t('downloads.layersBoth')}
+        {t('downloads.zoomRange', { min: pack.minZoom, max: pack.maxZoom })} · ~{sizeLabel} · {t('downloads.layersBoth')}
       </Text>
       <Text style={[styles.state, { color: stateColor }]} accessibilityLiveRegion="polite">
         {stateLabel}
       </Text>
       {status.error ? <Text style={[styles.error, { color: colors.danger }]}>{status.error}</Text> : null}
       <View style={[styles.actions, { minHeight: minTouch }]}>
+        {onSelect ? (
+          <Button
+            label={t('downloads.previewPack')}
+            variant="secondary"
+            onPress={onSelect}
+            disabled={busy}
+            testID={`downloads.preview.${pack.id}`}
+          />
+        ) : null}
         {status.state === 'ready' ? (
           <Button
             label={t('downloads.delete')}

@@ -14,6 +14,17 @@ type Props = {
   onLegNoteChange: (leg: PassageLeg, note: string) => void;
 };
 
+function formatLegMeta(leg: PassageLeg): string {
+  const base = t('passage.legMeta', {
+    brg: Math.round(leg.bearingDeg),
+    dist: leg.distanceNm.toFixed(1),
+    cum: leg.cumulativeNm.toFixed(1),
+    hours: leg.durationHours.toFixed(1),
+  });
+  if (!leg.etaUtc) return base;
+  return `${base} · ${t('passage.legEta', { utc: leg.etaUtc.slice(11, 16) })}`;
+}
+
 function LegSogField({ leg, onCommit }: { leg: PassageLeg; onCommit: (sogKn: number) => void }) {
   const { colors, spacing, minTouch } = useTheme();
   const [value, setValue] = useState(leg.sogKn.toFixed(1));
@@ -52,7 +63,12 @@ function LegNoteField({ leg, expanded, onExpand, onCommit }: { leg: PassageLeg; 
 
   if (!leg.note && !expanded) {
     return (
-      <Pressable accessibilityRole="button" onPress={onExpand} style={{ minHeight: minTouch, justifyContent: 'center', marginTop: spacing.xs }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('passage.addLegNoteA11y', { from: leg.from.name, to: leg.to.name })}
+        onPress={onExpand}
+        style={{ minHeight: minTouch, justifyContent: 'center', marginTop: spacing.xs }}
+      >
         <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('passage.addLegNote')}</Text>
       </Pressable>
     );
@@ -88,33 +104,32 @@ export function PassageLegTable({ detail, highlightedLegIndex, onHighlightLeg, o
       {detail.legs.map((leg) => {
         const highlighted = highlightedLegIndex === leg.index;
         return (
-          <Pressable
+          <View
             key={`${leg.from.id}-${leg.to.id}`}
-            accessibilityRole="button"
-            accessibilityState={{ selected: highlighted }}
-            onPress={() => onHighlightLeg(highlighted ? null : leg.index)}
             style={[
               styles.legRow,
               {
                 borderColor: colors.border,
                 backgroundColor: highlighted ? colors.background : 'transparent',
-                minHeight: minTouch,
               },
             ]}
             testID={`passage.leg.${leg.index}`}
           >
-            <View style={styles.legHeader}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('passage.legRowA11y', { index: leg.index, from: leg.from.name, to: leg.to.name })}
+              accessibilityState={{ selected: highlighted }}
+              onPress={() => onHighlightLeg(highlighted ? null : leg.index)}
+              style={[styles.legHeader, { minHeight: minTouch }]}
+            >
               <Text style={[styles.legIndex, { color: colors.primary }]}>{leg.index}</Text>
               <View style={styles.legMain}>
                 <Text style={[styles.legTitle, { color: colors.text }]}>
                   {leg.from.name} → {leg.to.name}
                 </Text>
-                <Text style={[styles.legMeta, { color: colors.textMuted }]}>
-                  {Math.round(leg.bearingDeg)}° · {leg.distanceNm.toFixed(1)} NM · Σ {leg.cumulativeNm.toFixed(1)} NM · {leg.durationHours.toFixed(1)} h
-                  {leg.etaUtc ? ` · ETA ${leg.etaUtc.slice(11, 16)} UTC` : ''}
-                </Text>
+                <Text style={[styles.legMeta, { color: colors.textMuted }]}>{formatLegMeta(leg)}</Text>
               </View>
-            </View>
+            </Pressable>
             <LegSogField leg={leg} onCommit={(sogKn) => onLegSogChange(leg, sogKn)} />
             <LegNoteField
               leg={leg}
@@ -122,7 +137,7 @@ export function PassageLegTable({ detail, highlightedLegIndex, onHighlightLeg, o
               onExpand={() => setExpandedNoteLeg(leg.index)}
               onCommit={(note) => onLegNoteChange(leg, note)}
             />
-          </Pressable>
+          </View>
         );
       })}
       <Text style={[styles.total, { color: colors.text, marginTop: spacing.md }]}>

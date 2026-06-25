@@ -2,6 +2,7 @@ import { PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useFormFactor } from '../../hooks/useFormFactor';
+import { useMapShellLayout } from '../../hooks/useMapShellLayout';
 import { useSettingsStore } from '../../store/settingsStore';
 
 type Props = PropsWithChildren<{
@@ -10,39 +11,104 @@ type Props = PropsWithChildren<{
 }>;
 
 export function ResponsiveMapShell({ map, panel }: Props) {
-  const { formFactor, isLandscape } = useFormFactor();
-  const layoutPreset = useSettingsStore((s) => s.layoutPreset);
-
-  const split =
-    layoutPreset === 'split' ||
-    (layoutPreset === 'map-forward' && formFactor === 'expanded') ||
-    (layoutPreset === 'instruments-forward' && formFactor !== 'compact' && isLandscape);
-
-  const row = split && (formFactor !== 'compact' || isLandscape);
+  const { isLandscape } = useFormFactor();
+  const { layoutPreset, row } = useMapShellLayout();
+  const panelSide = useSettingsStore((s) => s.panelSide);
 
   if (layoutPreset === 'minimal') {
     return <View style={styles.fill}>{map}</View>;
   }
 
-  if (row) {
+  const panelFirst =
+    panelSide === 'port' || (panelSide === 'auto' && !isLandscape && row === false && layoutPreset === 'instruments-forward');
+
+  if (layoutPreset === 'coordinates' && row) {
+    const rowStyle = panelSide === 'port' ? styles.rowReverse : styles.row;
     return (
-      <View style={[styles.fill, styles.row]}>
+      <View style={[styles.fill, rowStyle]}>
+        <View style={styles.mapWide}>{map}</View>
+        <View style={styles.panelNarrow}>{panel}</View>
+      </View>
+    );
+  }
+
+  if (row) {
+    const rowStyle = panelSide === 'port' ? styles.rowReverse : styles.row;
+    return (
+      <View style={[styles.fill, rowStyle]}>
         <View style={styles.half}>{map}</View>
         <View style={styles.half}>{panel}</View>
       </View>
     );
   }
 
+  if (layoutPreset === 'instruments-forward' && panelFirst) {
+    return (
+      <View style={styles.fill}>
+        <View style={styles.panelStack}>{panel}</View>
+        <View style={styles.mapRegion}>{map}</View>
+      </View>
+    );
+  }
+
+  if (layoutPreset === 'coordinates' && !row) {
+    return (
+      <View style={styles.fill}>
+        <View style={styles.mapRegion}>{map}</View>
+        <View style={styles.coordsPanel}>{panel}</View>
+      </View>
+    );
+  }
+
+  if (layoutPreset === 'split' && !row) {
+    return (
+      <View style={styles.fill}>
+        <View style={styles.mapRegion}>{map}</View>
+        <View style={styles.panelStack}>{panel}</View>
+      </View>
+    );
+  }
+
+  if (layoutPreset === 'map-forward' && !row) {
+    return (
+      <View style={styles.fill}>
+        <View style={styles.mapRegion}>{map}</View>
+        <View style={styles.panelStack}>{panel}</View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.fill}>
-      {map}
-      {layoutPreset !== 'map-forward' ? panel : null}
+      <View style={styles.mapRegion}>{map}</View>
+      {panel}
     </View>
   );
+}
+
+/** @deprecated Prefer useMapShellLayout() — kept for tests importing layout logic. */
+export function resolveMapShellSplit(
+  layoutPreset: string,
+  formFactor: string,
+  isLandscape: boolean,
+): { split: boolean; row: boolean } {
+  const split =
+    layoutPreset === 'split' ||
+    layoutPreset === 'coordinates' ||
+    (layoutPreset === 'map-forward' && formFactor === 'expanded') ||
+    (layoutPreset === 'instruments-forward' && formFactor !== 'compact' && isLandscape);
+  const row = split && (formFactor !== 'compact' || isLandscape);
+  return { split, row };
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   row: { flexDirection: 'row' },
-  half: { flex: 1 },
+  rowReverse: { flexDirection: 'row-reverse' },
+  half: { flex: 1, minHeight: 0 },
+  mapRegion: { flex: 1, minHeight: 0 },
+  mapWide: { flex: 0.55, minHeight: 0 },
+  panelNarrow: { flex: 0.45, minHeight: 0 },
+  coordsPanel: { flexShrink: 0, maxHeight: '46%', minHeight: 180 },
+  panelStack: { flexShrink: 0, maxHeight: '46%' },
 });

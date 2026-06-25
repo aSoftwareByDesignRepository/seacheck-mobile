@@ -3,18 +3,50 @@ import * as Sharing from 'expo-sharing';
 import { create } from 'zustand';
 
 import { getDatabase, newId, type TrackPointRow, type TrackRow } from '../lib/db/database';
-import { syncBackgroundTrackRecording } from '../services/trackRecordingService';
+import type { LonLat } from '../lib/geo/navigation';
+import { t } from '../i18n';
+import { registerTrackLiveTrail } from '../services/trackLiveTrail';
+import { useNavigationStore } from './navigationStore';
+import { usePassageStore } from './passageStore';
+
+function buildDefaultTrackName(): string {
+  const { activePassageId, passages } = usePassageStore.getState();
+  const date = new Date().toISOString().slice(0, 10);
+  if (activePassageId) {
+    const passage = passages.find((p) => p.id === activePassageId);
+    if (passage?.name) return `${passage.name} ${date}`;
+  }
+  return t('tracks.defaultName', { date });
+}
+
+const MAX_LIVE_TRAIL = 2000;
+const MAX_LIVE_INSPECT = 500;
+
+async function syncBackgroundTrackRecording(trackId: string | null): Promise<void> {
+  const { syncBackgroundTrackRecording: sync } = await import('../services/backgroundLocationService');
+  await sync(trackId);
+}
 
 type TrackStore = {
   hydrated: boolean;
   tracks: TrackRow[];
   recordingTrackId: string | null;
+  /** Live polyline while recording — [lon, lat][] for map overlay. */
+  liveTrail: LonLat[];
+  /** Recent points with metadata for tap-to-inspect while recording. */
+  liveInspectPoints: TrackPointRow[];
   hydrate: () => Promise<void>;
   startRecording: (name?: string) => Promise<string>;
   stopRecording: () => Promise<void>;
   appendPoint: (input: { latitude: number; longitude: number; sog_ms: number | null; cog_deg: number | null }) => Promise<void>;
+  pushLiveTrailPoint: (longitude: number, latitude: number) => void;
   deleteTrack: (id: string) => Promise<void>;
   exportGpx: (id: string) => Promise<void>;
+  /** Saved track polyline shown on map (from Tracks → Show on map). */
+  mapPreviewTrackId: string | null;
+  mapPreviewLine: LonLat[];
+  mapPreviewPoints: TrackPointRow[];
+  setMapPreviewTrack: (id: string | null) => Promise<void>;
   getPoints: (id: string) => Promise<TrackPointRow[]>;
 };
 
@@ -22,6 +54,11 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
   hydrated: false,
   tracks: [],
   recordingTrackId: null,
+  liveTrail: [],
+  liveInspectPoints: [],
+  mapPreviewTrackId: null,
+  mapPreviewLine: [],
+  mapPreviewPoints: [],
 
   hydrate: async () => {
     const db = await getDatabase();
@@ -31,6 +68,11 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
     set({ hydrated: true, tracks, recordingTrackId });
     if (recordingTrackId) {
       await syncBackgroundTrackRecording(recordingTrackId);
+      const points = await get().getPoints(recordingTrackId);
+      set({
+        liveTrail: points.map((p) => [p.longitude, p.latitude] as LonLat),
+        liveInspectPoints: points.slice(-MAX_LIVE_INSPECT),
+      });
     }
   },
 
@@ -38,13 +80,14 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
     if (get().recordingTrackId) return get().recordingTrackId!;
     const row: TrackRow = {
       id: newId('trk'),
-      name: name?.trim() || `Track ${new Date().toISOString().slice(0, 10)}`,
+      name: name?.trim() || buildDefaultTrackName(),
       started_at: Date.now(),
       ended_at: null,
     };
     const db = await getDatabase();
     await db.runAsync('INSERT INTO tracks (id, name, started_at, ended_at) VALUES (?, ?, ?, ?)', row.id, row.name, row.started_at, row.ended_at);
-    set({ tracks: [row, ...get().tracks], recordingTrackId: row.id });
+    set({ tracks: [row, ...get().tracks], recordingTrackId: row.id, liveTrail: [], liveInspectPoints: [] });
+    await useNavigationStore.getState().resetSessionDistance();
     await syncBackgroundTrackRecording(row.id);
     return row.id;
   },
@@ -65,29 +108,73 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
   appendPoint: async ({ latitude, longitude, sog_ms, cog_deg }) => {
     const trackId = get().recordingTrackId;
     if (!trackId) return;
+    const recorded_at = Date.now();
     const db = await getDatabase();
-    await db.runAsync(
+    const result = await db.runAsync(
       'INSERT INTO track_points (track_id, latitude, longitude, sog_ms, cog_deg, recorded_at) VALUES (?, ?, ?, ?, ?, ?)',
       trackId,
       latitude,
       longitude,
       sog_ms,
       cog_deg,
-      Date.now(),
+      recorded_at,
     );
+    const point: TrackPointRow = {
+      id: result.lastInsertRowId,
+      track_id: trackId,
+      latitude,
+      longitude,
+      sog_ms,
+      cog_deg,
+      recorded_at,
+    };
+    set((state) => {
+      const nextInspect = [...state.liveInspectPoints, point];
+      if (nextInspect.length > MAX_LIVE_INSPECT) nextInspect.splice(0, nextInspect.length - MAX_LIVE_INSPECT);
+      return { liveInspectPoints: nextInspect };
+    });
+    get().pushLiveTrailPoint(longitude, latitude);
+  },
+
+  pushLiveTrailPoint: (longitude, latitude) => {
+    const point: LonLat = [longitude, latitude];
+    set((state) => {
+      const next = [...state.liveTrail, point];
+      if (next.length > MAX_LIVE_TRAIL) next.splice(0, next.length - MAX_LIVE_TRAIL);
+      return { liveTrail: next };
+    });
   },
 
   deleteTrack: async (id) => {
     const wasRecording = get().recordingTrackId === id;
+    const wasPreview = get().mapPreviewTrackId === id;
     const db = await getDatabase();
     await db.runAsync('DELETE FROM tracks WHERE id = ?', id);
     set({
       tracks: get().tracks.filter((t) => t.id !== id),
       recordingTrackId: wasRecording ? null : get().recordingTrackId,
+      liveTrail: wasRecording ? [] : get().liveTrail,
+      liveInspectPoints: wasRecording ? [] : get().liveInspectPoints,
+      mapPreviewTrackId: wasPreview ? null : get().mapPreviewTrackId,
+      mapPreviewLine: wasPreview ? [] : get().mapPreviewLine,
+      mapPreviewPoints: wasPreview ? [] : get().mapPreviewPoints,
     });
     if (wasRecording) {
       await syncBackgroundTrackRecording(null);
     }
+  },
+
+  setMapPreviewTrack: async (id) => {
+    if (!id) {
+      set({ mapPreviewTrackId: null, mapPreviewLine: [], mapPreviewPoints: [] });
+      return;
+    }
+    const points = await get().getPoints(id);
+    set({
+      mapPreviewTrackId: id,
+      mapPreviewLine: points.map((p) => [p.longitude, p.latitude] as LonLat),
+      mapPreviewPoints: points,
+    });
   },
 
   getPoints: async (id) => {
@@ -120,3 +207,10 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
 function escapeXml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+registerTrackLiveTrail({
+  getRecordingTrackId: () => useTrackStore.getState().recordingTrackId,
+  pushLiveTrailPoint: (longitude, latitude) => {
+    useTrackStore.getState().pushLiveTrailPoint(longitude, latitude);
+  },
+});
