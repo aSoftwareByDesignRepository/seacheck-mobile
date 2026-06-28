@@ -3,7 +3,7 @@ import type * as Location from 'expo-location';
 
 import { getDatabase, type PassageRow, type WaypointRow } from '../db/database';
 import { FIX_STALE_MS } from '../geo/fixAge';
-import { classifyFixAcceptance } from '../geo/gpsFilter';
+import { classifyFixAcceptance, effectivePreviousFixForAcceptance } from '../geo/gpsFilter';
 import { loadAlarmRuntime, saveAlarmRuntime } from './alarmRuntimeState';
 import { ANCHOR_GPS_LOST_REPEAT_MS, processLocationAlarms } from './processLocationAlarms';
 import { computePassageLegs, legOverrideKey, type LegOverride } from '../passage/computeLegs';
@@ -33,6 +33,7 @@ type NavPersist = {
 type SettingsPersist = {
   legAdvanceAuto?: boolean;
   backgroundTrackRecording?: boolean;
+  distanceUnit?: import('../../settings/defaults').DistanceUnit;
 };
 
 export type AlarmLiveState = {
@@ -43,6 +44,7 @@ export type AlarmLiveState = {
   activePassageId: string | null;
   passageDetail: PassageWithLegs | null;
   legAdvanceAuto: boolean;
+  distanceUnit?: import('../../settings/defaults').DistanceUnit;
 };
 
 export type ProcessFixOptions = {
@@ -135,7 +137,7 @@ async function persistLegAdvanceFromBackground(legIndex: number, passageId: stri
   const idx = Math.min(Math.max(0, legIndex), detail.legs.length - 1);
 
   if (passageStore().getState().hydrated && passageStore().getState().activePassageId === passageId) {
-    await passageStore().getState().setPassageActiveLeg(legIndex, { resetTimer: false });
+    await passageStore().getState().setPassageActiveLeg(legIndex);
     return;
   }
 
@@ -154,7 +156,6 @@ async function persistLegAdvanceFromBackground(legIndex: number, passageId: stri
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     parsed.activeLegIndex = idx;
     parsed.goToTarget = goTo;
-    parsed.legTimerStartedAtMs = Date.now();
     await AsyncStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(parsed));
   } catch {
     /* keep prior nav state */
@@ -195,9 +196,15 @@ async function resolveAlarmInputs(options: ProcessFixOptions): Promise<{
   activePassageId: string | null;
   passageDetail: PassageWithLegs | null;
   legAdvanceAuto: boolean;
+  distanceUnit: import('../../settings/defaults').DistanceUnit;
 }> {
   const live = options.liveState;
   if (live) {
+    const activePassageId = live.activePassageId;
+    // Foreground hook may pass liveState before passage detail finishes loading — fetch so
+    // XTE / leg-advance alarms are not silently skipped on the first fixes after launch.
+    const passageDetail =
+      live.passageDetail ?? (activePassageId ? await fetchPassageDetailById(activePassageId) : null);
     return {
       navPersist: {
         goToTarget: live.goToTarget,
@@ -205,10 +212,11 @@ async function resolveAlarmInputs(options: ProcessFixOptions): Promise<{
         activeLegIndex: live.activeLegIndex,
         alarmLimits: live.alarmLimits,
       },
-      settings: { legAdvanceAuto: live.legAdvanceAuto },
-      activePassageId: live.activePassageId,
-      passageDetail: live.passageDetail,
+      settings: { legAdvanceAuto: live.legAdvanceAuto, distanceUnit: live.distanceUnit },
+      activePassageId,
+      passageDetail,
       legAdvanceAuto: live.legAdvanceAuto,
+      distanceUnit: live.distanceUnit ?? 'nm',
     };
   }
 
@@ -216,7 +224,7 @@ async function resolveAlarmInputs(options: ProcessFixOptions): Promise<{
     goToTarget: null,
     anchorAlarm: null,
     activeLegIndex: 0,
-    alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },
+    alarmLimits: { xteNm: 0.05, arrivalNm: 0.25 },
   };
   const settings = (await loadSettingsPersist()) ?? {};
   const activePassageId = await loadActivePassageId();
@@ -227,6 +235,7 @@ async function resolveAlarmInputs(options: ProcessFixOptions): Promise<{
     activePassageId,
     passageDetail,
     legAdvanceAuto: Boolean(settings.legAdvanceAuto),
+    distanceUnit: settings.distanceUnit ?? 'nm',
   };
 }
 
@@ -237,7 +246,7 @@ export async function processFixFromLocation(
 ): Promise<ProcessFixResult> {
   return enqueueAlarmProcessing(async () => {
     const fixTs = loc.timestamp ?? Date.now();
-    const { navPersist, activePassageId, passageDetail, legAdvanceAuto } = await resolveAlarmInputs(options);
+    const { navPersist, activePassageId, passageDetail, legAdvanceAuto, distanceUnit } = await resolveAlarmInputs(options);
     const runtime = await loadAlarmRuntime();
     const mappedFix = mapLocationToFix(loc);
 
@@ -254,7 +263,9 @@ export async function processFixFromLocation(
     // Reject single-fix GNSS spikes (multipath / invalid / poor accuracy) before drag/XTE/arrival
     // evaluation so they cannot fire a false critical alarm. The raw fix is still used elsewhere
     // for display; here only trustworthy fixes drive safety alarms.
-    const acceptance = classifyFixAcceptance(lastAlarmFix, {
+    const previousForAcceptance = effectivePreviousFixForAcceptance(lastAlarmFix, mappedFix.timestamp);
+    const deferAnchorDragEvaluation = previousForAcceptance == null && lastAlarmFix != null;
+    const acceptance = classifyFixAcceptance(previousForAcceptance, {
       latitude: mappedFix.latitude,
       longitude: mappedFix.longitude,
       timestamp: mappedFix.timestamp,
@@ -283,6 +294,8 @@ export async function processFixFromLocation(
       legAdvanceAuto,
       allowLegAdvancePrompt: options.allowLegAdvancePrompt,
       runtime,
+      distanceUnit,
+      deferAnchorDragEvaluation,
     });
 
     await saveAlarmRuntime(nextRuntime);

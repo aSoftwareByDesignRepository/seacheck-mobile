@@ -22,9 +22,11 @@ export function useAlarmMonitor() {
   const passages = usePassageStore((s) => s.passages);
   const activeLegIndex = useNavigationStore((s) => s.activeLegIndex);
   const legAdvanceAuto = useSettingsStore((s) => s.legAdvanceAuto);
+  const distanceUnit = useSettingsStore((s) => s.distanceUnit);
 
-  const passageDetailRef = useRef<PassageWithLegs | null>(null);
+  const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
   const legPromptShownRef = useRef<number | null>(null);
+  const [passageDetail, setPassageDetail] = useState<PassageWithLegs | null>(null);
   const [appActive, setAppActive] = useState(AppState.currentState === 'active');
 
   useEffect(() => {
@@ -36,13 +38,11 @@ export function useAlarmMonitor() {
 
   useEffect(() => {
     if (!activePassageId) {
-      passageDetailRef.current = null;
+      setPassageDetail(null);
       return;
     }
-    void usePassageStore.getState().getPassageDetail(activePassageId).then((d) => {
-      passageDetailRef.current = d;
-    });
-  }, [activePassageId, activeLegIndex, passages]);
+    void getPassageDetail(activePassageId).then(setPassageDetail);
+  }, [activePassageId, activeLegIndex, passages, getPassageDetail]);
 
   useEffect(() => {
     if (!appActive || !fix) return;
@@ -69,21 +69,21 @@ export function useAlarmMonitor() {
           alarmLimits,
           activeLegIndex,
           activePassageId,
-          passageDetail: passageDetailRef.current,
+          passageDetail,
           legAdvanceAuto,
+          distanceUnit,
         },
       },
     ).then(({ legAdvancePromptLegIdx }) => {
-      const detail = passageDetailRef.current;
       if (
-        detail &&
+        passageDetail &&
         legAdvancePromptLegIdx != null &&
         legAdvancePromptLegIdx !== legPromptShownRef.current &&
         !legAdvanceAuto &&
-        detail.legs[legAdvancePromptLegIdx]
+        passageDetail.legs[legAdvancePromptLegIdx]
       ) {
         legPromptShownRef.current = legAdvancePromptLegIdx;
-        const leg = detail.legs[legAdvancePromptLegIdx];
+        const leg = passageDetail.legs[legAdvancePromptLegIdx];
         void requestConfirm({
           title: t('alarms.legAdvanceTitle'),
           message: t('alarms.legAdvanceBody', {
@@ -110,5 +110,7 @@ export function useAlarmMonitor() {
     activeLegIndex,
     legAdvanceAuto,
     appActive,
+    distanceUnit,
+    passageDetail,
   ]);
 }

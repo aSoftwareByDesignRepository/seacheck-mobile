@@ -1,8 +1,11 @@
 import { ANCHOR_SOG_MIN_DRIFT_NM, MAX_ALARM_ACCURACY_M } from '../geo/fixQuality';
-import { bearingTrue, crossTrackErrorNm, distanceNm, type LonLat } from '../geo/navigation';
+import { crossTrackErrorNm, distanceNm, type LonLat } from '../geo/navigation';
+import { computePassageLegAdvance, shouldResetLegArrivalLatch, assessLegWaypointArrival } from '../passage/legArrival';
 import { t } from '../../i18n';
+import type { DistanceUnit } from '../../settings/defaults';
 import type { PassageWithLegs } from '../../store/passageStore';
 import type { AlarmLimits, AnchorAlarmState, NavigationTarget } from '../../store/navigationStore';
+import { formatDistanceLineFromNm, formatXteLineFromNm } from '../geo/units';
 import { DEFAULT_ALARM_RUNTIME, type AlarmRuntimeState } from './alarmRuntimeState';
 
 /** Re-fire anchor GPS-lost warning at this interval while fix is stale. */
@@ -51,6 +54,10 @@ export type AlarmProcessInput = {
   /** When false, leg-advance prompts are skipped (background task). */
   allowLegAdvancePrompt: boolean;
   runtime: AlarmRuntimeState;
+  /** Display unit for distance alarm copy — limits stay in NM internally. */
+  distanceUnit?: DistanceUnit;
+  /** First accepted fix after a GPS gap — skip anchor drag until a second fix confirms position. */
+  deferAnchorDragEvaluation?: boolean;
   nowMs?: number;
 };
 
@@ -67,7 +74,10 @@ export function processLocationAlarms(input: AlarmProcessInput): AlarmProcessOut
   const actions: AlarmAction[] = [];
   const pos: LonLat = [input.fix.longitude, input.fix.latitude];
 
-  if (anchorAlarm?.active && !isAccuracyTrustworthyForDrag(input.fix.accuracyM)) {
+  if (anchorAlarm?.active && input.deferAnchorDragEvaluation) {
+    // GPS just recovered — do not compare against pre-outage position on a single fix.
+    runtime.anchorSogStreak = 0;
+  } else if (anchorAlarm?.active && !isAccuracyTrustworthyForDrag(input.fix.accuracyM)) {
     // Low-confidence fix: do not evaluate drag (avoids false critical alarms from GPS noise).
     // Streak is reset so a burst of poor fixes cannot accumulate a phantom SOG drag.
     runtime.anchorSogStreak = 0;
@@ -82,8 +92,11 @@ export function processLocationAlarms(input: AlarmProcessInput): AlarmProcessOut
       runtime.anchorSogStreak >= ANCHOR_SOG_STREAK && drift >= ANCHOR_SOG_MIN_DRIFT_NM;
 
     if (radiusDrag || sustainedSogDrag) {
+      const unit = input.distanceUnit ?? 'nm';
       const reason = radiusDrag
-        ? t('alarms.anchorDragBody', { nm: drift.toFixed(2) })
+        ? t('alarms.anchorDragBody', {
+            dist: formatDistanceLineFromNm(drift, unit) ?? drift.toFixed(2),
+          })
         : t('alarms.anchorSogBody', { kn: (sogKn ?? 0).toFixed(1) });
       if (!anchorAlarm.triggered) {
         anchorAlarm = { ...anchorAlarm, triggered: true };
@@ -121,10 +134,14 @@ export function processLocationAlarms(input: AlarmProcessInput): AlarmProcessOut
 
     if (!skipArrival && dist <= input.alarmLimits.arrivalNm && runtime.arrivalFiredTargetId !== target.id) {
       runtime.arrivalFiredTargetId = target.id;
+      const unit = input.distanceUnit ?? 'nm';
       actions.push({
         type: 'trigger',
         severity: 'warning',
-        message: `${t('alarms.arrivalTitle')}: ${t('alarms.arrivalBody', { name: target.name, nm: dist.toFixed(2) })}`,
+        message: `${t('alarms.arrivalTitle')}: ${t('alarms.arrivalBody', {
+          name: target.name,
+          dist: formatDistanceLineFromNm(dist, unit) ?? dist.toFixed(2),
+        })}`,
       });
     } else if (dist > input.alarmLimits.arrivalNm * 2) {
       runtime.arrivalFiredTargetId = null;
@@ -139,6 +156,12 @@ export function processLocationAlarms(input: AlarmProcessInput): AlarmProcessOut
     if (runtime.xteLegIdx !== legIdx) {
       runtime.xteLegIdx = legIdx;
       runtime.xteFired = false;
+      if (runtime.lastAutoAdvancedLegIdx != null && runtime.lastAutoAdvancedLegIdx >= legIdx) {
+        runtime.lastAutoAdvancedLegIdx = null;
+      }
+      if (runtime.legAdvancePromptLegIdx != null && runtime.legAdvancePromptLegIdx >= legIdx) {
+        runtime.legAdvancePromptLegIdx = null;
+      }
     }
 
     const xte = Math.abs(
@@ -150,27 +173,43 @@ export function processLocationAlarms(input: AlarmProcessInput): AlarmProcessOut
         actions.push({
           type: 'trigger',
           severity: 'warning',
-          message: `${t('alarms.xteTitle')}: ${t('alarms.xteBody', { nm: xte.toFixed(2) })}`,
+          message: `${t('alarms.xteTitle')}: ${t('alarms.xteBody', {
+            dist: formatXteLineFromNm(xte, input.distanceUnit ?? 'nm') ?? xte.toFixed(2),
+          })}`,
         });
       }
     } else {
       runtime.xteFired = false;
     }
 
-    const distToWp = distanceNm(pos, [leg.to.longitude, leg.to.latitude]);
-    if (distToWp <= input.alarmLimits.arrivalNm && legIdx < detail.legs.length - 1) {
+    const legAdvance = computePassageLegAdvance(pos, detail.legs, legIdx, input.alarmLimits.arrivalNm);
+    if (legAdvance && legIdx < detail.legs.length - 1) {
       if (input.legAdvanceAuto) {
-        if (runtime.lastAutoAdvancedLegIdx !== legIdx) {
-          runtime.lastAutoAdvancedLegIdx = legIdx;
-          actions.push({ type: 'leg_advance_auto', legIndex: legIdx + 1, waypointName: leg.to.name });
+        if (runtime.lastAutoAdvancedLegIdx == null || runtime.lastAutoAdvancedLegIdx < legAdvance.completedLegIndex) {
+          runtime.lastAutoAdvancedLegIdx = legAdvance.completedLegIndex;
+          actions.push({
+            type: 'leg_advance_auto',
+            legIndex: legAdvance.nextLegIndex,
+            waypointName: legAdvance.waypointName,
+          });
         }
         runtime.legAdvancePromptLegIdx = null;
-      } else if (input.allowLegAdvancePrompt && runtime.legAdvancePromptLegIdx !== legIdx) {
-        runtime.legAdvancePromptLegIdx = legIdx;
+      } else if (input.allowLegAdvancePrompt && runtime.legAdvancePromptLegIdx !== legAdvance.completedLegIndex) {
+        runtime.legAdvancePromptLegIdx = legAdvance.completedLegIndex;
       }
-    } else if (distToWp > input.alarmLimits.arrivalNm * 2) {
-      runtime.legAdvancePromptLegIdx = null;
-      runtime.lastAutoAdvancedLegIdx = null;
+    } else {
+      const currentAssessment = assessLegWaypointArrival(
+        pos,
+        [leg.from.longitude, leg.from.latitude],
+        [leg.to.longitude, leg.to.latitude],
+        input.alarmLimits.arrivalNm,
+      );
+      if (shouldResetLegArrivalLatch(currentAssessment, input.alarmLimits.arrivalNm)) {
+        runtime.legAdvancePromptLegIdx = null;
+        if (runtime.lastAutoAdvancedLegIdx != null && runtime.lastAutoAdvancedLegIdx >= legIdx) {
+          runtime.lastAutoAdvancedLegIdx = null;
+        }
+      }
     }
   }
 

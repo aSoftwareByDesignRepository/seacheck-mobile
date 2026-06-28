@@ -5,7 +5,8 @@ describe('resolveMapShellLayout', () => {
     expect(resolveMapShellLayout('map-forward', 'compact', false)).toEqual({ split: false, row: false });
   });
 
-  it('splits map-forward on expanded form factors', () => {
+  it('splits map-forward on medium and expanded form factors', () => {
+    expect(resolveMapShellLayout('map-forward', 'medium', false)).toEqual({ split: true, row: true });
     expect(resolveMapShellLayout('map-forward', 'expanded', false)).toEqual({ split: true, row: true });
   });
 
@@ -15,5 +16,10 @@ describe('resolveMapShellLayout', () => {
 
   it('uses stacked coordinates on compact portrait', () => {
     expect(resolveMapShellLayout('coordinates', 'compact', false)).toEqual({ split: true, row: false });
+  });
+
+  it('never splits instruments-only', () => {
+    expect(resolveMapShellLayout('instruments-only', 'compact', false)).toEqual({ split: false, row: false });
+    expect(resolveMapShellLayout('instruments-only', 'expanded', true)).toEqual({ split: false, row: false });
   });
 });

@@ -1,21 +1,26 @@
 import { destinationPoint, type LonLat } from './navigation';
 
-/** Overall boat length on chart (~100 m) — readable at passage zoom levels. */
+/** Overall boat length on chart (~100 m) — readable at reference zoom (z13); scaled by zoom elsewhere. */
 export const BOAT_ICON_LENGTH_NM = 0.054;
 
 /** Maximum beam (~40 m). */
 export const BOAT_ICON_BEAM_NM = 0.022;
 
-/** Distance from GPS centre to bow tip — matches polygon geometry. */
+/** Distance from GPS centre to bow tip — matches polygon geometry at scale 1. */
 export const BOAT_BOW_OFFSET_NM = (BOAT_ICON_LENGTH_NM / 2) * 1.08;
+
+export function scaledBoatBowOffsetNm(scale = 1): number {
+  return BOAT_BOW_OFFSET_NM * scale;
+}
 
 /**
  * Navionics-style boat outline pointing along `bearingDeg` (true degrees, 0 = north).
  * Bow at the front, flat stern — direction is obvious without reading instruments.
+ * `scale` adjusts NM size for chart zoom (screen-size compensation).
  */
-export function buildBoatIconPolygon(center: LonLat, bearingDeg: number): LonLat[] {
-  const halfLen = BOAT_ICON_LENGTH_NM / 2;
-  const halfBeam = BOAT_ICON_BEAM_NM / 2;
+export function buildBoatIconPolygon(center: LonLat, bearingDeg: number, scale = 1): LonLat[] {
+  const halfLen = (BOAT_ICON_LENGTH_NM / 2) * scale;
+  const halfBeam = (BOAT_ICON_BEAM_NM / 2) * scale;
 
   const bowTip = destinationPoint(center, bearingDeg, halfLen * 1.08);
   const bowShoulder = destinationPoint(center, bearingDeg, halfLen * 0.12);
@@ -42,12 +47,13 @@ export function buildPositionDotPolygon(center: LonLat, radiusNm = 0.012, steps 
  * Diamond marker when heading is unknown — visually distinct from the directional boat icon.
  * Standard chart convention: shape shows position, boat shape shows position + heading.
  */
-export function buildPositionDiamondPolygon(center: LonLat, radiusNm = 0.014): LonLat[] {
+export function buildPositionDiamondPolygon(center: LonLat, radiusNm = 0.014, scale = 1): LonLat[] {
+  const r = radiusNm * scale;
   return [
-    destinationPoint(center, 0, radiusNm * 1.15),
-    destinationPoint(center, 90, radiusNm * 0.9),
-    destinationPoint(center, 180, radiusNm * 1.15),
-    destinationPoint(center, 270, radiusNm * 0.9),
-    destinationPoint(center, 0, radiusNm * 1.15),
+    destinationPoint(center, 0, r * 1.15),
+    destinationPoint(center, 90, r * 0.9),
+    destinationPoint(center, 180, r * 1.15),
+    destinationPoint(center, 270, r * 0.9),
+    destinationPoint(center, 0, r * 1.15),
   ];
 }

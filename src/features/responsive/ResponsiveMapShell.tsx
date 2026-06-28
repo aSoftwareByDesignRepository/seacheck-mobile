@@ -19,6 +19,10 @@ export function ResponsiveMapShell({ map, panel }: Props) {
     return <View style={styles.fill}>{map}</View>;
   }
 
+  if (layoutPreset === 'instruments-only') {
+    return <View style={styles.fill}>{panel}</View>;
+  }
+
   const panelFirst =
     panelSide === 'port' || (panelSide === 'auto' && !isLandscape && row === false && layoutPreset === 'instruments-forward');
 
@@ -74,6 +78,15 @@ export function ResponsiveMapShell({ map, panel }: Props) {
       <View style={styles.fill}>
         <View style={styles.mapRegion}>{map}</View>
         <View style={styles.panelStack}>{panel}</View>
+      </View>
+    );
+  }
+
+  if (layoutPreset === 'instruments-forward' && !row) {
+    return (
+      <View style={styles.fill}>
+        <View style={styles.panelStack}>{panel}</View>
+        <View style={styles.mapRegion}>{map}</View>
       </View>
     );
   }

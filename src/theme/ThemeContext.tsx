@@ -3,6 +3,7 @@ import { PropsWithChildren, createContext, useContext, useEffect, useMemo, useSt
 import { useColorScheme } from 'react-native';
 
 import { useSettingsStore } from '../store/settingsStore';
+import { resolveThemeIsDark, resolveThemePalette } from '../lib/theme/resolveThemeAppearance';
 
 export type ThemeMode = 'system' | 'light' | 'dark' | 'redNight' | 'highContrast';
 
@@ -108,6 +109,8 @@ const spacing = {
 
 type ThemeContextValue = {
   mode: ThemeMode;
+  /** Resolved dark appearance — includes system mode following OS scheme. */
+  isDark: boolean;
   colors: ThemeColors;
   spacing: typeof spacing;
   minTouch: number;
@@ -131,13 +134,14 @@ export function ThemeProvider({ children }: PropsWithChildren) {
     });
   }, []);
 
-  const resolved =
-    mode === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : mode;
-  const colors = palettes[resolved as keyof typeof palettes];
+  const resolved = resolveThemePalette(mode, systemScheme);
+  const isDark = resolveThemeIsDark(mode, systemScheme);
+  const colors = palettes[resolved];
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       mode,
+      isDark,
       colors,
       spacing,
       minTouch: gloveMode ? 56 : 48,
@@ -146,7 +150,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
         void AsyncStorage.setItem(STORAGE_KEY, nextMode);
       },
     }),
-    [mode, colors, gloveMode],
+    [mode, isDark, colors, gloveMode],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

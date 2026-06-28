@@ -27,7 +27,7 @@ import { useTheme } from '../theme/ThemeContext';
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 export function MainShell() {
-  const { colors, mode } = useTheme();
+  const { colors, isDark } = useTheme();
   useAppLocationWatch();
   useResumeBackgroundSync();
   useMaritimeMonitors();
@@ -36,7 +36,6 @@ export function MainShell() {
   const screenLocked = useNavigationStore((s) => s.screenLocked);
   const setScreenLocked = useNavigationStore((s) => s.setScreenLocked);
   const setMenuOpen = useTabOverflowStore((s) => s.setMenuOpen);
-  const isDark = mode === 'dark' || mode === 'redNight' || mode === 'highContrast';
   const useRail = formFactor !== 'compact' && isLandscape;
 
   useEffect(() => {

@@ -1,5 +1,5 @@
-/** Format elapsed milliseconds as M:SS or H:MM:SS for leg timer display. */
-export function formatLegElapsed(ms: number): string {
+/** Format elapsed milliseconds as M:SS or H:MM:SS. */
+export function formatElapsedMs(ms: number): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
   const hours = Math.floor(totalSec / 3600);
   const minutes = Math.floor((totalSec % 3600) / 60);

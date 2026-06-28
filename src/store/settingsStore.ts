@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import {
   CRUISE_PASSAGE_DEFAULTS,
   DEFAULT_SEAMARK_PLANNING,
+  DEFAULT_CHART_BASE_STYLE,
   type BearingReference,
   type CoordFormat,
   type AnchorRadiusNm,
@@ -11,14 +12,16 @@ import {
   type CourseVectorVisualScale,
   type DistanceUnit,
   type FollowZoomLevel,
+  type ChartBaseStyle,
   type LayoutPreset,
   type PanelSide,
   type SeamarkPlanningConfig,
   type SogUnit,
 } from '../settings/defaults';
-import { layoutContextKey, type LayoutContext } from '../lib/settings/layoutPreferences';
+import { layoutContextKey, normalizeLayoutPreset, type LayoutContext } from '../lib/settings/layoutPreferences';
+import { normalizeChartBaseStyle } from '../lib/settings/chartBaseStyle';
 import { enqueuePersist } from '../lib/persist/asyncPersistQueue';
-import { getActivityProfile, normalizeActivityProfileId } from '../settings/profiles';
+import { buildActivityProfileSettingsPatch, getActivityProfile, normalizeActivityProfileId } from '../settings/profiles';
 import { normalizeAnchorRadiusNm, normalizeCourseVectorMinutes, normalizeCourseVectorScale, normalizeFollowZoom } from '../lib/settings/mapSettings';
 import { normalizeSeamarkPlanning } from '../lib/settings/seamarkSettings';
 
@@ -48,6 +51,8 @@ type PersistPayload = {
   mapCourseVectorMinutes: CourseVectorMinutes;
   mapCourseVectorScale: CourseVectorVisualScale;
   mapFollowZoom: FollowZoomLevel;
+  chartBaseStyle: ChartBaseStyle;
+  mapShowPassageRouteLines: boolean;
   seamarkPlanning: SeamarkPlanningConfig;
   anchorRadiusNm: AnchorRadiusNm;
   followMode: boolean;
@@ -59,10 +64,6 @@ type PersistPayload = {
   alarmHapticEnabled: boolean;
   legAdvanceAuto: boolean;
   vessel: VesselProfile;
-  raceWindDirectionTrue: number | null;
-  raceTackingAngleDeg: number;
-  raceTargetSogKn: number | null;
-  raceShowLaylines: boolean;
   downloadWifiOnly: boolean;
   gloveMode: boolean;
   panelSide: PanelSide;
@@ -97,6 +98,8 @@ async function persist(state: SettingsState) {
     mapCourseVectorMinutes: state.mapCourseVectorMinutes,
     mapCourseVectorScale: state.mapCourseVectorScale,
     mapFollowZoom: state.mapFollowZoom,
+    chartBaseStyle: state.chartBaseStyle,
+    mapShowPassageRouteLines: state.mapShowPassageRouteLines,
     seamarkPlanning: state.seamarkPlanning,
     anchorRadiusNm: state.anchorRadiusNm,
     followMode: state.followMode,
@@ -108,10 +111,6 @@ async function persist(state: SettingsState) {
     alarmHapticEnabled: state.alarmHapticEnabled,
     legAdvanceAuto: state.legAdvanceAuto,
     vessel: state.vessel,
-    raceWindDirectionTrue: state.raceWindDirectionTrue,
-    raceTackingAngleDeg: state.raceTackingAngleDeg,
-    raceTargetSogKn: state.raceTargetSogKn,
-    raceShowLaylines: state.raceShowLaylines,
     downloadWifiOnly: state.downloadWifiOnly,
     gloveMode: state.gloveMode,
     panelSide: state.panelSide,
@@ -133,12 +132,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   layoutPreset: 'map-forward',
   layoutOverrides: {},
   ...CRUISE_PASSAGE_DEFAULTS,
+  chartBaseStyle: DEFAULT_CHART_BASE_STYLE,
+  mapShowPassageRouteLines: true,
   seamarkPlanning: DEFAULT_SEAMARK_PLANNING,
   vessel: emptyVessel,
-  raceWindDirectionTrue: null,
-  raceTackingAngleDeg: 45,
-  raceTargetSogKn: null,
-  raceShowLaylines: true,
   downloadWifiOnly: true,
   gloveMode: false,
   panelSide: 'auto',
@@ -148,8 +145,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as Partial<PersistPayload & { layoutOverrides?: Record<string, LayoutPreset> }>;
-        const legacyPreset = parsed.layoutPreset ?? 'map-forward';
-        const layoutOverrides = parsed.layoutOverrides ?? {};
+        const legacyPreset = normalizeLayoutPreset(parsed.layoutPreset);
+        const layoutOverridesRaw = parsed.layoutOverrides ?? {};
+        const layoutOverrides: Record<string, LayoutPreset> = {};
+        for (const [key, preset] of Object.entries(layoutOverridesRaw)) {
+          layoutOverrides[key] = normalizeLayoutPreset(preset, legacyPreset);
+        }
         if (Object.keys(layoutOverrides).length === 0 && parsed.layoutPreset) {
           layoutOverrides[layoutContextKey({ profileId: parsed.activityProfileId ?? 'cruise-passage', bucket: 'compact', isLandscape: false })] =
             legacyPreset;
@@ -170,6 +171,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           mapCourseVectorMinutes: normalizeCourseVectorMinutes(parsed.mapCourseVectorMinutes),
           mapCourseVectorScale: normalizeCourseVectorScale(parsed.mapCourseVectorScale),
           mapFollowZoom: normalizeFollowZoom(parsed.mapFollowZoom),
+          chartBaseStyle: normalizeChartBaseStyle(parsed.chartBaseStyle),
+          mapShowPassageRouteLines: parsed.mapShowPassageRouteLines ?? true,
           seamarkPlanning: normalizeSeamarkPlanning(parsed.seamarkPlanning),
           anchorRadiusNm: normalizeAnchorRadiusNm(parsed.anchorRadiusNm),
           followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode,
@@ -181,10 +184,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           alarmHapticEnabled: parsed.alarmHapticEnabled ?? true,
           legAdvanceAuto: Boolean(parsed.legAdvanceAuto),
           vessel: { ...emptyVessel, ...(parsed.vessel ?? {}) },
-          raceWindDirectionTrue: parsed.raceWindDirectionTrue ?? null,
-          raceTackingAngleDeg: parsed.raceTackingAngleDeg ?? 45,
-          raceTargetSogKn: parsed.raceTargetSogKn ?? null,
-          raceShowLaylines: parsed.raceShowLaylines ?? true,
           downloadWifiOnly: parsed.downloadWifiOnly ?? true,
           gloveMode: Boolean(parsed.gloveMode),
           panelSide: parsed.panelSide === 'port' || parsed.panelSide === 'starboard' ? parsed.panelSide : 'auto',
@@ -197,13 +196,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   completeOnboarding: async () => {
-    set({
-      onboardingCompleted: true,
-      ...CRUISE_PASSAGE_DEFAULTS,
-      layoutPreset: 'map-forward',
-      layoutOverrides: {},
-      vessel: get().vessel,
-    });
+    set({ onboardingCompleted: true });
     await persist(get());
   },
 
@@ -239,11 +232,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   applyActivityProfile: async (profileId) => {
     const profile = getActivityProfile(profileId);
     if (!profile) return;
-    set({
-      activityProfileId: profile.id,
-      sogUnit: profile.sogUnit,
-      distanceUnit: profile.distanceUnit,
-    });
+    set(buildActivityProfileSettingsPatch(profile));
     await persist(get());
   },
 }));

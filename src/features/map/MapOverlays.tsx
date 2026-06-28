@@ -9,9 +9,8 @@ import { formatBearing, magneticDeclinationDeg } from '../../lib/geo/magnetic';
 import { formatGotoNavLabel, legMidpoint } from '../../lib/geo/pathDistance';
 import { useNavigationStore } from '../../store/navigationStore';
 import { usePassageStore } from '../../store/passageStore';
+import { usePassageMapPlanningStore } from '../../store/passageMapPlanningStore';
 import { useWaypointStore } from '../../store/waypointStore';
-import { laylineBearingsFromMark } from '../../lib/racing/racingGeo';
-import { RACING_PACK_V11 } from '../../lib/featureFlags';
 import { useSettingsStore } from '../../store/settingsStore';
 import { isFixStale, useLocationStore } from '../../services/locationService';
 import { useTrackStore } from '../../store/trackStore';
@@ -37,6 +36,9 @@ export function MapOverlays({ showRangeRings }: Props) {
   const anchorAlarm = useNavigationStore((s) => s.anchorAlarm);
   const activePassageId = usePassageStore((s) => s.activePassageId);
   const activeLegIndex = useNavigationStore((s) => s.activeLegIndex);
+  const mapShowPassageRouteLines = useSettingsStore((s) => s.mapShowPassageRouteLines);
+  const planningPassageId = usePassageMapPlanningStore((s) => s.passageId);
+  const planningRevision = usePassageMapPlanningStore((s) => s.revision);
   const bearingReference = useSettingsStore((s) => s.bearingReference);
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const customBounds = useCustomDownloadStore((s) => {
@@ -230,9 +232,19 @@ export function MapOverlays({ showRangeRings }: Props) {
           }}
         />
       </GeoJSONSource>
-      <StartLineOverlay />
-      <LaylineOverlay />
-      <PassageOverlay passageId={activePassageId} activeLegIndex={activeLegIndex} />
+      {mapShowPassageRouteLines && activePassageId ? (
+        <PassageOverlay
+          passageId={activePassageId}
+          activeLegIndex={activeLegIndex}
+          refreshRevision={planningPassageId === activePassageId ? planningRevision : 0}
+        />
+      ) : null}
+      {planningPassageId && planningPassageId !== activePassageId ? (
+        <PassagePlanningOverlay passageId={planningPassageId} revision={planningRevision} />
+      ) : null}
+      {planningPassageId && planningPassageId === activePassageId && !mapShowPassageRouteLines ? (
+        <PassagePlanningOverlay passageId={planningPassageId} revision={planningRevision} showRouteLines={false} />
+      ) : null}
       <WaypointsOverlay />
       <TrackTrailOverlay />
       <SavedTrackOverlay />
@@ -241,113 +253,68 @@ export function MapOverlays({ showRangeRings }: Props) {
   );
 }
 
-function StartLineOverlay() {
-  const startLine = useNavigationStore((s) => s.startLine);
-  const waypoints = useWaypointStore((s) => s.items);
+function PassagePlanningOverlay({
+  passageId,
+  revision,
+  showRouteLines = true,
+}: {
+  passageId: string;
+  revision: number;
+  showRouteLines?: boolean;
+}) {
+  const passages = usePassageStore((s) => s.passages);
+  const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
+  const [waypoints, setWaypoints] = useState<{ longitude: number; latitude: number }[]>([]);
 
-  const data = useMemo(() => {
-    if (!startLine) return { type: 'FeatureCollection' as const, features: [] };
-    const pinA = waypoints.find((w) => w.id === startLine.pinAWaypointId);
-    const pinB = waypoints.find((w) => w.id === startLine.pinBWaypointId);
-    if (!pinA || !pinB) return { type: 'FeatureCollection' as const, features: [] };
-    const features: Feature[] = [
-      {
-        type: 'Feature',
-        properties: { kind: 'start-line' },
-        geometry: {
-          type: 'LineString',
-          coordinates: [
-            [pinA.longitude, pinA.latitude],
-            [pinB.longitude, pinB.latitude],
-          ],
-        },
-      },
-      {
-        type: 'Feature',
-        properties: { kind: 'start-pin' },
-        geometry: { type: 'Point', coordinates: [pinA.longitude, pinA.latitude] },
-      },
-      {
-        type: 'Feature',
-        properties: { kind: 'start-pin' },
-        geometry: { type: 'Point', coordinates: [pinB.longitude, pinB.latitude] },
-      },
-    ];
-    return { type: 'FeatureCollection' as const, features };
-  }, [startLine, waypoints]);
+  useEffect(() => {
+    void getPassageDetail(passageId).then((detail) => {
+      setWaypoints(detail?.waypoints ?? []);
+    });
+  }, [passageId, passages, getPassageDetail, revision]);
 
-  if (!startLine || data.features.length === 0) return null;
+  if (waypoints.length < 1) return null;
+
+  const lineData =
+    waypoints.length >= 2
+      ? buildPlanningPassageGeoJson(waypoints)
+      : {
+          type: 'FeatureCollection' as const,
+          features: waypoints.map((wp) => ({
+            type: 'Feature' as const,
+            properties: { kind: 'planning-wp' },
+            geometry: { type: 'Point' as const, coordinates: [wp.longitude, wp.latitude] },
+          })),
+        };
 
   return (
-    <GeoJSONSource id="seacheck-start-line" data={data}>
+    <GeoJSONSource id="seacheck-passage-planning" data={lineData}>
+      {waypoints.length >= 2 && showRouteLines ? (
+        <Layer
+          id="seacheck-passage-planning-line"
+          type="line"
+          filter={['==', ['get', 'kind'], 'planning-leg']}
+          paint={{ 'line-color': '#e65100', 'line-width': 3, 'line-opacity': 0.95, 'line-dasharray': [2, 1.5] }}
+        />
+      ) : null}
       <Layer
-        id="seacheck-start-line-stroke"
-        type="line"
-        filter={['==', ['get', 'kind'], 'start-line']}
-        paint={{ 'line-color': '#2e7d32', 'line-width': 4, 'line-opacity': 0.95, 'line-dasharray': [2, 1.5] }}
-      />
-      <Layer
-        id="seacheck-start-line-pin"
+        id="seacheck-passage-planning-wp"
         type="circle"
-        filter={['==', ['get', 'kind'], 'start-pin']}
-        paint={{ 'circle-radius': 8, 'circle-color': '#2e7d32', 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' }}
+        filter={['==', ['get', 'kind'], 'planning-wp']}
+        paint={{ 'circle-radius': 7, 'circle-color': '#e65100', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' }}
       />
     </GeoJSONSource>
   );
 }
 
-function LaylineOverlay() {
-  const goToTarget = useNavigationStore((s) => s.goToTarget);
-  const wind = useSettingsStore((s) => s.raceWindDirectionTrue);
-  const tacking = useSettingsStore((s) => s.raceTackingAngleDeg);
-  const showLaylines = useSettingsStore((s) => s.raceShowLaylines);
-  const activityProfileId = useSettingsStore((s) => s.activityProfileId);
-
-  const data = useMemo(() => {
-    if (!RACING_PACK_V11 || activityProfileId !== 'sailing-race' || !showLaylines || wind == null || !goToTarget) {
-      return { type: 'FeatureCollection' as const, features: [] };
-    }
-    const mark: LonLat = [goToTarget.longitude, goToTarget.latitude];
-    const { portDeg, starboardDeg } = laylineBearingsFromMark(wind, tacking);
-    const lengthNm = 3;
-    const portEnd = destinationPoint(mark, portDeg, lengthNm);
-    const starEnd = destinationPoint(mark, starboardDeg, lengthNm);
-    const features: Feature[] = [
-      {
-        type: 'Feature',
-        properties: { kind: 'layline-port' },
-        geometry: { type: 'LineString', coordinates: [mark, portEnd] },
-      },
-      {
-        type: 'Feature',
-        properties: { kind: 'layline-starboard' },
-        geometry: { type: 'LineString', coordinates: [mark, starEnd] },
-      },
-    ];
-    return { type: 'FeatureCollection' as const, features };
-  }, [activityProfileId, showLaylines, wind, tacking, goToTarget]);
-
-  if (data.features.length === 0) return null;
-
-  return (
-    <GeoJSONSource id="seacheck-laylines" data={data}>
-      <Layer
-        id="seacheck-layline-port"
-        type="line"
-        filter={['==', ['get', 'kind'], 'layline-port']}
-        paint={{ 'line-color': '#e65100', 'line-width': 2, 'line-opacity': 0.85, 'line-dasharray': [1.5, 1] }}
-      />
-      <Layer
-        id="seacheck-layline-starboard"
-        type="line"
-        filter={['==', ['get', 'kind'], 'layline-starboard']}
-        paint={{ 'line-color': '#1565c0', 'line-width': 2, 'line-opacity': 0.85, 'line-dasharray': [1.5, 1] }}
-      />
-    </GeoJSONSource>
-  );
-}
-
-function PassageOverlay({ passageId, activeLegIndex }: { passageId: string | null; activeLegIndex: number }) {
+function PassageOverlay({
+  passageId,
+  activeLegIndex,
+  refreshRevision = 0,
+}: {
+  passageId: string | null;
+  activeLegIndex: number;
+  refreshRevision?: number;
+}) {
   const passages = usePassageStore((s) => s.passages);
   const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
   const [waypoints, setWaypoints] = useState<{ longitude: number; latitude: number }[]>([]);
@@ -360,7 +327,7 @@ function PassageOverlay({ passageId, activeLegIndex }: { passageId: string | nul
     void getPassageDetail(passageId).then((detail) => {
       setWaypoints(detail?.waypoints ?? []);
     });
-  }, [passageId, passages, getPassageDetail]);
+  }, [passageId, passages, getPassageDetail, refreshRevision]);
 
   const data = useMemo(
     () => (waypoints.length >= 2 ? buildPassageGeoJson(waypoints, activeLegIndex) : { type: 'FeatureCollection' as const, features: [] }),
@@ -415,6 +382,35 @@ export function buildPassageGeoJson(
     features.push({
       type: 'Feature',
       properties: { kind: 'passage-wp' },
+      geometry: { type: 'Point', coordinates: [wp.longitude, wp.latitude] },
+    });
+  }
+  return { type: 'FeatureCollection', features };
+}
+
+export function buildPlanningPassageGeoJson(
+  waypoints: { longitude: number; latitude: number }[],
+): FeatureCollection {
+  const features: Feature[] = [];
+  for (let i = 1; i < waypoints.length; i++) {
+    const from = waypoints[i - 1];
+    const to = waypoints[i];
+    features.push({
+      type: 'Feature',
+      properties: { kind: 'planning-leg' },
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [from.longitude, from.latitude],
+          [to.longitude, to.latitude],
+        ],
+      },
+    });
+  }
+  for (const wp of waypoints) {
+    features.push({
+      type: 'Feature',
+      properties: { kind: 'planning-wp' },
       geometry: { type: 'Point', coordinates: [wp.longitude, wp.latitude] },
     });
   }

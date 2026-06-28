@@ -1,5 +1,6 @@
 import { bearingTrue, distanceNm, type LonLat } from '../geo/navigation';
 import { fetchIsEffectivelyOffline } from '../network/connectivity';
+import type { PlanningSeamarkFeature } from './queryPlanningSeamarks';
 import { fetchOverpass } from './overpassClient';
 
 export type SeamarkHit = {
@@ -46,12 +47,23 @@ function seamarkLabel(tags: Record<string, string>): { name: string; type: strin
 
 /** Nearest OpenSeaMap seamark — local SQLite index first, then Overpass when online. */
 export async function queryNearestSeamark(lat: number, lon: number): Promise<SeamarkHit | null> {
-  const { queryLocalSeamark } = await import('./seamarkIndex');
-  const local = await queryLocalSeamark(lat, lon);
+  const local = await queryLocalSeamarkAtTap(lat, lon);
   if (local) return local;
 
   if (await fetchIsEffectivelyOffline()) return null;
 
+  return queryOverpassSeamark(lat, lon);
+}
+
+/** Fast offline pick — indexed seamarks only, no network. */
+export async function queryLocalSeamarkAtTap(lat: number, lon: number): Promise<SeamarkHit | null> {
+  const { queryLocalSeamark } = await import('./seamarkIndex');
+  return queryLocalSeamark(lat, lon);
+}
+
+/** Online Overpass lookup for intentional chart-object queries (long-press). */
+export async function lookupChartObjectOnline(lat: number, lon: number): Promise<SeamarkHit | null> {
+  if (await fetchIsEffectivelyOffline()) return null;
   return queryOverpassSeamark(lat, lon);
 }
 
@@ -102,6 +114,19 @@ export function unknownChartObject(lat: number, lon: number): SeamarkHit {
     longitude: lon,
     distanceM: 0,
     source: 'unknown',
+    rawTags: {},
+  };
+}
+
+/** Build a detail-sheet hit from a visible planning mark. */
+export function planningMarkToSeamarkHit(mark: PlanningSeamarkFeature): SeamarkHit {
+  return {
+    name: mark.name,
+    type: mark.category,
+    latitude: mark.latitude,
+    longitude: mark.longitude,
+    distanceM: 0,
+    source: 'local',
     rawTags: {},
   };
 }

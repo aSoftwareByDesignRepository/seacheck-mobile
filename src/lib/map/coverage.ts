@@ -1,6 +1,7 @@
 import type { LngLatBounds } from '@maplibre/maplibre-react-native';
 
 import { bearingTrue, destinationPoint, distanceNm, type LonLat } from '../geo/navigation';
+import { expandLngLatBounds, pointInLngLatBounds } from './bounds';
 
 export type CoveragePack = {
   id: string;
@@ -24,12 +25,32 @@ export type PassageCoverageReport = {
   legs: LegCoverage[];
 };
 
-const BUFFER_NM = 0.5;
+export type PackSuggestionCandidate = {
+  id: string;
+  bounds: LngLatBounds;
+  priority: 'P0' | 'P1' | 'P2';
+};
 
-function pointInBounds(bounds: LngLatBounds, lat: number, lon: number): boolean {
-  const [west, south, east, north] = bounds;
-  return lon >= west && lon <= east && lat >= south && lat <= north;
-}
+export type PassagePackSuggestion = {
+  packId: string;
+  coversLegCount: number;
+};
+
+export type SuggestPacksResult = {
+  suggestions: PassagePackSuggestion[];
+  uncoveredLegCountAfterSuggestions: number;
+  needsCustomArea: boolean;
+};
+
+const BUFFER_NM = 0.5;
+const PRIORITY_RANK: Record<PackSuggestionCandidate['priority'], number> = { P0: 0, P1: 1, P2: 2 };
+
+export type PassageLegSample = {
+  legIndex: number;
+  fromName: string;
+  toName: string;
+  samples: LonLat[];
+};
 
 function sampleLegPoints(from: LonLat, to: LonLat, samples = 5): LonLat[] {
   const dist = distanceNm(from, to);
@@ -43,20 +64,12 @@ function sampleLegPoints(from: LonLat, to: LonLat, samples = 5): LonLat[] {
   return points;
 }
 
-function expandedBounds(bounds: LngLatBounds, bufferNm: number): LngLatBounds {
-  const [west, south, east, north] = bounds;
-  const midLat = (south + north) / 2;
-  const dLat = bufferNm / 60;
-  const dLon = bufferNm / (60 * Math.max(0.2, Math.cos((midLat * Math.PI) / 180)));
-  return [west - dLon, south - dLat, east + dLon, north + dLat];
-}
-
 function pointCoveredByPacks(lat: number, lon: number, packs: CoveragePack[]): string[] {
   const hits: string[] = [];
   for (const pack of packs) {
     if (!pack.ready) continue;
-    const expanded = expandedBounds(pack.bounds, BUFFER_NM);
-    if (pointInBounds(expanded, lat, lon)) hits.push(pack.label);
+    const expanded = expandLngLatBounds(pack.bounds, BUFFER_NM);
+    if (pointInLngLatBounds(expanded, lat, lon)) hits.push(pack.label);
   }
   return hits;
 }
@@ -64,6 +77,106 @@ function pointCoveredByPacks(lat: number, lon: number, packs: CoveragePack[]): s
 /** Public helper — whether lat/lon falls inside any ready offline pack (with buffer). */
 export function pointCoveredByReadyPacks(lat: number, lon: number, packs: CoveragePack[]): string[] {
   return pointCoveredByPacks(lat, lon, packs);
+}
+
+export function buildPassageLegSamples(
+  waypoints: { name: string; latitude: number; longitude: number }[],
+): PassageLegSample[] {
+  const legs: PassageLegSample[] = [];
+  for (let i = 1; i < waypoints.length; i++) {
+    const from = waypoints[i - 1];
+    const to = waypoints[i];
+    legs.push({
+      legIndex: i,
+      fromName: from.name,
+      toName: to.name,
+      samples: sampleLegPoints([from.longitude, from.latitude], [to.longitude, to.latitude]),
+    });
+  }
+  return legs;
+}
+
+/** Greedy corridor-pack set cover for legs not yet covered by ready offline packs. */
+export function suggestPacksForPassage(
+  waypoints: { name: string; latitude: number; longitude: number }[],
+  candidates: PackSuggestionCandidate[],
+  readyPacks: CoveragePack[],
+  readyIds: Set<string>,
+): SuggestPacksResult {
+  const legs = buildPassageLegSamples(waypoints);
+  if (legs.length === 0) {
+    return { suggestions: [], uncoveredLegCountAfterSuggestions: 0, needsCustomArea: false };
+  }
+
+  type SampleRef = { legIndex: number; lat: number; lon: number };
+
+  const uncoveredSamples: SampleRef[] = [];
+  for (const leg of legs) {
+    for (const [lon, lat] of leg.samples) {
+      if (pointCoveredByPacks(lat, lon, readyPacks).length === 0) {
+        uncoveredSamples.push({ legIndex: leg.legIndex, lat, lon });
+      }
+    }
+  }
+
+  if (uncoveredSamples.length === 0) {
+    return { suggestions: [], uncoveredLegCountAfterSuggestions: 0, needsCustomArea: false };
+  }
+
+  const available = candidates.filter((c) => !readyIds.has(c.id));
+  const suggestions: PassagePackSuggestion[] = [];
+  const chosen = new Set<string>();
+  let remaining = [...uncoveredSamples];
+
+  while (remaining.length > 0) {
+    let best: { id: string; count: number; priority: number } | null = null;
+    for (const pack of available) {
+      if (chosen.has(pack.id)) continue;
+      let count = 0;
+      for (const sample of remaining) {
+        if (pointInLngLatBounds(expandLngLatBounds(pack.bounds, BUFFER_NM), sample.lat, sample.lon)) count++;
+      }
+      if (count === 0) continue;
+      const rank = PRIORITY_RANK[pack.priority];
+      if (!best || count > best.count || (count === best.count && rank < best.priority)) {
+        best = { id: pack.id, count, priority: rank };
+      }
+    }
+    if (!best) break;
+
+    const packDef = available.find((p) => p.id === best!.id);
+    if (!packDef) break;
+
+    chosen.add(best.id);
+
+    let legsHelped = 0;
+    for (const leg of legs) {
+      const legHasGap = leg.samples.some(
+        ([lon, lat]) => pointCoveredByPacks(lat, lon, readyPacks).length === 0,
+      );
+      if (!legHasGap) continue;
+      const packHelps = leg.samples.some(
+        ([lon, lat]) =>
+          pointCoveredByPacks(lat, lon, readyPacks).length === 0 &&
+          pointInLngLatBounds(expandLngLatBounds(packDef.bounds, BUFFER_NM), lat, lon),
+      );
+      if (packHelps) legsHelped++;
+    }
+
+    suggestions.push({ packId: best.id, coversLegCount: Math.max(1, legsHelped) });
+    remaining = remaining.filter(
+      (sample) => !pointInLngLatBounds(expandLngLatBounds(packDef.bounds, BUFFER_NM), sample.lat, sample.lon),
+    );
+  }
+
+  const uncoveredLegIndices = new Set<number>();
+  for (const sample of remaining) uncoveredLegIndices.add(sample.legIndex);
+
+  return {
+    suggestions,
+    uncoveredLegCountAfterSuggestions: uncoveredLegIndices.size,
+    needsCustomArea: remaining.length > 0,
+  };
 }
 
 export function assessPassageCoverage(
@@ -113,9 +226,13 @@ export function buildCoveragePacks(
   regionDefs: { id: string; nameKey: string; bounds: LngLatBounds }[],
   customEntries: Record<string, { name?: string; bounds?: LngLatBounds }>,
   labelForKey: (key: string) => string,
+  legacyDefs: { id: string; nameKey: string; bounds: LngLatBounds }[] = [],
 ): CoveragePack[] {
   const packs: CoveragePack[] = [];
+  const seen = new Set<string>();
+
   for (const def of regionDefs) {
+    seen.add(def.id);
     packs.push({
       id: def.id,
       label: labelForKey(def.nameKey),
@@ -123,8 +240,21 @@ export function buildCoveragePacks(
       ready: regions[def.id]?.state === 'ready',
     });
   }
+
+  for (const def of legacyDefs) {
+    if (seen.has(def.id) || regions[def.id]?.state !== 'ready') continue;
+    seen.add(def.id);
+    packs.push({
+      id: def.id,
+      label: labelForKey(def.nameKey),
+      bounds: def.bounds,
+      ready: true,
+    });
+  }
+
   for (const [id, entry] of Object.entries(customEntries)) {
-    if (!entry.bounds) continue;
+    if (!entry.bounds || seen.has(id)) continue;
+    seen.add(id);
     packs.push({
       id,
       label: entry.name ?? id,

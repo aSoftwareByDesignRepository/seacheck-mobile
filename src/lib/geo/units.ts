@@ -42,6 +42,18 @@ export function distanceFromNm(distanceNm: number, unit: DistanceUnit): number {
   }
 }
 
+/** Convert a user-entered distance back to nautical miles for internal storage. */
+export function distanceToNm(value: number, unit: DistanceUnit): number {
+  switch (unit) {
+    case 'km':
+      return value / NM_TO_KM;
+    case 'sm':
+      return value / NM_TO_SM;
+    default:
+      return value;
+  }
+}
+
 export function formatDistanceNm(distanceNm: number | null | undefined, unit: DistanceUnit, digits = 1): string {
   if (distanceNm == null || Number.isNaN(distanceNm)) return '—';
   return distanceFromNm(distanceNm, unit).toFixed(digits);
@@ -67,4 +79,43 @@ export function distanceUnitLabel(unit: DistanceUnit): string {
     default:
       return unit;
   }
+}
+
+/** Cross-track error for instrument cells — internal value stays in NM. */
+export function formatXteFromNm(
+  xteNm: number | null | undefined,
+  unit: DistanceUnit,
+  side: 'L' | 'R' | null = null,
+  digits = 2,
+): { value: string; unitLabel: string } {
+  if (xteNm == null || Number.isNaN(xteNm)) {
+    return { value: '—', unitLabel: '' };
+  }
+  const sideSuffix = side ? ` ${side}` : '';
+  return {
+    value: formatDistanceNm(xteNm, unit, digits),
+    unitLabel: `${distanceUnitLabel(unit)}${sideSuffix}`,
+  };
+}
+
+/** Single-line XTE for compact banners and alarm copy. */
+export function formatXteLineFromNm(
+  xteNm: number | null | undefined,
+  unit: DistanceUnit,
+  side: 'L' | 'R' | null = null,
+  digits = 2,
+): string | null {
+  if (xteNm == null || Number.isNaN(xteNm)) return null;
+  const { value, unitLabel } = formatXteFromNm(xteNm, unit, side, digits);
+  return `${value} ${unitLabel}`.trim();
+}
+
+/** Single-line distance for alarm notifications — internal math stays in NM. */
+export function formatDistanceLineFromNm(
+  distanceNm: number | null | undefined,
+  unit: DistanceUnit,
+  digits = 2,
+): string | null {
+  if (distanceNm == null || Number.isNaN(distanceNm)) return null;
+  return `${formatDistanceNm(distanceNm, unit, digits)} ${distanceUnitLabel(unit)}`;
 }

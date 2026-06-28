@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { TrackPointRow } from '../../lib/db/database';
-import { msToKnots } from '../../lib/geo/navigation';
+import { formatSog } from '../../lib/geo/units';
 import { t } from '../../i18n';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme } from '../../theme/ThemeContext';
@@ -23,8 +23,7 @@ export function TrackPointMapDetailSheet({ point, trackName, onClose, onCopied }
   if (!point) return null;
 
   const when = new Date(point.recorded_at).toLocaleString();
-  const sogKn = msToKnots(point.sog_ms);
-  const sogText = sogKn != null ? `${sogKn.toFixed(1)} ${sogUnit}` : '—';
+  const sogText = point.sog_ms != null ? formatSog(point.sog_ms, sogUnit) : '—';
   const title = trackName ?? t('tracks.previewFallback');
 
   return (

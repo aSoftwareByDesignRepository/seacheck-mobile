@@ -1,10 +1,12 @@
 import {
   buildDisplayFix,
   classifyFixAcceptance,
+  effectivePreviousFixForAcceptance,
   isFixOutlier,
   smoothGpsPosition,
   estimateSmoothedAccuracyM,
 } from '../src/lib/geo/gpsFilter';
+import { FIX_STALE_MS } from '../src/lib/geo/fixAge';
 import type { LocationFix } from '../src/services/locationService';
 
 describe('gpsFilter', () => {
@@ -53,6 +55,18 @@ describe('gpsFilter', () => {
     });
     expect(isFixOutlier(prev, next)).toBe(false);
     expect(classifyFixAcceptance(prev, next).accepted).toBe(true);
+  });
+
+  it('drops previous fix after a GPS gap so recovery is not compared to stale baseline', () => {
+    const prev = base({ timestamp: 1_700_000_000_000, speedKn: 0 });
+    const next = base({
+      latitude: 54.5,
+      longitude: 10.12,
+      timestamp: 1_700_000_000_000 + FIX_STALE_MS + 1000,
+      speedKn: 0,
+    });
+    expect(effectivePreviousFixForAcceptance(prev, next.timestamp)).toBeNull();
+    expect(classifyFixAcceptance(effectivePreviousFixForAcceptance(prev, next.timestamp), next).accepted).toBe(true);
   });
 
   it('smooths position toward higher-accuracy fixes', () => {

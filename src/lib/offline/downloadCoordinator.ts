@@ -7,9 +7,9 @@ class DownloadCoordinator {
     return this.activeRegionId;
   }
 
-  /** Returns session token when download may start; null when another download is active. */
+  /** Returns session token when download may start; null when another download is active or this region is already downloading. */
   tryBegin(regionId: string): number | null {
-    if (this.activeRegionId != null && this.activeRegionId !== regionId) return null;
+    if (this.activeRegionId != null) return null;
     this.activeRegionId = regionId;
     const next = (this.sessions.get(regionId) ?? 0) + 1;
     this.sessions.set(regionId, next);

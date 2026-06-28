@@ -1,14 +1,18 @@
-import { normalizeActivityProfileId } from '../src/settings/profiles';
+import { ACTIVITY_PROFILES, buildActivityProfileSettingsPatch, normalizeActivityProfileId } from '../src/settings/profiles';
 
-describe('activity profiles', () => {
-  it('normalizes legacy land and camp profiles to cruise-passage', () => {
-    expect(normalizeActivityProfileId('hiking')).toBe('cruise-passage');
-    expect(normalizeActivityProfileId('cycling')).toBe('cruise-passage');
-    expect(normalizeActivityProfileId('anchor-camp')).toBe('cruise-passage');
+describe('activity profile settings', () => {
+  const cruise = ACTIVITY_PROFILES.find((p) => p.id === 'cruise-passage')!;
+
+  it('normalizes legacy sailing-race to cruise-passage', () => {
+    expect(normalizeActivityProfileId('sailing-race')).toBe('cruise-passage');
     expect(normalizeActivityProfileId(undefined)).toBe('cruise-passage');
   });
 
-  it('keeps maritime profile ids', () => {
-    expect(normalizeActivityProfileId('sailing-race')).toBe('sailing-race');
+  it('builds settings patch from profile', () => {
+    expect(buildActivityProfileSettingsPatch(cruise)).toEqual({
+      activityProfileId: 'cruise-passage',
+      sogUnit: 'kn',
+      distanceUnit: 'nm',
+    });
   });
 });

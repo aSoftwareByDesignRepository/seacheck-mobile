@@ -9,6 +9,9 @@ import { PassageEditorPanel } from '../features/passage/PassageEditorPanel';
 import { MasterDetailLayout } from '../features/responsive/MasterDetailLayout';
 import { PassageMetaSection } from '../features/passage/PassageMetaSection';
 import { PassageWaypointSection } from '../features/passage/PassageWaypointSection';
+import { PassageWaypointCoordSheet } from '../features/passage/PassageWaypointCoordSheet';
+import { addMapWaypointToPassage, notifyPassagePlanningChanged, startPassageMapPlanning } from '../lib/passage/passageMapPlanning';
+import { usePassageMapPlanningStore } from '../store/passageMapPlanningStore';
 import { usePassageCoverage } from '../hooks/usePassageCoverage';
 import { useFormFactor } from '../hooks/useFormFactor';
 import { formatDistanceNm, distanceUnitLabel } from '../lib/geo/units';
@@ -16,6 +19,7 @@ import { t } from '../i18n';
 import type { RootTabParamList } from '../navigation/types';
 import type { PassageLeg, PassageWithLegs } from '../store/passageStore';
 import { usePassageStore } from '../store/passageStore';
+import type { WaypointRow } from '../lib/db/database';
 import { requestConfirm } from '../store/confirmStore';
 import { useFeedbackStore } from '../store/feedbackStore';
 import { useWaypointStore } from '../store/waypointStore';
@@ -32,6 +36,7 @@ export function PassageScreen() {
   const { colors, spacing } = useTheme();
   const { formFactor } = useFormFactor();
   const listColumns = formFactor !== 'compact' ? 2 : 1;
+  const compactActions = formFactor === 'compact';
   const passages = usePassageStore((s) => s.passages);
   const activePassageId = usePassageStore((s) => s.activePassageId);
   const createPassage = usePassageStore((s) => s.createPassage);
@@ -48,6 +53,7 @@ export function PassageScreen() {
   const buildPassageSummary = usePassageStore((s) => s.buildPassageSummary);
   const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
   const waypoints = useWaypointStore((s) => s.items);
+  const updateWaypoint = useWaypointStore((s) => s.update);
   const showInfo = useFeedbackStore((s) => s.showInfo);
   const showError = useFeedbackStore((s) => s.showError);
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
@@ -55,8 +61,11 @@ export function PassageScreen() {
   const [detail, setDetail] = useState<PassageWithLegs | null>(null);
   const [editorPane, setEditorPane] = useState<'table' | 'map'>('table');
   const [highlightedLegIndex, setHighlightedLegIndex] = useState<number | null>(null);
+  const [coordSheet, setCoordSheet] = useState<{ mode: 'add' | 'edit'; waypoint?: WaypointRow } | null>(null);
   const [summaries, setSummaries] = useState<Record<string, { legs: number; nm: number; waypoints: number }>>({});
   const coverage = usePassageCoverage(detail?.waypoints ?? []);
+  const planningPassageId = usePassageMapPlanningStore((s) => s.passageId);
+  const planningRevision = usePassageMapPlanningStore((s) => s.revision);
 
   const loadDetail = useCallback(
     async (id: string) => {
@@ -83,6 +92,22 @@ export function PassageScreen() {
     if (selectedId) void loadDetail(selectedId);
   }, [passages, selectedId, loadDetail]);
 
+  useEffect(() => {
+    if (!selectedId || planningPassageId !== selectedId) return;
+    void loadDetail(selectedId);
+  }, [planningRevision, selectedId, planningPassageId, loadDetail]);
+
+  useEffect(() => {
+    if (!planningPassageId) return;
+    void getPassageDetail(planningPassageId).then((d) => {
+      if (!d) return;
+      setSummaries((prev) => ({
+        ...prev,
+        [planningPassageId]: { legs: d.legs.length, nm: d.totalNm, waypoints: d.waypoints.length },
+      }));
+    });
+  }, [planningRevision, planningPassageId, getPassageDetail]);
+
   async function handleDuplicate(id: string) {
     const copy = await duplicatePassage(id);
     await loadDetail(copy.id);
@@ -91,11 +116,6 @@ export function PassageScreen() {
 
   async function handleCreate() {
     const p = await createPassage(t('passage.defaultName'));
-    if (waypoints.length >= 2) {
-      for (const wp of waypoints.slice(0, 2)) {
-        await addWaypointToPassage(p.id, wp.id);
-      }
-    }
     await loadDetail(p.id);
   }
 
@@ -120,23 +140,27 @@ export function PassageScreen() {
 
   async function handleAddWaypoint(passageId: string, waypointId: string) {
     await addWaypointToPassage(passageId, waypointId);
+    notifyPassagePlanningChanged(passageId);
     await refreshDetail(passageId);
   }
 
   async function handleRemoveWaypoint(passageId: string, waypointId: string) {
     await removeWaypointFromPassage(passageId, waypointId);
+    notifyPassagePlanningChanged(passageId);
     await refreshDetail(passageId);
   }
 
   async function handleMoveUp(index: number) {
     if (!detail) return;
     await reorderWaypointInPassage(detail.id, index, index - 1);
+    notifyPassagePlanningChanged(detail.id);
     await refreshDetail(detail.id);
   }
 
   async function handleMoveDown(index: number) {
     if (!detail) return;
     await reorderWaypointInPassage(detail.id, index, index + 1);
+    notifyPassagePlanningChanged(detail.id);
     await refreshDetail(detail.id);
   }
 
@@ -190,6 +214,24 @@ export function PassageScreen() {
     showInfo(t('passage.summaryCopied'));
   }
 
+  function handlePlanOnMap() {
+    if (!detail) return;
+    void startPassageMapPlanning(detail.id).then((started) => {
+      if (started) navigation.navigate('Map');
+    });
+  }
+
+  async function handleCoordSubmit(input: { name: string; latitude: number; longitude: number }) {
+    if (!detail) return;
+    if (coordSheet?.mode === 'edit' && coordSheet.waypoint) {
+      await updateWaypoint(coordSheet.waypoint.id, input);
+      notifyPassagePlanningChanged(detail.id);
+    } else {
+      await addMapWaypointToPassage(detail.id, input.latitude, input.longitude, input.name);
+    }
+    await refreshDetail(detail.id);
+  }
+
   if (passages.length === 0) {
     return (
       <Screen testID="screen.passage" title={t('tabs.passage')}>
@@ -230,13 +272,14 @@ export function PassageScreen() {
               ) : null}
               {item.id === activePassageId ? <StatusBadge label={t('passage.active')} variant="success" /> : null}
             </Pressable>
-            <View style={styles.actions}>
+            <View style={[styles.actions, !compactActions ? styles.actionsRow : null]}>
               {item.id === activePassageId ? (
-                <Button label={t('passage.deactivate')} variant="secondary" onPress={() => void deactivatePassage()} testID="passage.deactivate" />
+                <Button label={t('passage.deactivate')} variant="secondary" fullWidth={compactActions} onPress={() => void deactivatePassage()} testID="passage.deactivate" />
               ) : (
                 <Button
                   label={t('passage.activate')}
                   disabled={!meta || meta.waypoints < 2}
+                  fullWidth={compactActions}
                   onPress={() => {
                     if (!meta || meta.waypoints < 2) {
                       showError(t('passage.activateNeedTwo'));
@@ -249,8 +292,8 @@ export function PassageScreen() {
                   testID={`passage.activate.${item.id}`}
                 />
               )}
-              <Button label={t('passage.duplicate')} variant="secondary" onPress={() => void handleDuplicate(item.id)} testID={`passage.duplicate.${item.id}`} />
-              <Button label={t('passage.delete')} variant="danger" onPress={() => confirmDelete(item.id, item.name)} testID={`passage.delete.${item.id}`} />
+              <Button label={t('passage.duplicate')} variant="secondary" fullWidth={compactActions} onPress={() => void handleDuplicate(item.id)} testID={`passage.duplicate.${item.id}`} />
+              <Button label={t('passage.delete')} variant="danger" fullWidth={compactActions} onPress={() => confirmDelete(item.id, item.name)} testID={`passage.delete.${item.id}`} />
             </View>
           </View>
         );
@@ -275,8 +318,14 @@ export function PassageScreen() {
         onRemove={(wpId) => void handleRemoveWaypoint(detail.id, wpId)}
         onMoveUp={(index) => void handleMoveUp(index)}
         onMoveDown={(index) => void handleMoveDown(index)}
+        onPlanOnMap={handlePlanOnMap}
+        onAddByCoords={() => setCoordSheet({ mode: 'add' })}
+        onEditWaypoint={(wp) => setCoordSheet({ mode: 'edit', waypoint: wp })}
       />
-      <PassageCoverageCard detail={detail} onOpenDownloads={() => navigation.navigate('Downloads')} />
+      <PassageCoverageCard
+        detail={detail}
+        onOpenDownloads={(opts) => navigation.navigate('Downloads', opts)}
+      />
       <PassageEditorPanel
         detail={detail}
         legCoverage={coverage.legs}
@@ -287,13 +336,14 @@ export function PassageScreen() {
         onLegSogChange={(leg, sog) => void handleLegSogChange(leg, sog)}
         onLegNoteChange={(leg, note) => void handleLegNoteChange(leg, note)}
       />
-      <View style={[styles.exportRow, { marginTop: spacing.lg, gap: spacing.sm }]}>
+      <View style={[styles.exportRow, !compactActions ? styles.actionsRow : null, { marginTop: spacing.lg, gap: spacing.sm }]}>
         {detail.id === activePassageId ? (
-          <Button label={t('passage.deactivate')} variant="secondary" onPress={() => void deactivatePassage()} testID="passage.detail.deactivate" />
+          <Button label={t('passage.deactivate')} variant="secondary" fullWidth={compactActions} onPress={() => void deactivatePassage()} testID="passage.detail.deactivate" />
         ) : (
           <Button
             label={t('passage.activate')}
             disabled={detail.waypoints.length < 2}
+            fullWidth={compactActions}
             onPress={() => {
               if (detail.waypoints.length < 2) {
                 showError(t('passage.activateNeedTwo'));
@@ -301,13 +351,13 @@ export function PassageScreen() {
               }
               void activatePassage(detail.id)
                 .then(() => navigation.navigate('Map'))
-                .catch(() => showError(t('passage.activateNeedTwo')));
+                .catch(() => showError(t('passage.activateFailed')));
             }}
             testID="passage.detail.activate"
           />
         )}
-        <Button label={t('passage.exportGpx')} variant="secondary" onPress={() => void exportPassageGpx(detail.id)} testID="passage.exportGpx" />
-        <Button label={t('passage.copySummary')} variant="secondary" onPress={() => void handleCopySummary()} testID="passage.copySummary" />
+        <Button label={t('passage.exportGpx')} variant="secondary" fullWidth={compactActions} onPress={() => void exportPassageGpx(detail.id)} testID="passage.exportGpx" />
+        <Button label={t('passage.copySummary')} variant="secondary" fullWidth={compactActions} onPress={() => void handleCopySummary()} testID="passage.copySummary" />
       </View>
     </>
   ) : (
@@ -320,6 +370,13 @@ export function PassageScreen() {
       <View style={{ marginTop: spacing.lg }}>
         <MasterDetailLayout master={listPane} detail={detailPane} />
       </View>
+      <PassageWaypointCoordSheet
+        visible={coordSheet != null}
+        mode={coordSheet?.mode ?? 'add'}
+        waypoint={coordSheet?.waypoint}
+        onClose={() => setCoordSheet(null)}
+        onSubmit={handleCoordSubmit}
+      />
     </Screen>
   );
 }
@@ -331,5 +388,6 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
   meta: { fontSize: 14, lineHeight: 20, marginBottom: 8 },
   actions: { gap: 8, marginTop: 8 },
+  actionsRow: { flexDirection: 'row', flexWrap: 'wrap' },
   exportRow: { gap: 8 },
 });

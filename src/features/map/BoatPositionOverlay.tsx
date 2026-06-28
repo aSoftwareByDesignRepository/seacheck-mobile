@@ -1,13 +1,21 @@
 import { GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
 import { useMemo } from 'react';
-import type { Feature, FeatureCollection, Polygon } from 'geojson';
+import type { Feature, Polygon } from 'geojson';
 
 import {
+  BOAT_ICON_LENGTH_NM,
   buildBoatIconPolygon,
   buildPositionDiamondPolygon,
   buildPositionDotPolygon,
 } from '../../lib/geo/boatIcon';
 import { resolveBoatHeadingDeg } from '../../lib/geo/cog';
+import {
+  BOAT_ICON_TARGET_LENGTH_PX,
+  chartSymbolOutlineWidth,
+  chartSymbolScaleForZoom,
+  DIAMOND_TARGET_RADIUS_PX,
+  resolveChartZoom,
+} from '../../lib/map/chartSymbolScale';
 import {
   MAP_BOAT_FILL,
   MAP_BOAT_OUTLINE,
@@ -15,23 +23,47 @@ import {
 } from '../../lib/map/mapChartColors';
 import { isFixStale, useLocationStore, useMapDisplayFix } from '../../services/locationService';
 
+const DIAMOND_BASE_RADIUS_NM = 0.014;
+
+type Props = {
+  /** Live chart zoom — symbols scale so the boat stays visible when zoomed out. */
+  mapZoom: number | null;
+  fallbackZoom?: number;
+};
+
 /**
  * Boat-shaped position marker with optional GPS accuracy ring.
  * Heading/COG rotation matches instruments and course vector.
  * Diamond fallback when direction is unknown — distinct from the boat shape.
  */
-export function BoatPositionOverlay() {
+export function BoatPositionOverlay({ mapZoom, fallbackZoom = 13 }: Props) {
   const fix = useLocationStore((s) => s.fix);
   const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
   const mapDisplayFix = useMapDisplayFix();
 
-  const data = useMemo((): FeatureCollection => {
+  const { data, outlineWidth } = useMemo(() => {
     const displayFix = mapDisplayFix ?? fix ?? lastGoodFix;
-    if (!displayFix) return { type: 'FeatureCollection', features: [] };
+    if (!displayFix) {
+      return { data: { type: 'FeatureCollection' as const, features: [] }, outlineWidth: 3 };
+    }
 
     const stale = isFixStale(fix);
     const center: [number, number] = [displayFix.longitude, displayFix.latitude];
     const heading = resolveBoatHeadingDeg(displayFix);
+    const zoom = resolveChartZoom(mapZoom, fallbackZoom);
+    const boatScale = chartSymbolScaleForZoom(
+      zoom,
+      displayFix.latitude,
+      BOAT_ICON_TARGET_LENGTH_PX,
+      BOAT_ICON_LENGTH_NM,
+    );
+    const diamondScale = chartSymbolScaleForZoom(
+      zoom,
+      displayFix.latitude,
+      DIAMOND_TARGET_RADIUS_PX * 2,
+      DIAMOND_BASE_RADIUS_NM * 2,
+    );
+    const lineWidth = chartSymbolOutlineWidth(Math.max(boatScale, diamondScale));
     const features: Feature[] = [];
 
     const accuracyM =
@@ -53,7 +85,7 @@ export function BoatPositionOverlay() {
         properties: { kind: 'boat', stale, heading: Math.round(heading) },
         geometry: {
           type: 'Polygon',
-          coordinates: [buildBoatIconPolygon(center, heading)],
+          coordinates: [buildBoatIconPolygon(center, heading, boatScale)],
         } satisfies Polygon,
       });
     } else {
@@ -62,13 +94,13 @@ export function BoatPositionOverlay() {
         properties: { kind: 'position-marker', stale },
         geometry: {
           type: 'Polygon',
-          coordinates: [buildPositionDiamondPolygon(center)],
+          coordinates: [buildPositionDiamondPolygon(center, DIAMOND_BASE_RADIUS_NM, diamondScale)],
         } satisfies Polygon,
       });
     }
 
-    return { type: 'FeatureCollection', features };
-  }, [fix, lastGoodFix, mapDisplayFix]);
+    return { data: { type: 'FeatureCollection' as const, features }, outlineWidth: lineWidth };
+  }, [fix, lastGoodFix, mapDisplayFix, mapZoom, fallbackZoom]);
 
   if (data.features.length === 0) return null;
 
@@ -89,7 +121,7 @@ export function BoatPositionOverlay() {
         filter={['in', ['get', 'kind'], ['literal', ['boat', 'position-marker']]]}
         paint={{
           'line-color': MAP_BOAT_OUTLINE,
-          'line-width': 3,
+          'line-width': outlineWidth,
           'line-opacity': 0.98,
         }}
       />

@@ -56,6 +56,30 @@ describe('passage GPX export', () => {
     expect(gpx).toContain('Test passage');
   });
 
+  it('builds readable summary text in km when requested', () => {
+    const text = buildPassageSummaryText(
+      'Trip',
+      [
+        {
+          fromName: 'A',
+          toName: 'B',
+          bearingDeg: 90,
+          distanceNm: 10,
+          cumulativeNm: 10,
+          sogKn: 5,
+          durationHours: 2,
+          etaUtc: '2026-06-22T10:00:00.000Z',
+          note: '',
+        },
+      ],
+      10,
+      2,
+      'km',
+    );
+    expect(text).toContain('18.5 km');
+    expect(text).not.toContain('10.0 NM');
+  });
+
   it('builds readable summary text', () => {
     const text = buildPassageSummaryText('Trip', [
       {

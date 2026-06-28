@@ -2,6 +2,14 @@ import type { FormFactor } from '../../hooks/useFormFactor';
 import type { LayoutPreset } from '../../settings/defaults';
 import { LAYOUT_PRESETS, getActivityProfile } from '../../settings/profiles';
 
+export function isLayoutPreset(value: unknown): value is LayoutPreset {
+  return typeof value === 'string' && (LAYOUT_PRESETS as readonly string[]).includes(value);
+}
+
+export function normalizeLayoutPreset(value: unknown, fallback: LayoutPreset = 'map-forward'): LayoutPreset {
+  return isLayoutPreset(value) ? value : fallback;
+}
+
 export type LayoutContext = {
   profileId: string;
   bucket: FormFactor;

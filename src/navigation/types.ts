@@ -6,7 +6,14 @@ export type RootTabParamList = {
   Passage: undefined;
   Waypoints: undefined;
   Tracks: undefined;
-  Downloads: undefined;
+  Downloads:
+    | {
+        focusPackIds?: string[];
+        scrollToCustom?: boolean;
+        passageBounds?: [number, number, number, number];
+        passageName?: string;
+      }
+    | undefined;
   Settings: undefined;
 };
 

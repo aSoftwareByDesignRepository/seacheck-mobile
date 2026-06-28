@@ -3,10 +3,12 @@ import * as Sharing from 'expo-sharing';
 import { create } from 'zustand';
 
 import { useNavigationStore } from './navigationStore';
+import { usePassageMapPlanningStore } from './passageMapPlanningStore';
 
 import { getDatabase, newId, withDatabaseTransaction, type PassageLegOverrideRow, type PassageRow, type WaypointRow } from '../lib/db/database';
 import { buildPassageRouteGpx, buildPassageSummaryText } from '../lib/gpx/gpx';
 import { t } from '../i18n';
+import { useSettingsStore } from './settingsStore';
 import {
   clampPlannedSogKn,
   computePassageLegs,
@@ -40,7 +42,7 @@ type PassageStore = {
   activatePassage: (id: string) => Promise<void>;
   deactivatePassage: () => Promise<void>;
   syncActivePassageNavigation: (passageId: string) => Promise<void>;
-  setPassageActiveLeg: (legIndex: number, options?: { resetTimer?: boolean }) => Promise<void>;
+  setPassageActiveLeg: (legIndex: number) => Promise<void>;
   getPassageDetail: (id: string) => Promise<PassageWithLegs | null>;
   exportPassageGpx: (id: string) => Promise<void>;
   buildPassageSummary: (id: string) => Promise<string | null>;
@@ -160,6 +162,9 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
 
   deletePassage: async (id) => {
     const wasActive = get().activePassageId === id;
+    if (usePassageMapPlanningStore.getState().passageId === id) {
+      usePassageMapPlanningStore.getState().stopPlanning();
+    }
     await withDatabaseTransaction(async (db) => {
       await db.runAsync('DELETE FROM passage_leg_overrides WHERE passage_id = ?', id);
       await db.runAsync('DELETE FROM passage_waypoints WHERE passage_id = ?', id);
@@ -218,6 +223,7 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
       waypointId,
       sortOrder,
     );
+    await get().syncActivePassageNavigation(passageId);
   },
 
   removeWaypointFromPassage: async (passageId, waypointId) => {
@@ -298,16 +304,13 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
     await get().setPassageActiveLeg(0);
   },
 
-  setPassageActiveLeg: async (legIndex, options) => {
+  setPassageActiveLeg: async (legIndex) => {
     const passageId = get().activePassageId;
     if (!passageId) return;
     const detail = await get().getPassageDetail(passageId);
     if (!detail || detail.legs.length === 0) return;
     const idx = Math.min(Math.max(0, legIndex), detail.legs.length - 1);
     await useNavigationStore.getState().setActiveLegIndex(idx);
-    if (options?.resetTimer !== false) {
-      await useNavigationStore.getState().resetLegTimer();
-    }
     const leg = detail.legs[idx];
     await useNavigationStore.getState().setGoTo({
       id: leg.to.id,
@@ -339,7 +342,7 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
     }
     const nav = useNavigationStore.getState();
     const nextIdx = Math.min(nav.activeLegIndex, detail.legs.length - 1);
-    await get().setPassageActiveLeg(nextIdx, { resetTimer: false });
+    await get().setPassageActiveLeg(nextIdx);
   },
 
   getPassageDetail: async (id) => {
@@ -356,13 +359,16 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
   exportPassageGpx: async (id) => {
     const detail = await get().getPassageDetail(id);
     if (!detail || detail.waypoints.length === 0) return;
+    const distanceUnit = useSettingsStore.getState().distanceUnit;
     const gpx = buildPassageRouteGpx(
       detail.name,
       detail.waypoints.map((wp) => ({ name: wp.name, latitude: wp.latitude, longitude: wp.longitude, note: wp.note })),
       detail.legs.map((leg) => ({
         from: { name: leg.from.name, latitude: leg.from.latitude, longitude: leg.from.longitude },
         to: { name: leg.to.name, latitude: leg.to.latitude, longitude: leg.to.longitude },
+        distanceNm: leg.distanceNm,
       })),
+      { distanceUnit },
     );
     const path = `${FileSystem.cacheDirectory}seacheck-passage-${id}.gpx`;
     await FileSystem.writeAsStringAsync(path, gpx);
@@ -389,6 +395,7 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
       })),
       detail.totalNm,
       detail.totalHours,
+      useSettingsStore.getState().distanceUnit,
     );
   },
 }));

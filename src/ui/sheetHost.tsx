@@ -8,7 +8,7 @@ import {
   useRef,
   useSyncExternalStore,
 } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { t } from '../i18n';
@@ -225,32 +225,30 @@ export function BottomSheetChrome({
 }: BottomSheetChromeProps) {
   const { colors, spacing, minTouch } = useTheme();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const backdropDismiss = useContext(SheetBackdropDismissContext) ?? onClose;
+  const maxSheetHeight = Math.round(windowHeight * 0.88);
 
-  const body = (
-    <>
-      <View style={[styles.header, { marginBottom: spacing.md }]}>
-        <View style={styles.headerText}>
-          <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
-            {title}
-          </Text>
-          {subtitle ? <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('common.close')}
-          accessibilityHint={t('ui.sheetCloseHint')}
-          onPress={onClose}
-          hitSlop={8}
-          style={[styles.closeBtn, { minHeight: minTouch, minWidth: minTouch, borderColor: colors.border }]}
-          testID={testID ? `${testID}.close` : undefined}
-        >
-          <Text style={[styles.closeLabel, { color: colors.textMuted }]}>✕</Text>
-        </Pressable>
+  const header = (
+    <View style={[styles.header, { marginBottom: spacing.md }]}>
+      <View style={styles.headerText}>
+        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
+          {title}
+        </Text>
+        {subtitle ? <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
       </View>
-      {children}
-      {footer ? <View style={{ marginTop: spacing.lg, gap: spacing.sm }}>{footer}</View> : null}
-    </>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('common.close')}
+        accessibilityHint={t('ui.sheetCloseHint')}
+        onPress={onClose}
+        hitSlop={8}
+        style={[styles.closeBtn, { minHeight: minTouch, minWidth: minTouch, borderColor: colors.border }]}
+        testID={testID ? `${testID}.close` : undefined}
+      >
+        <Text style={[styles.closeLabel, { color: colors.textMuted }]}>✕</Text>
+      </Pressable>
+    </View>
   );
 
   return (
@@ -260,7 +258,7 @@ export function BottomSheetChrome({
       accessible={false}
       importantForAccessibility="no-hide-descendants"
     >
-      <Pressable
+      <View
         style={[
           styles.sheet,
           {
@@ -269,25 +267,33 @@ export function BottomSheetChrome({
             paddingHorizontal: spacing.lg,
             paddingTop: spacing.md,
             paddingBottom: insets.bottom + spacing.lg,
+            maxHeight: maxSheetHeight,
           },
         ]}
-        onPress={(e) => e.stopPropagation()}
+        onStartShouldSetResponder={() => true}
         accessibilityViewIsModal
         testID={testID}
       >
         <View style={[styles.handle, { backgroundColor: colors.border }]} accessibilityElementsHidden importantForAccessibility="no" />
+        {header}
         {scrollable ? (
           <ScrollView
+            style={styles.scrollBody}
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: spacing.sm }}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator
+            contentContainerStyle={{ paddingBottom: spacing.sm, gap: spacing.sm }}
           >
-            {body}
+            {children}
+            {footer ? <View style={{ marginTop: spacing.md, gap: spacing.sm }}>{footer}</View> : null}
           </ScrollView>
         ) : (
-          body
+          <>
+            {children}
+            {footer ? <View style={{ marginTop: spacing.lg, gap: spacing.sm }}>{footer}</View> : null}
+          </>
         )}
-      </Pressable>
+      </View>
     </Pressable>
   );
 }
@@ -305,8 +311,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     borderWidth: 1,
-    maxHeight: sheet.maxHeight,
+    width: '100%',
+    flexShrink: 1,
   },
+  scrollBody: { flexGrow: 0, flexShrink: 1, minHeight: 0 },
   handle: {
     alignSelf: 'center',
     width: sheet.handleWidth,

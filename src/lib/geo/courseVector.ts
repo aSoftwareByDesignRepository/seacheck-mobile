@@ -1,5 +1,6 @@
-import { BOAT_BOW_OFFSET_NM } from './boatIcon';
+import { BOAT_BOW_OFFSET_NM, scaledBoatBowOffsetNm } from './boatIcon';
 import { destinationPoint, type LonLat } from './navigation';
+import { pixelLengthToNm, COURSE_VECTOR_MIN_LENGTH_PX } from '../map/chartSymbolScale';
 import {
   COURSE_VECTOR_SCALE_MULTIPLIER,
   DEFAULT_COURSE_VECTOR_SCALE,
@@ -69,13 +70,44 @@ export function courseVectorVisualLengthNm(
   return Math.min(maxNm, Math.max(trueLengthNm * mult, minVisual));
 }
 
+/** Base arrowhead size in NM at symbol scale 1. */
+export const COURSE_VECTOR_ARROWHEAD_BASE_NM = 0.024;
+
 /** Small chevron at the vector tip — direction cue at a glance. */
-export function buildCourseVectorArrowhead(from: LonLat, bearingDeg: number, lengthNm: number): LonLat[] {
+export function buildCourseVectorArrowhead(
+  from: LonLat,
+  bearingDeg: number,
+  lengthNm: number,
+  symbolScale = 1,
+): LonLat[] {
   const tip = destinationPoint(from, bearingDeg, lengthNm);
-  const baseCenter = destinationPoint(tip, bearingDeg + 180, 0.032);
-  const port = destinationPoint(baseCenter, bearingDeg - 118, 0.024);
-  const star = destinationPoint(baseCenter, bearingDeg + 118, 0.024);
+  const wing = COURSE_VECTOR_ARROWHEAD_BASE_NM * symbolScale;
+  const baseCenter = destinationPoint(tip, bearingDeg + 180, wing * 1.33);
+  const port = destinationPoint(baseCenter, bearingDeg - 118, wing);
+  const star = destinationPoint(baseCenter, bearingDeg + 118, wing);
   return [tip, star, baseCenter, port, tip];
+}
+
+export type CourseVectorChartContext = {
+  chartZoom: number | null | undefined;
+  latitudeDeg: number;
+  symbolScale?: number;
+  arrowheadScale?: number;
+};
+
+/** Ensures the vector reads on screen when zoomed out — true NM length unchanged in metadata. */
+export function courseVectorDrawLengthNm(
+  visualLengthNm: number,
+  chartZoom: number | null | undefined,
+  latitudeDeg: number,
+  minPixels: number = COURSE_VECTOR_MIN_LENGTH_PX,
+): number {
+  if (chartZoom == null || !Number.isFinite(chartZoom) || !Number.isFinite(latitudeDeg)) {
+    return visualLengthNm;
+  }
+  const minNm = pixelLengthToNm(minPixels, chartZoom, latitudeDeg);
+  if (minNm <= 0) return visualLengthNm;
+  return Math.max(visualLengthNm, minNm);
 }
 
 /**
@@ -86,20 +118,27 @@ export function buildCourseVectorGeometry(
   input: CourseVectorInput,
   minutes: number = COURSE_VECTOR_MINUTES,
   scale: CourseVectorVisualScale = DEFAULT_COURSE_VECTOR_SCALE,
+  chart?: CourseVectorChartContext,
 ): CourseVectorGeometry | null {
   if (input.bearingDeg == null || Number.isNaN(input.bearingDeg)) return null;
 
   const bearing = normalizeDeg(input.bearingDeg);
   const center: LonLat = [input.longitude, input.latitude];
-  const from = destinationPoint(center, bearing, BOAT_BOW_OFFSET_NM);
+  const symbolScale = chart?.symbolScale ?? 1;
+  const arrowheadScale = chart?.arrowheadScale ?? symbolScale;
+  const bowOffset = chart ? scaledBoatBowOffsetNm(symbolScale) : BOAT_BOW_OFFSET_NM;
+  const from = destinationPoint(center, bearing, bowOffset);
   const lengthNm = courseVectorLengthNm(input.speedKn, minutes);
-  const visualLengthNm = courseVectorVisualLengthNm(lengthNm, input.speedKn, scale);
+  let visualLengthNm = courseVectorVisualLengthNm(lengthNm, input.speedKn, scale);
+  if (chart) {
+    visualLengthNm = courseVectorDrawLengthNm(visualLengthNm, chart.chartZoom, chart.latitudeDeg);
+  }
   const to = destinationPoint(from, bearing, visualLengthNm);
 
   return {
     line: [from, to],
     lengthNm,
     visualLengthNm,
-    arrowhead: buildCourseVectorArrowhead(from, bearing, visualLengthNm),
+    arrowhead: buildCourseVectorArrowhead(from, bearing, visualLengthNm, arrowheadScale),
   };
 }

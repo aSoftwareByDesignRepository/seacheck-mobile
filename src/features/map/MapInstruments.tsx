@@ -6,12 +6,9 @@ import { useBarometer } from '../../hooks/useBarometer';
 import { useFormFactor } from '../../hooks/useFormFactor';
 import { useMapShellLayout } from '../../hooks/useMapShellLayout';
 import { useNavigationInstruments } from '../../hooks/useNavigationInstruments';
-import { useLegTimerMs } from '../../hooks/useLegTimer';
-import { formatLegElapsed } from '../../lib/racing/legTimer';
-import { RACING_PACK_V11 } from '../../lib/featureFlags';
 import { formatCoordinates } from '../../map/coords';
 import { magneticDeclinationDeg } from '../../lib/geo/magnetic';
-import { formatSog, formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
+import { formatSog, formatDistanceNm, distanceUnitLabel, formatXteFromNm } from '../../lib/geo/units';
 import { formatCogDisplay } from '../../hooks/useNavigationInstruments';
 import { t } from '../../i18n';
 import { nextCoordFormat, coordFormatTitleKey } from '../../lib/settings/coordFormats';
@@ -31,9 +28,11 @@ import { BarometerInstrument } from './BarometerInstrument';
 
 type Props = {
   fix: LocationFix | null;
+  /** Fills the screen — no chart strip above instruments. */
+  fullScreen?: boolean;
 };
 
-export function MapInstruments({ fix }: Props) {
+export function MapInstruments({ fix, fullScreen = false }: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const { instrumentHeroSize } = useFormFactor();
   const { coordinatesEmphasis } = useMapShellLayout();
@@ -42,8 +41,6 @@ export function MapInstruments({ fix }: Props) {
   const bearingReference = useSettingsStore((s) => s.bearingReference);
   const sogUnit = useSettingsStore((s) => s.sogUnit);
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
-  const activityProfileId = useSettingsStore((s) => s.activityProfileId);
-  const raceTargetSogKn = useSettingsStore((s) => s.raceTargetSogKn);
   const showInfo = useFeedbackStore((s) => s.showInfo);
 
   const goToTarget = useNavigationStore((s) => s.goToTarget);
@@ -52,13 +49,11 @@ export function MapInstruments({ fix }: Props) {
   const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
   const mapDisplayFix = useMapDisplayFix();
   const nav = useNavigationInstruments();
-  const legTimerMs = useLegTimerMs();
   const barometerEnabled = useSettingsStore((s) => s.barometerEnabled);
   const barometer = useBarometer(barometerEnabled);
 
   const stale = isFixStale(fix);
   const coordFix = mapDisplayFix ?? (fix && !stale ? fix : lastGoodFix);
-  const isRace = activityProfileId === 'sailing-race';
   const declination = coordFix ? magneticDeclinationDeg(coordFix.latitude, coordFix.longitude) : 0;
   const cogText = !coordFix ? '—' : stale ? '—' : formatCogDisplay(fix, bearingReference, declination);
   const sogText = !coordFix || stale ? '—' : formatSog(fix?.speedMs ?? null, sogUnit);
@@ -78,13 +73,10 @@ export function MapInstruments({ fix }: Props) {
     showInfo(t('map.coordFormatCycled', { format: t(coordFormatTitleKey(next)) }));
   }
 
-  const showNavRow = Boolean(goToTarget && coordFix && !stale);
   const showNavHero = Boolean(goToTarget);
-  const showXte = nav.xteNm != null && !stale;
+  const showXte = nav.xteNm != null && !stale && goToTarget?.kind !== 'mob' && Boolean(activePassageId);
   const showSession = true;
   const showPassageMeta = Boolean(activePassageId && nav.remainingNm != null && !stale);
-  const showLegTimer = isRace && activePassageId && legTimerMs != null;
-  const showLegIndex = nav.activeLegNumber != null && nav.totalLegs != null;
   const showBarometer = barometerEnabled && barometer.available && barometer.trend.currentHpa != null;
   const leeway = !stale ? computeLeeway(fix?.speedKn ?? null, displayHeading(fix), displayCog(fix)) : null;
   const distanceLabel = distanceUnitLabel(distanceUnit);
@@ -96,6 +88,7 @@ export function MapInstruments({ fix }: Props) {
     anchorDriftNm != null ? formatDistanceNm(anchorDriftNm, distanceUnit) : null;
   const anchorLimitText =
     anchorAlarm?.active ? formatDistanceNm(anchorAlarm.radiusNm, distanceUnit) : null;
+  const xteDisplay = formatXteFromNm(nav.xteNm, distanceUnit, nav.xteSide);
 
   const passageNavHero =
     showNavHero && goToTarget ? (
@@ -106,7 +99,7 @@ export function MapInstruments({ fix }: Props) {
         distanceNm={nav.distanceToTargetNm}
         distanceUnit={distanceUnit}
         etaUtc={nav.etaUtc}
-        xteNm={activePassageId ? nav.xteNm : null}
+        xteNm={activePassageId && goToTarget.kind !== 'mob' ? nav.xteNm : null}
         xteSide={nav.xteSide}
         legNumber={nav.activeLegNumber ?? 0}
         totalLegs={nav.totalLegs ?? 0}
@@ -183,71 +176,7 @@ export function MapInstruments({ fix }: Props) {
       </Pressable>
     );
 
-  const panelBody = isRace ? (
-    <>
-      {statusBadges}
-      {anchorDriftRow}
-      {barometerBlock}
-      {passageNavHero}
-      {coordinatesEmphasis ? coordsBlock : null}
-      <View style={styles.row}>
-        <InstrumentCell label={t('map.sog')} value={sogText} unit={sogUnit} hero heroSize={instrumentHeroSize} />
-        <InstrumentCell
-          label={courseLabel}
-          value={cogText.split(' ')[0]}
-          unit={cogText.includes(' ') ? cogText.split(' ')[1] : undefined}
-          hero
-          heroSize={instrumentHeroSize}
-        />
-      </View>
-      {!passageNavHero && showNavRow ? (
-        <View style={styles.row}>
-          <InstrumentCell
-            label={t('race.brgToMark')}
-            value={nav.bearingToTarget != null ? String(Math.round(nav.bearingToTarget)) : '—'}
-            unit={nav.bearingSuffix}
-          />
-          <InstrumentCell
-            label={t('map.xte')}
-            value={nav.xteNm != null ? nav.xteNm.toFixed(2) : '—'}
-            unit={nav.xteNm != null ? `NM ${nav.xteSide ?? ''}` : undefined}
-          />
-        </View>
-      ) : null}
-      {showNavRow && RACING_PACK_V11 && nav.vmgKn != null ? (
-        <View style={styles.row}>
-          <InstrumentCell label={t('race.vmg')} value={nav.vmgKn.toFixed(1)} unit="kn" />
-          <InstrumentCell
-            label={t('race.targetSog')}
-            value={
-              raceTargetSogKn != null && !stale && sogText !== '—'
-                ? (Number.parseFloat(sogText) - raceTargetSogKn).toFixed(1)
-                : '—'
-            }
-            unit={raceTargetSogKn != null ? 'Δ kn' : undefined}
-          />
-        </View>
-      ) : null}
-      <View style={styles.row}>
-        <InstrumentCell
-          label={t('race.distToMark')}
-          value={nav.distanceToTargetNm != null ? nav.distanceToTargetNm.toFixed(1) : '—'}
-          unit={distanceUnit === 'nm' ? 'NM' : distanceUnit === 'km' ? 'km' : 'SM'}
-        />
-        <InstrumentCell label={t('race.legTime')} value={showLegTimer ? formatLegElapsed(legTimerMs) : '—'} />
-      </View>
-      <View style={styles.row}>
-        {showLegIndex ? (
-          <InstrumentCell label={t('race.legIndex')} value={`${nav.activeLegNumber}/${nav.totalLegs}`} />
-        ) : (
-          <InstrumentCell label={t('map.accuracy')} value={fix?.accuracyM != null && !stale ? `±${Math.round(fix.accuracyM)}` : '—'} unit="m" />
-        )}
-        <View style={{ flex: 1 }} />
-      </View>
-      {!coordinatesEmphasis ? coordsBlock : null}
-      <InstrumentCell label={t('map.distanceRun')} value={sessionDistText} unit={distanceLabel} />
-    </>
-  ) : coordinatesEmphasis ? (
+  const panelBody = coordinatesEmphasis ? (
     <>
       {statusBadges}
       {barometerBlock}
@@ -265,7 +194,7 @@ export function MapInstruments({ fix }: Props) {
       </View>
       {showXte && !passageNavHero ? (
         <View style={styles.row}>
-          <InstrumentCell label={t('map.xte')} value={nav.xteNm!.toFixed(2)} unit={`NM ${nav.xteSide ?? ''}`} />
+          <InstrumentCell label={t('map.xte')} value={xteDisplay.value} unit={xteDisplay.unitLabel || undefined} />
           {nav.activeLegLabel ? <InstrumentCell label={t('map.leg')} value={nav.activeLegLabel} /> : null}
         </View>
       ) : null}
@@ -292,7 +221,7 @@ export function MapInstruments({ fix }: Props) {
       </View>
       {showXte && !passageNavHero ? (
         <View style={styles.row}>
-          <InstrumentCell label={t('map.xte')} value={nav.xteNm!.toFixed(2)} unit={`NM ${nav.xteSide ?? ''}`} />
+          <InstrumentCell label={t('map.xte')} value={xteDisplay.value} unit={xteDisplay.unitLabel || undefined} />
           {nav.activeLegLabel ? <InstrumentCell label={t('map.leg')} value={nav.activeLegLabel} /> : null}
         </View>
       ) : null}
@@ -323,6 +252,7 @@ export function MapInstruments({ fix }: Props) {
     <View
       style={[
         styles.panel,
+        fullScreen ? styles.panelFullScreen : null,
         {
           backgroundColor: colors.surface,
           borderColor: colors.border,
@@ -343,6 +273,7 @@ export function MapInstruments({ fix }: Props) {
 
 const styles = StyleSheet.create({
   panel: { borderTopWidth: 1, flex: 1, flexShrink: 1, minHeight: 0 },
+  panelFullScreen: { borderTopWidth: 0 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 14 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
   row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, minWidth: 0 },

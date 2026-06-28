@@ -1,4 +1,4 @@
-import { PropsWithChildren, ReactElement } from 'react';
+import { PropsWithChildren, ReactElement, RefObject } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -22,9 +22,10 @@ type ScreenProps = PropsWithChildren<{
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
+  scrollRef?: RefObject<ScrollView | null>;
 }>;
 
-export function Screen({ testID, title, subtitle, loading, error, onRetry, children }: ScreenProps) {
+export function Screen({ testID, title, subtitle, loading, error, onRetry, scrollRef, children }: ScreenProps) {
   const { colors, spacing } = useTheme();
 
   if (loading && !children) {
@@ -40,6 +41,7 @@ export function Screen({ testID, title, subtitle, loading, error, onRetry, child
   return (
     <SafeAreaView edges={TAB_SCREEN_EDGES} testID={testID} style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
+        ref={scrollRef}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingHorizontal: spacing.xl, paddingVertical: spacing.xl }]}
       >

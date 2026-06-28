@@ -1,3 +1,6 @@
+import type { DistanceUnit } from '../../settings/defaults';
+import { distanceUnitLabel, formatDistanceNm } from '../geo/units';
+
 export function escapeXml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -12,14 +15,33 @@ export type GpxWaypoint = {
 export type GpxRouteLeg = {
   from: GpxWaypoint;
   to: GpxWaypoint;
+  distanceNm?: number;
 };
 
-export function buildPassageRouteGpx(name: string, waypoints: GpxWaypoint[], legs: GpxRouteLeg[]): string {
+export type GpxExportOptions = {
+  distanceUnit?: DistanceUnit;
+};
+
+function formatGpxDistance(nm: number | undefined, unit: DistanceUnit): string {
+  if (nm == null || Number.isNaN(nm)) return '';
+  return `${formatDistanceNm(nm, unit, 2)} ${distanceUnitLabel(unit)}`;
+}
+
+export function buildPassageRouteGpx(
+  name: string,
+  waypoints: GpxWaypoint[],
+  legs: GpxRouteLeg[],
+  options: GpxExportOptions = {},
+): string {
+  const unit = options.distanceUnit ?? 'nm';
   const wptXml = waypoints
-    .map(
-      (wp) =>
-        `<wpt lat="${wp.latitude.toFixed(6)}" lon="${wp.longitude.toFixed(6)}"><name>${escapeXml(wp.name)}</name>${wp.note ? `<desc>${escapeXml(wp.note)}</desc>` : ''}</wpt>`,
-    )
+    .map((wp, index) => {
+      const legToNext = legs[index];
+      const legDesc = legToNext?.distanceNm != null ? formatGpxDistance(legToNext.distanceNm, unit) : '';
+      const descParts = [wp.note?.trim(), legDesc ? `Next leg: ${legDesc}` : ''].filter(Boolean);
+      const desc = descParts.length ? `<desc>${escapeXml(descParts.join(' · '))}</desc>` : '';
+      return `<wpt lat="${wp.latitude.toFixed(6)}" lon="${wp.longitude.toFixed(6)}"><name>${escapeXml(wp.name)}</name>${desc}</wpt>`;
+    })
     .join('');
   const rtepts = waypoints
     .map((wp) => `<rtept lat="${wp.latitude.toFixed(6)}" lon="${wp.longitude.toFixed(6)}"><name>${escapeXml(wp.name)}</name></rtept>`)
@@ -35,17 +57,30 @@ export function buildPassageRouteGpx(name: string, waypoints: GpxWaypoint[], leg
 
 export function buildPassageSummaryText(
   name: string,
-  legs: { fromName: string; toName: string; bearingDeg: number; distanceNm: number; cumulativeNm: number; sogKn: number; durationHours: number; etaUtc: string | null; note: string }[],
+  legs: {
+    fromName: string;
+    toName: string;
+    bearingDeg: number;
+    distanceNm: number;
+    cumulativeNm: number;
+    sogKn: number;
+    durationHours: number;
+    etaUtc: string | null;
+    note: string;
+  }[],
   totalNm: number,
   totalHours: number,
+  distanceUnit: DistanceUnit = 'nm',
 ): string {
+  const unitLabel = distanceUnitLabel(distanceUnit);
+  const dist = (nm: number) => `${formatDistanceNm(nm, distanceUnit, 1)} ${unitLabel}`;
   const lines = [`${name}`, ''];
   for (const leg of legs) {
     const eta = leg.etaUtc ? leg.etaUtc.slice(11, 16) + ' UTC' : '—';
     lines.push(
-      `${leg.fromName} → ${leg.toName}: ${Math.round(leg.bearingDeg)}° · ${leg.distanceNm.toFixed(1)} NM · SOG ${leg.sogKn.toFixed(1)} kn · ${leg.durationHours.toFixed(1)} h · ETA ${eta}${leg.note ? ` · ${leg.note}` : ''}`,
+      `${leg.fromName} → ${leg.toName}: ${Math.round(leg.bearingDeg)}° · ${dist(leg.distanceNm)} · SOG ${leg.sogKn.toFixed(1)} kn · ${leg.durationHours.toFixed(1)} h · ETA ${eta}${leg.note ? ` · ${leg.note}` : ''}`,
     );
   }
-  lines.push('', `Total: ${totalNm.toFixed(1)} NM · ${totalHours.toFixed(1)} h at planned SOG`);
+  lines.push('', `Total: ${dist(totalNm)} · ${totalHours.toFixed(1)} h at planned SOG`);
   return lines.join('\n');
 }

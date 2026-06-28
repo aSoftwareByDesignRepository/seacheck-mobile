@@ -3,6 +3,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { stopPassageMapPlanning, isPassageMapPlanningActive } from '../../lib/passage/passageMapPlanning';
 import { ensureDownloadAllowed } from '../../lib/network/downloadPolicy';
 import { validateDownloadBounds } from '../../lib/map/bounds';
 import { estimateDownloadKb, estimateTileCount, formatStorageSize } from '../../map/tileMath';
@@ -50,6 +51,10 @@ export function CustomDownloadSection({ downloadLocked = false, actionBusyId, on
   const quickValid = quickBounds ? validateDownloadBounds(quickBounds, 10, 14).ok : false;
 
   function openMapPicker() {
+    if (isPassageMapPlanningActive()) {
+      showInfo(t('passage.mapPlanningPaused'));
+    }
+    stopPassageMapPlanning();
     startSelecting();
     navigation.navigate('Map');
   }

@@ -1,13 +1,5 @@
 import { computeBarometerTrend, pruneBarometerReadings } from '../src/lib/barometer/trend';
-import { formatLegElapsed } from '../src/lib/racing/legTimer';
-import { formatCountdownMs, laylineBearingsFromMark, velocityMadeGoodKn } from '../src/lib/racing/racingGeo';
 import { magneticDeclinationDeg, trueToMagneticBearing } from '../src/lib/geo/magnetic';
-
-describe('formatLegElapsed', () => {
-  it('formats sub-hour legs as M:SS', () => {
-    expect(formatLegElapsed(134_000)).toBe('2:14');
-  });
-});
 
 describe('barometer trend', () => {
   const now = Date.parse('2026-06-22T12:00:00.000Z');
@@ -21,23 +13,6 @@ describe('barometer trend', () => {
       now,
     );
     expect(computeBarometerTrend(readings, now).trend).toBe('falling_fast');
-  });
-});
-
-describe('racing geo', () => {
-  it('computes VMG toward mark', () => {
-    expect(velocityMadeGoodKn(6, 90, 90)).toBeCloseTo(6, 1);
-    expect(velocityMadeGoodKn(6, 0, 90)).toBeCloseTo(0, 1);
-  });
-
-  it('builds layline bearings from wind', () => {
-    const lines = laylineBearingsFromMark(0, 45);
-    expect(lines.portDeg).toBe(45);
-    expect(lines.starboardDeg).toBe(315);
-  });
-
-  it('formats countdown', () => {
-    expect(formatCountdownMs(125_000)).toBe('2:05');
   });
 });
 

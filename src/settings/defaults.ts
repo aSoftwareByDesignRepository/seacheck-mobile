@@ -31,6 +31,7 @@ export const CRUISE_PASSAGE_DEFAULTS = {
 };
 
 export { DEFAULT_SEAMARK_PLANNING, type SeamarkPlanningConfig } from '../lib/settings/seamarkSettings';
+export { DEFAULT_CHART_BASE_STYLE, type ChartBaseStyle } from '../lib/settings/chartBaseStyle';
 
 export type { AnchorRadiusNm, CourseVectorMinutes, CourseVectorVisualScale, FollowZoomLevel };
 
@@ -38,5 +39,11 @@ export type SogUnit = 'kn' | 'mph' | 'kmh' | 'ms';
 export type DistanceUnit = 'nm' | 'km' | 'sm';
 export type BearingReference = 'true' | 'magnetic';
 export type CoordFormat = 'ddm' | 'dd' | 'dms';
-export type LayoutPreset = 'map-forward' | 'instruments-forward' | 'split' | 'minimal' | 'coordinates';
+export type LayoutPreset =
+  | 'map-forward'
+  | 'instruments-forward'
+  | 'instruments-only'
+  | 'split'
+  | 'minimal'
+  | 'coordinates';
 export type PanelSide = 'auto' | 'port' | 'starboard';

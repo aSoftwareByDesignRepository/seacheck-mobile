@@ -34,6 +34,17 @@ export function crossTrackErrorNm(position: LonLat, legStart: LonLat, legEnd: Lo
   return distFromStart * Math.sin((angleDiff * Math.PI) / 180);
 }
 
+/** Distance along the rhumb leg from start toward end (NM). Can exceed leg length when abeam/past. */
+export function alongTrackFromStartNm(position: LonLat, legStart: LonLat, legEnd: LonLat): number {
+  const legLength = distanceNm(legStart, legEnd);
+  if (legLength < 0.001) return 0;
+  const legBearing = bearingTrue(legStart, legEnd);
+  const bearingToPos = bearingTrue(legStart, position);
+  const distFromStart = distanceNm(legStart, position);
+  const angleDiff = ((bearingToPos - legBearing + 540) % 360) - 180;
+  return distFromStart * Math.cos((angleDiff * Math.PI) / 180);
+}
+
 export function etaUtcIso(departureMs: number, cumulativeHours: number): string {
   return new Date(departureMs + cumulativeHours * 3_600_000).toISOString();
 }

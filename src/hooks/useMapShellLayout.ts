@@ -21,8 +21,9 @@ export function resolveMapShellLayout(
   const split =
     layoutPreset === 'split' ||
     layoutPreset === 'coordinates' ||
-    (layoutPreset === 'map-forward' && formFactor === 'expanded') ||
+    (layoutPreset === 'map-forward' && formFactor !== 'compact') ||
     (layoutPreset === 'instruments-forward' && formFactor !== 'compact' && isLandscape);
+  // instruments-only never splits — full-screen instruments, no chart
   const row = split && (formFactor !== 'compact' || isLandscape);
   return { split, row };
 }

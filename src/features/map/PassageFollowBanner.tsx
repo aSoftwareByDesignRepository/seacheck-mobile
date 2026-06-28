@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { usePassageFollow } from '../../hooks/usePassageFollow';
-import { formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
+import { formatDistanceNm, distanceUnitLabel, formatXteLineFromNm } from '../../lib/geo/units';
 import { t } from '../../i18n';
 import { usePassageStore } from '../../store/passageStore';
 import { useNavigationStore } from '../../store/navigationStore';
@@ -30,8 +30,7 @@ export function PassageFollowBanner({ compact = false, onOpenPassage }: Props) {
     follow.distanceToNextNm != null
       ? `${formatDistanceNm(follow.distanceToNextNm, distanceUnit)} ${unitLabel}`
       : '—';
-  const xteText =
-    follow.xteNm != null ? `${follow.xteNm.toFixed(2)} NM ${follow.xteSide ?? ''}`.trim() : null;
+  const xteText = formatXteLineFromNm(follow.xteNm, distanceUnit, follow.xteSide);
 
   return (
     <View
@@ -76,17 +75,44 @@ export function PassageFollowBanner({ compact = false, onOpenPassage }: Props) {
       {follow.stale ? (
         <Text style={[styles.stale, { color: colors.warningText }]}>{t('map.staleCoordsHint')}</Text>
       ) : null}
+      {follow.legWaypointArrived && !follow.isLastLeg ? (
+        <View
+          style={[
+            styles.passedHint,
+            { backgroundColor: colors.warningBg, borderColor: colors.warningBorder, marginTop: spacing.sm },
+          ]}
+          accessibilityRole="text"
+        >
+          <Text style={[styles.passedHintText, { color: colors.warningText }]}>
+            {follow.legWaypointPassedAlongTrack
+              ? t('passage.waypointPassedAlongTrack', { name: follow.nextWaypointName })
+              : t('passage.waypointArrivedNear', { name: follow.nextWaypointName })}
+          </Text>
+        </View>
+      ) : null}
       <View style={[styles.actions, { gap: spacing.sm, marginTop: compact ? spacing.xs : spacing.sm }]}>
         {!follow.isLastLeg ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t('passage.nextLegManual')}
-            accessibilityHint={t('passage.nextLegManualHint')}
+            accessibilityLabel={t('passage.skipToNextWaypoint')}
+            accessibilityHint={t('passage.skipToNextWaypointHint')}
             onPress={() => void setPassageActiveLeg(activeLegIndex + 1)}
-            style={[styles.actionBtn, { borderColor: colors.primary, minHeight: minTouch }]}
+            style={[
+              styles.actionBtn,
+              follow.legWaypointArrived
+                ? { borderColor: colors.primary, backgroundColor: colors.primary, minHeight: minTouch }
+                : { borderColor: colors.primary, minHeight: minTouch },
+            ]}
             testID="map.passageFollow.nextLeg"
           >
-            <Text style={[styles.actionPrimary, { color: colors.primary }]}>{t('passage.nextLegManual')}</Text>
+            <Text
+              style={[
+                styles.actionPrimary,
+                { color: follow.legWaypointArrived ? colors.primaryText : colors.primary },
+              ]}
+            >
+              {t('passage.skipToNextWaypoint')}
+            </Text>
           </Pressable>
         ) : (
           <View style={[styles.finalChip, { backgroundColor: colors.successBg, borderColor: colors.success }]}>
@@ -150,6 +176,8 @@ const styles = StyleSheet.create({
   statValueLarge: { fontSize: 22, fontWeight: '900', marginTop: 2, fontVariant: ['tabular-nums'], lineHeight: 28 },
   statValueCompact: { fontSize: 18, fontWeight: '900', marginTop: 2, fontVariant: ['tabular-nums'], lineHeight: 24 },
   stale: { fontSize: 12, lineHeight: 16, marginTop: 6, fontWeight: '600' },
+  passedHint: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  passedHintText: { fontSize: 13, lineHeight: 19, fontWeight: '700' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch' },
   actionBtn: {
     borderWidth: 1,

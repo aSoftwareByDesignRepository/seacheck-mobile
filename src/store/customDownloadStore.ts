@@ -16,6 +16,7 @@ type CustomDownloadState = {
   resetCorners: () => void;
   setZoomRange: (minZoom: number, maxZoom: number) => void;
   setPackName: (name: string) => void;
+  prefillFromBounds: (bounds: [number, number, number, number], name: string) => void;
   getBounds: () => LngLatBounds | null;
 };
 
@@ -58,6 +59,16 @@ export const useCustomDownloadStore = create<CustomDownloadState>((set, get) => 
   setZoomRange: (minZoom, maxZoom) => set({ minZoom, maxZoom: Math.max(minZoom, maxZoom) }),
 
   setPackName: (name) => set({ packName: name }),
+
+  prefillFromBounds: (bounds, name) => {
+    const [west, south, east, north] = bounds;
+    set({
+      selecting: true,
+      cornerA: { latitude: south, longitude: west },
+      cornerB: { latitude: north, longitude: east },
+      packName: name,
+    });
+  },
 
   getBounds: () => {
     const { cornerA, cornerB } = get();

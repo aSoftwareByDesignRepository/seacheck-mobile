@@ -24,6 +24,25 @@ describe('processLocationAlarms', () => {
     expect(result.anchorAlarm?.triggered).toBe(true);
   });
 
+  it('defers anchor drag on first fix after GPS gap recovery', () => {
+    const result = processLocationAlarms({
+      fix: { latitude: 54.01, longitude: 10.01, speedKn: 0, accuracyM: 12 },
+      anchorAlarm: { active: true, latitude: 54, longitude: 10, radiusNm: 0.05, triggered: false },
+      goToTarget: null,
+      alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },
+      activePassageId: null,
+      activeLegIndex: 0,
+      passageDetail: null,
+      legAdvanceAuto: false,
+      allowLegAdvancePrompt: true,
+      runtime: freshAlarmRuntime(),
+      deferAnchorDragEvaluation: true,
+    });
+
+    expect(result.actions.some((a) => a.type === 'trigger')).toBe(false);
+    expect(result.anchorAlarm?.triggered).toBe(false);
+  });
+
   it('does not fire anchor drag on a low-confidence (poor accuracy) fix', () => {
     const result = processLocationAlarms({
       fix: { latitude: 54.01, longitude: 10.01, speedKn: 0, accuracyM: 120 },
@@ -203,5 +222,68 @@ describe('processLocationAlarms', () => {
 
     const second = processLocationAlarms({ ...base, runtime: first.runtime });
     expect(second.actions.filter((a) => a.type === 'leg_advance_auto')).toHaveLength(0);
+  });
+
+  it('auto-advances when waypoint is passed along-track without entering the circle', () => {
+    const wp = (id: string, name: string, lat: number, lon: number) => ({
+      id,
+      name,
+      latitude: lat,
+      longitude: lon,
+      type: 'generic' as const,
+      created_at: 0,
+      updated_at: 0,
+    });
+    const passageDetail = {
+      id: 'p1',
+      waypoints: [wp('a', 'A', 54.0, 10.0), wp('b', 'B', 54.01, 10.0), wp('c', 'C', 54.02, 10.0)],
+      legs: [
+        {
+          index: 1,
+          from: wp('a', 'A', 54.0, 10.0),
+          to: wp('b', 'B', 54.01, 10.0),
+          distanceNm: 0.6,
+          bearingDeg: 0,
+          durationHours: 1,
+          etaUtc: null,
+        },
+        {
+          index: 2,
+          from: wp('b', 'B', 54.01, 10.0),
+          to: wp('c', 'C', 54.02, 10.0),
+          distanceNm: 0.6,
+          bearingDeg: 0,
+          durationHours: 1,
+          etaUtc: null,
+        },
+      ],
+      totalNm: 1.2,
+      totalHours: 2,
+      default_sog_kn: 5,
+      planned_departure: null,
+      is_active: 1,
+      created_at: 0,
+      updated_at: 0,
+      name: 'Tack test',
+    };
+
+    const result = processLocationAlarms({
+      fix: { latitude: 54.01, longitude: 10.008, speedKn: 4 },
+      anchorAlarm: null,
+      goToTarget: null,
+      alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },
+      activePassageId: 'p1',
+      activeLegIndex: 0,
+      passageDetail,
+      legAdvanceAuto: true,
+      allowLegAdvancePrompt: false,
+      runtime: freshAlarmRuntime(),
+    });
+
+    expect(result.actions.filter((a) => a.type === 'leg_advance_auto')).toHaveLength(1);
+    if (result.actions[0]?.type === 'leg_advance_auto') {
+      expect(result.actions[0].legIndex).toBe(1);
+      expect(result.actions[0].waypointName).toBe('B');
+    }
   });
 });

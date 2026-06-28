@@ -23,10 +23,6 @@ async function syncNavigationAfterWaypointChange(id: string, next: WaypointRow |
       await nav.setGoTo(null);
     }
   }
-  const start = nav.startLine;
-  if (start && (start.pinAWaypointId === id || start.pinBWaypointId === id)) {
-    await nav.clearStartLine();
-  }
 }
 
 export const useWaypointStore = create<WaypointStore>((set, get) => ({

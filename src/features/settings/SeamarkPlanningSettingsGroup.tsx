@@ -40,7 +40,6 @@ export function SeamarkPlanningSettingsGroup({ config, onChange }: Props) {
       />
       {config.enabled ? (
         <>
-          <Text style={[styles.rasterNote, { color: colors.textMuted }]}>{t('settings.seamarkRasterNote')}</Text>
           {SEAMARK_PLANNING_CATEGORY_ORDER.map((category) => {
             const cat = config[category];
             return (
@@ -82,7 +81,6 @@ export function SeamarkPlanningSettingsGroup({ config, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  rasterNote: { fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: 8 },
   categoryBlock: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8, marginTop: 4, gap: 4 },
   zoomRow: { gap: 6, marginBottom: 8 },
   zoomLabel: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },

@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useFormFactor } from '../../hooks/useFormFactor';
-import { formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
+import { formatDistanceNm, distanceUnitLabel, formatXteFromNm } from '../../lib/geo/units';
 import type { DistanceUnit } from '../../settings/defaults';
 import { t } from '../../i18n';
 import { useTheme } from '../../theme/ThemeContext';
@@ -42,6 +42,7 @@ export function PassageNavHero({
   const { colors, spacing } = useTheme();
   const { width, formFactor } = useFormFactor();
   const unitLabel = distanceUnitLabel(distanceUnit);
+  const xteDisplay = formatXteFromNm(xteNm, distanceUnit, xteSide);
   const brgLabel = isMob ? t('map.brgMob') : t('passage.brgToNext');
   const distValue = distanceNm != null ? formatDistanceNm(distanceNm, distanceUnit) : '—';
   const stackEta = width < 400 || (formFactor === 'compact' && width < 520);
@@ -90,7 +91,7 @@ export function PassageNavHero({
       ) : null}
       {xteNm != null ? (
         <View style={[styles.row, { gap: spacing.sm, marginTop: spacing.xs }]}>
-          <InstrumentCell label={t('map.xte')} value={xteNm.toFixed(2)} unit={`NM ${xteSide ?? ''}`} />
+          <InstrumentCell label={t('map.xte')} value={xteDisplay.value} unit={xteDisplay.unitLabel || undefined} />
         </View>
       ) : null}
       {stale ? (

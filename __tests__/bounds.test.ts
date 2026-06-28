@@ -1,4 +1,4 @@
-import { normalizeBounds, validateDownloadBounds } from '../src/lib/map/bounds';
+import { expandLngLatBounds, normalizeBounds, pointInLngLatBounds, validateDownloadBounds } from '../src/lib/map/bounds';
 
 describe('download bounds', () => {
   it('normalizes corner order', () => {
@@ -24,5 +24,19 @@ describe('download bounds', () => {
     );
     const result = validateDownloadBounds(bounds, 10, 14);
     expect(result.ok).toBe(true);
+  });
+
+  it('detects points inside antimeridian-crossing bounds', () => {
+    const bounds: [number, number, number, number] = [170, -20, -170, 20];
+    expect(pointInLngLatBounds(bounds, 0, 175)).toBe(true);
+    expect(pointInLngLatBounds(bounds, 0, -175)).toBe(true);
+    expect(pointInLngLatBounds(bounds, 0, 0)).toBe(false);
+  });
+
+  it('expands bounds near the antimeridian without breaking wrap logic', () => {
+    const bounds: [number, number, number, number] = [175, -18, -175, 18];
+    const expanded = expandLngLatBounds(bounds, 0.5);
+    expect(pointInLngLatBounds(expanded, 0, 179)).toBe(true);
+    expect(pointInLngLatBounds(expanded, 0, -179)).toBe(true);
   });
 });

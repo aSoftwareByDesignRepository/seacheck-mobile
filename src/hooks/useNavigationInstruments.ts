@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { formatBearing, magneticDeclinationDeg } from '../lib/geo/magnetic';
 import { bearingTrue, crossTrackErrorNm, distanceNm, legDurationHours, msToKnots, type LonLat } from '../lib/geo/navigation';
-import { velocityMadeGoodKn } from '../lib/racing/racingGeo';
 import { formatDistanceNm } from '../lib/geo/units';
 import { displayCog, isFixStale, useLocationStore } from '../services/locationService';
 import { useNavigationStore } from '../store/navigationStore';
@@ -24,8 +23,6 @@ export type NavigationInstruments = {
   remainingNm: number | null;
   etaDestUtc: string | null;
   plannedEtaDestUtc: string | null;
-  vmgKn: number | null;
-  bearingToMarkTrue: number | null;
 };
 
 export function useNavigationInstruments(): NavigationInstruments {
@@ -57,13 +54,11 @@ export function useNavigationInstruments(): NavigationInstruments {
     const formatted = formatBearing(trueBearing, bearingReference, declination);
     const dist = distanceNm(pos, target);
     const sogKn = fix?.speedKn ?? msToKnots(fix?.speedMs) ?? 0;
-    const cogTrue = displayCog(fix);
-    const vmg = cogTrue != null ? velocityMadeGoodKn(sogKn, cogTrue, trueBearing) : null;
     const eta =
       sogKn > 0.5
         ? new Date(Date.now() + legDurationHours(dist, sogKn) * 3_600_000).toISOString().slice(11, 16) + ' UTC'
         : null;
-    return { bearing: formatted.value, suffix: formatted.suffix, dist, eta, vmgKn: vmg, bearingToMarkTrue: trueBearing };
+    return { bearing: formatted.value, suffix: formatted.suffix, dist, eta };
   }, [pos, goToTarget, stale, bearingReference, declination, fix]);
 
   const etaDestUtc = useMemo(() => {
@@ -128,8 +123,6 @@ export function useNavigationInstruments(): NavigationInstruments {
     remainingNm,
     etaDestUtc,
     plannedEtaDestUtc,
-    vmgKn: targetInfo?.vmgKn ?? null,
-    bearingToMarkTrue: targetInfo?.bearingToMarkTrue ?? null,
   };
 }
 

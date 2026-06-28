@@ -2,8 +2,9 @@ import { useCallback, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TAB_BAR_CONTENT_HEIGHT } from '../features/map/mapChromeLayout';
+import { MINIMAL_INSTRUMENT_STRIP_HEIGHT, TAB_BAR_CONTENT_HEIGHT } from '../features/map/mapChromeLayout';
 import { useFormFactor } from '../hooks/useFormFactor';
+import { useEffectiveLayoutPreset } from '../hooks/useEffectiveLayoutPreset';
 import { t } from '../i18n';
 import { useFeedbackStore, type FeedbackKind } from '../store/feedbackStore';
 import { useTheme } from '../theme/ThemeContext';
@@ -62,11 +63,13 @@ export function GlobalFeedback() {
   const { spacing } = useTheme();
   const insets = useSafeAreaInsets();
   const { formFactor, isLandscape } = useFormFactor();
+  const layoutPreset = useEffectiveLayoutPreset();
   const { register, unregister } = useSheetHost();
   const { sheetTop } = useSheetHostSnapshotPublic();
 
   const hasBottomTabBar = formFactor === 'compact' || !isLandscape;
-  const bottomOffset = insets.bottom + (hasBottomTabBar ? TAB_BAR_CONTENT_HEIGHT : 0) + spacing.sm;
+  const minimalDockExtra = layoutPreset === 'minimal' ? MINIMAL_INSTRUMENT_STRIP_HEIGHT + spacing.sm : 0;
+  const bottomOffset = insets.bottom + (hasBottomTabBar ? TAB_BAR_CONTENT_HEIGHT : 0) + spacing.sm + minimalDockExtra;
   const horizontalInset = spacing.lg;
 
   const renderOverlay = useCallback(() => {

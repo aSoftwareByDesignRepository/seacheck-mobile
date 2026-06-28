@@ -5,6 +5,7 @@ import { computeGpsCogDeg, resolveDisplayCog } from '../lib/geo/cog';
 import {
   buildDisplayFix,
   classifyFixAcceptance,
+  effectivePreviousFixForAcceptance,
   smoothGpsPosition,
   type FixAcceptanceReason,
   type GpsSmoothState,
@@ -90,7 +91,7 @@ function processRawFix(raw: Omit<LocationFix, 'cogDeg'>, smoothEnabled: boolean)
     return null;
   }
 
-  const acceptance = classifyFixAcceptance(lastAcceptedFix, raw);
+  const acceptance = classifyFixAcceptance(effectivePreviousFixForAcceptance(lastAcceptedFix, raw.timestamp), raw);
   const cogDeg =
     acceptance.accepted && lastAcceptedFix
       ? (computeGpsCogDeg(lastAcceptedFix, raw) ?? lastAcceptedFix.cogDeg)

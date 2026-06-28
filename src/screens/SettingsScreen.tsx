@@ -6,8 +6,8 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useFormFactor } from '../hooks/useFormFactor';
 import { useEffectiveLayoutPreset, useLayoutContext } from '../hooks/useEffectiveLayoutPreset';
 import { useBatteryOptimization } from '../hooks/useBatteryOptimization';
-import { parseAlarmLimitNm } from '../lib/alarms/alarmLimits';
-import { RACING_PACK_V11 } from '../lib/featureFlags';
+import { parseAlarmLimitDisplay } from '../lib/alarms/alarmLimits';
+import { distanceUnitLabel, formatDistanceNm } from '../lib/geo/units';
 import { COURSE_VECTOR_MINUTE_OPTIONS, COURSE_VECTOR_SCALE_OPTIONS, FOLLOW_ZOOM_OPTIONS } from '../lib/settings/mapSettings';
 import { courseVectorScaleLabelKey } from '../lib/settings/courseVectorLabels';
 import {
@@ -19,7 +19,6 @@ import { openBatteryOptimizationSettings, requestBatteryOptimizationExemption } 
 import { openSystemSettings, requestBackgroundLocationAccess, requestForegroundLocationAccess } from '../lib/permissions/locationPermissions';
 import { MAP_ATTRIBUTION } from '../map/constants';
 import type { PanelSide } from '../settings/defaults';
-import { ACTIVITY_PROFILES, LAYOUT_PRESETS } from '../settings/profiles';
 import { t } from '../i18n';
 import { useNavigationStore } from '../store/navigationStore';
 import { useFeedbackStore } from '../store/feedbackStore';
@@ -31,8 +30,12 @@ import { type ThemeMode, useTheme } from '../theme/ThemeContext';
 import { Button } from '../ui/Button';
 import { CoordFormatPicker } from '../ui/CoordFormatPicker';
 import { FilterChip } from '../ui/FilterChip';
-import { RacePackSection } from '../features/racing/RacePackSection';
+import { LayoutPresetPicker } from '../ui/LayoutPresetPicker';
+import { ChartDataSettingsGroup } from '../features/settings/ChartDataSettingsGroup';
 import { SeamarkPlanningSettingsGroup } from '../features/settings/SeamarkPlanningSettingsGroup';
+import { AnchorWatchSettingsGroup } from '../features/settings/AnchorWatchSettingsGroup';
+import type { ChartBaseStyle } from '../settings/defaults';
+import { useOfflinePackStore } from '../store/offlinePackStore';
 import { ButtonStack, Card, FieldGroup, FieldInput, Screen, SettingsGroup } from '../ui/Screen';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ToggleRow } from '../ui/ToggleRow';
@@ -43,7 +46,7 @@ const PANEL_SIDES: PanelSide[] = ['auto', 'port', 'starboard'];
 export function SettingsScreen() {
   const { colors, mode, setMode, minTouch } = useTheme();
   const { formFactor } = useFormFactor();
-  const twoColumn = formFactor === 'expanded';
+  const twoColumn = formFactor !== 'compact';
   const vessel = useSettingsStore((s) => s.vessel);
   const patchSettings = useSettingsStore((s) => s.patchSettings);
   const sogUnit = useSettingsStore((s) => s.sogUnit);
@@ -55,6 +58,7 @@ export function SettingsScreen() {
   const mapCourseVectorMinutes = useSettingsStore((s) => s.mapCourseVectorMinutes);
   const mapCourseVectorScale = useSettingsStore((s) => s.mapCourseVectorScale);
   const mapFollowZoom = useSettingsStore((s) => s.mapFollowZoom);
+  const chartBaseStyle = useSettingsStore((s) => s.chartBaseStyle);
   const seamarkPlanning = useSettingsStore((s) => s.seamarkPlanning);
   const followMode = useSettingsStore((s) => s.followMode);
   const gpsSmoothPosition = useSettingsStore((s) => s.gpsSmoothPosition);
@@ -65,9 +69,9 @@ export function SettingsScreen() {
   const alarmHapticEnabled = useSettingsStore((s) => s.alarmHapticEnabled);
   const legAdvanceAuto = useSettingsStore((s) => s.legAdvanceAuto);
   const gloveMode = useSettingsStore((s) => s.gloveMode);
+  const mapShowPassageRouteLines = useSettingsStore((s) => s.mapShowPassageRouteLines);
+  const downloadWifiOnly = useSettingsStore((s) => s.downloadWifiOnly);
   const panelSide = useSettingsStore((s) => s.panelSide);
-  const activityProfileId = useSettingsStore((s) => s.activityProfileId);
-  const applyActivityProfile = useSettingsStore((s) => s.applyActivityProfile);
   const setLayoutOverride = useSettingsStore((s) => s.setLayoutOverride);
   const layoutPreset = useEffectiveLayoutPreset();
   const layoutContext = useLayoutContext();
@@ -81,9 +85,10 @@ export function SettingsScreen() {
   const showSuccess = useFeedbackStore((s) => s.showSuccess);
   const showInfo = useFeedbackStore((s) => s.showInfo);
   const showError = useFeedbackStore((s) => s.showError);
+  const ensureChartStyle = useOfflinePackStore((s) => s.ensureChartStyle);
   const [draft, setDraft] = useState(vessel);
-  const [xteDraft, setXteDraft] = useState(String(alarmLimits.xteNm));
-  const [arrivalDraft, setArrivalDraft] = useState(String(alarmLimits.arrivalNm));
+  const [xteDraft, setXteDraft] = useState(formatDistanceNm(alarmLimits.xteNm, distanceUnit, 2));
+  const [arrivalDraft, setArrivalDraft] = useState(formatDistanceNm(alarmLimits.arrivalNm, distanceUnit, 2));
   const [notificationPermission, setNotificationPermission] = useState(getMaritimeNotificationPermission());
   const [backgroundGpsRunning, setBackgroundGpsRunning] = useState(false);
   const batteryStatus = useBatteryOptimization(Platform.OS === 'android');
@@ -96,9 +101,9 @@ export function SettingsScreen() {
   );
 
   useEffect(() => {
-    setXteDraft(String(alarmLimits.xteNm));
-    setArrivalDraft(String(alarmLimits.arrivalNm));
-  }, [alarmLimits.xteNm, alarmLimits.arrivalNm]);
+    setXteDraft(formatDistanceNm(alarmLimits.xteNm, distanceUnit, 2));
+    setArrivalDraft(formatDistanceNm(alarmLimits.arrivalNm, distanceUnit, 2));
+  }, [alarmLimits.xteNm, alarmLimits.arrivalNm, distanceUnit]);
 
   const refreshBackgroundStatus = useCallback(async () => {
     await refreshPermission();
@@ -123,8 +128,8 @@ export function SettingsScreen() {
 
   function commitAlarmLimit(field: 'xteNm' | 'arrivalNm', draft: string, setDraft: (v: string) => void) {
     const current = alarmLimits[field];
-    const next = parseAlarmLimitNm(draft, current);
-    setDraft(String(next));
+    const next = parseAlarmLimitDisplay(draft, distanceUnit, current);
+    setDraft(formatDistanceNm(next, distanceUnit, 2));
     if (next !== current) void patchAlarmLimits({ [field]: next });
   }
 
@@ -215,6 +220,17 @@ export function SettingsScreen() {
 
   const backgroundGpsLabel = backgroundGpsRunning ? t('settings.backgroundGpsRunning') : t('settings.backgroundGpsStopped');
 
+  const handleChartBaseStyleChange = useCallback(
+    (style: ChartBaseStyle) => {
+      if (style === chartBaseStyle) return;
+      void patchSettings({ chartBaseStyle: style })
+        .then(() => ensureChartStyle())
+        .then(() => showInfo(t('settings.chartBaseChanged')))
+        .catch(() => showError(t('settings.chartBaseChangeFailed')));
+    },
+    [chartBaseStyle, patchSettings, ensureChartStyle, showInfo, showError],
+  );
+
   const displayCard = (
     <Card style={twoColumn ? { flex: 1 } : undefined}>
       {twoColumn ? (
@@ -237,35 +253,8 @@ export function SettingsScreen() {
         </View>
       </SettingsGroup>
 
-      <SettingsGroup title={t('settings.activityProfile')} hint={t('settings.activityProfileHint')}>
-        <View style={styles.chipRow}>
-          {ACTIVITY_PROFILES.map((p) => (
-            <FilterChip
-              key={p.id}
-              label={t(p.labelKey as 'profiles.cruisePassage')}
-              selected={activityProfileId === p.id}
-              onPress={() => void applyActivityProfile(p.id)}
-              testID={`settings.profile.${p.id}`}
-            />
-          ))}
-        </View>
-      </SettingsGroup>
-
       <SettingsGroup title={t('settings.layoutTitle')} hint={t('settings.layoutSummary')}>
-        <View style={styles.chipRow}>
-          {LAYOUT_PRESETS.map((preset) => (
-            <FilterChip
-              key={preset}
-              label={t(`map.layouts.${preset}` as 'map.layouts.map-forward')}
-              selected={layoutPreset === preset}
-              onPress={() => void setLayoutOverride(preset, layoutContext)}
-              testID={`settings.layout.${preset}`}
-            />
-          ))}
-        </View>
-        <Text style={[styles.layoutDescription, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}>
-          {t(`settings.layoutDescriptions.${layoutPreset}` as 'settings.layoutDescriptions.map-forward')}
-        </Text>
+        <LayoutPresetPicker value={layoutPreset} onChange={(preset) => void setLayoutOverride(preset, layoutContext)} />
       </SettingsGroup>
 
       <SettingsGroup title={t('settings.coordFormat')} hint={t('settings.coordFormatHint')}>
@@ -317,6 +306,7 @@ export function SettingsScreen() {
                   />
                 ))}
               </View>
+              <Text style={[styles.bodyText, { color: colors.textMuted, marginTop: 8 }]}>{t('settings.courseVectorZoomHint')}</Text>
             </SettingsGroup>
           </>
         ) : null}
@@ -360,6 +350,15 @@ export function SettingsScreen() {
           minTouch={minTouch}
         />
         <ToggleRow
+          label={t('settings.mapShowPassageRouteLines')}
+          hint={t('settings.mapShowPassageRouteLinesHint')}
+          value={mapShowPassageRouteLines}
+          onChange={(v) => void patchSettings({ mapShowPassageRouteLines: v })}
+          testID="settings.mapShowPassageRouteLines"
+          colors={colors}
+          minTouch={minTouch}
+        />
+        <ToggleRow
           label={t('settings.gloveMode')}
           hint={t('settings.gloveModeHint')}
           value={gloveMode}
@@ -369,6 +368,8 @@ export function SettingsScreen() {
           minTouch={minTouch}
         />
       </SettingsGroup>
+
+      <ChartDataSettingsGroup baseStyle={chartBaseStyle} onBaseStyleChange={handleChartBaseStyleChange} />
 
       <SeamarkPlanningSettingsGroup
         config={seamarkPlanning}
@@ -523,38 +524,52 @@ export function SettingsScreen() {
         <SettingsGroup title={t('settings.alarmFeedbackTitle')}>
           <ToggleRow label={t('settings.alarmSound')} value={alarmSoundEnabled} onChange={(v) => void patchSettings({ alarmSoundEnabled: v })} testID="settings.alarmSound" colors={colors} minTouch={minTouch} />
           <ToggleRow label={t('settings.alarmHaptic')} value={alarmHapticEnabled} onChange={(v) => void patchSettings({ alarmHapticEnabled: v })} testID="settings.alarmHaptic" colors={colors} minTouch={minTouch} />
-          <ToggleRow label={t('settings.legAdvanceAuto')} value={legAdvanceAuto} onChange={(v) => void patchSettings({ legAdvanceAuto: v })} testID="settings.legAdvanceAuto" colors={colors} minTouch={minTouch} />
+          <ToggleRow label={t('settings.legAdvanceAuto')} hint={t('settings.legAdvanceAutoHint')} value={legAdvanceAuto} onChange={(v) => void patchSettings({ legAdvanceAuto: v })} testID="settings.legAdvanceAuto" colors={colors} minTouch={minTouch} />
         </SettingsGroup>
         <SettingsGroup title={t('settings.alarmLimitsTitle')}>
-          <FieldGroup label={t('settings.alarmXteNm')}>
+          <Text style={[styles.bodyText, { color: colors.textMuted }]}>
+            {t('settings.alarmLimitsUnitNote', { unit: distanceUnitLabel(distanceUnit) })}
+          </Text>
+          <FieldGroup label={t('settings.alarmXteLimit', { unit: distanceUnitLabel(distanceUnit) })}>
             <FieldInput
               value={xteDraft}
               onChangeText={setXteDraft}
               onEndEditing={() => commitAlarmLimit('xteNm', xteDraft, setXteDraft)}
               keyboardType="number-pad"
-              accessibilityLabel={t('settings.alarmXteNm')}
+              accessibilityLabel={t('settings.alarmXteLimit', { unit: distanceUnitLabel(distanceUnit) })}
             />
           </FieldGroup>
-          <FieldGroup label={t('settings.alarmArrivalNm')}>
+          <FieldGroup label={t('settings.alarmArrivalLimit', { unit: distanceUnitLabel(distanceUnit) })}>
             <FieldInput
               value={arrivalDraft}
               onChangeText={setArrivalDraft}
               onEndEditing={() => commitAlarmLimit('arrivalNm', arrivalDraft, setArrivalDraft)}
               keyboardType="number-pad"
-              accessibilityLabel={t('settings.alarmArrivalNm')}
+              accessibilityLabel={t('settings.alarmArrivalLimit', { unit: distanceUnitLabel(distanceUnit) })}
             />
+            <Text style={[styles.bodyText, { color: colors.textMuted, marginTop: 6 }]}>
+              {t('settings.alarmArrivalHint', {
+                example: formatDistanceNm(0.25, distanceUnit, 2),
+                unit: distanceUnitLabel(distanceUnit),
+              })}
+            </Text>
           </FieldGroup>
         </SettingsGroup>
+        <AnchorWatchSettingsGroup />
       </Card>
 
-      {RACING_PACK_V11 && activityProfileId === 'sailing-race' ? (
-        <>
-          <SectionHeader title={t('settings.racingTitle')} description={t('settings.racingSummary')} />
-          <Card>
-            <RacePackSection embedded />
-          </Card>
-        </>
-      ) : null}
+      <SectionHeader title={t('settings.downloadsTitle')} description={t('settings.downloadsSummary')} />
+      <Card>
+        <ToggleRow
+          label={t('downloads.wifiOnly')}
+          hint={t('downloads.wifiOnlyHint')}
+          value={downloadWifiOnly}
+          onChange={(v) => void patchSettings({ downloadWifiOnly: v })}
+          testID="settings.downloadWifiOnly"
+          colors={colors}
+          minTouch={minTouch}
+        />
+      </Card>
 
       <SectionHeader title={t('settings.emergencyTitle')} />
       <Card>
@@ -577,7 +592,6 @@ const styles = StyleSheet.create({
   twoCol: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
   cardTitle: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  layoutDescription: { fontSize: 14, lineHeight: 21, borderWidth: 1, borderRadius: 12, padding: 12 },
   statusLine: { fontSize: 15, fontWeight: '700' },
   bodyText: { fontSize: 14, lineHeight: 21 },
   version: { fontSize: 14, fontWeight: '600' },

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useFormFactor } from '../../hooks/useFormFactor';
 import { t } from '../../i18n';
 import { formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
 import type { WaypointRow } from '../../lib/db/database';
@@ -19,10 +20,25 @@ type Props = {
   onRemove: (waypointId: string) => void;
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
+  onPlanOnMap: () => void;
+  onAddByCoords: () => void;
+  onEditWaypoint: (waypoint: WaypointRow) => void;
 };
 
-export function PassageWaypointSection({ detail, allWaypoints, onAdd, onRemove, onMoveUp, onMoveDown }: Props) {
+export function PassageWaypointSection({
+  detail,
+  allWaypoints,
+  onAdd,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  onPlanOnMap,
+  onAddByCoords,
+  onEditWaypoint,
+}: Props) {
   const { colors, spacing, minTouch } = useTheme();
+  const { formFactor } = useFormFactor();
+  const compactActions = formFactor === 'compact';
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const activePassageId = usePassageStore((s) => s.activePassageId);
   const activeLegIndex = useNavigationStore((s) => s.activeLegIndex);
@@ -43,6 +59,23 @@ export function PassageWaypointSection({ detail, allWaypoints, onAdd, onRemove, 
         {t('passage.waypointsTitle')}
       </Text>
       <Text style={[styles.body, { color: colors.textMuted }]}>{t('passage.waypointsBody')}</Text>
+
+      <View style={[styles.primaryActions, { gap: spacing.sm }]}>
+        <Button
+          label={t('passage.planOnMap')}
+          onPress={onPlanOnMap}
+          testID="passage.planOnMap"
+          style={{ minHeight: minTouch }}
+          accessibilityHint={t('passage.planOnMapHint')}
+        />
+        <Button
+          label={t('passage.addByCoords')}
+          variant="secondary"
+          onPress={onAddByCoords}
+          testID="passage.addByCoords"
+          style={{ minHeight: minTouch }}
+        />
+      </View>
 
       {detail.waypoints.length === 0 ? (
         <Text style={{ color: colors.textMuted, lineHeight: 20 }}>{t('passage.waypointsEmpty')}</Text>
@@ -91,10 +124,18 @@ export function PassageWaypointSection({ detail, allWaypoints, onAdd, onRemove, 
                   </Text>
                 ) : null}
               </View>
-              <View style={styles.actions}>
+              <View style={[styles.actions, !compactActions ? styles.actionsRow : null]}>
+                <Button
+                  label={t('passage.editWaypoint')}
+                  variant="secondary"
+                  fullWidth={compactActions}
+                  onPress={() => onEditWaypoint(wp)}
+                  testID={`passage.edit.${wp.id}`}
+                />
                 <Button
                   label={t('passage.moveUp')}
                   variant="secondary"
+                  fullWidth={compactActions}
                   onPress={() => onMoveUp(index)}
                   testID={`passage.moveUp.${wp.id}`}
                   disabled={index === 0}
@@ -102,6 +143,7 @@ export function PassageWaypointSection({ detail, allWaypoints, onAdd, onRemove, 
                 <Button
                   label={t('passage.moveDown')}
                   variant="secondary"
+                  fullWidth={compactActions}
                   onPress={() => onMoveDown(index)}
                   testID={`passage.moveDown.${wp.id}`}
                   disabled={index === lastIndex}
@@ -109,6 +151,7 @@ export function PassageWaypointSection({ detail, allWaypoints, onAdd, onRemove, 
                 <Button
                   label={t('passage.removeWaypoint')}
                   variant="danger"
+                  fullWidth={compactActions}
                   onPress={() => onRemove(wp.id)}
                   testID={`passage.remove.${wp.id}`}
                 />
@@ -127,9 +170,9 @@ export function PassageWaypointSection({ detail, allWaypoints, onAdd, onRemove, 
             ))}
           </View>
         </>
-      ) : (
+      ) : detail.waypoints.length > 0 ? (
         <Text style={[styles.hint, { color: colors.textMuted }]}>{t('passage.noMoreWaypoints')}</Text>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -138,6 +181,7 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 10 },
   title: { fontSize: 17, fontWeight: '800' },
   body: { fontSize: 14, lineHeight: 20, marginBottom: 4 },
+  primaryActions: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -156,7 +200,8 @@ const styles = StyleSheet.create({
   name: { fontSize: 15, fontWeight: '600' },
   meta: { fontSize: 13, marginTop: 2 },
   legMeta: { fontSize: 13, marginTop: 4, lineHeight: 18, fontVariant: ['tabular-nums'] },
-  actions: { gap: 8, width: '100%' },
+  actions: { gap: 8 },
+  actionsRow: { flexDirection: 'row', flexWrap: 'wrap', width: '100%' },
   addLabel: { fontSize: 13, fontWeight: '700', marginTop: 8, textTransform: 'uppercase', letterSpacing: 0.4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   hint: { fontSize: 14, lineHeight: 20 },

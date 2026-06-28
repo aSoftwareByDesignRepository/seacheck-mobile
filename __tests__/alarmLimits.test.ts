@@ -1,18 +1,22 @@
-import { ALARM_LIMIT_MAX_NM, ALARM_LIMIT_MIN_NM, parseAlarmLimitNm } from '../src/lib/alarms/alarmLimits';
+import { parseAlarmLimitDisplay } from '../src/lib/alarms/alarmLimits';
+import { distanceToNm } from '../src/lib/geo/units';
 
-describe('parseAlarmLimitNm', () => {
-  it('parses decimal comma and dot', () => {
-    expect(parseAlarmLimitNm('0,05', 0.1)).toBe(0.05);
-    expect(parseAlarmLimitNm('0.1', 0.05)).toBe(0.1);
+describe('parseAlarmLimitDisplay', () => {
+  it('parses km input and stores as NM internally', () => {
+    expect(parseAlarmLimitDisplay('0.46', 'km', 0.05)).toBeCloseTo(0.25, 2);
   });
 
-  it('clamps to min and max', () => {
-    expect(parseAlarmLimitNm('0', 0.05)).toBe(ALARM_LIMIT_MIN_NM);
-    expect(parseAlarmLimitNm('99', 0.05)).toBe(ALARM_LIMIT_MAX_NM);
+  it('parses NM input unchanged', () => {
+    expect(parseAlarmLimitDisplay('0.25', 'nm', 0.05)).toBeCloseTo(0.25, 3);
   });
 
-  it('returns fallback for empty or invalid input', () => {
-    expect(parseAlarmLimitNm('', 0.05)).toBe(0.05);
-    expect(parseAlarmLimitNm('abc', 0.05)).toBe(0.05);
+  it('returns fallback for invalid input', () => {
+    expect(parseAlarmLimitDisplay('abc', 'km', 0.05)).toBe(0.05);
+  });
+});
+
+describe('distanceToNm', () => {
+  it('converts km to NM', () => {
+    expect(distanceToNm(1.852, 'km')).toBeCloseTo(1, 3);
   });
 });

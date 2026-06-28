@@ -5,8 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFormFactor } from '../../hooks/useFormFactor';
 import { useNavigationInstruments, formatCogDisplay } from '../../hooks/useNavigationInstruments';
 import { magneticDeclinationDeg } from '../../lib/geo/magnetic';
-import { formatSog } from '../../lib/geo/units';
-import { formatLegElapsed } from '../../lib/racing/legTimer';
+import { formatSog, formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
+import { formatElapsedMs } from '../../lib/time/formatElapsed';
 import { t } from '../../i18n';
 import { useConfirmStore } from '../../store/confirmStore';
 import { isFixStale, useLocationStore } from '../../services/locationService';
@@ -27,6 +27,7 @@ export function MobNavigateBackOverlay() {
   const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
   const bearingReference = useSettingsStore((s) => s.bearingReference);
   const sogUnit = useSettingsStore((s) => s.sogUnit);
+  const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const nav = useNavigationInstruments();
   const [elapsedMs, setElapsedMs] = useState(0);
 
@@ -46,7 +47,7 @@ export function MobNavigateBackOverlay() {
   const brg = nav.bearingToTarget != null ? `${Math.round(nav.bearingToTarget)}° ${nav.bearingSuffix}` : '—';
   const dist =
     nav.distanceToTargetNm != null
-      ? `${nav.distanceToTargetNm.toFixed(2)} NM`
+      ? `${formatDistanceNm(nav.distanceToTargetNm, distanceUnit)} ${distanceUnitLabel(distanceUnit)}`
       : '—';
   const sog = !navFix || stale ? '—' : formatSog(fix?.speedMs ?? null, sogUnit);
   const cog = !navFix || stale ? '—' : formatCogDisplay(fix, bearingReference, declination);
@@ -86,7 +87,7 @@ export function MobNavigateBackOverlay() {
 
       <View style={styles.metaRow}>
         <Text style={[styles.meta, { color: colors.text }]}>
-          {t('map.mobElapsed')}: {formatLegElapsed(elapsedMs)}
+          {t('map.mobElapsed')}: {formatElapsedMs(elapsedMs)}
         </Text>
         <Text style={[styles.meta, { color: colors.textMuted }]}>
           {t('map.sog')}: {sog} · {t('map.cog')}: {cog}

@@ -93,7 +93,7 @@
   "settings": {
     "title": "Settings",
     "displayTitle": "Display",
-    "displaySummary": "Theme, coordinates, and map behaviour",
+    "displaySummary": "Theme, chart data, coordinates, and map behaviour",
     "themeLabel": "Theme",
     "themes": {
       "system": "System",
@@ -111,6 +111,7 @@
     "layoutDescriptions": {
       "map-forward": "Large map on top with instruments below — best everyday default for sailing and passage.",
       "instruments-forward": "Instruments first on phones, map below — best when you need numbers more than the chart.",
+      "instruments-only": "Full-screen instruments with no chart — maximum number space and lower battery use. Switch to any other layout to show the map again.",
       "split": "Map and instruments share the screen side by side on wide screens, stacked on phones — balanced view.",
       "minimal": "Full-screen chart with speed and course only — maximum map space; safety buttons stay in the bottom corner.",
       "coordinates": "Highlights your live position coordinates — best for precise fixes, logging, and sharing position."
@@ -126,6 +127,7 @@
     "courseVectorScaleStandard": "Standard",
     "courseVectorScaleLong": "Long",
     "courseVectorScaleExtra": "Very long",
+    "courseVectorZoomHint": "When zoomed out, the line may draw longer than the true speed projection so it stays visible on screen. Navigation always uses your speed and projection time.",
     "followZoom": "Follow zoom level",
     "followZoomHint": "How close the chart zooms when follow mode centres on your GPS position.",
     "followMode": "Follow position on map",
@@ -135,15 +137,38 @@
     "barometerEnabledHint": "Shows pressure and trend in the instrument panel. Needs a pressure sensor in your device — off by default.",
     "gloveMode": "Glove mode (larger touch targets)",
     "gloveModeHint": "Increases buttons to 56 px for wet hands or gloves",
+    "mapShowPassageRouteLines": "Show passage route lines",
+    "mapShowPassageRouteLinesHint": "Connect waypoints with lines on the main chart while planning or following a passage, and in the Passage editor map preview.",
     "panelSide": "Instrument panel side",
     "panelSideAuto": "Auto",
     "panelSidePort": "Port (left)",
     "panelSideStarboard": "Starboard (right)",
     "mapBehaviourTitle": "Map behaviour",
+    "chartDataTitle": "Chart & data",
+    "chartDataSummary": "Base map and OpenSeaMap seamarks — what SeaCheck downloads and shows offline.",
+    "chartDataLayersBody": "SeaCheck uses OpenStreetMap land charts (Carto) plus OpenSeaMap seamark tiles. Both are included in offline region packs.",
+    "chartBaseStyleLabel": "Base map style",
+    "chartBaseStyles": {
+      "voyager": "Voyager",
+      "light": "Light"
+    },
+    "chartBaseDescriptions": {
+      "voyager": "Colourful default — coastlines, roads, and place names stand out. Best for everyday navigation.",
+      "light": "Minimal grey palette — less visual clutter when you focus on seamarks and your track."
+    },
+    "chartBaseRedownloadHint": "Changing the base map updates online charts immediately. Re-download offline packs to replace cached base tiles.",
+    "chartBaseChanged": "Base map updated. Re-download offline packs if you need the new style offline.",
+    "chartBaseChangeFailed": "Could not update the chart style file. Try again.",
+    "chartSeamarkRasterTitle": "OpenSeaMap seamarks (overlay)",
+    "chartSeamarkRasterBody": "Buoys, lights, and harbour symbols come from OpenSeaMap raster tiles. Their zoom visibility follows OpenSeaMap rules — SeaCheck cannot change that. Use planning marks below for earlier harbour and anchorage hints from your offline index.",
+    "chartDepthTitle": "Depth contours",
+    "chartDepthBody": "OpenSeaMap offers depth data via separate WMS services (GEBCO contours). SeaCheck does not include depth overlays yet — they need a different online layer and are not part of offline packs. Always use official charts for depth-critical navigation.",
+    "chartSatelliteTitle": "Satellite imagery",
+    "chartSatelliteBody": "Satellite tiles need separate licensing, large downloads, and usually an online connection. SeaCheck does not offer a satellite layer — it would not fit reliable offline passage planning.",
     "seamarkPlanningTitle": "Planning marks on chart",
     "seamarkPlanningHint": "OpenSeaMap seamarks on the base chart only appear when you zoom in closely. Planning marks use your downloaded pack index to show harbours and anchorages earlier — ideal for passage planning.",
     "seamarkPlanningEnabled": "Show planning marks",
-    "seamarkPlanningEnabledHint": "Coloured dots from your offline seamark index. Tap a mark for details — same as chart objects.",
+    "seamarkPlanningEnabledHint": "Coloured dots from your offline seamark index. Tap a mark for details. Tap the chart for waypoint and anchor actions.",
     "seamarkRasterNote": "The OpenSeaMap overlay layer follows OpenSeaMap’s own zoom rules and cannot be changed here.",
     "seamarkPlanningHarbour": "Harbours & marinas",
     "seamarkPlanningAnchorage": "Anchorages & moorings",
@@ -203,9 +228,16 @@
     "alarmHaptic": "Alarm vibration & haptics",
     "alarmXteNm": "Off-course limit (NM)",
     "alarmArrivalNm": "Arrival radius (NM)",
+    "alarmXteLimit": "Off-course limit (%{unit})",
+    "alarmArrivalLimit": "Arrival radius (%{unit})",
+    "alarmLimitsUnitNote": "Distances use your chosen unit (%{unit}). Stored precisely for alarms.",
+    "alarmArrivalHint": "Circle around each waypoint that counts as “arrived”. SeaCheck also advances when you pass abeam while tacking or cutting a corner. %{example} %{unit} is a good default for coastal sailing.",
+    "anchorWatchTitle": "Anchor watch",
+    "anchorWatchHint": "Default drag radius when you set an anchor alarm from the chart. Also available in Map → Tools.",
+    "downloadsTitle": "Offline charts",
+    "downloadsSummary": "Same Wi‑Fi setting as the Downloads tab — large chart packs stay off cellular unless you confirm.",
     "legAdvanceAuto": "Auto-advance passage legs at arrival",
-    "racingTitle": "Regatta / racing",
-    "racingSummary": "Wind, laylines, target speed, and start countdown — also in Map → Layout when Sailing race profile is active.",
+    "legAdvanceAutoHint": "When a waypoint is reached or passed, move to the next leg automatically. You can always skip manually on the map banner.",
     "aboutTitle": "About & legal",
     "disclaimerBody": "SeaCheck is an aid to navigation only. Not for primary navigation. Always verify with official charts.",
     "version": "SeaCheck v%{v}"
@@ -231,7 +263,7 @@
     "chartA11yFollow": "Follow mode active — chart tracks your position",
     "chartA11yPan": "Follow paused — you moved the chart",
     "chartA11yLocked": "Screen locked",
-    "chartA11yHint": "Pan with one finger to move the chart. Pinch to zoom. Double tap the re-centre control to resume follow mode.",
+    "chartA11yHint": "Pan with one finger to move the chart. Pinch to zoom. Press and hold the chart to open actions for that spot. Tap a waypoint, track point, or planning mark for details.",
     "chartA11yOfflineNoCharts": "Offline with no downloaded charts in this area",
     "chartA11yOfflineUncovered": "Offline — current view is outside downloaded chart coverage",
     "chartA11yOfflineCovered": "Offline — using downloaded charts",
@@ -270,8 +302,14 @@
     "coordsTapCopy": "Tap to copy",
     "coordsCardA11y": "Position in %{format}: latitude %{lat}, longitude %{lon}",
     "dropWaypointTitle": "Drop waypoint here?",
+    "locationMenuTitle": "What do you want to do here?",
+    "locationMenuHint": "Add a waypoint, set anchor watch, copy coordinates, or look up a seamark.",
     "dropWaypointConfirm": "Save waypoint",
+    "lookupSeamarkAction": "Look up seamark",
+    "seamarkLookupNone": "No seamark found at this spot",
+    "seamarkLookupFailed": "Could not look up seamark — try again when online",
     "newWaypoint": "New waypoint",
+    "waypointSaved": "Waypoint saved",
     "copyCoordsAction": "Copy coordinates",
     "anchorHere": "Set anchor alarm here",
     "brgTo": "BRG to WP",
@@ -291,6 +329,24 @@
     "layoutLabel": "Layout preset",
     "extrasLabel": "Map extras",
     "rangeRings": "Range rings",
+    "rangeRingsNeedsChart": "Range rings need a visible chart — switch to a layout that shows the map first.",
+    "measureDistance": "Measure distance",
+    "measureNeedsChart": "Distance measuring needs a visible chart — switch to a layout that shows the map first.",
+    "measureBlockedPlanning": "Finish or stop passage planning before measuring distance.",
+    "measureStoppedForPlanning": "Distance measuring stopped — passage planning uses chart taps.",
+    "measureStarted": "Tap the chart to place points. Distance is shown in nautical miles.",
+    "measureTitle": "Measure distance",
+    "measureHintEmpty": "Tap the chart to place the first point.",
+    "measureHintOnePoint": "Add at least one more point to see the distance.",
+    "measureHintMore": "Add more points or tap Done when finished.",
+    "measureTotalLabel": "Total distance",
+    "measureNoDistanceYet": "No distance measured yet",
+    "measureTotalA11y": "Total distance %{distance}, about %{hours} hours %{minutes} minutes at %{sog} knots",
+    "measureDuration": "≈ %{hours} h %{minutes} min at %{sog} kn",
+    "measureSogLabel": "Planning speed for time estimate",
+    "measureSogHint": "Estimated time at steady speed — use as a guide before passage planning.",
+    "measureUndo": "Undo last point",
+    "measureDone": "Done",
     "courseVector": "Course vector",
     "screenLock": "Screen lock",
     "screenLocked": "Screen locked",
@@ -302,9 +358,9 @@
     "anchorWatchLabel": "Anchor watch",
     "anchorWatchMonitoringHint": "Monitors your GPS position continuously while the alarm is on. You are alerted if you drift outside the green circle or move steadily while at anchor.",
     "anchorRadiusHint": "Drag alarm radius — choose before setting the alarm, or change it here while the watch is active.",
-    "anchorRadiusOption": "%{nm} NM",
-    "anchorRadiusActive": "Alarm active — radius %{nm} NM",
-    "anchorRadiusUpdated": "Anchor alarm radius updated to %{nm} NM",
+    "anchorRadiusOption": "%{value} %{unit}",
+    "anchorRadiusActive": "Alarm active — radius %{value} %{unit}",
+    "anchorRadiusUpdated": "Anchor alarm radius updated to %{value} %{unit}",
     "mobHold": "Man overboard — hold 2 seconds",
     "mobHoldHint": "Hold for two seconds to drop a MOB mark at your current position",
     "mobShort": "MOB",
@@ -336,15 +392,16 @@
     "anchorSetTitle": "Anchor alarm set",
     "anchorBackgroundTitle": "Monitor anchor with screen off?",
     "anchorBackgroundBody": "Allow background location so SeaCheck can alert you if you drift while the screen is locked or another app is open.",
-    "anchorSetBody": "Alert if you drift more than %{nm} NM from this position.",
-    "anchorSetLimitedBody": "Anchor set at %{nm} NM radius — screen-off monitoring is limited until background location and notifications are enabled.",
+    "anchorSetBody": "Alert if you drift more than %{value} %{unit} from this position.",
+    "anchorSetLimitedBody": "Anchor set at %{value} %{unit} radius — screen-off monitoring is limited until background location and notifications are enabled.",
+    "anchorSetFailed": "Could not set anchor alarm. Try again.",
     "anchorWatchLimitedTitle": "Anchor watch limited",
     "anchorWatchLimitedBody": "Without background location and alarm notifications, anchor alerts only work while SeaCheck is open on screen.",
     "anchorWatchLimitedChip": "Anchor watch limited",
     "batteryOptimizationChip": "Battery saver may stop GPS",
     "anchorGpsSuspended": "GPS lost — anchor watch paused",
     "anchorClearTitle": "Clear anchor alarm?",
-    "anchorClearBody": "Monitoring stops immediately. Current radius: %{nm} NM.",
+    "anchorClearBody": "Monitoring stops immediately. Current radius: %{value} %{unit}.",
     "anchorClearConfirm": "Clear alarm",
     "anchorAlreadyActive": "Anchor alarm is already active — clear it first or choose a new position on the map.",
     "anchorReplaceTitle": "Move anchor alarm?",
@@ -363,45 +420,14 @@
     "layouts": {
       "map-forward": "Map first",
       "instruments-forward": "Instruments first",
+      "instruments-only": "Instruments only",
       "split": "Split view",
       "minimal": "Minimal map",
       "coordinates": "Coordinates"
     },
     "waypointBrgDist": "%{brg} · %{dist} %{unit}",
-    "waypointActiveGoTo": "Active go-to target"
-  },
-  "race": {
-    "startLineTitle": "Start line",
-    "startLineBody": "Pick two saved waypoints as the pin ends — the line appears on the map.",
-    "startLineNeedWaypoints": "Save at least two waypoints first (long-press the map).",
-    "startLinePickBoth": "Select pin A and pin B to draw the start line.",
-    "startLineReady": "Start line on map",
-    "startLineClear": "Clear start line",
-    "pinA": "Pin A",
-    "pinB": "Pin B",
-    "brgToMark": "BRG to mark",
-    "distToMark": "Dist to mark",
-    "legTime": "Leg time",
-    "legIndex": "Leg",
-    "vmg": "VMG",
-    "targetSog": "vs target",
-    "targetSogTitle": "Target boat speed",
-    "targetClear": "No target",
-    "windTitle": "True wind direction",
-    "windBody": "Meteorological — where wind comes from. Enables laylines on the map.",
-    "windClear": "Off",
-    "tackingTitle": "Tacking angle",
-    "laylinesToggle": "Show laylines on map",
-    "countdownTitle": "Start countdown",
-    "countdownBody": "Preset timers or sync when the committee signals — pulses at 5, 4, 1, 0 minutes/seconds.",
-    "countdownPreset": "T−%{min} min",
-    "countdownSync": "Start now",
-    "countdownClear": "Clear countdown",
-    "countdownLabel": "Start in",
-    "countdownStarted": "Race started",
-    "countdownGo": "GO",
-    "countdownMinutes": "%{min} min",
-    "countdownSeconds": "%{sec} s"
+    "waypointActiveGoTo": "Active go-to target",
+    "instrumentsOnlyA11y": "Full-screen navigation instruments without chart"
   },
   "barometer": {
     "label": "Barometer",
@@ -416,8 +442,7 @@
     }
   },
   "profiles": {
-    "cruisePassage": "Cruise / passage",
-    "sailingRace": "Sailing race"
+    "cruisePassage": "Cruise / passage"
   },
   "coordinates": {
     "blockTitle": "Position",
@@ -444,15 +469,15 @@
   },
   "alarms": {
     "anchorDragTitle": "Anchor drag alarm",
-    "anchorDragBody": "Drifted %{nm} NM from anchor point",
+    "anchorDragBody": "Drifted %{dist} from anchor point",
     "anchorGpsSuspended": "GPS signal lost — anchor drag detection paused until fix returns",
     "anchorSogBody": "Moving at %{kn} kn while at anchor",
     "arrivalTitle": "Waypoint arrival",
-    "arrivalBody": "Within %{nm} NM of %{name}",
+    "arrivalBody": "Within %{dist} of %{name}",
     "xteTitle": "Off course",
-    "xteBody": "Cross-track error %{nm} NM",
-    "legAdvanceTitle": "Waypoint reached",
-    "legAdvanceBody": "Arrived at %{name}. Advance to the next leg?",
+    "xteBody": "Cross-track error %{dist}",
+    "legAdvanceTitle": "Waypoint reached or passed",
+    "legAdvanceBody": "You are at or past %{name}. Start the next leg?",
     "legAdvanceConfirm": "Next leg",
     "legAdvanceLater": "Not yet",
     "legAdvanced": "Advanced to leg toward %{name}"
@@ -460,7 +485,7 @@
   "downloads": {
     "title": "Offline charts",
     "subtitle": "Download base map + OpenSeaMap seamarks for use without signal.",
-    "wifiNote": "Use Wi‑Fi for large packs. Kieler Bucht is a small test pack (~few MB).",
+    "wifiNote": "Download corridor-sized packs on Wi‑Fi — each area shows estimated size before you start (like NV Charts). Kieler Bucht is a small test pack.",
     "wifiOnly": "Wi‑Fi only downloads",
     "wifiOnlyHint": "When on, cellular downloads require confirmation",
     "cellularWarnTitle": "Not on Wi‑Fi",
@@ -485,6 +510,8 @@
     "errorPackUnavailable": "Could not verify offline pack — try again",
     "errorDownloadBusy": "Another chart download is already running. Wait for it to finish or cancel it first.",
     "errorStorageInsufficient": "Not enough free storage for this download. Free space and try again.",
+    "errorPackTooLarge": "This chart pack exceeds the safe download limit — choose a smaller corridor pack or use a custom area.",
+    "errorPackRetired": "This region pack was replaced by smaller corridor downloads and cannot be downloaded again.",
     "downloadSuccess": "Chart pack ready for offline use",
     "downloadFailed": "Chart download failed",
     "downloadCancelled": "Download cancelled",
@@ -494,9 +521,20 @@
     "zoomRange": "Zoom %{min}–%{max}",
     "statusIdle": "Not downloaded",
     "layersBoth": "Base + seamarks",
-    "regionPacksTitle": "Region packs (essential)",
-    "regionPacksP1": "Region packs (extended)",
-    "regionPacksP2": "Region packs (future corridors)",
+    "regionPacksTitle": "Corridor packs (essential)",
+    "regionPacksP1": "Corridor packs (extended)",
+    "regionPacksP2": "Corridor packs (future corridors)",
+    "recommendedBadge": "Suggested for passage",
+    "passageRecommendedTitle": "Recommended for your passage",
+    "passageRecommendedBody": "From your passage plan — download these to cover chart gaps.",
+    "passageCustomTitle": "Custom area for this passage",
+    "passageCustomBody": "Some legs of “%{name}” need a custom chart rectangle. Open the map to review and adjust the suggested bounds.",
+    "passageCustomOpenMap": "Open map to adjust area",
+    "passageCustomDefaultName": "Passage — %{name}",
+    "largePackHint": "Large download — use Wi‑Fi and confirm free storage before starting.",
+    "legacyTitle": "Previous large region packs",
+    "legacyBody": "These older all-in-one downloads still work offline. Delete when no longer needed and use the smaller corridor packs above.",
+    "legacyRetiredNote": "Retired — still available offline until you delete it. New downloads use smaller corridor packs.",
     "previewTitle": "Coverage preview",
     "previewUnavailableTitle": "Preview unavailable",
     "customTitle": "Custom area",
@@ -537,29 +575,85 @@
         "name": "Kieler Bucht (test)",
         "description": "Small pack for dockside and on-water UAT around Kiel."
       },
+      "kattegatNorth": {
+        "name": "Kattegat north",
+        "description": "Skagen to Anholt — open Kattegat crossing and north Jutland coast."
+      },
+      "kattegatSouth": {
+        "name": "Kattegat south",
+        "description": "East Jutland and Limfjord approaches — passage between North and Baltic seas."
+      },
+      "danishBelts": {
+        "name": "Danish belts",
+        "description": "Great Belt, Little Belt, and Fehmarn Belt — strait detail for belt passages."
+      },
+      "oresund": {
+        "name": "Øresund",
+        "description": "Copenhagen–Malmö strait and Sound approaches — harbour-scale detail."
+      },
+      "bornholm": {
+        "name": "Bornholm",
+        "description": "Bornholm island and southern approaches."
+      },
+      "germanBalticWest": {
+        "name": "German Baltic west",
+        "description": "Flensburg to Fehmarn and Lübeck Bay."
+      },
+      "germanBalticEast": {
+        "name": "German Baltic east",
+        "description": "Wismar to Rügen and Szczecin lagoon approach."
+      },
+      "skaneCoast": {
+        "name": "Skåne coast",
+        "description": "Malmö to Ystad and southern Skåne sailing grounds."
+      },
+      "blekinge": {
+        "name": "Blekinge",
+        "description": "Karlskrona archipelago and eastern Blekinge coast."
+      },
+      "kalmarSound": {
+        "name": "Kalmar & Öland west",
+        "description": "Kalmar Sound, Öland west coast, and Västervik approaches."
+      },
+      "gotlandWest": {
+        "name": "Gotland west",
+        "description": "Visby west coast and Gotland passage waters."
+      },
+      "gotlandEast": {
+        "name": "Gotland east",
+        "description": "Gotland east coast and Hoburg approaches."
+      },
+      "gulfFinlandWest": {
+        "name": "Gulf of Finland west",
+        "description": "Helsinki archipelago south and Gulf of Finland western waters."
+      },
+      "alandBothniaSouth": {
+        "name": "Åland & Bothnian Sea south",
+        "description": "Åland islands, Turku archipelago, and southern Bothnian Sea."
+      },
       "balticWest": {
-        "name": "Kattegat & Danish Straits",
-        "description": "Skagen to Copenhagen, Øresund, Great Belt, Bornholm approaches."
+        "name": "Kattegat & Danish Straits (legacy)",
+        "description": "Former all-in-one pack — replaced by Kattegat, belts, and Øresund corridor packs."
       },
       "balticSouth": {
-        "name": "German Baltic coast",
-        "description": "Flensburg to Rügen, Fehmarn, Szczecin lagoon approach."
+        "name": "German Baltic coast (legacy)",
+        "description": "Former all-in-one pack — replaced by German Baltic west/east corridor packs."
       },
       "balticSouthSe": {
-        "name": "Southern Sweden",
-        "description": "Malmö to Karlskrona, Kalmar, Öland west coast."
+        "name": "Southern Sweden (legacy)",
+        "description": "Former all-in-one pack — replaced by Skåne, Blekinge, and Kalmar corridor packs."
       },
       "balticCentral": {
-        "name": "Central Baltic",
-        "description": "Gotland, Öland east, and surrounding open waters."
+        "name": "Central Baltic (legacy)",
+        "description": "Former all-in-one pack — replaced by Gotland west/east corridor packs."
       },
       "balticEast": {
-        "name": "Gulf of Finland approach",
-        "description": "Helsinki archipelago south and Gulf of Finland west."
+        "name": "Gulf of Finland approach (legacy)",
+        "description": "Former all-in-one pack — replaced by Gulf of Finland west corridor pack."
       },
       "balticNorth": {
-        "name": "Gulf of Bothnia south & Åland",
-        "description": "Åland islands, Turku archipelago, Bothnian Sea south."
+        "name": "Gulf of Bothnia south & Åland (legacy)",
+        "description": "Former all-in-one pack — replaced by Åland & Bothnian Sea south corridor pack."
       }
     }
   },
@@ -647,6 +741,7 @@
     "active": "Active",
     "delete": "Delete",
     "deleteTitle": "Delete passage?",
+    "deleteFailed": "Could not delete passage. Try again.",
     "duplicate": "Duplicate",
     "duplicateSuffix": "copy",
     "duplicated": "Passage duplicated",
@@ -662,11 +757,11 @@
     "routeSummaryDuration": "Planned time",
     "routeSummaryA11y": "Planned route: %{legs} legs, %{distance} %{unit}, %{hours} hours at planned speed",
     "waypointsTitle": "Passage waypoints",
-    "waypointsBody": "Waypoints are visited in order. Add saved marks from your library.",
-    "waypointsEmpty": "No waypoints in this passage yet.",
+    "waypointsBody": "Waypoints are visited in order. Plan on the chart, enter coordinates, or pick saved marks.",
+    "waypointsEmpty": "No waypoints yet — tap Plan on map or Add by coordinates.",
     "addWaypoint": "Add waypoint",
     "removeWaypoint": "Remove",
-    "noMoreWaypoints": "All saved waypoints are already in this passage — long-press the map to create more.",
+    "noMoreWaypoints": "All saved waypoints are in this passage — use Plan on map or Add by coordinates for more.",
     "offlineCheckTitle": "Offline chart coverage",
     "offlineCheckBody": "Checks whether downloaded packs cover each leg (with 0.5 NM buffer). Download gaps before departure.",
     "mapPreviewOffline": "Map preview requires offline charts — download a pack first",
@@ -676,6 +771,18 @@
     "offlineLegOk": "Covered",
     "offlineLegGap": "Gap",
     "offlineCoveredBy": "Packs: %{packs}",
+    "offlineLegStatusTitle": "Leg-by-leg status",
+    "recommendedPacksTitle": "Recommended for this passage",
+    "recommendedPacksBody": "These corridor packs cover the gaps below. Download one at a time on Wi‑Fi.",
+    "recommendedPacksCustomHint": "Some legs still need a custom map area — tap the button below.",
+    "remainingLegsAfterPacks": "%{count} leg(s) may still need a custom area after these downloads.",
+    "downloadAllRecommended": "Download all recommended (%{count})",
+    "downloadAllProgress": "%{count} pack(s) downloaded for this passage.",
+    "downloadAllPartialFail": "Some downloads failed — retry individually on Wi‑Fi.",
+    "openCustomDownload": "Set up custom chart area",
+    "offlineNeedsCustom": "This route crosses areas outside corridor packs. Draw a custom download rectangle in Downloads.",
+    "downloadPack": "Download",
+    "suggestionLegs": "Helps with %{count} leg(s)",
     "openDownloads": "Open Downloads",
     "metaTitle": "Passage details",
     "nameLabel": "Passage name",
@@ -714,12 +821,56 @@
     "followLeg": "Leg %{current} of %{total}",
     "nextLegManual": "Next leg",
     "nextLegManualHint": "Advances to the next passage leg manually",
+    "skipToNextWaypoint": "Skip to next waypoint",
+    "skipToNextWaypointHint": "Stop navigating to the current waypoint and continue with the next one — use after tacking or shortcuts",
+    "waypointPassedAlongTrack": "You passed %{name} — tap Skip to continue",
+    "waypointArrivedNear": "Near %{name} — tap Skip when ready for the next leg",
     "finalLeg": "Final leg",
     "openPassage": "Open passage",
     "followBannerA11y": "Following %{passage}, leg %{leg} of %{total}. Next waypoint %{name}. Bearing %{brg}, distance %{dist}.",
     "navHeroA11y": "Navigate to %{name}. Bearing %{brg} degrees %{suffix}, distance %{dist} %{unit}. Leg %{leg} of %{total}.",
     "waypointLegMeta": "From previous: Brg %{brg}° · %{dist} %{unit}",
     "nextWaypointBadge": "Next",
-    "waypointNextA11y": "Next waypoint on active passage"
+    "waypointNextA11y": "Next waypoint on active passage",
+    "planOnMap": "Plan on map",
+    "planOnMapHint": "Open the chart to add waypoints by tapping",
+    "addByCoords": "Add by coordinates",
+    "addByCoordsTitle": "Add waypoint by coordinates",
+    "editWaypoint": "Edit",
+    "editWaypointTitle": "Edit waypoint",
+    "waypointNameLabel": "Name",
+    "latitudeLabel": "Latitude (decimal degrees)",
+    "longitudeLabel": "Longitude (decimal degrees)",
+    "coordsHint": "Use decimal degrees, e.g. 54.321 and 10.140",
+    "coordsInvalid": "Enter valid numbers for latitude and longitude.",
+    "coordsOutOfRange": "Latitude must be −90…90 and longitude −180…180.",
+    "coordsSaveFailed": "Could not save the waypoint.",
+    "addWaypointConfirm": "Add waypoint",
+    "mapWaypointName": "WP %{n}",
+    "mapWaypointAdded": "Waypoint added to passage",
+    "mapPassageStarted": "New passage started — tap the chart to add waypoints",
+    "mapPassageStartFailed": "Could not start passage planning. Try again.",
+    "mapStartPassageHere": "Start new passage here",
+    "mapAddWaypointHere": "Add waypoint to passage",
+    "mapPlanningBanner": "Passage planning — tap the chart to add waypoints",
+    "mapPlanningTapHint": "Tap the chart to add the next waypoint. Long-press for more options.",
+    "mapPlanningNeedSecond": "Add one more waypoint on the chart to activate navigation.",
+    "mapPlanningMeta": "%{count} waypoints · %{distance} %{unit} planned",
+    "mapPlanningEmpty": "No waypoints yet — tap the chart to place the first one.",
+    "mapPlanningDone": "Save & finish",
+    "mapPlanningSaved": "Passage saved",
+    "mapPlanningStop": "Stop planning",
+    "mapPlanningStopped": "Passage saved — chart planning stopped",
+    "mapPlanningPaused": "Passage planning paused for chart download",
+    "mapPlanningShowList": "Show %{count} waypoints",
+    "mapPlanningHideList": "Hide waypoint list",
+    "mapPlanningSwitchTitle": "Switch passage on chart?",
+    "mapPlanningSwitchBody": "You are already planning another passage on the chart. Switch to this one?",
+    "mapPlanningSwitchConfirm": "Switch",
+    "mapPlanningDiscardTitle": "Discard empty passage?",
+    "mapPlanningDiscardEmpty": "This passage has no waypoints and will be deleted.",
+    "mapPlanningDiscardConfirm": "Discard",
+    "activated": "Passage activated — follow on the chart",
+    "activateFailed": "Could not activate passage"
   }
 }

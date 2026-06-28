@@ -1,5 +1,6 @@
 import type { LocationFix } from '../../services/locationService';
 
+import { FIX_STALE_MS } from './fixAge';
 import { distanceNm, msToKnots } from './navigation';
 import { isFixAccuracyOk, isValidCoordinate } from './fixQuality';
 
@@ -20,6 +21,22 @@ type FixLike = Pick<
   LocationFix,
   'latitude' | 'longitude' | 'timestamp' | 'speedKn' | 'accuracyM'
 >;
+
+/**
+ * After a GPS gap the prior fix is not a valid outlier baseline — large dt makes multipath
+ * jumps look "slow" and slip through speed checks. Alarm coordinator defers anchor drag on
+ * the first accepted fix after a gap; display smoothing uses the same cutoff.
+ */
+export function effectivePreviousFixForAcceptance(
+  previous: FixLike | null,
+  nextTimestamp: number,
+  maxGapMs = FIX_STALE_MS,
+): FixLike | null {
+  if (!previous) return null;
+  if (!Number.isFinite(nextTimestamp) || !Number.isFinite(previous.timestamp)) return previous;
+  if (nextTimestamp - previous.timestamp > maxGapMs) return null;
+  return previous;
+}
 
 /**
  * Rejects single-fix spikes that imply impossible speed — common multipath / GNSS jumps.

@@ -1,9 +1,17 @@
 import { GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
 import { useMemo } from 'react';
-import type { Feature, FeatureCollection, LineString, Polygon } from 'geojson';
+import type { Feature, LineString, Polygon } from 'geojson';
 
-import { buildCourseVectorGeometry } from '../../lib/geo/courseVector';
+import { buildCourseVectorGeometry, COURSE_VECTOR_ARROWHEAD_BASE_NM } from '../../lib/geo/courseVector';
 import { resolveBoatHeadingDeg } from '../../lib/geo/cog';
+import { BOAT_ICON_LENGTH_NM } from '../../lib/geo/boatIcon';
+import {
+  BOAT_ICON_TARGET_LENGTH_PX,
+  chartSymbolOutlineWidth,
+  chartSymbolScaleForZoom,
+  COURSE_VECTOR_ARROWHEAD_TARGET_PX,
+  resolveChartZoom,
+} from '../../lib/map/chartSymbolScale';
 import {
   MAP_COURSE_VECTOR,
   MAP_COURSE_VECTOR_CASING,
@@ -12,11 +20,16 @@ import {
 import { isFixStale, useLocationStore, useMapDisplayFix } from '../../services/locationService';
 import { useSettingsStore } from '../../store/settingsStore';
 
+type Props = {
+  mapZoom: number | null;
+  fallbackZoom?: number;
+};
+
 /**
  * Navionics-style course vector — long rhumb projection from the boat bow at current SOG.
  * Direction comes from the boat icon; this line shows where you will be in N minutes.
  */
-export function CourseVectorOverlay() {
+export function CourseVectorOverlay({ mapZoom, fallbackZoom = 13 }: Props) {
   const show = useSettingsStore((s) => s.mapShowCourseVector);
   const vectorMinutes = useSettingsStore((s) => s.mapCourseVectorMinutes);
   const vectorScale = useSettingsStore((s) => s.mapCourseVectorScale);
@@ -24,14 +37,28 @@ export function CourseVectorOverlay() {
   const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
   const mapDisplayFix = useMapDisplayFix();
 
-  const data = useMemo((): FeatureCollection => {
-    if (!show) return { type: 'FeatureCollection', features: [] };
+  const { data, lineWidth, casingWidth } = useMemo(() => {
+    if (!show) return { data: { type: 'FeatureCollection' as const, features: [] }, lineWidth: 3, casingWidth: 5 };
 
     const displayFix = mapDisplayFix ?? fix ?? lastGoodFix;
-    if (!displayFix) return { type: 'FeatureCollection', features: [] };
+    if (!displayFix) return { data: { type: 'FeatureCollection' as const, features: [] }, lineWidth: 3, casingWidth: 5 };
 
     const stale = isFixStale(fix);
     const bearing = resolveBoatHeadingDeg(displayFix);
+    const zoom = resolveChartZoom(mapZoom, fallbackZoom);
+    const symbolScale = chartSymbolScaleForZoom(
+      zoom,
+      displayFix.latitude,
+      BOAT_ICON_TARGET_LENGTH_PX,
+      BOAT_ICON_LENGTH_NM,
+    );
+    const arrowheadScale = chartSymbolScaleForZoom(
+      zoom,
+      displayFix.latitude,
+      COURSE_VECTOR_ARROWHEAD_TARGET_PX,
+      COURSE_VECTOR_ARROWHEAD_BASE_NM,
+    );
+    const stroke = chartSymbolOutlineWidth(Math.max(symbolScale, arrowheadScale));
     const geom = buildCourseVectorGeometry(
       {
         latitude: displayFix.latitude,
@@ -41,9 +68,15 @@ export function CourseVectorOverlay() {
       },
       vectorMinutes,
       vectorScale,
+      {
+        chartZoom: zoom,
+        latitudeDeg: displayFix.latitude,
+        symbolScale,
+        arrowheadScale,
+      },
     );
 
-    if (!geom) return { type: 'FeatureCollection', features: [] };
+    if (!geom) return { data: { type: 'FeatureCollection' as const, features: [] }, lineWidth: stroke, casingWidth: stroke + 2 };
 
     const features: Feature[] = [
       {
@@ -64,8 +97,12 @@ export function CourseVectorOverlay() {
       },
     ];
 
-    return { type: 'FeatureCollection', features };
-  }, [show, vectorMinutes, vectorScale, fix, lastGoodFix, mapDisplayFix]);
+    return {
+      data: { type: 'FeatureCollection' as const, features },
+      lineWidth: stroke,
+      casingWidth: stroke + 2,
+    };
+  }, [show, vectorMinutes, vectorScale, fix, lastGoodFix, mapDisplayFix, mapZoom, fallbackZoom]);
 
   if (data.features.length === 0) return null;
 
@@ -78,7 +115,7 @@ export function CourseVectorOverlay() {
         layout={{ 'line-cap': 'round', 'line-join': 'round' }}
         paint={{
           'line-color': MAP_COURSE_VECTOR_CASING,
-          'line-width': 5,
+          'line-width': casingWidth,
           'line-opacity': 0.92,
         }}
       />
@@ -89,7 +126,7 @@ export function CourseVectorOverlay() {
         layout={{ 'line-cap': 'round', 'line-join': 'round' }}
         paint={{
           'line-color': MAP_COURSE_VECTOR,
-          'line-width': 3,
+          'line-width': lineWidth,
           'line-opacity': 0.95,
         }}
       />
@@ -100,7 +137,7 @@ export function CourseVectorOverlay() {
         layout={{ 'line-cap': 'round', 'line-join': 'round' }}
         paint={{
           'line-color': MAP_COURSE_VECTOR_STALE,
-          'line-width': 3,
+          'line-width': lineWidth,
           'line-opacity': 0.55,
           'line-dasharray': [2, 2],
         }}

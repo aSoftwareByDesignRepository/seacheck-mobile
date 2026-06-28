@@ -13,6 +13,7 @@ describe('downloadCoordinator', () => {
   it('allows only one active download at a time', () => {
     expect(downloadCoordinator.tryBegin('a')).toBe(1);
     expect(downloadCoordinator.tryBegin('b')).toBeNull();
+    expect(downloadCoordinator.tryBegin('a')).toBeNull();
     downloadCoordinator.end('a');
     expect(downloadCoordinator.tryBegin('b')).toBe(1);
   });

@@ -8,6 +8,7 @@ import {
   refreshMaritimeNotificationPermission,
 } from '../../services/maritimeAlarmNotifications';
 import { DEFAULT_ANCHOR_RADIUS_NM, normalizeAnchorRadiusNm } from '../settings/mapSettings';
+import { distanceUnitLabel, formatDistanceNm } from '../geo/units';
 import { useLocationStore } from '../../services/locationService';
 import { useNavigationStore } from '../../store/navigationStore';
 import { useFeedbackStore } from '../../store/feedbackStore';
@@ -86,11 +87,14 @@ export async function activateAnchorAlarmAt(
 
   await nav.setAnchorAlarm(lat, lon, effectiveRadius);
   const status = await getAnchorWatchStatus();
+  const distanceUnit = useSettingsStore.getState().distanceUnit;
+  const radiusLabel = formatDistanceNm(effectiveRadius, distanceUnit, 2);
+  const unitLabel = distanceUnitLabel(distanceUnit);
 
   feedback.showSuccess(
     status.limited
-      ? t('map.anchorSetLimitedBody', { nm: effectiveRadius.toFixed(2) })
-      : t('map.anchorSetBody', { nm: effectiveRadius.toFixed(2) }),
+      ? t('map.anchorSetLimitedBody', { value: radiusLabel, unit: unitLabel })
+      : t('map.anchorSetBody', { value: radiusLabel, unit: unitLabel }),
   );
 
   if (status.limited) {

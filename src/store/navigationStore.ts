@@ -32,11 +32,6 @@ export type AlarmLimits = {
   arrivalNm: number;
 };
 
-export type StartLine = {
-  pinAWaypointId: string;
-  pinBWaypointId: string;
-};
-
 type PersistPayload = {
   goToTarget: NavigationTarget | null;
   mobTarget: NavigationTarget | null;
@@ -46,9 +41,6 @@ type PersistPayload = {
   sessionDistanceNm: number;
   sessionStartedAtMs: number | null;
   alarmLimits: AlarmLimits;
-  legTimerStartedAtMs: number | null;
-  startLine: StartLine | null;
-  raceStartAtMs: number | null;
 };
 
 type NavigationState = PersistPayload & {
@@ -74,13 +66,9 @@ type NavigationState = PersistPayload & {
   ensureSessionStarted: () => Promise<void>;
   setScreenLocked: (locked: boolean) => Promise<void>;
   patchAlarmLimits: (patch: Partial<AlarmLimits>) => Promise<void>;
-  resetLegTimer: () => Promise<void>;
-  setStartLine: (pinAWaypointId: string, pinBWaypointId: string) => Promise<void>;
-  clearStartLine: () => Promise<void>;
-  setRaceStartAt: (ms: number | null) => Promise<void>;
 };
 
-const DEFAULT_LIMITS: AlarmLimits = { xteNm: 0.05, arrivalNm: 0.1 };
+const DEFAULT_LIMITS: AlarmLimits = { xteNm: 0.05, arrivalNm: 0.25 };
 
 const defaultAnchor: AnchorAlarmState = {
   active: false,
@@ -100,9 +88,6 @@ async function persist(state: NavigationState) {
     sessionDistanceNm: state.sessionDistanceNm,
     sessionStartedAtMs: state.sessionStartedAtMs,
     alarmLimits: state.alarmLimits,
-    legTimerStartedAtMs: state.legTimerStartedAtMs,
-    startLine: state.startLine,
-    raceStartAtMs: state.raceStartAtMs,
   };
   await enqueuePersist(STORAGE_KEY, () => AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(payload)));
 }
@@ -146,9 +131,6 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
   sessionStartedAtMs: null,
   alarmLimits: DEFAULT_LIMITS,
   screenLocked: false,
-  legTimerStartedAtMs: null,
-  startLine: null,
-  raceStartAtMs: null,
   anchorWatchPrompt: null,
   anchorWatchPromptDismissed: false,
 
@@ -178,9 +160,6 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
             xteNm: Math.max(0.001, Number(parsed.alarmLimits?.xteNm) || DEFAULT_LIMITS.xteNm),
             arrivalNm: Math.max(0.001, Number(parsed.alarmLimits?.arrivalNm) || DEFAULT_LIMITS.arrivalNm),
           },
-          legTimerStartedAtMs: typeof parsed.legTimerStartedAtMs === 'number' ? parsed.legTimerStartedAtMs : null,
-          startLine: parsed.startLine ?? null,
-          raceStartAtMs: typeof parsed.raceStartAtMs === 'number' ? parsed.raceStartAtMs : null,
         });
       } catch (error) {
         console.warn('[navigationStore] hydrate failed', error);
@@ -298,27 +277,6 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
 
   patchAlarmLimits: async (patch) => {
     set({ alarmLimits: { ...get().alarmLimits, ...patch } });
-    await persist(get());
-  },
-
-  resetLegTimer: async () => {
-    set({ legTimerStartedAtMs: Date.now() });
-    await persist(get());
-  },
-
-  setStartLine: async (pinAWaypointId, pinBWaypointId) => {
-    if (pinAWaypointId === pinBWaypointId) return;
-    set({ startLine: { pinAWaypointId, pinBWaypointId } });
-    await persist(get());
-  },
-
-  clearStartLine: async () => {
-    set({ startLine: null });
-    await persist(get());
-  },
-
-  setRaceStartAt: async (ms) => {
-    set({ raceStartAtMs: ms });
     await persist(get());
   },
 }));

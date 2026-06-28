@@ -74,13 +74,12 @@ async function runStartupHydrate(): Promise<string[]> {
       if (!detail || detail.waypoints.length < 2) {
         await usePassageStore.getState().deactivatePassage();
       } else {
-        if (!nav.legTimerStartedAtMs) await nav.resetLegTimer();
         const legIdx = Math.min(nav.activeLegIndex, detail.legs.length - 1);
         const leg = detail.legs[legIdx];
         if (!nav.goToTarget) {
-          await usePassageStore.getState().setPassageActiveLeg(legIdx, { resetTimer: false });
+          await usePassageStore.getState().setPassageActiveLeg(legIdx);
         } else if (nav.goToTarget.kind === 'waypoint' && leg && nav.goToTarget.id !== leg.to.id) {
-          await usePassageStore.getState().setPassageActiveLeg(legIdx, { resetTimer: false });
+          await usePassageStore.getState().setPassageActiveLeg(legIdx);
         }
       }
     }

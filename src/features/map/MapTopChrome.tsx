@@ -1,8 +1,8 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { RACING_PACK_V11 } from '../../lib/featureFlags';
 import { useIsEffectivelyOffline } from '../../lib/network/connectivity';
 import { useChartCoverageAtPoint } from '../../hooks/useChartCoverageAtPoint';
+import { selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
 import { useFormFactor } from '../../hooks/useFormFactor';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -10,8 +10,8 @@ import { useTheme } from '../../theme/ThemeContext';
 import { GpsStatusStrip } from './GpsStatusStrip';
 import { MapPreviewTrackBanner } from './MapPreviewTrackBanner';
 import { PassageFollowBanner } from './PassageFollowBanner';
-import { RaceCountdownBanner } from '../racing/RaceCountdownBanner';
 import { MAP_CHROME_GAP } from './mapChromeLayout';
+import { MapModeHintStrip } from './MapModeHintStrip';
 import { MapTopAlertBanner } from './MapTopAlertBanner';
 
 type Props = {
@@ -23,10 +23,10 @@ type Props = {
   onRecenter: () => void;
   viewportLatitude: number;
   viewportLongitude: number;
-  activityProfileId: string;
-  raceCountdown: { isActive: boolean; isStarted: boolean; remainingMs: number | null };
   /** Passage follow strip on the map — only when the instrument panel is hidden (minimal layout). */
   showPassageFollow?: boolean;
+  /** Mode hint (planning, etc.) — shown above alerts; reserves action column like other chrome. */
+  modeHint?: string | null;
   onTopChromeLayout?: (height: number) => void;
 };
 
@@ -49,16 +49,16 @@ export function MapTopChrome({
   onRecenter,
   viewportLatitude,
   viewportLongitude,
-  activityProfileId,
-  raceCountdown,
   showPassageFollow = false,
+  modeHint,
   onTopChromeLayout,
 }: Props) {
   const { spacing, minTouch } = useTheme();
   const { formFactor, height } = useFormFactor();
   const isOffline = useIsEffectivelyOffline();
   const offlineHydrated = useOfflinePackStore((s) => s.hydrated);
-  const hasReadyPack = useOfflinePackStore((s) => s.hasReadyPack());
+  const offlineRegions = useOfflinePackStore((s) => s.regions);
+  const hasReadyPack = selectHasReadyOfflinePack(offlineRegions);
   const downloadHintDismissed = useSettingsStore((s) => s.downloadHintDismissed);
   const coverage = useChartCoverageAtPoint(viewportLatitude, viewportLongitude);
 
@@ -71,9 +71,6 @@ export function MapTopChrome({
   else if (showCoverageAlert) alertKind = 'coverage';
   else if (showDownloadHint) alertKind = 'download';
 
-  const showRaceBanner =
-    RACING_PACK_V11 && activityProfileId === 'sailing-race' && (raceCountdown.isActive || raceCountdown.isStarted);
-
   const bannerMaxHeight = bannerStackMaxHeight(height, formFactor);
 
   return (
@@ -83,7 +80,8 @@ export function MapTopChrome({
       onLayout={(e) => onTopChromeLayout?.(e.nativeEvent.layout.height)}
       testID="map.topChrome"
     >
-      {alertKind ? (
+      {modeHint ? <MapModeHintStrip message={modeHint} testID="map.modeHint" /> : null}
+      {!modeHint && alertKind ? (
         <MapTopAlertBanner kind={alertKind} onOpenDownloads={onOpenDownloads} onDismissDownloadHint={() => void useSettingsStore.getState().dismissDownloadHint()} />
       ) : null}
 
@@ -102,7 +100,7 @@ export function MapTopChrome({
         />
       </ScrollView>
 
-      {showPassageFollow || showRaceBanner ? (
+      {showPassageFollow ? (
         <ScrollView
           nestedScrollEnabled
           showsVerticalScrollIndicator={false}
@@ -110,11 +108,8 @@ export function MapTopChrome({
           style={{ maxHeight: bannerMaxHeight, flexGrow: 0 }}
           contentContainerStyle={{ gap: MAP_CHROME_GAP }}
         >
-          {showPassageFollow ? <PassageFollowBanner compact onOpenPassage={onOpenPassage} /> : null}
+          <PassageFollowBanner compact onOpenPassage={onOpenPassage} />
           <MapPreviewTrackBanner compact />
-          {showRaceBanner ? (
-            <RaceCountdownBanner remainingMs={raceCountdown.remainingMs} isActive={raceCountdown.isActive} isStarted={raceCountdown.isStarted} />
-          ) : null}
         </ScrollView>
       ) : (
         <MapPreviewTrackBanner compact />

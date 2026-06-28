@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { activateAnchorAlarmAt } from '../../lib/anchor/activateAnchorAlarm';
+import { isPassageMapPlanningActive } from '../../lib/passage/passageMapPlanning';
 import {
   ANCHOR_RADIUS_NM_OPTIONS,
   COURSE_VECTOR_MINUTE_OPTIONS,
@@ -9,19 +10,20 @@ import {
   type AnchorRadiusNm,
 } from '../../lib/settings/mapSettings';
 import { courseVectorScaleLabelKey } from '../../lib/settings/courseVectorLabels';
+import { formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
 import { isSafetyFixOk } from '../../lib/geo/fixQuality';
 import {
   copyMaydayToClipboard,
   maydayCopyFeedbackKey,
   maydayUnavailableMessage,
 } from '../../lib/emergency/copyMaydayClipboard';
+import { useEffectiveLayoutPreset } from '../../hooks/useEffectiveLayoutPreset';
 import { t } from '../../i18n';
-import { StartLineSection } from '../racing/StartLineSection';
-import { RacePackSection } from '../racing/RacePackSection';
 import { useLocationStore } from '../../services/locationService';
 import { useNavigationStore } from '../../store/navigationStore';
 import { useFeedbackStore } from '../../store/feedbackStore';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useMeasureDistanceStore } from '../../store/measureDistanceStore';
 import { useWaypointStore } from '../../store/waypointStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { BottomSheet } from '../../ui/BottomSheet';
@@ -45,11 +47,15 @@ export function MapActions({
 }: Props) {
   const { colors, minTouch } = useTheme();
   const fix = useLocationStore((s) => s.fix);
-  const activityProfileId = useSettingsStore((s) => s.activityProfileId);
+  const layoutPreset = useEffectiveLayoutPreset();
+  const measureActive = useMeasureDistanceStore((s) => s.active);
+  const startMeasure = useMeasureDistanceStore((s) => s.start);
+  const stopMeasure = useMeasureDistanceStore((s) => s.stop);
   const mapShowCourseVector = useSettingsStore((s) => s.mapShowCourseVector);
   const mapCourseVectorMinutes = useSettingsStore((s) => s.mapCourseVectorMinutes);
   const mapCourseVectorScale = useSettingsStore((s) => s.mapCourseVectorScale);
   const anchorRadiusNm = useSettingsStore((s) => s.anchorRadiusNm);
+  const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const patchSettings = useSettingsStore((s) => s.patchSettings);
   const vessel = useSettingsStore((s) => s.vessel);
   const coordFormat = useSettingsStore((s) => s.coordFormat);
@@ -58,7 +64,6 @@ export function MapActions({
   const showError = useFeedbackStore((s) => s.showError);
   const dropMob = useNavigationStore((s) => s.dropMob);
   const createWaypoint = useWaypointStore((s) => s.create);
-  const waypoints = useWaypointStore((s) => s.items);
   const clearAnchorAlarm = useNavigationStore((s) => s.clearAnchorAlarm);
   const patchAnchorRadiusNm = useNavigationStore((s) => s.patchAnchorRadiusNm);
   const anchorAlarm = useNavigationStore((s) => s.anchorAlarm);
@@ -142,7 +147,12 @@ export function MapActions({
     await patchSettings({ anchorRadiusNm: nm });
     if (anchorAlarm?.active) {
       await patchAnchorRadiusNm(nm);
-      showInfo(t('map.anchorRadiusUpdated', { nm: nm.toFixed(2) }));
+      showInfo(
+        t('map.anchorRadiusUpdated', {
+          value: formatDistanceNm(nm, distanceUnit, 2),
+          unit: distanceUnitLabel(distanceUnit),
+        }),
+      );
     }
   }
 
@@ -160,6 +170,32 @@ export function MapActions({
       return;
     }
     void activateAnchorAlarm();
+  }
+
+  async function toggleRangeRings() {
+    if (layoutPreset === 'instruments-only' && !showRangeRings) {
+      showInfo(t('map.rangeRingsNeedsChart'));
+      return;
+    }
+    onToggleRangeRings();
+  }
+
+  function toggleMeasure() {
+    if (layoutPreset === 'instruments-only') {
+      showInfo(t('map.measureNeedsChart'));
+      return;
+    }
+    if (isPassageMapPlanningActive()) {
+      showInfo(t('map.measureBlockedPlanning'));
+      return;
+    }
+    if (measureActive) {
+      stopMeasure();
+      return;
+    }
+    setSheetOpen(false);
+    startMeasure();
+    showInfo(t('map.measureStarted'));
   }
 
   const buttons = (
@@ -215,7 +251,10 @@ export function MapActions({
             {ANCHOR_RADIUS_NM_OPTIONS.map((nm) => (
               <FilterChip
                 key={nm}
-                label={t('map.anchorRadiusOption', { nm: nm.toFixed(2) })}
+                label={t('map.anchorRadiusOption', {
+                  value: formatDistanceNm(nm, distanceUnit, 2),
+                  unit: distanceUnitLabel(distanceUnit),
+                })}
                 selected={Math.abs((anchorAlarm?.active ? anchorAlarm.radiusNm : anchorRadiusNm) - nm) < 0.001}
                 onPress={() => void setAnchorRadius(nm)}
                 testID={`map.anchorRadius.${nm}`}
@@ -224,7 +263,10 @@ export function MapActions({
           </View>
           {anchorAlarm?.active ? (
             <Text style={[styles.sectionHint, { color: colors.success }]} accessibilityRole="text">
-              {t('map.anchorRadiusActive', { nm: anchorAlarm.radiusNm.toFixed(2) })}
+              {t('map.anchorRadiusActive', {
+                value: formatDistanceNm(anchorAlarm.radiusNm, distanceUnit, 2),
+                unit: distanceUnitLabel(distanceUnit),
+              })}
             </Text>
           ) : null}
         </SheetSection>
@@ -273,7 +315,13 @@ export function MapActions({
         </SheetSection>
         <SheetSection label={t('map.extrasLabel')}>
           <View style={styles.chipRow}>
-            <FilterChip label={t('map.rangeRings')} selected={showRangeRings} onPress={onToggleRangeRings} testID="map.rangeRings" />
+            <FilterChip
+              label={t('map.measureDistance')}
+              selected={measureActive}
+              onPress={() => void toggleMeasure()}
+              testID="map.measureDistance"
+            />
+            <FilterChip label={t('map.rangeRings')} selected={showRangeRings} onPress={() => void toggleRangeRings()} testID="map.rangeRings" />
             <FilterChip label={t('map.emergencyCopy')} selected={false} onPress={() => void copyEmergencyMessage()} testID="map.emergencyCopy" />
             <FilterChip
               label={t('map.screenLock')}
@@ -286,21 +334,16 @@ export function MapActions({
             />
           </View>
         </SheetSection>
-        {activityProfileId === 'sailing-race' ? (
-          <>
-            <SheetSection label={t('race.startLineTitle')}>
-              <StartLineSection waypoints={waypoints} />
-            </SheetSection>
-            <RacePackSection />
-          </>
-        ) : null}
       </BottomSheet>
 
       <ActionSheet
         visible={anchorClearOpen}
         onClose={() => setAnchorClearOpen(false)}
         title={t('map.anchorClearTitle')}
-        message={t('map.anchorClearBody', { nm: (anchorAlarm?.radiusNm ?? anchorRadiusNm).toFixed(2) })}
+        message={t('map.anchorClearBody', {
+          value: formatDistanceNm(anchorAlarm?.radiusNm ?? anchorRadiusNm, distanceUnit, 2),
+          unit: distanceUnitLabel(distanceUnit),
+        })}
         options={[
           {
             label: t('map.anchorClearConfirm'),

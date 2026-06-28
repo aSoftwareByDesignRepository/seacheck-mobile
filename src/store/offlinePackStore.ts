@@ -4,6 +4,8 @@ import { create } from 'zustand';
 
 import { ensureChartStyleFile } from '../map/chartStyle';
 import { getRegionPack, REGION_PACKS } from '../map/regionPacks';
+import { isLegacyRegionPackId } from '../map/legacyRegionPacks';
+import { validateRegionPack } from '../map/regionPackValidation';
 import { estimateDownloadKb, estimateTileCount } from '../map/tileMath';
 import { t } from '../i18n';
 import { clearSeamarkIndex, indexSeamarksForPack } from '../lib/seamarks/seamarkIndex';
@@ -22,6 +24,7 @@ import {
   resetDownloadCoordinatorForTests,
 } from '../lib/offline/downloadCoordinator';
 import { ensureStorageForDownload } from '../lib/offline/storageCheck';
+import { useSettingsStore } from './settingsStore';
 
 const STORAGE_KEY = 'seacheck.offline.v1';
 
@@ -37,6 +40,8 @@ export type RegionPackStatus = {
   displayName?: string;
   seamarksIndexed?: boolean;
   seamarksIndexing?: boolean;
+  /** Retired macro-region — delete-only in Downloads UI. */
+  legacy?: boolean;
 };
 
 type PersistedIndex = Record<
@@ -66,6 +71,7 @@ type OfflinePackStore = {
   deleteRegion: (regionId: string) => Promise<void>;
   hasReadyPack: () => boolean;
   retryPendingSeamarkIndexing: () => Promise<void>;
+  ensureChartStyle: () => Promise<string>;
 };
 
 function emptyStatus(regionId: string): RegionPackStatus {
@@ -338,6 +344,18 @@ function isNativeDownloadComplete(status: OfflinePackStatus): boolean {
   return status.state === 'complete' || status.percentage >= 100;
 }
 
+/** Some native builds need an explicit resume after createPack before tiles download. */
+async function kickstartNativeDownload(pack: OfflinePack): Promise<OfflinePackStatus> {
+  let status = await pack.status();
+  if (isNativeDownloadComplete(status)) return status;
+  try {
+    await pack.resume();
+  } catch {
+    /* native may already be active */
+  }
+  return pack.status();
+}
+
 async function finalizeReadyDownload(
   regionId: string,
   newPackId: string,
@@ -374,7 +392,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
 
     let chartStyleUri: string | null = null;
     try {
-      chartStyleUri = await ensureChartStyleFile();
+      chartStyleUri = await ensureChartStyleFile(useSettingsStore.getState().chartBaseStyle);
     } catch (error) {
       console.warn('[offlinePackStore] chart style unavailable', error);
     }
@@ -397,6 +415,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
               packId: entry.packId,
               state: 'error',
               error: t('downloads.errorPackUnavailable'),
+              legacy: isLegacyRegionPackId(regionId),
             };
             continue;
           }
@@ -408,6 +427,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
             displayName: entry.name,
             state: 'error',
             error: t('downloads.errorPackMissing'),
+            legacy: isLegacyRegionPackId(regionId),
           };
           continue;
         }
@@ -419,6 +439,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
             custom: entry.custom,
             displayName: entry.name,
             seamarksIndexed: entry.seamarksIndexed ?? false,
+            legacy: isLegacyRegionPackId(regionId),
           };
         } catch {
           regions[regionId] = {
@@ -428,6 +449,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
             error: t('downloads.errorStatusFailed'),
             custom: entry.custom,
             displayName: entry.name,
+            legacy: isLegacyRegionPackId(regionId),
           };
         }
       }
@@ -437,8 +459,14 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         if (!regionId || regions[regionId]?.packId) continue;
         try {
           const status = await pack.status();
-          regions[regionId] = statusFromNative(regionId, pack.id, status);
           const meta = pack.metadata ?? {};
+          const legacy = isLegacyRegionPackId(regionId);
+          regions[regionId] = {
+            ...statusFromNative(regionId, pack.id, status),
+            legacy,
+            custom: Boolean(meta.custom),
+            displayName: typeof meta.name === 'string' ? meta.name : undefined,
+          };
           index[regionId] = {
             packId: pack.id,
             name: typeof meta.name === 'string' ? meta.name : index[regionId]?.name,
@@ -520,13 +548,29 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       }
     } catch (error) {
       console.warn('[offlinePackStore] hydrate failed', error);
+      const prev = get();
+      if (prev.hydrated) {
+        set({ hydrated: true });
+        return;
+      }
       set({ hydrated: true, chartStyleUri, regions: emptyRegions, customBoundsIndex: {}, activeDownloadRegionId: null });
     }
   },
 
   startDownload: async (regionId) => {
     const packDef = getRegionPack(regionId);
-    if (!packDef) return;
+    if (!packDef) {
+      throw new Error(t('downloads.downloadFailed'));
+    }
+
+    if (isLegacyRegionPackId(regionId)) {
+      throw new Error(t('downloads.errorPackRetired'));
+    }
+
+    const packValidation = validateRegionPack(packDef);
+    if (!packValidation.ok) {
+      throw new Error(t('downloads.errorPackTooLarge'));
+    }
 
     await assertStorageForBounds(packDef.bounds, packDef.minZoom, packDef.maxZoom);
 
@@ -564,8 +608,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
     let newPackId: string | null = null;
 
     try {
-      const chartStyleUri = get().chartStyleUri ?? (await ensureChartStyleFile());
-      set({ chartStyleUri });
+      const chartStyleUri = await get().ensureChartStyle();
 
       const pack = await OfflineManager.createPack(
         {
@@ -580,7 +623,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       );
 
       newPackId = pack.id;
-      const status = await pack.status();
+      const status = await kickstartNativeDownload(pack);
       set((state) => ({
         regions: { ...state.regions, [regionId]: statusFromNative(regionId, pack.id, status) },
       }));
@@ -616,8 +659,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
     let newPackId: string | null = null;
 
     try {
-      const chartStyleUri = get().chartStyleUri ?? (await ensureChartStyleFile());
-      set({ chartStyleUri });
+      const chartStyleUri = await get().ensureChartStyle();
 
       set({
         ...syncActiveDownloadId(),
@@ -640,7 +682,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       );
 
       newPackId = pack.id;
-      const status = await pack.status();
+      const status = await kickstartNativeDownload(pack);
       set((state) => ({
         regions: { ...state.regions, [regionId]: { ...statusFromNative(regionId, pack.id, status), ...customMeta } },
       }));
@@ -654,6 +696,10 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
   retryDownload: async (regionId) => {
     const status = get().regions[regionId];
     if (!status) return;
+
+    if (isLegacyRegionPackId(regionId)) {
+      throw new Error(t('downloads.errorPackRetired'));
+    }
 
     if (status.custom) {
       const bounds = get().customBoundsIndex[regionId];
@@ -707,9 +753,14 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       }
     }
 
+    const boundsBeforeDelete = index[regionId]?.bounds ?? nextCustom[regionId];
     delete index[regionId];
     await saveIndex(index);
-    delete nextCustom[regionId];
+    if (current.custom) {
+      if (boundsBeforeDelete) nextCustom[regionId] = boundsBeforeDelete;
+    } else {
+      delete nextCustom[regionId];
+    }
 
     set({
       ...syncActiveDownloadId(),
@@ -759,6 +810,12 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
   },
 
   hasReadyPack: () => Object.values(get().regions).some((r) => r.state === 'ready'),
+
+  ensureChartStyle: async () => {
+    const uri = await ensureChartStyleFile(useSettingsStore.getState().chartBaseStyle);
+    set({ chartStyleUri: uri });
+    return uri;
+  },
 
   retryPendingSeamarkIndexing: async () => {
     if (!(await fetchIsEffectivelyOnline())) return;

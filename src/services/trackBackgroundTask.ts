@@ -91,8 +91,10 @@ TaskManager.defineTask(TRACK_LOCATION_TASK, async ({ data, error }) => {
       const inBackground = !appInForeground;
       if (appInForeground) {
         applyBackgroundLocationFix(loc);
+        // Foreground alarms are handled by useAlarmMonitor — skip here to avoid double evaluation.
+      } else {
+        await processFixFromLocation(loc, { allowLegAdvancePrompt: false, inBackground: true });
       }
-      await processFixFromLocation(loc, { allowLegAdvancePrompt: false, inBackground });
       await persistTrackPoint(loc);
     }
   } catch (taskError) {
