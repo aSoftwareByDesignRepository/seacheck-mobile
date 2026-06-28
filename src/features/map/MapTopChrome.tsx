@@ -81,7 +81,7 @@ export function MapTopChrome({
       testID="map.topChrome"
     >
       {modeHint ? <MapModeHintStrip message={modeHint} testID="map.modeHint" /> : null}
-      {!modeHint && alertKind ? (
+      {alertKind ? (
         <MapTopAlertBanner kind={alertKind} onOpenDownloads={onOpenDownloads} onDismissDownloadHint={() => void useSettingsStore.getState().dismissDownloadHint()} />
       ) : null}
 

@@ -95,6 +95,8 @@ export function useAlarmMonitor() {
         }).then((confirmed) => {
           if (confirmed) {
             void usePassageStore.getState().setPassageActiveLeg(legAdvancePromptLegIdx + 1);
+          } else {
+            legPromptShownRef.current = null;
           }
         });
       } else if (legAdvancePromptLegIdx == null) {

@@ -6,6 +6,7 @@ import { backgroundNavigationOptions } from '../lib/geo/gpsLocationOptions';
 import {
   isAnchorMonitoringNeeded,
   isBackgroundTrackNeeded,
+  isPassageMonitoringNeeded,
   shouldRunBackgroundLocation,
 } from '../lib/alarms/alarmCoordinator';
 import { TRACK_LOCATION_TASK } from './trackLocationTaskConstants';
@@ -35,6 +36,19 @@ function trackRecordingOptions(): Location.LocationTaskOptions {
     }),
     timeInterval: 10_000,
     distanceInterval: 3,
+  };
+}
+
+function passageMonitoringOptions(): Location.LocationTaskOptions {
+  return {
+    ...backgroundNavigationOptions({
+      notificationTitle: t('location.backgroundPassageTitle'),
+      notificationBody: t('location.backgroundPassageBody'),
+      notificationColor: '#0073ad',
+      killServiceOnDestroy: false,
+    }),
+    timeInterval: 8_000,
+    distanceInterval: 4,
   };
 }
 
@@ -91,9 +105,10 @@ export async function syncBackgroundLocationMonitoring(): Promise<{ ok: boolean;
   }
 
   const anchor = await isAnchorMonitoringNeeded();
+  const passage = await isPassageMonitoringNeeded();
   const track = await isBackgroundTrackNeeded();
-  const mode = anchor ? 'anchor' : 'track';
-  const options = anchor ? anchorMonitoringOptions() : trackRecordingOptions();
+  const mode = anchor ? 'anchor' : passage ? 'passage' : 'track';
+  const options = anchor ? anchorMonitoringOptions() : passage ? passageMonitoringOptions() : trackRecordingOptions();
 
   const lastMode = await AsyncStorage.getItem(BG_MODE_KEY);
   const running = await isBackgroundLocationRunning();
@@ -108,6 +123,10 @@ export async function syncBackgroundLocationMonitoring(): Promise<{ ok: boolean;
   }
 
   if (!track && anchor) {
+    return { ok: false, reason: result.reason };
+  }
+
+  if (!track && !anchor && passage) {
     return { ok: false, reason: result.reason };
   }
 

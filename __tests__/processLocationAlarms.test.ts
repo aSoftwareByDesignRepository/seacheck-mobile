@@ -1,4 +1,5 @@
 import {
+  ANCHOR_RADIUS_STREAK,
   ANCHOR_SOG_KN,
   ANCHOR_SOG_STREAK,
   freshAlarmRuntime,
@@ -6,10 +7,11 @@ import {
 } from '../src/lib/alarms/processLocationAlarms';
 
 describe('processLocationAlarms', () => {
-  it('fires anchor drag when drift exceeds radius', () => {
-    const result = processLocationAlarms({
-      fix: { latitude: 54.01, longitude: 10.01, speedKn: 0 },
-      anchorAlarm: { active: true, latitude: 54, longitude: 10, radiusNm: 0.05, triggered: false },
+  it('fires anchor drag when drift exceeds radius on consecutive fixes', () => {
+    const anchor = { active: true, latitude: 54, longitude: 10, radiusNm: 0.05, triggered: false };
+    const base = {
+      fix: { latitude: 54.01, longitude: 10.01, speedKn: 0, accuracyM: 12 },
+      anchorAlarm: anchor,
       goToTarget: null,
       alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },
       activePassageId: null,
@@ -17,11 +19,15 @@ describe('processLocationAlarms', () => {
       passageDetail: null,
       legAdvanceAuto: false,
       allowLegAdvancePrompt: true,
-      runtime: freshAlarmRuntime(),
-    });
+    };
 
+    const first = processLocationAlarms({ ...base, runtime: freshAlarmRuntime() });
+    expect(first.actions.some((a) => a.type === 'trigger')).toBe(false);
+
+    const result = processLocationAlarms({ ...base, runtime: first.runtime });
     expect(result.actions.some((a) => a.type === 'trigger' && a.severity === 'critical')).toBe(true);
     expect(result.anchorAlarm?.triggered).toBe(true);
+    expect(ANCHOR_RADIUS_STREAK).toBe(2);
   });
 
   it('defers anchor drag on first fix after GPS gap recovery', () => {
@@ -62,8 +68,29 @@ describe('processLocationAlarms', () => {
   });
 
   it('still fires anchor drag when accuracy is within the alarm limit', () => {
-    const result = processLocationAlarms({
+    const anchor = { active: true, latitude: 54, longitude: 10, radiusNm: 0.05, triggered: false };
+    const base = {
       fix: { latitude: 54.01, longitude: 10.01, speedKn: 0, accuracyM: 15 },
+      anchorAlarm: anchor,
+      goToTarget: null,
+      alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },
+      activePassageId: null,
+      activeLegIndex: 0,
+      passageDetail: null,
+      legAdvanceAuto: false,
+      allowLegAdvancePrompt: true,
+    };
+
+    const first = processLocationAlarms({ ...base, runtime: freshAlarmRuntime() });
+    const result = processLocationAlarms({ ...base, runtime: first.runtime });
+
+    expect(result.actions.some((a) => a.type === 'trigger' && a.severity === 'critical')).toBe(true);
+    expect(result.anchorAlarm?.triggered).toBe(true);
+  });
+
+  it('does not fire anchor drag when accuracy is unknown', () => {
+    const result = processLocationAlarms({
+      fix: { latitude: 54.01, longitude: 10.01, speedKn: 0, accuracyM: null },
       anchorAlarm: { active: true, latitude: 54, longitude: 10, radiusNm: 0.05, triggered: false },
       goToTarget: null,
       alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },
@@ -75,8 +102,8 @@ describe('processLocationAlarms', () => {
       runtime: freshAlarmRuntime(),
     });
 
-    expect(result.actions.some((a) => a.type === 'trigger' && a.severity === 'critical')).toBe(true);
-    expect(result.anchorAlarm?.triggered).toBe(true);
+    expect(result.actions.some((a) => a.type === 'trigger')).toBe(false);
+    expect(result.anchorAlarm?.triggered).toBe(false);
   });
 
   it('does not accumulate SOG drag streak across poor-accuracy fixes', () => {
@@ -109,7 +136,7 @@ describe('processLocationAlarms', () => {
 
     for (let i = 0; i < ANCHOR_SOG_STREAK; i++) {
       const out = processLocationAlarms({
-        fix: { latitude: 54.0001, longitude: 10.0001, speedKn: ANCHOR_SOG_KN + 0.2 },
+        fix: { latitude: 54.0001, longitude: 10.0001, speedKn: ANCHOR_SOG_KN + 0.2, accuracyM: 12 },
         anchorAlarm: anchor,
         goToTarget: null,
         alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },
@@ -127,7 +154,7 @@ describe('processLocationAlarms', () => {
     }
 
     const final = processLocationAlarms({
-      fix: { latitude: 54.0001, longitude: 10.0001, speedKn: ANCHOR_SOG_KN + 0.2 },
+      fix: { latitude: 54.0001, longitude: 10.0001, speedKn: ANCHOR_SOG_KN + 0.2, accuracyM: 12 },
       anchorAlarm: anchor,
       goToTarget: null,
       alarmLimits: { xteNm: 0.05, arrivalNm: 0.1 },

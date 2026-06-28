@@ -5,6 +5,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 import { useFormFactor } from '../hooks/useFormFactor';
 import { usePackDownloadActions } from '../hooks/usePackDownloadActions';
+import { stopPassageMapPlanning, isPassageMapPlanningActive } from '../lib/passage/passageMapPlanning';
 import { REGION_PACKS, resolveRegionPack, type RegionPackDefinition } from '../map/regionPacks';
 import { t } from '../i18n';
 import type { RootTabParamList } from '../navigation/types';
@@ -236,6 +237,10 @@ export function DownloadsScreen() {
             label={t('downloads.passageCustomOpenMap')}
             variant="secondary"
             onPress={() => {
+              if (isPassageMapPlanningActive()) {
+                showInfo(t('passage.mapPlanningPaused'));
+              }
+              stopPassageMapPlanning();
               useCustomDownloadStore.getState().prefillFromBounds(
                 passageBounds,
                 t('downloads.passageCustomDefaultName', { name: passageName }),

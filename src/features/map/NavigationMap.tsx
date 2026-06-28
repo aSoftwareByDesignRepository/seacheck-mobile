@@ -42,9 +42,11 @@ import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { usePassageMapPlanningStore } from '../../store/passageMapPlanningStore';
 import { usePassageStore } from '../../store/passageStore';
 import { useTrackStore } from '../../store/trackStore';
-import { mapChartHasOpenDetail, resolveMapChartTapAction } from '../../lib/map/mapChartInteraction';
+import { mapChartHasOpenDetail, pickMapChartFeatures, resolveMapChartTapAction, resolvePlanningMapTapAction } from '../../lib/map/mapChartInteraction';
 import { buildMapChartAccessibilityLabel } from '../../lib/map/mapAccessibility';
 import { resolveBoatHeadingDeg } from '../../lib/geo/cog';
+import { isValidCoordinate } from '../../lib/geo/fixQuality';
+import { distanceNm } from '../../lib/geo/navigation';
 import { resolveMapInitialCenter, shouldPauseFollowOnRegionChange } from '../../lib/map/mapCameraFollow';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useWaypointStore } from '../../store/waypointStore';
@@ -114,7 +116,10 @@ export function NavigationMap() {
   const showError = useFeedbackStore((s) => s.showError);
   const customSelecting = useCustomDownloadStore((s) => s.selecting);
   const planningPassageId = usePassageMapPlanningStore((s) => s.passageId);
+  const planningRevision = usePassageMapPlanningStore((s) => s.revision);
+  const allowRouteEdits = usePassageMapPlanningStore((s) => s.allowRouteEdits);
   const passageMapPlanning = planningPassageId != null;
+  const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
   const measureActive = useMeasureDistanceStore((s) => s.active);
   const addMeasurePoint = useMeasureDistanceStore((s) => s.addPoint);
   const setCustomCorner = useCustomDownloadStore((s) => s.setCorner);
@@ -145,7 +150,7 @@ export function NavigationMap() {
   const [longPressAction, setLongPressAction] = useState<{ lat: number; lon: number; coordLabel: string } | null>(null);
   const suppressNextPressRef = useRef(false);
   const planningMarkTapRef = useRef(false);
-  const planningCameraFitRef = useRef<string | null>(null);
+  const planningCameraFitRef = useRef<{ passageId: string; revision: number } | null>(null);
   const isOffline = useIsEffectivelyOffline();
   const chartCoverage = useChartCoverageAtPoint(mapCenter.latitude, mapCenter.longitude);
   const showScaleBar = Platform.OS === 'ios' || Device.isDevice;
@@ -236,7 +241,8 @@ export function NavigationMap() {
   const handleStartNewPassageFromMap = useCallback(
     async (lat: number, lon: number) => {
       try {
-        await startNewPassageFromMap(lat, lon);
+        const id = await startNewPassageFromMap(lat, lon);
+        if (!id) return;
         void pulseUiAcknowledgement();
         showInfo(t('passage.mapPassageStarted'));
       } catch {
@@ -271,8 +277,14 @@ export function NavigationMap() {
       planningCameraFitRef.current = null;
       return;
     }
-    if (!mapStyleLoaded || planningCameraFitRef.current === planningPassageId) return;
-    planningCameraFitRef.current = planningPassageId;
+    const lastFit = planningCameraFitRef.current;
+    if (
+      !mapStyleLoaded ||
+      (lastFit?.passageId === planningPassageId && lastFit.revision === planningRevision)
+    ) {
+      return;
+    }
+    planningCameraFitRef.current = { passageId: planningPassageId, revision: planningRevision };
     void usePassageStore.getState().getPassageDetail(planningPassageId).then((detail) => {
       if (!detail || detail.waypoints.length === 0) return;
       const bounds = boundsFromWaypoints(detail.waypoints);
@@ -283,7 +295,7 @@ export function NavigationMap() {
         duration: 400,
       });
     });
-  }, [planningPassageId, mapStyleLoaded]);
+  }, [planningPassageId, planningRevision, mapStyleLoaded]);
 
   const applyLayerVisibility = useCallback(async (visible: boolean) => {
     try {
@@ -422,9 +434,106 @@ export function NavigationMap() {
     ],
   );
 
+  const handlePlanningMapTap = useCallback(
+    async (lon: number, lat: number) => {
+      if (!planningPassageId) return;
+      const detail = await getPassageDetail(planningPassageId);
+      const pickCtx = {
+        savedWaypoints,
+        passageWaypoints: detail?.waypoints ?? [],
+        recordingTrackId,
+        liveInspectPoints,
+        mapPreviewPoints,
+      };
+      const detailsOpen = mapChartHasOpenDetail({ seamarkHit, waypointHit, trackPointHit });
+
+      if (!allowRouteEdits) {
+        const pick = pickMapChartFeatures(lat, lon, pickCtx);
+        if (pick.kind === 'waypoint') {
+          setTrackPointHit(null);
+          setSeamarkHit(null);
+          setWaypointHit(pick.waypoint);
+        } else if (pick.kind === 'track-point') {
+          setWaypointHit(null);
+          setSeamarkHit(null);
+          setTrackPointHit(pick.point);
+        } else if (detailsOpen) {
+          dismissChartDetails();
+        }
+        return;
+      }
+
+      const tap = resolvePlanningMapTapAction(lat, lon, pickCtx, detailsOpen);
+      switch (tap.action) {
+        case 'open-waypoint':
+          setTrackPointHit(null);
+          setSeamarkHit(null);
+          setWaypointHit(tap.waypoint);
+          break;
+        case 'open-track-point':
+          setWaypointHit(null);
+          setSeamarkHit(null);
+          setTrackPointHit(tap.point);
+          break;
+        case 'dismiss-details':
+          dismissChartDetails();
+          break;
+        case 'add-waypoint':
+          void handleAddPlanningWaypoint(lat, lon);
+          break;
+      }
+    },
+    [
+      planningPassageId,
+      allowRouteEdits,
+      getPassageDetail,
+      savedWaypoints,
+      recordingTrackId,
+      liveInspectPoints,
+      mapPreviewPoints,
+      seamarkHit,
+      waypointHit,
+      trackPointHit,
+      dismissChartDetails,
+      handleAddPlanningWaypoint,
+    ],
+  );
+
+  const planningModeHint = passageMapPlanning
+    ? allowRouteEdits
+      ? t('passage.mapPlanningBanner')
+      : t('passage.mapPlanningViewBanner')
+    : null;
+
   function handleLongPressAnchor(lat: number, lon: number) {
     void (async () => {
       try {
+        const currentFix = useLocationStore.getState().fix;
+        if (!currentFix || !isValidCoordinate(currentFix.latitude, currentFix.longitude)) {
+          const confirmed = await useConfirmStore.getState().requestConfirm({
+            title: t('map.anchorMapNoGpsTitle'),
+            message: t('map.anchorMapNoGpsBody'),
+            confirmLabel: t('map.anchorMapPositionConfirm'),
+            cancelLabel: t('common.dismiss'),
+            destructive: false,
+          });
+          if (!confirmed) return;
+        } else {
+          const driftNm = distanceNm(
+            [currentFix.longitude, currentFix.latitude],
+            [lon, lat],
+          );
+          if (driftNm > 0.05) {
+            const confirmed = await useConfirmStore.getState().requestConfirm({
+              title: t('map.anchorMapPositionTitle'),
+              message: t('map.anchorMapPositionBody'),
+              confirmLabel: t('map.anchorMapPositionConfirm'),
+              cancelLabel: t('common.dismiss'),
+              destructive: false,
+            });
+            if (!confirmed) return;
+          }
+        }
         const anchorActive = useNavigationStore.getState().anchorAlarm?.active;
         if (anchorActive) {
           const confirmed = await useConfirmStore.getState().requestConfirm({
@@ -456,7 +565,7 @@ export function NavigationMap() {
           viewportLatitude={mapCenter.latitude}
           viewportLongitude={mapCenter.longitude}
           showPassageFollow={isMinimalLayout || isInstrumentsOnlyLayout}
-          modeHint={passageMapPlanning ? t('passage.mapPlanningBanner') : null}
+          modeHint={planningModeHint}
         />
       </View>
       {!isMinimalLayout ? (
@@ -550,7 +659,7 @@ export function NavigationMap() {
           return;
         }
         if (passageMapPlanning) {
-          void handleAddPlanningWaypoint(lat, lon);
+          void handlePlanningMapTap(lon, lat);
           return;
         }
         if (measureActive) {
@@ -619,6 +728,7 @@ export function NavigationMap() {
               viewportLatitude={mapCenter.latitude}
               viewportLongitude={mapCenter.longitude}
               showPassageFollow
+              modeHint={planningModeHint}
             />
           }
           showRangeRings={showRangeRings}
@@ -680,7 +790,7 @@ export function NavigationMap() {
         options={
           longPressAction
             ? [
-                ...(passageMapPlanning
+                ...(passageMapPlanning && allowRouteEdits
                   ? [
                       {
                         label: t('passage.mapAddWaypointHere'),
@@ -688,33 +798,31 @@ export function NavigationMap() {
                         onPress: () => void handleAddPlanningWaypoint(longPressAction.lat, longPressAction.lon),
                       },
                     ]
-                  : [
-                      {
-                        label: t('passage.mapStartPassageHere'),
-                        testID: 'map.longPress.startPassage',
-                        onPress: () => void handleStartNewPassageFromMap(longPressAction.lat, longPressAction.lon),
-                      },
-                    ]),
-                ...(passageMapPlanning
-                  ? []
-                  : [
-                      {
-                        label: t('map.dropWaypointConfirm'),
-                        testID: 'map.longPress.waypoint',
-                        onPress: () =>
-                          void createWaypoint({
-                            name: t('map.newWaypoint'),
-                            latitude: longPressAction.lat,
-                            longitude: longPressAction.lon,
-                            type: 'generic',
-                          })
-                            .then(() => {
-                              void pulseUiAcknowledgement();
-                              showInfo(t('map.waypointSaved'));
+                  : !passageMapPlanning
+                    ? [
+                        {
+                          label: t('passage.mapStartPassageHere'),
+                          testID: 'map.longPress.startPassage',
+                          onPress: () => void handleStartNewPassageFromMap(longPressAction.lat, longPressAction.lon),
+                        },
+                        {
+                          label: t('map.dropWaypointConfirm'),
+                          testID: 'map.longPress.waypoint',
+                          onPress: () =>
+                            void createWaypoint({
+                              name: t('map.newWaypoint'),
+                              latitude: longPressAction.lat,
+                              longitude: longPressAction.lon,
+                              type: 'generic',
                             })
-                            .catch(() => showError(t('passage.coordsSaveFailed'))),
-                      },
-                    ]),
+                              .then(() => {
+                                void pulseUiAcknowledgement();
+                                showInfo(t('map.waypointSaved'));
+                              })
+                              .catch(() => showError(t('passage.coordsSaveFailed'))),
+                        },
+                      ]
+                    : []),
                 {
                   label: t('map.anchorHere'),
                   testID: 'map.longPress.anchor',

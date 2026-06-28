@@ -2,6 +2,7 @@ import { getBatteryOptimizationStatus } from '../permissions/batteryOptimization
 import { isValidCoordinate } from '../geo/fixQuality';
 import type { AnchorWatchStatus } from './types';
 import { t } from '../../i18n';
+import { requestConfirm } from '../../store/confirmStore';
 import {
   ensureMaritimeAlarmNotifications,
   getMaritimeNotificationPermission,
@@ -83,6 +84,18 @@ export async function activateAnchorAlarmAt(
   if (nav.anchorAlarm?.active && !options?.replace) {
     feedback.showInfo(t('map.anchorAlreadyActive'));
     return null;
+  }
+
+  const statusBefore = await getAnchorWatchStatus();
+  if (statusBefore.limited) {
+    const confirmed = await requestConfirm({
+      title: t('map.anchorWatchLimitedTitle'),
+      message: t('map.anchorWatchLimitedBody'),
+      confirmLabel: t('map.anchorActivateLimitedConfirm'),
+      cancelLabel: t('common.dismiss'),
+      destructive: false,
+    });
+    if (!confirmed) return null;
   }
 
   await nav.setAnchorAlarm(lat, lon, effectiveRadius);

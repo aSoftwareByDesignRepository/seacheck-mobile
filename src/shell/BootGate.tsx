@@ -6,6 +6,7 @@ import { t, applyLocalePreference, loadStoredLocale } from '../i18n';
 import { useNavigationStore } from '../store/navigationStore';
 import { useOfflinePackStore } from '../store/offlinePackStore';
 import { usePassageStore } from '../store/passageStore';
+import { usePassageMapPlanningStore } from '../store/passageMapPlanningStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTrackStore } from '../store/trackStore';
 import { useWaypointStore } from '../store/waypointStore';
@@ -46,6 +47,7 @@ async function runStartupHydrate(): Promise<string[]> {
     { name: 'passages', run: () => usePassageStore.getState().hydrate() },
     { name: 'tracks', run: () => useTrackStore.getState().hydrate() },
     { name: 'navigation', run: () => useNavigationStore.getState().hydrate() },
+    { name: 'passageMapPlanning', run: () => usePassageMapPlanningStore.getState().hydrate() },
   ];
 
   const results = await Promise.allSettled(tasks.map((task) => task.run()));
@@ -81,6 +83,18 @@ async function runStartupHydrate(): Promise<string[]> {
         } else if (nav.goToTarget.kind === 'waypoint' && leg && nav.goToTarget.id !== leg.to.id) {
           await usePassageStore.getState().setPassageActiveLeg(legIdx);
         }
+      }
+    }
+
+    const planning = usePassageMapPlanningStore.getState();
+    if (planning.passageId) {
+      const exists = usePassageStore.getState().passages.some((p) => p.id === planning.passageId);
+      if (!exists) {
+        planning.stopPlanning();
+      } else if (planning.passageId === passageId && !planning.allowRouteEdits) {
+        /* restored view-only session for active passage */
+      } else if (planning.passageId === passageId && planning.allowRouteEdits) {
+        planning.startPlanning(planning.passageId, { allowRouteEdits: false });
       }
     }
   } catch (error) {

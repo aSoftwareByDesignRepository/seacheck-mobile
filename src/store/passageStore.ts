@@ -125,6 +125,15 @@ async function rewriteWaypointOrder(passageId: string, orderedIds: string[], db?
   }
 }
 
+async function syncPassageBackgroundMonitoring(): Promise<void> {
+  try {
+    const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
+    await syncBackgroundLocationMonitoring();
+  } catch (error) {
+    console.warn('[passageStore] background monitoring sync failed', error);
+  }
+}
+
 export const usePassageStore = create<PassageStore>((set, get) => ({
   hydrated: false,
   passages: [],
@@ -178,6 +187,7 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
       const nav = useNavigationStore.getState();
       await nav.setGoTo(null);
       await nav.setActiveLegIndex(0);
+      await syncPassageBackgroundMonitoring();
     }
   },
 
@@ -302,6 +312,7 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
     });
     await useNavigationStore.getState().resetSessionDistance();
     await get().setPassageActiveLeg(0);
+    await syncPassageBackgroundMonitoring();
   },
 
   setPassageActiveLeg: async (legIndex) => {
@@ -331,6 +342,7 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
     const nav = useNavigationStore.getState();
     await nav.setGoTo(null);
     await nav.setActiveLegIndex(0);
+    await syncPassageBackgroundMonitoring();
   },
 
   syncActivePassageNavigation: async (passageId) => {

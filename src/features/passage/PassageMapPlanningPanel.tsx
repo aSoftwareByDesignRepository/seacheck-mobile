@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMapBottomLayout } from '../../hooks/useMapBottomLayout';
 import { formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
-import { addMapWaypointToPassage, notifyPassagePlanningChanged, stopPassageMapPlanning } from '../../lib/passage/passageMapPlanning';
+import { addMapWaypointToPassage, notifyPassagePlanningChanged, stopPassageMapPlanning, unlockActivePassageRouteEdits } from '../../lib/passage/passageMapPlanning';
 import { t } from '../../i18n';
 import type { WaypointRow } from '../../lib/db/database';
 import type { RootTabParamList } from '../../navigation/types';
@@ -27,7 +27,9 @@ export function PassageMapPlanningPanel() {
   const insets = useSafeAreaInsets();
   const passageId = usePassageMapPlanningStore((s) => s.passageId);
   const planningRevision = usePassageMapPlanningStore((s) => s.revision);
+  const allowRouteEdits = usePassageMapPlanningStore((s) => s.allowRouteEdits);
   const passages = usePassageStore((s) => s.passages);
+  const activePassageId = usePassageStore((s) => s.activePassageId);
   const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
   const deletePassage = usePassageStore((s) => s.deletePassage);
   const activatePassage = usePassageStore((s) => s.activatePassage);
@@ -58,7 +60,10 @@ export function PassageMapPlanningPanel() {
 
   const passage = passages.find((p) => p.id === passageId);
   const wpCount = detail?.waypoints.length ?? 0;
-  const canActivate = wpCount >= 2;
+  const canActivate = wpCount >= 2 && passageId !== activePassageId;
+  const isActivePassage = passageId === activePassageId;
+  const readOnlyPlanning = isActivePassage && !allowRouteEdits;
+  const canEditRoute = allowRouteEdits;
   const unitLabel = distanceUnitLabel(distanceUnit);
   const totalNm = detail?.totalNm ?? 0;
   const metaA11y = t('passage.mapPlanningMeta', {
@@ -139,17 +144,18 @@ export function PassageMapPlanningPanel() {
   }
 
   async function handleCoordSubmit(input: { name: string; latitude: number; longitude: number }) {
-    try {
-      if (coordSheet?.mode === 'edit' && coordSheet.waypoint) {
-        await updateWaypoint(coordSheet.waypoint.id, input);
-        notifyPassagePlanningChanged(passageId!);
-      } else {
-        await addMapWaypointToPassage(passageId!, input.latitude, input.longitude, input.name);
-      }
-      await refresh();
-    } catch {
-      showError(t('passage.coordsSaveFailed'));
+    if (coordSheet?.mode === 'edit' && coordSheet.waypoint) {
+      await updateWaypoint(coordSheet.waypoint.id, input);
+      notifyPassagePlanningChanged(passageId!);
+    } else {
+      await addMapWaypointToPassage(passageId!, input.latitude, input.longitude, input.name);
     }
+    await refresh();
+  }
+
+  async function handleUnlockRouteEdits() {
+    const ok = await unlockActivePassageRouteEdits();
+    if (ok) showInfo(t('passage.mapPlanningUnlocked'));
   }
 
   const stepHint =
@@ -158,6 +164,12 @@ export function PassageMapPlanningPanel() {
       : wpCount === 1
         ? t('passage.mapPlanningNeedSecond')
         : t('passage.mapPlanningTapHint');
+
+  const hintText = readOnlyPlanning
+    ? t('passage.mapPlanningViewHint')
+    : isActivePassage && allowRouteEdits
+      ? t('passage.mapPlanningActiveEditHint')
+      : stepHint;
 
   return (
     <>
@@ -173,7 +185,16 @@ export function PassageMapPlanningPanel() {
           <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
             {passage?.name ?? t('passage.defaultName')}
           </Text>
-          <Text style={[styles.hint, { color: colors.textMuted }]}>{stepHint}</Text>
+          <Text style={[styles.hint, { color: colors.textMuted }]}>{hintText}</Text>
+          {readOnlyPlanning ? (
+            <Button
+              label={t('passage.mapPlanningUnlock')}
+              variant="secondary"
+              onPress={() => void handleUnlockRouteEdits()}
+              testID="passage.mapPlanning.unlock"
+              style={{ minHeight: minTouch }}
+            />
+          ) : null}
           <View
             style={[styles.metaRow, { backgroundColor: colors.background, borderColor: colors.border }]}
             accessibilityRole="text"
@@ -199,7 +220,7 @@ export function PassageMapPlanningPanel() {
                 testID="passage.mapPlanning.activate"
                 style={styles.actionBtn}
               />
-            ) : (
+            ) : canEditRoute ? (
               <Button
                 label={t('passage.addByCoords')}
                 variant="secondary"
@@ -207,7 +228,7 @@ export function PassageMapPlanningPanel() {
                 testID="passage.mapPlanning.addCoords"
                 style={styles.actionBtn}
               />
-            )}
+            ) : null}
           </View>
 
           {wpCount > 0 ? (
@@ -237,38 +258,42 @@ export function PassageMapPlanningPanel() {
                         </Text>
                       </View>
                       <View style={styles.rowActions}>
-                        <Button
-                          label={t('passage.editWaypoint')}
-                          variant="secondary"
-                          onPress={() => setCoordSheet({ mode: 'edit', waypoint: wp })}
-                          testID={`passage.mapPlanning.edit.${wp.id}`}
-                        />
-                        <Button
-                          label={t('passage.moveUp')}
-                          variant="secondary"
-                          onPress={() => void mutateWaypoints(() => reorderWaypointInPassage(passageId!, index, index - 1))}
-                          disabled={index === 0}
-                          testID={`passage.mapPlanning.up.${wp.id}`}
-                        />
-                        <Button
-                          label={t('passage.moveDown')}
-                          variant="secondary"
-                          onPress={() => void mutateWaypoints(() => reorderWaypointInPassage(passageId!, index, index + 1))}
-                          disabled={index === (detail?.waypoints.length ?? 0) - 1}
-                          testID={`passage.mapPlanning.down.${wp.id}`}
-                        />
-                        <Button
-                          label={t('passage.removeWaypoint')}
-                          variant="danger"
-                          onPress={() => void mutateWaypoints(() => removeWaypointFromPassage(passageId!, wp.id))}
-                          testID={`passage.mapPlanning.remove.${wp.id}`}
-                        />
+                        {canEditRoute ? (
+                          <>
+                            <Button
+                              label={t('passage.editWaypoint')}
+                              variant="secondary"
+                              onPress={() => setCoordSheet({ mode: 'edit', waypoint: wp })}
+                              testID={`passage.mapPlanning.edit.${wp.id}`}
+                            />
+                            <Button
+                              label={t('passage.moveUp')}
+                              variant="secondary"
+                              onPress={() => void mutateWaypoints(() => reorderWaypointInPassage(passageId!, index, index - 1))}
+                              disabled={index === 0}
+                              testID={`passage.mapPlanning.up.${wp.id}`}
+                            />
+                            <Button
+                              label={t('passage.moveDown')}
+                              variant="secondary"
+                              onPress={() => void mutateWaypoints(() => reorderWaypointInPassage(passageId!, index, index + 1))}
+                              disabled={index === (detail?.waypoints.length ?? 0) - 1}
+                              testID={`passage.mapPlanning.down.${wp.id}`}
+                            />
+                            <Button
+                              label={t('passage.removeWaypoint')}
+                              variant="danger"
+                              onPress={() => void mutateWaypoints(() => removeWaypointFromPassage(passageId!, wp.id))}
+                              testID={`passage.mapPlanning.remove.${wp.id}`}
+                            />
+                          </>
+                        ) : null}
                       </View>
                     </View>
                   ))}
                 </ScrollView>
               ) : null}
-              {canActivate ? (
+              {canActivate && canEditRoute ? (
                 <Button
                   label={t('passage.addByCoords')}
                   variant="ghost"
@@ -294,6 +319,7 @@ export function PassageMapPlanningPanel() {
               onPress={() => void handleDeletePassage()}
               testID="passage.mapPlanning.delete"
               style={{ minHeight: minTouch }}
+              disabled={readOnlyPlanning}
             />
           </View>
         </View>

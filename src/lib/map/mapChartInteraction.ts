@@ -9,13 +9,19 @@ export type MapChartTapPick =
 
 type TapPickContext = {
   savedWaypoints: WaypointRow[];
+  passageWaypoints?: WaypointRow[];
   recordingTrackId: string | null;
   liveInspectPoints: TrackPointRow[];
   mapPreviewPoints: TrackPointRow[];
 };
 
-/** Synchronous chart picks — waypoints and track points within tap radius. */
+/** Synchronous chart picks — passage waypoints, saved waypoints, and track points within tap radius. */
 export function pickMapChartFeatures(lat: number, lon: number, ctx: TapPickContext): MapChartTapPick {
+  if (ctx.passageWaypoints?.length) {
+    const passageHit = nearestWaypoint(lat, lon, ctx.passageWaypoints);
+    if (passageHit) return { kind: 'waypoint', waypoint: passageHit.waypoint };
+  }
+
   const waypoint = nearestWaypoint(lat, lon, ctx.savedWaypoints);
   if (waypoint) return { kind: 'waypoint', waypoint: waypoint.waypoint };
 
@@ -58,4 +64,18 @@ export function resolveMapChartTapAction(
   if (pick.kind === 'track-point') return { action: 'open-track-point', point: pick.point };
   if (detailsOpen) return { action: 'dismiss-details' };
   return { action: 'none' };
+}
+
+/** Passage planning tap — inspect features first; add waypoint only on empty chart. */
+export function resolvePlanningMapTapAction(
+  lat: number,
+  lon: number,
+  ctx: TapPickContext,
+  detailsOpen: boolean,
+): MapChartTapAction | { action: 'add-waypoint' } {
+  const pick = pickMapChartFeatures(lat, lon, ctx);
+  if (pick.kind === 'waypoint') return { action: 'open-waypoint', waypoint: pick.waypoint };
+  if (pick.kind === 'track-point') return { action: 'open-track-point', point: pick.point };
+  if (detailsOpen) return { action: 'dismiss-details' };
+  return { action: 'add-waypoint' };
 }

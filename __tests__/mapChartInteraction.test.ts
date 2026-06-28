@@ -1,4 +1,4 @@
-import { mapChartHasOpenDetail, pickMapChartFeatures, resolveMapChartTapAction } from '../src/lib/map/mapChartInteraction';
+import { mapChartHasOpenDetail, pickMapChartFeatures, resolveMapChartTapAction, resolvePlanningMapTapAction } from '../src/lib/map/mapChartInteraction';
 import type { TrackPointRow, WaypointRow } from '../src/lib/db/database';
 
 const waypoint = (id: string, lat: number, lon: number): WaypointRow =>
@@ -25,6 +25,48 @@ const trackPoint = (id: string, lat: number, lon: number): TrackPointRow =>
   }) as TrackPointRow;
 
 describe('mapChartInteraction', () => {
+  it('prefers passage waypoint over saved waypoint at same location', () => {
+    const lat = 54.32;
+    const lon = 10.14;
+    const pick = pickMapChartFeatures(lat, lon, {
+      savedWaypoints: [waypoint('saved', lat, lon)],
+      passageWaypoints: [waypoint('passage', lat, lon)],
+      recordingTrackId: null,
+      liveInspectPoints: [],
+      mapPreviewPoints: [],
+    });
+    expect(pick.kind).toBe('waypoint');
+    if (pick.kind === 'waypoint') expect(pick.waypoint.id).toBe('passage');
+  });
+
+  it('planning tap adds waypoint only on empty chart', () => {
+    const action = resolvePlanningMapTapAction(
+      54.32,
+      10.14,
+      { savedWaypoints: [], passageWaypoints: [], recordingTrackId: null, liveInspectPoints: [], mapPreviewPoints: [] },
+      false,
+    );
+    expect(action).toEqual({ action: 'add-waypoint' });
+  });
+
+  it('planning tap opens passage waypoint before adding', () => {
+    const lat = 54.32;
+    const lon = 10.14;
+    const action = resolvePlanningMapTapAction(
+      lat,
+      lon,
+      {
+        savedWaypoints: [],
+        passageWaypoints: [waypoint('passage-wp', lat, lon)],
+        recordingTrackId: null,
+        liveInspectPoints: [],
+        mapPreviewPoints: [],
+      },
+      false,
+    );
+    expect(action).toEqual({ action: 'open-waypoint', waypoint: expect.objectContaining({ id: 'passage-wp' }) });
+  });
+
   it('prefers waypoint over track points', () => {
     const lat = 54.32;
     const lon = 10.14;

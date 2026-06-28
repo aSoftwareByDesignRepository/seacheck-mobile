@@ -17,6 +17,9 @@ export const ANCHOR_SOG_KN = 0.5;
 /** Consecutive GPS updates required before SOG drag alarm fires. */
 export const ANCHOR_SOG_STREAK = 3;
 
+/** Consecutive fixes outside the anchor circle before radius drag fires. */
+export const ANCHOR_RADIUS_STREAK = 2;
+
 /** Re-fire critical anchor alarm at this interval while triggered. */
 export const ANCHOR_REPEAT_MS = 45_000;
 
@@ -28,12 +31,9 @@ export type LocationFixInput = {
   accuracyM?: number | null;
 };
 
-/**
- * Anchor drag must not fire on low-confidence fixes. Unknown accuracy is treated as acceptable
- * (matches isFixAccuracyOk) because the coordinator already rejects outlier spikes upstream.
- */
+/** Anchor drag requires known horizontal accuracy within the safety limit. */
 function isAccuracyTrustworthyForDrag(accuracyM: number | null | undefined): boolean {
-  if (accuracyM == null || !Number.isFinite(accuracyM)) return true;
+  if (accuracyM == null || !Number.isFinite(accuracyM)) return false;
   return accuracyM <= MAX_ALARM_ACCURACY_M;
 }
 
@@ -77,17 +77,21 @@ export function processLocationAlarms(input: AlarmProcessInput): AlarmProcessOut
   if (anchorAlarm?.active && input.deferAnchorDragEvaluation) {
     // GPS just recovered — do not compare against pre-outage position on a single fix.
     runtime.anchorSogStreak = 0;
+    runtime.anchorRadiusStreak = 0;
   } else if (anchorAlarm?.active && !isAccuracyTrustworthyForDrag(input.fix.accuracyM)) {
     // Low-confidence fix: do not evaluate drag (avoids false critical alarms from GPS noise).
     // Streak is reset so a burst of poor fixes cannot accumulate a phantom SOG drag.
     runtime.anchorSogStreak = 0;
+    runtime.anchorRadiusStreak = 0;
   } else if (anchorAlarm?.active) {
     const drift = distanceNm([anchorAlarm.longitude, anchorAlarm.latitude], pos);
     const sogKn = input.fix.speedKn;
     const sogKnown = sogKn != null && Number.isFinite(sogKn);
     const sogDrag = sogKnown && sogKn > ANCHOR_SOG_KN;
     runtime.anchorSogStreak = sogDrag ? runtime.anchorSogStreak + 1 : 0;
-    const radiusDrag = drift > anchorAlarm.radiusNm;
+    const outsideRadius = drift > anchorAlarm.radiusNm;
+    runtime.anchorRadiusStreak = outsideRadius ? runtime.anchorRadiusStreak + 1 : 0;
+    const radiusDrag = runtime.anchorRadiusStreak >= ANCHOR_RADIUS_STREAK;
     const sustainedSogDrag =
       runtime.anchorSogStreak >= ANCHOR_SOG_STREAK && drift >= ANCHOR_SOG_MIN_DRIFT_NM;
 
@@ -119,6 +123,7 @@ export function processLocationAlarms(input: AlarmProcessInput): AlarmProcessOut
     // Critical anchor alarms stay latched until the user clears the anchor watch.
   } else {
     runtime.anchorSogStreak = 0;
+    runtime.anchorRadiusStreak = 0;
   }
 
   const target = input.goToTarget;

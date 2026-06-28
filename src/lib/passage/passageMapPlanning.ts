@@ -18,11 +18,21 @@ export async function addMapWaypointToPassage(passageId: string, latitude: numbe
   return waypoint;
 }
 
-export async function startNewPassageFromMap(latitude: number, longitude: number) {
+export async function startNewPassageFromMap(latitude: number, longitude: number): Promise<string | null> {
+  const activeId = usePassageMapPlanningStore.getState().passageId;
+  if (activeId) {
+    const ok = await requestConfirm({
+      title: t('passage.mapPlanningSwitchTitle'),
+      message: t('passage.mapPlanningSwitchBody'),
+      confirmLabel: t('passage.mapPlanningSwitchConfirm'),
+      destructive: false,
+    });
+    if (!ok) return null;
+  }
   const passage = await usePassageStore.getState().createPassage(t('passage.defaultName'));
   try {
     await addMapWaypointToPassage(passage.id, latitude, longitude, t('passage.mapWaypointName', { n: 1 }));
-    usePassageMapPlanningStore.getState().startPlanning(passage.id);
+    usePassageMapPlanningStore.getState().startPlanning(passage.id, { allowRouteEdits: true });
     return passage.id;
   } catch (error) {
     await usePassageStore.getState().deletePassage(passage.id);
@@ -41,7 +51,34 @@ export async function startPassageMapPlanning(passageId: string): Promise<boolea
     });
     if (!ok) return false;
   }
-  usePassageMapPlanningStore.getState().startPlanning(passageId);
+
+  const activePassageId = usePassageStore.getState().activePassageId;
+  const isActivePassage = passageId === activePassageId;
+  if (isActivePassage) {
+    const ok = await requestConfirm({
+      title: t('passage.mapPlanningActiveTitle'),
+      message: t('passage.mapPlanningActiveBody'),
+      confirmLabel: t('passage.mapPlanningActiveConfirm'),
+      cancelLabel: t('common.dismiss'),
+      destructive: false,
+    });
+    if (!ok) return false;
+  }
+
+  usePassageMapPlanningStore.getState().startPlanning(passageId, { allowRouteEdits: !isActivePassage });
+  return true;
+}
+
+export async function unlockActivePassageRouteEdits(): Promise<boolean> {
+  const ok = await requestConfirm({
+    title: t('passage.mapPlanningUnlockTitle'),
+    message: t('passage.mapPlanningUnlockBody'),
+    confirmLabel: t('passage.mapPlanningUnlockConfirm'),
+    cancelLabel: t('common.dismiss'),
+    destructive: true,
+  });
+  if (!ok) return false;
+  usePassageMapPlanningStore.getState().unlockRouteEdits();
   return true;
 }
 
@@ -51,6 +88,12 @@ export function stopPassageMapPlanning() {
 
 export function isPassageMapPlanningActive(): boolean {
   return usePassageMapPlanningStore.getState().passageId != null;
+}
+
+export function isPlanningActivePassage(): boolean {
+  const { passageId } = usePassageMapPlanningStore.getState();
+  if (!passageId) return false;
+  return usePassageStore.getState().activePassageId === passageId;
 }
 
 /** Refresh chart overlay and map panel after passage edits outside map taps. */

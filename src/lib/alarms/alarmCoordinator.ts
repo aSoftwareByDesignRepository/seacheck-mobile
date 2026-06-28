@@ -4,6 +4,7 @@ import type * as Location from 'expo-location';
 import { getDatabase, type PassageRow, type WaypointRow } from '../db/database';
 import { FIX_STALE_MS } from '../geo/fixAge';
 import { classifyFixAcceptance, effectivePreviousFixForAcceptance } from '../geo/gpsFilter';
+import { enqueuePersist } from '../persist/asyncPersistQueue';
 import { loadAlarmRuntime, saveAlarmRuntime } from './alarmRuntimeState';
 import { ANCHOR_GPS_LOST_REPEAT_MS, processLocationAlarms } from './processLocationAlarms';
 import { computePassageLegs, legOverrideKey, type LegOverride } from '../passage/computeLegs';
@@ -131,6 +132,19 @@ async function fetchPassageDetailById(id: string): Promise<PassageWithLegs | nul
   return { ...passage, waypoints, legs, totalNm, totalHours };
 }
 
+async function patchNavPersist(patch: Partial<NavPersist>): Promise<void> {
+  await enqueuePersist(NAV_STORAGE_KEY, async () => {
+    const raw = await AsyncStorage.getItem(NAV_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as NavPersist & Record<string, unknown>;
+      await AsyncStorage.setItem(NAV_STORAGE_KEY, JSON.stringify({ ...parsed, ...patch }));
+    } catch {
+      /* keep prior nav state */
+    }
+  });
+}
+
 async function persistLegAdvanceFromBackground(legIndex: number, passageId: string): Promise<void> {
   const detail = await fetchPassageDetailById(passageId);
   if (!detail || detail.legs.length === 0) return;
@@ -150,16 +164,7 @@ async function persistLegAdvanceFromBackground(legIndex: number, passageId: stri
     kind: 'waypoint' as const,
   };
 
-  const raw = await AsyncStorage.getItem(NAV_STORAGE_KEY);
-  if (!raw) return;
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    parsed.activeLegIndex = idx;
-    parsed.goToTarget = goTo;
-    await AsyncStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(parsed));
-  } catch {
-    /* keep prior nav state */
-  }
+  await patchNavPersist({ activeLegIndex: idx, goToTarget: goTo });
 }
 
 function mapLocationToFix(loc: Location.LocationObject) {
@@ -187,6 +192,11 @@ let lastAlarmFix: {
 
 /** Test-only — clears the outlier-detection memory between cases. */
 export function resetAlarmFixHistoryForTests(): void {
+  lastAlarmFix = null;
+}
+
+/** Clears outlier-detection memory when anchor watch starts or stops. */
+export function resetAlarmFixHistory(): void {
   lastAlarmFix = null;
 }
 
@@ -249,39 +259,44 @@ export async function processFixFromLocation(
     const { navPersist, activePassageId, passageDetail, legAdvanceAuto, distanceUnit } = await resolveAlarmInputs(options);
     const runtime = await loadAlarmRuntime();
     const mappedFix = mapLocationToFix(loc);
+    const anchorFixStale = Boolean(
+      navPersist.anchorAlarm?.active && Date.now() - fixTs > FIX_STALE_MS,
+    );
 
-    if (navPersist.anchorAlarm?.active && Date.now() - fixTs > FIX_STALE_MS) {
+    if (anchorFixStale) {
       const now = Date.now();
       if (now - runtime.lastAnchorGpsWarnMs > ANCHOR_GPS_LOST_REPEAT_MS) {
         runtime.lastAnchorGpsWarnMs = now;
         await saveAlarmRuntime(runtime);
         await triggerMaritimeAlarm('warning', t('alarms.anchorGpsSuspended'), { inBackground: options.inBackground });
       }
-      return { legAdvancePromptLegIdx: null };
     }
 
-    // Reject single-fix GNSS spikes (multipath / invalid / poor accuracy) before drag/XTE/arrival
-    // evaluation so they cannot fire a false critical alarm. The raw fix is still used elsewhere
-    // for display; here only trustworthy fixes drive safety alarms.
-    const previousForAcceptance = effectivePreviousFixForAcceptance(lastAlarmFix, mappedFix.timestamp);
-    const deferAnchorDragEvaluation = previousForAcceptance == null && lastAlarmFix != null;
-    const acceptance = classifyFixAcceptance(previousForAcceptance, {
-      latitude: mappedFix.latitude,
-      longitude: mappedFix.longitude,
-      timestamp: mappedFix.timestamp,
-      speedKn: mappedFix.speedKn,
-      accuracyM: mappedFix.accuracyM,
-    });
-    if (!acceptance.accepted) {
-      return { legAdvancePromptLegIdx: runtime.legAdvancePromptLegIdx };
+    let deferAnchorDragEvaluation = anchorFixStale;
+    if (!anchorFixStale) {
+      // Reject single-fix GNSS spikes (multipath / invalid / poor accuracy) before drag/XTE/arrival
+      // evaluation so they cannot fire a false critical alarm. The raw fix is still used elsewhere
+      // for display; here only trustworthy fixes drive safety alarms.
+      const previousForAcceptance = effectivePreviousFixForAcceptance(lastAlarmFix, mappedFix.timestamp);
+      deferAnchorDragEvaluation = previousForAcceptance == null && lastAlarmFix != null;
+      const acceptance = classifyFixAcceptance(previousForAcceptance, {
+        latitude: mappedFix.latitude,
+        longitude: mappedFix.longitude,
+        timestamp: mappedFix.timestamp,
+        speedKn: mappedFix.speedKn,
+        accuracyM: mappedFix.accuracyM,
+      });
+      if (!acceptance.accepted) {
+        return { legAdvancePromptLegIdx: runtime.legAdvancePromptLegIdx };
+      }
+      lastAlarmFix = {
+        latitude: mappedFix.latitude,
+        longitude: mappedFix.longitude,
+        speedKn: mappedFix.speedKn,
+        accuracyM: mappedFix.accuracyM,
+        timestamp: mappedFix.timestamp,
+      };
     }
-    lastAlarmFix = {
-      latitude: mappedFix.latitude,
-      longitude: mappedFix.longitude,
-      speedKn: mappedFix.speedKn,
-      accuracyM: mappedFix.accuracyM,
-      timestamp: mappedFix.timestamp,
-    };
 
     const { actions, runtime: nextRuntime, anchorAlarm } = processLocationAlarms({
       fix: mappedFix,
@@ -307,21 +322,19 @@ export async function processFixFromLocation(
           await navigationStore().getState().setAnchorTriggered(anchorAlarm.triggered);
         }
       } else {
-        const raw = await AsyncStorage.getItem(NAV_STORAGE_KEY);
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw) as NavPersist & Record<string, unknown>;
-            parsed.anchorAlarm = anchorAlarm;
-            await AsyncStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(parsed));
-          } catch {
-            /* keep prior nav state */
-          }
-        }
+        await patchNavPersist({ anchorAlarm });
       }
     }
 
     for (const action of actions) {
       if (action.type === 'trigger') {
+        if (action.severity === 'critical') {
+          const navState = navigationStore().getState();
+          const anchorStillActive = navState.hydrated
+            ? Boolean(navState.anchorAlarm?.active)
+            : Boolean((await loadNavPersist())?.anchorAlarm?.active);
+          if (!anchorStillActive) continue;
+        }
         await triggerMaritimeAlarm(action.severity, action.message, { inBackground: options.inBackground });
       } else if (action.type === 'leg_advance_auto') {
         if (activePassageId) {
@@ -355,6 +368,18 @@ export async function isBackgroundTrackNeeded(): Promise<boolean> {
   return Boolean(settings?.backgroundTrackRecording);
 }
 
+/** Active passage with at least two waypoints — background GPS for XTE/arrival alarms. */
+export async function isPassageMonitoringNeeded(): Promise<boolean> {
+  const activePassageId = await loadActivePassageId();
+  if (!activePassageId) return false;
+  const detail = await fetchPassageDetailById(activePassageId);
+  return Boolean(detail && detail.waypoints.length >= 2);
+}
+
 export async function shouldRunBackgroundLocation(): Promise<boolean> {
-  return (await isAnchorMonitoringNeeded()) || (await isBackgroundTrackNeeded());
+  return (
+    (await isAnchorMonitoringNeeded()) ||
+    (await isPassageMonitoringNeeded()) ||
+    (await isBackgroundTrackNeeded())
+  );
 }

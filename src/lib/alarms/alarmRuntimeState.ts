@@ -4,6 +4,8 @@ export const ALARM_RUNTIME_KEY = 'seacheck.alarms.runtime.v1';
 
 export type AlarmRuntimeState = {
   anchorSogStreak: number;
+  /** Consecutive fixes outside anchor radius before radius drag fires. */
+  anchorRadiusStreak: number;
   lastCriticalPulseMs: number;
   arrivalFiredTargetId: string | null;
   xteFired: boolean;
@@ -18,6 +20,7 @@ export type AlarmRuntimeState = {
 
 export const DEFAULT_ALARM_RUNTIME: AlarmRuntimeState = {
   anchorSogStreak: 0,
+  anchorRadiusStreak: 0,
   lastCriticalPulseMs: 0,
   arrivalFiredTargetId: null,
   xteFired: false,

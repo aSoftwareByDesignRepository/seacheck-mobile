@@ -87,14 +87,14 @@ export function PassageWaypointCoordSheet({ visible, mode, waypoint, onClose, on
         <FieldInput
           value={latDraft}
           onChangeText={setLatDraft}
-          keyboardType="default"
+          keyboardType="number-pad"
           accessibilityLabel={t('passage.latitudeLabel')}
         />
         <FieldLabel>{t('passage.longitudeLabel')}</FieldLabel>
         <FieldInput
           value={lonDraft}
           onChangeText={setLonDraft}
-          keyboardType="default"
+          keyboardType="number-pad"
           accessibilityLabel={t('passage.longitudeLabel')}
         />
         {error ? (

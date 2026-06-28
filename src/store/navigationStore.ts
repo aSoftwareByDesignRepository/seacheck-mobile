@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
 import { resetAlarmRuntime } from '../lib/alarms/alarmRuntimeState';
+import { resetAlarmFixHistory } from '../lib/alarms/alarmCoordinator';
 import type { AnchorWatchStatus } from '../lib/anchor/types';
 import type { WaypointRow } from '../lib/db/database';
 import { isValidCoordinate } from '../lib/geo/fixQuality';
@@ -211,6 +212,7 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
       },
     });
     await persist(get());
+    resetAlarmFixHistory();
     await resetAlarmRuntime();
     try {
       void ensureMaritimeAlarmNotifications();
@@ -229,7 +231,7 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     if (!current?.active) return;
     const next = Math.max(0.01, radiusNm);
     if (current.radiusNm === next) return;
-    set({ anchorAlarm: { ...current, radiusNm: next, triggered: false } });
+    set({ anchorAlarm: { ...current, radiusNm: next } });
     await persist(get());
     await resetAlarmRuntime();
   },
@@ -237,6 +239,7 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
   clearAnchorAlarm: async () => {
     set({ anchorAlarm: null });
     await persist(get());
+    resetAlarmFixHistory();
     await resetAlarmRuntime();
     const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
     await syncBackgroundLocationMonitoring();

@@ -6,11 +6,14 @@ describe('coordInput', () => {
   it('parses decimal coordinates with comma or dot', () => {
     expect(parseCoordField('54.321')).toBe(54.321);
     expect(parseCoordField('10,14')).toBe(10.14);
+    expect(parseCoordField('-12.5')).toBe(-12.5);
   });
 
-  it('returns null for empty or invalid input', () => {
+  it('returns null for empty, invalid, or partial input', () => {
     expect(parseCoordField('')).toBeNull();
     expect(parseCoordField('abc')).toBeNull();
+    expect(parseCoordField('54.32N')).toBeNull();
+    expect(parseCoordField('54.32abc')).toBeNull();
   });
 });
 
@@ -22,10 +25,18 @@ describe('passageMapPlanningStore', () => {
   it('tracks planning session and revision bumps', () => {
     usePassageMapPlanningStore.getState().startPlanning('pass-1');
     expect(usePassageMapPlanningStore.getState().passageId).toBe('pass-1');
+    expect(usePassageMapPlanningStore.getState().allowRouteEdits).toBe(true);
     usePassageMapPlanningStore.getState().bumpRevision();
     expect(usePassageMapPlanningStore.getState().revision).toBe(1);
     usePassageMapPlanningStore.getState().stopPlanning();
     expect(usePassageMapPlanningStore.getState().passageId).toBeNull();
+  });
+
+  it('supports view-only planning for active passages', () => {
+    usePassageMapPlanningStore.getState().startPlanning('pass-active', { allowRouteEdits: false });
+    expect(usePassageMapPlanningStore.getState().allowRouteEdits).toBe(false);
+    usePassageMapPlanningStore.getState().unlockRouteEdits();
+    expect(usePassageMapPlanningStore.getState().allowRouteEdits).toBe(true);
   });
 
   it('notifyPassagePlanningChanged bumps only for active passage', () => {
