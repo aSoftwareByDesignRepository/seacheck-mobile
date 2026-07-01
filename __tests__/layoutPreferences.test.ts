@@ -21,12 +21,19 @@ describe('layoutPreferences', () => {
   });
 
   it('cycles through all layout presets', () => {
-    expect(nextLayoutPreset('coordinates')).toBe('map-forward');
-    expect(nextLayoutPreset('instruments-only')).toBe('split');
+    expect(nextLayoutPreset('map-forward')).toBe('minimal');
+    expect(nextLayoutPreset('minimal')).toBe('instruments-only');
+    expect(nextLayoutPreset('instruments-only')).toBe('map-forward');
   });
 
   it('normalizes unknown stored presets', () => {
     expect(normalizeLayoutPreset('bogus')).toBe('map-forward');
     expect(normalizeLayoutPreset('instruments-only')).toBe('instruments-only');
+  });
+
+  it('migrates removed layout presets to map-forward', () => {
+    expect(normalizeLayoutPreset('instruments-forward')).toBe('map-forward');
+    expect(normalizeLayoutPreset('split')).toBe('map-forward');
+    expect(normalizeLayoutPreset('coordinates')).toBe('map-forward');
   });
 });

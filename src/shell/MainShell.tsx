@@ -1,13 +1,16 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ScreenLockOverlay } from '../features/map/ScreenLockOverlay';
+import { ScreenLockCoordinator } from '../features/map/ScreenLockCoordinator';
 import { AdaptiveTabBar } from '../navigation/AdaptiveTabBar';
 import { RAIL_WIDTH } from '../navigation/tabBarLayout';
 import { TabOverflowMenu } from '../navigation/TabOverflowMenu';
 import { useResumeBackgroundSync } from '../hooks/useResumeBackgroundSync';
+import { useDownloadFailureAlerts } from '../hooks/useDownloadFailureAlerts';
+import { useDownloadKeepAwake } from '../hooks/useDownloadKeepAwake';
+import { useMapLibreNetworkSync } from '../hooks/useMapLibreNetworkSync';
 import { useAppLocationWatch } from '../hooks/useAppLocationWatch';
 import { useMaritimeMonitors } from '../hooks/useMaritimeMonitors';
 import { useForegroundTrackRecording } from '../hooks/useForegroundTrackRecording';
@@ -16,12 +19,10 @@ import { t } from '../i18n';
 import type { RootTabParamList } from '../navigation/types';
 import { DownloadsScreen } from '../screens/DownloadsScreen';
 import { MapScreen } from '../screens/MapScreen';
-import { PassageScreen } from '../screens/PassageScreen';
-import { SettingsScreen } from '../screens/SettingsScreen';
+import { PassageStack } from '../navigation/PassageStack';
+import { SettingsStack } from '../navigation/SettingsStack';
 import { TracksScreen } from '../screens/TracksScreen';
-import { WaypointsScreen } from '../screens/WaypointsScreen';
 import { useNavigationStore } from '../store/navigationStore';
-import { useTabOverflowStore } from '../navigation/tabOverflowStore';
 import { useTheme } from '../theme/ThemeContext';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -29,22 +30,21 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 export function MainShell() {
   const { colors, isDark } = useTheme();
   useAppLocationWatch();
+  useMapLibreNetworkSync();
+  useDownloadKeepAwake();
+  useDownloadFailureAlerts();
   useResumeBackgroundSync();
   useMaritimeMonitors();
   useForegroundTrackRecording();
   const { formFactor, isLandscape } = useFormFactor();
   const screenLocked = useNavigationStore((s) => s.screenLocked);
   const setScreenLocked = useNavigationStore((s) => s.setScreenLocked);
-  const setMenuOpen = useTabOverflowStore((s) => s.setMenuOpen);
   const useRail = formFactor !== 'compact' && isLandscape;
-
-  useEffect(() => {
-    if (screenLocked) setMenuOpen(false);
-  }, [screenLocked, setMenuOpen]);
 
   return (
     <View style={styles.root}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
+      <ScreenLockCoordinator />
       <Tab.Navigator
         tabBar={(props) => <AdaptiveTabBar {...props} variant={useRail ? 'rail' : 'bottom'} />}
         layout={({ children }) => (
@@ -76,15 +76,26 @@ export function MainShell() {
         }}
       >
         <Tab.Screen name="Map" component={MapScreen} options={{ title: t('tabs.map'), tabBarButtonTestID: 'tab.map' }} />
-        <Tab.Screen name="Passage" component={PassageScreen} options={{ title: t('tabs.passage'), tabBarButtonTestID: 'tab.passage' }} />
-        <Tab.Screen name="Waypoints" component={WaypointsScreen} options={{ title: t('tabs.waypoints'), tabBarButtonTestID: 'tab.waypoints' }} />
+        <Tab.Screen
+          name="Passage"
+          component={PassageStack}
+          options={{ title: t('tabs.passage'), tabBarButtonTestID: 'tab.passage' }}
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              // Always land on the passage overview list, even when a detail page
+              // is still on the nested stack from a previous visit or map hand-off.
+              e.preventDefault();
+              navigation.navigate('Passage', { screen: 'PassageList' });
+            },
+          })}
+        />
         <Tab.Screen name="Tracks" component={TracksScreen} options={{ title: t('tabs.tracks'), tabBarButtonTestID: 'tab.tracks' }} />
         <Tab.Screen name="Downloads" component={DownloadsScreen} options={{ title: t('tabs.downloads'), tabBarButtonTestID: 'tab.downloads' }} />
-        <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t('tabs.settings'), tabBarButtonTestID: 'tab.settings' }} />
+        <Tab.Screen name="Settings" component={SettingsStack} options={{ title: t('tabs.settings'), tabBarButtonTestID: 'tab.settings' }} />
       </Tab.Navigator>
       <TabOverflowMenu />
       {screenLocked ? (
-        <ScreenLockOverlay onUnlock={() => void setScreenLocked(false)} />
+        <ScreenLockOverlay visible={screenLocked} onUnlock={() => void setScreenLocked(false)} />
       ) : null}
     </View>
   );

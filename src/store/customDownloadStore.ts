@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import type { LngLatBounds } from '@maplibre/maplibre-react-native';
-import { boundsCenter, normalizeBounds, type LonLatPoint } from '../lib/map/bounds';
+import { boundsCenter, squareBoundsContaining, squareBoundsFromAnchor, type LonLatPoint } from '../lib/map/bounds';
 
 type CustomDownloadState = {
   selecting: boolean;
@@ -43,7 +43,7 @@ export const useCustomDownloadStore = create<CustomDownloadState>((set, get) => 
       return;
     }
     if (!cornerB) {
-      const bounds = normalizeBounds(cornerA, point);
+      const bounds = squareBoundsFromAnchor(cornerA, point);
       const center = boundsCenter(bounds);
       set({
         cornerB: point,
@@ -61,7 +61,8 @@ export const useCustomDownloadStore = create<CustomDownloadState>((set, get) => 
   setPackName: (name) => set({ packName: name }),
 
   prefillFromBounds: (bounds, name) => {
-    const [west, south, east, north] = bounds;
+    const square = squareBoundsContaining(bounds);
+    const [west, south, east, north] = square;
     set({
       selecting: true,
       cornerA: { latitude: south, longitude: west },
@@ -73,6 +74,6 @@ export const useCustomDownloadStore = create<CustomDownloadState>((set, get) => 
   getBounds: () => {
     const { cornerA, cornerB } = get();
     if (!cornerA || !cornerB) return null;
-    return normalizeBounds(cornerA, cornerB);
+    return squareBoundsFromAnchor(cornerA, cornerB);
   },
 }));

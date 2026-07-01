@@ -1,70 +1,69 @@
-import * as Clipboard from 'expo-clipboard';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { computeAnchorDriftNm } from '../../lib/anchor/anchorDrift';
-import { useBarometer } from '../../hooks/useBarometer';
 import { useFormFactor } from '../../hooks/useFormFactor';
-import { useMapShellLayout } from '../../hooks/useMapShellLayout';
-import { useNavigationInstruments } from '../../hooks/useNavigationInstruments';
-import { formatCoordinates } from '../../map/coords';
-import { magneticDeclinationDeg } from '../../lib/geo/magnetic';
-import { formatSog, formatDistanceNm, distanceUnitLabel, formatXteFromNm } from '../../lib/geo/units';
-import { formatCogDisplay } from '../../hooks/useNavigationInstruments';
-import { t } from '../../i18n';
+import { useNavigationInstrumentData } from '../../hooks/useNavigationInstrumentData';
 import { nextCoordFormat, coordFormatTitleKey } from '../../lib/settings/coordFormats';
-import { computeLeeway } from '../../lib/geo/leeway';
 import { pulseUiAcknowledgement } from '../../services/alarmFeedbackService';
-import { isFixStale, isLowSog, displayCog, displayHeading, type LocationFix, useLocationStore, useMapDisplayFix } from '../../services/locationService';
+import { isLowSog, type LocationFix } from '../../services/locationService';
 import { useFeedbackStore } from '../../store/feedbackStore';
-import { useNavigationStore } from '../../store/navigationStore';
-import { usePassageStore } from '../../store/passageStore';
 import { useSettingsStore } from '../../store/settingsStore';
+import { t } from '../../i18n';
 import { useTheme } from '../../theme/ThemeContext';
-import { InstrumentCell } from '../../ui/InstrumentCell';
-import { StatusBadge } from '../../ui/StatusBadge';
-import { MapCoordinatesCard } from './MapCoordinatesCard';
-import { PassageNavHero } from './PassageNavHero';
+import { InstrumentChip } from '../../ui/InstrumentChip';
+import { StatusBadgeRow, compactBadgeItems } from '../../ui/StatusBadgeRow';
 import { BarometerInstrument } from './BarometerInstrument';
+import { InstrumentCoordsLine } from './InstrumentCoordsLine';
+import { InstrumentMetricGrid } from './InstrumentMetricGrid';
+import { buildInstrumentDetailMetrics } from './instrumentDetailMetrics';
+import { PassageInstrumentBlock } from './PassageInstrumentBlock';
 
 type Props = {
   fix: LocationFix | null;
-  /** Fills the screen — no chart strip above instruments. */
-  fullScreen?: boolean;
+  onOpenPassage: () => void;
 };
 
-export function MapInstruments({ fix, fullScreen = false }: Props) {
+/** Full-screen navigation dashboard — instruments-only layout. */
+export function MapInstruments({ fix, onOpenPassage }: Props) {
   const { colors, spacing, minTouch } = useTheme();
-  const { instrumentHeroSize } = useFormFactor();
-  const { coordinatesEmphasis } = useMapShellLayout();
+  const { instrumentFullScreenHeroSize, width } = useFormFactor();
   const coordFormat = useSettingsStore((s) => s.coordFormat);
   const patchSettings = useSettingsStore((s) => s.patchSettings);
-  const bearingReference = useSettingsStore((s) => s.bearingReference);
   const sogUnit = useSettingsStore((s) => s.sogUnit);
-  const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const showInfo = useFeedbackStore((s) => s.showInfo);
 
-  const goToTarget = useNavigationStore((s) => s.goToTarget);
-  const anchorAlarm = useNavigationStore((s) => s.anchorAlarm);
-  const activePassageId = usePassageStore((s) => s.activePassageId);
-  const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
-  const mapDisplayFix = useMapDisplayFix();
-  const nav = useNavigationInstruments();
-  const barometerEnabled = useSettingsStore((s) => s.barometerEnabled);
-  const barometer = useBarometer(barometerEnabled);
+  const viewportRef = useRef(0);
+  const contentRef = useRef(0);
+  const [scrollEnabled, setScrollEnabled] = useState(false);
 
-  const stale = isFixStale(fix);
-  const coordFix = mapDisplayFix ?? (fix && !stale ? fix : lastGoodFix);
-  const declination = coordFix ? magneticDeclinationDeg(coordFix.latitude, coordFix.longitude) : 0;
-  const cogText = !coordFix ? '—' : stale ? '—' : formatCogDisplay(fix, bearingReference, declination);
-  const sogText = !coordFix || stale ? '—' : formatSog(fix?.speedMs ?? null, sogUnit);
-  const courseLabel = isLowSog(fix) && !stale ? t('map.hdg') : t('map.cog');
-  const coordsMuted = stale && Boolean(coordFix);
+  const updateScrollMetrics = useCallback((viewport?: number, content?: number) => {
+    if (viewport != null) viewportRef.current = viewport;
+    if (content != null) contentRef.current = content;
+    const v = viewportRef.current;
+    const c = contentRef.current;
+    setScrollEnabled(v > 0 && c > v + 1);
+  }, []);
 
-  async function copyCoords() {
-    if (!coordFix) return;
-    await Clipboard.setStringAsync(formatCoordinates(coordFormat, coordFix.latitude, coordFix.longitude));
-    showInfo(t('map.coordsCopied'));
-  }
+  const data = useNavigationInstrumentData(fix);
+  const cogParts = data.cogText.split(' ');
+  const detailMetrics = buildInstrumentDetailMetrics(data);
+  const showBarometerBlock = data.showBarometer && !detailMetrics.some((m) => m.key === 'baro');
+  const compactHero = Math.min(instrumentFullScreenHeroSize, Math.round(width * 0.14));
+
+  const badgeItems = compactBadgeItems([
+    data.anchorAlarm?.active
+      ? {
+          key: 'anchor',
+          label: data.anchorAlarm.triggered ? t('map.anchorTriggered') : t('map.anchorActive'),
+          variant: data.anchorAlarm.triggered ? 'danger' : 'success',
+        }
+      : null,
+    isLowSog(fix) && !data.stale ? { key: 'lowSog', label: t('map.lowSog'), variant: 'warning' } : null,
+    data.stale && fix ? { key: 'stale', label: t('map.staleGps'), variant: 'danger' } : null,
+    data.showBarometer && data.barometer.trend.trend === 'falling_fast'
+      ? { key: 'baro', label: t('barometer.fallingFast'), variant: 'warning' }
+      : null,
+  ]);
 
   async function cycleCoordFormat() {
     const next = nextCoordFormat(coordFormat);
@@ -73,211 +72,92 @@ export function MapInstruments({ fix, fullScreen = false }: Props) {
     showInfo(t('map.coordFormatCycled', { format: t(coordFormatTitleKey(next)) }));
   }
 
-  const showNavHero = Boolean(goToTarget);
-  const showXte = nav.xteNm != null && !stale && goToTarget?.kind !== 'mob' && Boolean(activePassageId);
-  const showSession = true;
-  const showPassageMeta = Boolean(activePassageId && nav.remainingNm != null && !stale);
-  const showBarometer = barometerEnabled && barometer.available && barometer.trend.currentHpa != null;
-  const leeway = !stale ? computeLeeway(fix?.speedKn ?? null, displayHeading(fix), displayCog(fix)) : null;
-  const distanceLabel = distanceUnitLabel(distanceUnit);
-  const sessionDistText = formatDistanceNm(nav.sessionDistanceNm, distanceUnit);
-  const remainingDistText = nav.remainingNm != null ? formatDistanceNm(nav.remainingNm, distanceUnit) : null;
-  const anchorDriftNm =
-    anchorAlarm?.active && coordFix ? computeAnchorDriftNm(anchorAlarm, coordFix) : null;
-  const anchorDriftText =
-    anchorDriftNm != null ? formatDistanceNm(anchorDriftNm, distanceUnit) : null;
-  const anchorLimitText =
-    anchorAlarm?.active ? formatDistanceNm(anchorAlarm.radiusNm, distanceUnit) : null;
-  const xteDisplay = formatXteFromNm(nav.xteNm, distanceUnit, nav.xteSide);
-
-  const passageNavHero =
-    showNavHero && goToTarget ? (
-      <PassageNavHero
-        nextWaypointName={goToTarget.name}
-        bearing={nav.bearingToTarget}
-        bearingSuffix={nav.bearingSuffix}
-        distanceNm={nav.distanceToTargetNm}
-        distanceUnit={distanceUnit}
-        etaUtc={nav.etaUtc}
-        xteNm={activePassageId && goToTarget.kind !== 'mob' ? nav.xteNm : null}
-        xteSide={nav.xteSide}
-        legNumber={nav.activeLegNumber ?? 0}
-        totalLegs={nav.totalLegs ?? 0}
-        isMob={goToTarget.kind === 'mob'}
-        heroSize={instrumentHeroSize}
-        stale={stale && Boolean(fix)}
-      />
-    ) : null;
-
-  const barometerBlock = showBarometer ? <BarometerInstrument trend={barometer.trend} /> : null;
-
-  const statusBadges = (
-    <View style={[styles.badgeRow, { gap: spacing.sm }]}>
-      {anchorAlarm?.active ? (
-        <StatusBadge
-          label={anchorAlarm.triggered ? t('map.anchorTriggered') : t('map.anchorActive')}
-          variant={anchorAlarm.triggered ? 'danger' : 'success'}
-        />
-      ) : null}
-      {isLowSog(fix) && !stale ? <StatusBadge label={t('map.lowSog')} variant="warning" /> : null}
-      {stale && fix ? <StatusBadge label={t('map.staleGps')} variant="danger" /> : null}
-      {showBarometer && barometer.trend.trend === 'falling_fast' ? (
-        <StatusBadge label={t('barometer.fallingFast')} variant="warning" />
-      ) : null}
-    </View>
-  );
-
-  const anchorDriftRow =
-    anchorAlarm?.active && anchorDriftText && anchorLimitText ? (
-      <View style={styles.row}>
-        <InstrumentCell
-          label={t('map.anchorDrift')}
-          value={anchorDriftText}
-          unit={`/ ${anchorLimitText}`}
-          accessibilityLabel={t('map.anchorDriftA11y', {
-            drift: anchorDriftText,
-            limit: anchorLimitText,
-          })}
-          testID="map.anchorDrift"
-        />
-        <View style={{ flex: 1 }} />
-      </View>
-    ) : null;
-
-  const coordsBlock =
-    coordinatesEmphasis && coordFix ? (
-      <MapCoordinatesCard
-        latitude={coordFix.latitude}
-        longitude={coordFix.longitude}
-        format={coordFormat}
-        stale={coordsMuted}
-        onCopied={() => showInfo(t('map.coordsCopied'))}
-        onCycleFormat={() => void cycleCoordFormat()}
-      />
-    ) : (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t('map.copyCoords')}
-        accessibilityHint={t('map.coordFormatCycleHint')}
-        onPress={() => void copyCoords()}
-        onLongPress={() => void cycleCoordFormat()}
-        delayLongPress={400}
-        style={[styles.coordsInline, { minHeight: minTouch, borderColor: colors.border, backgroundColor: colors.background }]}
-        testID="map.coords.copy"
-      >
-        <Text style={[styles.coordsInlineText, { color: coordsMuted ? colors.textMuted : colors.text }]} selectable>
-          {coordFix
-            ? formatCoordinates(coordFormat, coordFix.latitude, coordFix.longitude)
-            : t('map.awaitingGps')}
-        </Text>
-        {coordsMuted ? (
-          <Text style={[styles.staleHint, { color: colors.textMuted }]}>{t('map.staleCoordsHint')}</Text>
-        ) : null}
-      </Pressable>
-    );
-
-  const panelBody = coordinatesEmphasis ? (
-    <>
-      {statusBadges}
-      {barometerBlock}
-      {passageNavHero}
-      {coordsBlock}
-      <View style={styles.row}>
-        <InstrumentCell label={t('map.sog')} value={sogText} unit={sogUnit} hero heroSize={instrumentHeroSize} />
-        <InstrumentCell
-          label={courseLabel}
-          value={cogText.split(' ')[0]}
-          unit={cogText.includes(' ') ? cogText.split(' ')[1] : undefined}
-          hero
-          heroSize={instrumentHeroSize}
-        />
-      </View>
-      {showXte && !passageNavHero ? (
-        <View style={styles.row}>
-          <InstrumentCell label={t('map.xte')} value={xteDisplay.value} unit={xteDisplay.unitLabel || undefined} />
-          {nav.activeLegLabel ? <InstrumentCell label={t('map.leg')} value={nav.activeLegLabel} /> : null}
-        </View>
-      ) : null}
-      {showPassageMeta ? (
-        <View style={styles.row}>
-          <InstrumentCell label={t('map.remainingNm')} value={remainingDistText!} unit={distanceLabel} />
-          <InstrumentCell label={t('map.etaDest')} value={nav.etaDestUtc ?? nav.plannedEtaDestUtc ?? '—'} />
-        </View>
-      ) : null}
-      {showSession ? (
-        <InstrumentCell label={t('map.distanceRun')} value={sessionDistText} unit={distanceLabel} />
-      ) : null}
-    </>
-  ) : (
-    <>
-      {statusBadges}
-      {anchorDriftRow}
-      {barometerBlock}
-      {passageNavHero}
-      <View style={styles.row}>
-        <InstrumentCell label={courseLabel} value={cogText.split(' ')[0]} unit={cogText.includes(' ') ? cogText.split(' ')[1] : undefined} hero heroSize={instrumentHeroSize} />
-        <InstrumentCell label={t('map.sog')} value={sogText} unit={sogUnit} hero heroSize={instrumentHeroSize} />
-        <InstrumentCell label={t('map.accuracy')} value={fix?.accuracyM != null && !stale ? `±${Math.round(fix.accuracyM)}` : '—'} unit="m" />
-      </View>
-      {showXte && !passageNavHero ? (
-        <View style={styles.row}>
-          <InstrumentCell label={t('map.xte')} value={xteDisplay.value} unit={xteDisplay.unitLabel || undefined} />
-          {nav.activeLegLabel ? <InstrumentCell label={t('map.leg')} value={nav.activeLegLabel} /> : null}
-        </View>
-      ) : null}
-      {showPassageMeta ? (
-        <View style={styles.row}>
-          <InstrumentCell label={t('map.remainingNm')} value={remainingDistText!} unit={distanceLabel} />
-          <InstrumentCell label={t('map.etaDest')} value={nav.etaDestUtc ?? nav.plannedEtaDestUtc ?? '—'} />
-        </View>
-      ) : null}
-      {showSession ? (
-        <InstrumentCell label={t('map.distanceRun')} value={sessionDistText} unit={distanceLabel} />
-      ) : null}
-      {leeway ? (
-        <InstrumentCell
-          label={t('map.leeway')}
-          value={Math.abs(leeway.angleDeg).toFixed(0)}
-          unit={leeway.side === 'none' ? '°' : `° ${leeway.side === 'port' ? t('map.leewayPort') : t('map.leewayStarboard')}`}
-        />
-      ) : null}
-      {fix?.altitudeM != null && !stale ? (
-        <InstrumentCell label={t('map.gpsAlt')} value={Math.round(fix.altitudeM).toString()} unit="m" />
-      ) : null}
-      {coordsBlock}
-    </>
-  );
-
   return (
-    <View
-      style={[
-        styles.panel,
-        fullScreen ? styles.panelFullScreen : null,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-        },
-      ]}
-      testID="map.instruments"
-    >
+    <View style={[styles.root, { backgroundColor: colors.background }]} testID="map.instruments">
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { gap: spacing.md, paddingBottom: spacing.sm }]}
+        scrollEnabled={scrollEnabled}
+        bounces={scrollEnabled}
+        alwaysBounceVertical={false}
+        onLayout={(e) => updateScrollMetrics(e.nativeEvent.layout.height, undefined)}
+        onContentSizeChange={(_, h) => updateScrollMetrics(undefined, h)}
+        contentContainerStyle={[
+          styles.scroll,
+          {
+            paddingHorizontal: spacing.lg,
+            paddingTop: spacing.sm,
+            paddingBottom: spacing.xl,
+            flexGrow: scrollEnabled ? undefined : 1,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={scrollEnabled}
       >
-        {panelBody}
+        <View style={[styles.sections, { gap: spacing.md }]}>
+          {badgeItems.length > 0 ? <StatusBadgeRow items={badgeItems} testID="map.instruments.badges" /> : null}
+
+          <PassageInstrumentBlock fix={fix} density="full" onOpenPassage={onOpenPassage} />
+
+          <View style={[styles.primaryGrid, { gap: spacing.sm }]}>
+            <View style={[styles.heroRow, { gap: spacing.sm }]}>
+              <InstrumentChip
+                label={t('map.sog')}
+                value={data.sogText}
+                unit={sogUnit}
+                hero
+                heroSize={compactHero}
+              />
+              <InstrumentChip
+                label={data.courseLabel}
+                value={cogParts[0] ?? '—'}
+                unit={cogParts.length > 1 ? cogParts.slice(1).join(' ') : undefined}
+                hero
+                heroSize={compactHero}
+              />
+            </View>
+            <InstrumentChip
+              label={t('map.accuracy')}
+              value={data.accuracyText}
+              unit="m"
+              hero
+              heroSize={Math.round(compactHero * 0.72)}
+            />
+          </View>
+
+          {data.coordFix ? (
+            <InstrumentCoordsLine
+              latitude={data.coordFix.latitude}
+              longitude={data.coordFix.longitude}
+              format={coordFormat}
+              stale={data.coordsMuted}
+              onCopied={() => showInfo(t('map.coordsCopied'))}
+              onCycleFormat={() => void cycleCoordFormat()}
+            />
+          ) : (
+            <View style={[styles.awaiting, { borderColor: colors.border, minHeight: minTouch }]}>
+              <Text style={{ color: colors.textMuted, fontWeight: '600', fontSize: 15 }}>{t('map.awaitingGps')}</Text>
+            </View>
+          )}
+
+          {showBarometerBlock ? <BarometerInstrument trend={data.barometer.trend} /> : null}
+
+          {detailMetrics.length > 0 ? <InstrumentMetricGrid metrics={detailMetrics} layout="grid" /> : null}
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  panel: { borderTopWidth: 1, flex: 1, flexShrink: 1, minHeight: 0 },
-  panelFullScreen: { borderTopWidth: 0 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 14 },
-  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, minWidth: 0 },
-  coordsInline: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, justifyContent: 'center' },
-  coordsInlineText: { fontSize: 15, fontWeight: '600', lineHeight: 22, textAlign: 'center', fontVariant: ['tabular-nums'] },
-  staleHint: { fontSize: 12, lineHeight: 16, textAlign: 'center', marginTop: 4 },
+  root: { flex: 1, minHeight: 0 },
+  scroll: {},
+  sections: { alignSelf: 'stretch', minWidth: 0, width: '100%' },
+  primaryGrid: {},
+  heroRow: { flexDirection: 'row', alignItems: 'stretch' },
+  awaiting: {
+    borderWidth: 1,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+  },
 });

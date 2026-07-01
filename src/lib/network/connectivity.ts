@@ -9,6 +9,14 @@ export function isEffectivelyOffline(state: Pick<NetInfoState, 'isConnected' | '
   return state.isConnected === false || state.isInternetReachable === false;
 }
 
+/**
+ * Whether the OS reports no active network interface (airplane mode, etc.).
+ * Ignores isInternetReachable — Android often reports false negatives while Wi‑Fi/cellular work.
+ */
+export function isDeviceDisconnected(state: Pick<NetInfoState, 'isConnected'>): boolean {
+  return state.isConnected === false;
+}
+
 /** Whether network-backed operations (tile download, Overpass) may proceed. */
 export function isEffectivelyOnline(state: Pick<NetInfoState, 'isConnected' | 'isInternetReachable'>): boolean {
   return state.isConnected === true && state.isInternetReachable === true;
@@ -35,4 +43,17 @@ export function useIsEffectivelyOffline(): boolean {
   }, []);
 
   return offline;
+}
+
+/** Reactive flag for MapLibre native network — only false when the device has no connection. */
+export function useIsDeviceDisconnected(): boolean {
+  const [disconnected, setDisconnected] = useState(false);
+
+  useEffect(() => {
+    const apply = (state: NetInfoState) => setDisconnected(isDeviceDisconnected(state));
+    void NetInfo.fetch().then(apply);
+    return NetInfo.addEventListener(apply);
+  }, []);
+
+  return disconnected;
 }

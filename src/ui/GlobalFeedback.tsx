@@ -2,9 +2,6 @@ import { useCallback, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MINIMAL_INSTRUMENT_STRIP_HEIGHT, TAB_BAR_CONTENT_HEIGHT } from '../features/map/mapChromeLayout';
-import { useFormFactor } from '../hooks/useFormFactor';
-import { useEffectiveLayoutPreset } from '../hooks/useEffectiveLayoutPreset';
 import { t } from '../i18n';
 import { useFeedbackStore, type FeedbackKind } from '../store/feedbackStore';
 import { useTheme } from '../theme/ThemeContext';
@@ -14,42 +11,56 @@ type BannerProps = {
   message: string;
   kind: FeedbackKind;
   onDismiss: () => void;
-  bottomOffset: number;
+  topOffset: number;
   horizontalInset: number;
 };
 
-function FeedbackBanner({ message, kind, onDismiss, bottomOffset, horizontalInset }: BannerProps) {
+/**
+ * Top snackbar — stays clear of map bottom chrome (tab bar, planning panel, instruments).
+ * Errors use assertive live region; success/info are polite and auto-dismiss.
+ */
+function FeedbackBanner({ message, kind, onDismiss, topOffset, horizontalInset }: BannerProps) {
   const { colors, spacing, minTouch } = useTheme();
 
   const palette =
     kind === 'error'
       ? { bg: colors.dangerBg, border: colors.dangerBorder, text: colors.danger }
       : kind === 'info'
-        ? { bg: colors.warningBg, border: colors.warningBorder, text: colors.warningText }
-        : { bg: colors.successBg, border: colors.border, text: colors.success };
+        ? { bg: colors.surface, border: colors.border, text: colors.text }
+        : { bg: colors.successBg, border: colors.success, text: colors.success };
 
   return (
-    <View
-      pointerEvents="box-none"
-      style={[styles.host, { bottom: bottomOffset, paddingBottom: spacing.xs }]}
-    >
+    <View pointerEvents="box-none" style={[styles.host, { top: topOffset, paddingHorizontal: horizontalInset }]}>
       <View
         testID="feedback.banner"
         style={[
           styles.wrap,
-          { backgroundColor: palette.bg, borderColor: palette.border, marginHorizontal: horizontalInset },
+          {
+            backgroundColor: palette.bg,
+            borderColor: palette.border,
+            shadowColor: colors.text,
+            gap: spacing.sm,
+            paddingVertical: spacing.sm,
+            paddingLeft: spacing.md,
+            paddingRight: spacing.xs,
+          },
         ]}
         accessibilityRole="alert"
         accessibilityLiveRegion={kind === 'error' ? 'assertive' : 'polite'}
       >
-        <Text style={[styles.text, { color: palette.text }]}>{message}</Text>
+        <Text style={[styles.text, { color: palette.text, flex: 1 }]} numberOfLines={4}>
+          {message}
+        </Text>
         <Pressable
           onPress={onDismiss}
           accessibilityRole="button"
           accessibilityLabel={t('common.dismiss')}
-          style={[styles.dismiss, { minHeight: minTouch }]}
+          hitSlop={8}
+          style={[styles.dismissBtn, { minWidth: minTouch, minHeight: minTouch }]}
         >
-          <Text style={[styles.dismissText, { color: palette.text }]}>{t('common.dismiss')}</Text>
+          <Text style={[styles.dismissGlyph, { color: palette.text }]} accessibilityElementsHidden>
+            ×
+          </Text>
         </Pressable>
       </View>
     </View>
@@ -62,15 +73,11 @@ export function GlobalFeedback() {
   const clear = useFeedbackStore((s) => s.clear);
   const { spacing } = useTheme();
   const insets = useSafeAreaInsets();
-  const { formFactor, isLandscape } = useFormFactor();
-  const layoutPreset = useEffectiveLayoutPreset();
   const { register, unregister } = useSheetHost();
   const { sheetTop } = useSheetHostSnapshotPublic();
 
-  const hasBottomTabBar = formFactor === 'compact' || !isLandscape;
-  const minimalDockExtra = layoutPreset === 'minimal' ? MINIMAL_INSTRUMENT_STRIP_HEIGHT + spacing.sm : 0;
-  const bottomOffset = insets.bottom + (hasBottomTabBar ? TAB_BAR_CONTENT_HEIGHT : 0) + spacing.sm + minimalDockExtra;
-  const horizontalInset = spacing.lg;
+  const topOffset = insets.top + spacing.sm;
+  const horizontalInset = Math.max(spacing.lg, insets.left, insets.right);
 
   const renderOverlay = useCallback(() => {
     if (!message || !kind) return null;
@@ -79,11 +86,11 @@ export function GlobalFeedback() {
         message={message}
         kind={kind}
         onDismiss={clear}
-        bottomOffset={bottomOffset}
+        topOffset={topOffset}
         horizontalInset={horizontalInset}
       />
     );
-  }, [message, kind, clear, bottomOffset, horizontalInset]);
+  }, [message, kind, clear, topOffset, horizontalInset]);
 
   const elevateOverSheets = Boolean(message && kind && sheetTop);
 
@@ -103,16 +110,27 @@ export function GlobalFeedback() {
       message={message}
       kind={kind}
       onDismiss={clear}
-      bottomOffset={bottomOffset}
+      topOffset={topOffset}
       horizontalInset={horizontalInset}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  host: { position: 'absolute', left: 0, right: 0, zIndex: 100, elevation: 8 },
-  wrap: { borderRadius: 12, borderWidth: 1, paddingVertical: 12, paddingHorizontal: 16 },
-  text: { fontSize: 15, fontWeight: '600', lineHeight: 22, textAlign: 'center' },
-  dismiss: { marginTop: 8, alignItems: 'center', justifyContent: 'center' },
-  dismissText: { fontSize: 14, fontWeight: '700', textDecorationLine: 'underline' },
+  host: { position: 'absolute', left: 0, right: 0, zIndex: 100, elevation: 8, alignItems: 'center' },
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 520,
+    borderRadius: 14,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  text: { fontSize: 15, fontWeight: '600', lineHeight: 22 },
+  dismissBtn: { alignItems: 'center', justifyContent: 'center' },
+  dismissGlyph: { fontSize: 26, fontWeight: '400', lineHeight: 28 },
 });

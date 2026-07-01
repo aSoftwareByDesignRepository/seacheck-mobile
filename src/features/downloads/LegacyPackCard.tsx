@@ -5,18 +5,22 @@ import { t } from '../../i18n';
 import type { RegionPackStatus } from '../../store/offlinePackStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
+import { downloadsStyles } from './downloadsStyles';
 
 type Props = {
   status: RegionPackStatus;
   onDelete: () => void;
   busy: boolean;
+  variant?: 'card' | 'list';
+  showDivider?: boolean;
 };
 
 /** Retired macro-region pack — offline data remains usable until deleted. */
-export function LegacyPackCard({ status, onDelete, busy }: Props) {
+export function LegacyPackCard({ status, onDelete, busy, variant = 'card', showDivider = false }: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const def = resolveRegionPack(status.regionId);
   const name = def ? t(def.nameKey as 'downloads.packs.kielBay.name') : status.displayName ?? status.regionId;
+  const listMode = variant === 'list';
 
   const stateLabel =
     status.state === 'ready'
@@ -25,30 +29,44 @@ export function LegacyPackCard({ status, onDelete, busy }: Props) {
         ? t('downloads.statusError')
         : t('downloads.statusIdle');
 
+  const containerStyle = listMode
+    ? [
+        downloadsStyles.listItem,
+        showDivider ? [downloadsStyles.listItemDivider, { borderTopColor: colors.border }] : null,
+      ]
+    : [styles.card, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: spacing.lg }];
+
   return (
     <View
-      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: spacing.lg }]}
+      style={containerStyle}
       testID={`downloads.legacy.${status.regionId}`}
       accessibilityLabel={`${name}. ${t('downloads.legacyRetiredNote')}. ${stateLabel}`}
     >
-      <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
+      <Text style={[downloadsStyles.packName, { color: colors.text }]} accessibilityRole="header">
         {name}
       </Text>
-      <Text style={[styles.body, { color: colors.textMuted }]}>{t('downloads.legacyRetiredNote')}</Text>
-      <Text style={[styles.state, { color: status.state === 'ready' ? colors.success : status.state === 'error' ? colors.danger : colors.textMuted }]}>
+      <Text style={[downloadsStyles.packDescription, { color: colors.textMuted }]}>{t('downloads.legacyRetiredNote')}</Text>
+      <Text
+        style={[
+          downloadsStyles.packMeta,
+          { color: status.state === 'ready' ? colors.success : status.state === 'error' ? colors.danger : colors.textMuted, fontWeight: '700' },
+        ]}
+      >
         {stateLabel}
       </Text>
       {status.error ? (
-        <Text style={[styles.error, { color: colors.danger }]} accessibilityLiveRegion="polite">
+        <Text style={[downloadsStyles.packError, { color: colors.danger }]} accessibilityLiveRegion="polite">
           {status.error}
         </Text>
       ) : null}
-      <View style={[styles.actions, { minHeight: minTouch }]}>
+      <View style={[downloadsStyles.actions, { minHeight: minTouch }]}>
         <Button
           label={t('downloads.delete')}
           variant="danger"
           onPress={onDelete}
           disabled={busy}
+          fullWidth={false}
+          style={downloadsStyles.actionBtn}
           testID={`downloads.legacy.delete.${status.regionId}`}
         />
       </View>
@@ -58,9 +76,4 @@ export function LegacyPackCard({ status, onDelete, busy }: Props) {
 
 const styles = StyleSheet.create({
   card: { borderRadius: 16, borderWidth: 1, padding: 16 },
-  title: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
-  body: { fontSize: 14, lineHeight: 20, marginBottom: 8 },
-  state: { fontSize: 14, fontWeight: '700', marginBottom: 12 },
-  error: { fontSize: 13, marginBottom: 8, lineHeight: 18 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

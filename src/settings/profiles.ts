@@ -15,14 +15,7 @@ export const ACTIVITY_PROFILES: ActivityProfile[] = [
   { id: 'cruise-passage', labelKey: 'profiles.cruisePassage', defaultLayout: 'map-forward', sogUnit: 'kn', distanceUnit: 'nm' },
 ];
 
-export const LAYOUT_PRESETS: LayoutPreset[] = [
-  'map-forward',
-  'instruments-forward',
-  'instruments-only',
-  'split',
-  'minimal',
-  'coordinates',
-];
+export const LAYOUT_PRESETS: LayoutPreset[] = ['map-forward', 'minimal', 'instruments-only'];
 
 const DEFAULT_PROFILE_ID: ActivityProfileId = 'cruise-passage';
 

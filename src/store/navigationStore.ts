@@ -6,6 +6,8 @@ import { resetAlarmFixHistory } from '../lib/alarms/alarmCoordinator';
 import type { AnchorWatchStatus } from '../lib/anchor/types';
 import type { WaypointRow } from '../lib/db/database';
 import { isValidCoordinate } from '../lib/geo/fixQuality';
+import { type LayoutContext } from '../lib/settings/layoutPreferences';
+import type { FormFactor } from '../hooks/useFormFactor';
 import { enqueuePersist } from '../lib/persist/asyncPersistQueue';
 import { t } from '../i18n';
 import { ensureMaritimeAlarmNotifications } from '../services/maritimeAlarmNotifications';
@@ -54,6 +56,8 @@ type NavigationState = PersistPayload & {
   setAnchorWatchPrompt: (status: AnchorWatchStatus | null) => void;
   dismissAnchorWatchPrompt: () => void;
   hydrate: () => Promise<void>;
+  /** Session-only — restore instruments-only layout after MOB cleared. */
+  mobLayoutRestoreContextKey: string | null;
   setGoTo: (target: NavigationTarget | null) => Promise<void>;
   dropMob: (lat: number, lon: number) => Promise<NavigationTarget>;
   clearMob: () => Promise<void>;
@@ -132,6 +136,7 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
   sessionStartedAtMs: null,
   alarmLimits: DEFAULT_LIMITS,
   screenLocked: false,
+  mobLayoutRestoreContextKey: null,
   anchorWatchPrompt: null,
   anchorWatchPromptDismissed: false,
 
@@ -192,13 +197,26 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
   },
 
   clearMob: async () => {
-    const { goToTarget, mobTarget } = get();
+    const { goToTarget, mobTarget, mobLayoutRestoreContextKey } = get();
     set({
       mobTarget: null,
       mobDroppedAtMs: null,
       goToTarget: goToTarget?.kind === 'mob' ? null : goToTarget,
+      mobLayoutRestoreContextKey: null,
     });
     await persist(get());
+    if (mobLayoutRestoreContextKey) {
+      const parts = mobLayoutRestoreContextKey.split(':');
+      if (parts.length === 3) {
+        const ctx: LayoutContext = {
+          profileId: parts[0]!,
+          bucket: parts[1] as FormFactor,
+          isLandscape: parts[2] === 'landscape',
+        };
+        const { useSettingsStore } = await import('./settingsStore');
+        await useSettingsStore.getState().setLayoutOverride('instruments-only', ctx);
+      }
+    }
   },
 
   setAnchorAlarm: async (lat, lon, radiusNm) => {

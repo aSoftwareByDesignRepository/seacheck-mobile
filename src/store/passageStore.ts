@@ -30,6 +30,8 @@ type PassageStore = {
   hydrated: boolean;
   passages: PassageRow[];
   activePassageId: string | null;
+  /** Bumps when any passage route geometry or order changes — refreshes map overlays. */
+  routeRevision: number;
   hydrate: () => Promise<void>;
   createPassage: (name: string) => Promise<PassageRow>;
   deletePassage: (id: string) => Promise<void>;
@@ -46,6 +48,7 @@ type PassageStore = {
   getPassageDetail: (id: string) => Promise<PassageWithLegs | null>;
   exportPassageGpx: (id: string) => Promise<void>;
   buildPassageSummary: (id: string) => Promise<string | null>;
+  bumpRouteRevision: () => void;
 };
 
 async function loadPassageWaypoints(passageId: string): Promise<WaypointRow[]> {
@@ -138,6 +141,9 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
   hydrated: false,
   passages: [],
   activePassageId: null,
+  routeRevision: 0,
+
+  bumpRouteRevision: () => set((state) => ({ routeRevision: state.routeRevision + 1 })),
 
   hydrate: async () => {
     const db = await getDatabase();
@@ -215,25 +221,27 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
   },
 
   addWaypointToPassage: async (passageId, waypointId) => {
-    const db = await getDatabase();
-    const existing = await db.getFirstAsync<{ c: number }>(
-      'SELECT COUNT(*) as c FROM passage_waypoints WHERE passage_id = ? AND waypoint_id = ?',
-      passageId,
-      waypointId,
-    );
-    if (existing?.c) return;
-    const countRow = await db.getFirstAsync<{ c: number }>(
-      'SELECT COUNT(*) as c FROM passage_waypoints WHERE passage_id = ?',
-      passageId,
-    );
-    const sortOrder = countRow?.c ?? 0;
-    await db.runAsync(
-      'INSERT OR REPLACE INTO passage_waypoints (passage_id, waypoint_id, sort_order) VALUES (?, ?, ?)',
-      passageId,
-      waypointId,
-      sortOrder,
-    );
+    await withDatabaseTransaction(async (db) => {
+      const existing = await db.getFirstAsync<{ c: number }>(
+        'SELECT COUNT(*) as c FROM passage_waypoints WHERE passage_id = ? AND waypoint_id = ?',
+        passageId,
+        waypointId,
+      );
+      if (existing?.c) return;
+      const maxRow = await db.getFirstAsync<{ m: number | null }>(
+        'SELECT MAX(sort_order) as m FROM passage_waypoints WHERE passage_id = ?',
+        passageId,
+      );
+      const sortOrder = (maxRow?.m ?? -1) + 1;
+      await db.runAsync(
+        'INSERT INTO passage_waypoints (passage_id, waypoint_id, sort_order) VALUES (?, ?, ?)',
+        passageId,
+        waypointId,
+        sortOrder,
+      );
+    });
     await get().syncActivePassageNavigation(passageId);
+    get().bumpRouteRevision();
   },
 
   removeWaypointFromPassage: async (passageId, waypointId) => {
@@ -253,6 +261,7 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
       );
     });
     await get().syncActivePassageNavigation(passageId);
+    get().bumpRouteRevision();
   },
 
   reorderWaypointInPassage: async (passageId, fromIndex, toIndex) => {
@@ -267,6 +276,7 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
       next.map((w) => w.id),
     );
     await get().syncActivePassageNavigation(passageId);
+    get().bumpRouteRevision();
   },
 
   setPassageMeta: async (id, patch) => {

@@ -8,7 +8,6 @@ import { MAP_EMBED_PREVIEW_HEIGHT } from '../../map/previewConstants';
 import { KIEL_CENTER } from '../../map/constants';
 import { t } from '../../i18n';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
-import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme } from '../../theme/ThemeContext';
 
 type Props = {
@@ -18,7 +17,6 @@ type Props = {
 export function RegionPackMapPreview({ pack }: Props) {
   const { colors, minTouch } = useTheme();
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
-  const chartBaseStyle = useSettingsStore((s) => s.chartBaseStyle);
   const cameraRef = useRef<CameraRef>(null);
   const [ready, setReady] = useState(false);
   const [west, south, east, north] = pack.bounds;
@@ -42,7 +40,7 @@ export function RegionPackMapPreview({ pack }: Props) {
 
   useEffect(() => {
     setReady(false);
-  }, [chartBaseStyle, chartStyleUri]);
+  }, [chartStyleUri]);
 
   useEffect(() => {
     if (!ready) return;
@@ -67,7 +65,7 @@ export function RegionPackMapPreview({ pack }: Props) {
       style={[styles.wrap, { height: MAP_EMBED_PREVIEW_HEIGHT, minHeight: Math.max(MAP_EMBED_PREVIEW_HEIGHT, minTouch) }]}
       testID="downloads.packPreview"
     >
-      <Map key={`pack-preview-${pack.id}-${chartBaseStyle}`} style={styles.map} mapStyle={chartStyleUri} onDidFinishLoadingMap={() => setReady(true)}>
+      <Map key={`pack-preview-${pack.id}`} style={styles.map} mapStyle={chartStyleUri} onDidFinishLoadingMap={() => setReady(true)}>
         <Camera ref={cameraRef} initialViewState={{ center: KIEL_CENTER, zoom: 8 }} />
         <GeoJSONSource id={`pack-preview-${pack.id}`} data={geojson}>
           <Layer id={`pack-preview-fill-${pack.id}`} type="fill" paint={{ 'fill-color': '#0073ad', 'fill-opacity': 0.12 }} />

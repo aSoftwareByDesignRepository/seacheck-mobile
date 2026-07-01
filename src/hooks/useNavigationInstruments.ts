@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { formatBearing, magneticDeclinationDeg } from '../lib/geo/magnetic';
 import { bearingTrue, crossTrackErrorNm, distanceNm, legDurationHours, msToKnots, type LonLat } from '../lib/geo/navigation';
+import { formatEtaAheadHours, formatEtaLocalFromIso } from '../lib/time/formatEta';
 import { formatDistanceNm } from '../lib/geo/units';
 import { displayCog, isFixStale, useLocationStore } from '../services/locationService';
 import { useNavigationStore } from '../store/navigationStore';
@@ -13,7 +14,8 @@ export type NavigationInstruments = {
   bearingToTarget: number | null;
   bearingSuffix: 'T' | 'M';
   distanceToTargetNm: number | null;
-  etaUtc: string | null;
+  /** Local wall-clock ETA to active go-to target. */
+  etaLocal: string | null;
   xteNm: number | null;
   xteSide: 'L' | 'R' | null;
   sessionDistanceNm: number;
@@ -21,8 +23,8 @@ export type NavigationInstruments = {
   activeLegNumber: number | null;
   totalLegs: number | null;
   remainingNm: number | null;
-  etaDestUtc: string | null;
-  plannedEtaDestUtc: string | null;
+  etaDestLocal: string | null;
+  plannedEtaDestLocal: string | null;
 };
 
 export function useNavigationInstruments(): NavigationInstruments {
@@ -37,7 +39,7 @@ export function useNavigationInstruments(): NavigationInstruments {
   const [legNumbers, setLegNumbers] = useState<{ current: number; total: number } | null>(null);
   const [xte, setXte] = useState<{ nm: number; side: 'L' | 'R' } | null>(null);
   const [remainingNm, setRemainingNm] = useState<number | null>(null);
-  const [plannedEtaDestUtc, setPlannedEtaDestUtc] = useState<string | null>(null);
+  const [plannedEtaDestLocal, setPlannedEtaDestLocal] = useState<string | null>(null);
 
   const stale = isFixStale(fix);
   const pos: LonLat | null = fix ? [fix.longitude, fix.latitude] : null;
@@ -55,17 +57,15 @@ export function useNavigationInstruments(): NavigationInstruments {
     const dist = distanceNm(pos, target);
     const sogKn = fix?.speedKn ?? msToKnots(fix?.speedMs) ?? 0;
     const eta =
-      sogKn > 0.5
-        ? new Date(Date.now() + legDurationHours(dist, sogKn) * 3_600_000).toISOString().slice(11, 16) + ' UTC'
-        : null;
+      sogKn > 0.5 ? formatEtaAheadHours(legDurationHours(dist, sogKn)) : null;
     return { bearing: formatted.value, suffix: formatted.suffix, dist, eta };
   }, [pos, goToTarget, stale, bearingReference, declination, fix]);
 
-  const etaDestUtc = useMemo(() => {
+  const etaDestLocal = useMemo(() => {
     if (remainingNm == null || stale || !fix) return null;
     const sogKn = fix.speedKn ?? msToKnots(fix.speedMs) ?? 0;
     if (sogKn <= 0.5) return null;
-    return new Date(Date.now() + legDurationHours(remainingNm, sogKn) * 3_600_000).toISOString().slice(11, 16) + ' UTC';
+    return formatEtaAheadHours(legDurationHours(remainingNm, sogKn));
   }, [remainingNm, stale, fix?.speedKn, fix?.speedMs]);
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export function useNavigationInstruments(): NavigationInstruments {
       setLegNumbers(null);
       setXte(null);
       setRemainingNm(null);
-      setPlannedEtaDestUtc(null);
+      setPlannedEtaDestLocal(null);
       return;
     }
     void getPassageDetail(activePassageId).then((detail) => {
@@ -83,7 +83,7 @@ export function useNavigationInstruments(): NavigationInstruments {
         setLegNumbers(null);
         setXte(null);
         setRemainingNm(null);
-        setPlannedEtaDestUtc(null);
+        setPlannedEtaDestLocal(null);
         return;
       }
       const idx = Math.min(activeLegIndex, detail.legs.length - 1);
@@ -104,7 +104,7 @@ export function useNavigationInstruments(): NavigationInstruments {
       }
       setRemainingNm(rem);
       const lastLeg = detail.legs[detail.legs.length - 1];
-      setPlannedEtaDestUtc(lastLeg.etaUtc ? lastLeg.etaUtc.slice(11, 16) + ' UTC' : null);
+      setPlannedEtaDestLocal(formatEtaLocalFromIso(lastLeg.etaUtc));
     });
   }, [activePassageId, activeLegIndex, pos, stale, getPassageDetail]);
 
@@ -113,7 +113,7 @@ export function useNavigationInstruments(): NavigationInstruments {
     bearingToTarget: targetInfo?.bearing ?? null,
     bearingSuffix: targetInfo?.suffix ?? 'T',
     distanceToTargetNm: targetInfo?.dist ?? null,
-    etaUtc: targetInfo?.eta ?? null,
+    etaLocal: targetInfo?.eta ?? null,
     xteNm: xte?.nm ?? null,
     xteSide: xte?.side ?? null,
     sessionDistanceNm,
@@ -121,8 +121,8 @@ export function useNavigationInstruments(): NavigationInstruments {
     activeLegNumber: legNumbers?.current ?? null,
     totalLegs: legNumbers?.total ?? null,
     remainingNm,
-    etaDestUtc,
-    plannedEtaDestUtc,
+    etaDestLocal,
+    plannedEtaDestLocal,
   };
 }
 

@@ -14,6 +14,33 @@ export function normalizeBounds(a: LonLatPoint, b: LonLatPoint): LngLatBounds {
   ];
 }
 
+/**
+ * Square download area anchored on the first tap; second tap sets direction and size.
+ * Side length is max(|Δlat|, |Δlon|) so the result is always a true square in degrees.
+ */
+export function squareBoundsFromAnchor(anchor: LonLatPoint, pointer: LonLatPoint): LngLatBounds {
+  const dLat = pointer.latitude - anchor.latitude;
+  const dLon = pointer.longitude - anchor.longitude;
+  const side = Math.max(Math.abs(dLat), Math.abs(dLon));
+  if (side === 0) {
+    return [anchor.longitude, anchor.latitude, anchor.longitude, anchor.latitude];
+  }
+  const endLat = anchor.latitude + Math.sign(dLat || 1) * side;
+  const endLon = anchor.longitude + Math.sign(dLon || 1) * side;
+  return normalizeBounds(anchor, { latitude: endLat, longitude: endLon });
+}
+
+/** Expand a rectangle to the smallest square that fully contains it. */
+export function squareBoundsContaining(bounds: LngLatBounds): LngLatBounds {
+  const [west, south, east, north] = bounds;
+  const latSpan = north - south;
+  const lonSpan = east - west;
+  const side = Math.max(latSpan, lonSpan);
+  const latPad = (side - latSpan) / 2;
+  const lonPad = (side - lonSpan) / 2;
+  return [west - lonPad, south - latPad, east + lonPad, north + latPad];
+}
+
 export const MIN_BOUNDS_DEG = 0.02;
 export const MAX_BOUNDS_DEG = 3;
 export const MAX_TILE_COUNT = 80_000;

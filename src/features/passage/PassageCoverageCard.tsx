@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { usePackDownloadActions } from '../../hooks/usePackDownloadActions';
 import { usePassagePackSuggestions } from '../../hooks/usePassagePackSuggestions';
+import { isPackDownloadActive } from '../downloads/packDownloadPresentation';
 import { boundsFromWaypoints } from '../../lib/map/passageBounds';
 import { isLargeRegionPack } from '../../map/regionPackValidation';
 import { t } from '../../i18n';
@@ -28,7 +29,7 @@ type Props = {
 export function PassageCoverageCard({ detail, onOpenDownloads }: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const report = usePassagePackSuggestions(detail.waypoints);
-  const { packBusy, handleDownload, handleDownloadAll, handleCancel } = usePackDownloadActions();
+  const { packBusy, handleDownload, handleDownloadAll, handleCancel, activeDownloadRegionId } = usePackDownloadActions();
   const showInfo = useFeedbackStore((s) => s.showInfo);
   const showError = useFeedbackStore((s) => s.showError);
 
@@ -89,20 +90,24 @@ export function PassageCoverageCard({ detail, onOpenDownloads }: Props) {
             <Text style={[styles.hint, { color: colors.warningText }]}>{t('downloads.largePackHint')}</Text>
           ) : null}
           <View style={styles.suggestionList}>
-            {report.suggestionDetails.map((suggestion) => (
+            {report.suggestionDetails.map((suggestion) => {
+              const downloadActive = isPackDownloadActive(
+                suggestion.packId,
+                suggestion.status,
+                activeDownloadRegionId,
+              );
+              return (
               <PassagePackSuggestionRow
                 key={suggestion.packId}
                 suggestion={suggestion}
+                activeDownloadRegionId={activeDownloadRegionId}
                 busy={packBusy(suggestion.packId)}
                 onDownload={() => void handleDownload(suggestion.packId)}
-                onCancel={
-                  suggestion.status.state === 'downloading'
-                    ? () => void handleCancel(suggestion.packId)
-                    : undefined
-                }
+                onCancel={downloadActive ? () => void handleCancel(suggestion.packId) : undefined}
                 onBrowsePack={() => onOpenDownloads({ focusPackIds: [suggestion.packId] })}
               />
-            ))}
+            );
+            })}
           </View>
           {pendingPackIds.length > 1 ? (
             <Button

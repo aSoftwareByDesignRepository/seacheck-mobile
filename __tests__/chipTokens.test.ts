@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-import { filterChipStyle, statusBadgeStyle, touchChipStyle } from '../src/ui/chipTokens';
+import { filterChipStyle, statusBadgeMinHeight, statusBadgeStyle, touchChipStyle } from '../src/ui/chipTokens';
 
 describe('chipTokens', () => {
   it('touch chips meet minimum WCAG touch height without extra vertical padding', () => {
@@ -20,6 +20,7 @@ describe('chipTokens', () => {
     const badge = statusBadgeStyle();
     expect(badge.paddingVertical).toBeGreaterThanOrEqual(6);
     expect(badge.justifyContent).toBe('center');
+    expect(statusBadgeMinHeight()).toBeGreaterThanOrEqual(28);
   });
 
   it('uses Android font padding fix on chip text styles', () => {

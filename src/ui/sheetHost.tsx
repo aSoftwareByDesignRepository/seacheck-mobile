@@ -12,6 +12,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensio
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { t } from '../i18n';
+import { useNavigationStore } from '../store/navigationStore';
 import { radius, sheet, typography } from '../theme/tokens';
 import { useTheme } from '../theme/ThemeContext';
 import { Button } from './Button';
@@ -50,6 +51,8 @@ type SheetHostApi = {
   update: (id: string, render: () => ReactNode, onClose: () => void) => void;
   invalidate: () => void;
   unregister: (id: string) => void;
+  /** Closes every registered sheet — used when the screen lock engages. */
+  dismissAll: () => void;
 };
 
 const SheetHostContext = createContext<SheetHostApi | null>(null);
@@ -117,6 +120,15 @@ function createSheetHostStore() {
       if (!entries.delete(id)) return;
       emit();
     },
+    dismissAll() {
+      if (entries.size === 0) return;
+      const closers = [...entries.values()].map((entry) => entry.onClose);
+      entries.clear();
+      emit();
+      for (const close of closers) {
+        close();
+      }
+    },
   };
 }
 
@@ -137,6 +149,7 @@ export function SheetHostProvider({ children }: PropsWithChildren) {
       update: (id, render, onClose) => store.update(id, render, onClose),
       invalidate: () => store.invalidate(),
       unregister: (id) => store.unregister(id),
+      dismissAll: () => store.dismissAll(),
     }),
     [store],
   );
@@ -173,6 +186,7 @@ export function useSheetHostSnapshotPublic(): SheetHostSnapshot {
 
 function SheetHostModal() {
   const { sheetTop, feedback, hasEntries } = useSheetHostSnapshot();
+  const screenLocked = useNavigationStore((s) => s.screenLocked);
 
   const requestBackdropDismiss = useCallback(() => {
     if (!sheetTop) return;
@@ -180,7 +194,7 @@ function SheetHostModal() {
     sheetTop.onClose();
   }, [sheetTop]);
 
-  if (!hasEntries) return null;
+  if (!hasEntries || screenLocked) return null;
 
   return (
     <Modal

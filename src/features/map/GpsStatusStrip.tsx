@@ -127,8 +127,8 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
     return touchChipStyle(minTouch, { backgroundColor: bg, borderColor: border });
   }
 
-  return (
-    <View style={[compact ? chipRow.rowScroll : chipRow.row, !compact ? styles.rowSpaced : null]} testID="map.gpsStatus">
+  const chips = (
+    <>
       {showRecenter ? (
         <Pressable
           accessibilityRole="button"
@@ -138,7 +138,9 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           style={chipColors(colors.surface, colors.primary)}
           testID="map.recenter"
         >
-          <Text style={[touchChipText, { color: colors.primary }]}>{t('map.recenterChip')}</Text>
+          <Text style={[touchChipText, { color: colors.primary }]} numberOfLines={1}>
+            {t('map.recenterChip')}
+          </Text>
         </Pressable>
       ) : null}
       {showBatteryRestricted ? (
@@ -149,7 +151,9 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           style={chipColors(colors.warningBg, colors.warningBorder)}
           testID="map.gpsStatus.batteryOpt"
         >
-          <Text style={[touchChipText, { color: colors.warningText }]}>{t('map.batteryOptimizationShort')}</Text>
+          <Text style={[touchChipText, { color: colors.warningText }]} numberOfLines={1}>
+            {t('map.batteryOptimizationShort')}
+          </Text>
         </Pressable>
       ) : null}
       {showAnchorLimited ? (
@@ -160,7 +164,9 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           style={chipColors(colors.warningBg, colors.warningBorder)}
           testID="map.gpsStatus.anchorLimited"
         >
-          <Text style={[touchChipText, { color: colors.warningText }]}>{t('map.anchorWatchLimitedShort')}</Text>
+          <Text style={[touchChipText, { color: colors.warningText }]} numberOfLines={1}>
+            {t('map.anchorWatchLimitedShort')}
+          </Text>
         </Pressable>
       ) : null}
       {showOutlier ? (
@@ -172,7 +178,9 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           style={chipColors(colors.warningBg, colors.warningBorder)}
           testID="map.gpsStatus.outlier"
         >
-          <Text style={[touchChipText, { color: colors.warningText }]}>{t('map.gpsOutlierShort')}</Text>
+          <Text style={[touchChipText, { color: colors.warningText }]} numberOfLines={1}>
+            {t('map.gpsOutlierShort')}
+          </Text>
         </Pressable>
       ) : null}
       {showAccuracyGood ? (
@@ -181,7 +189,9 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           accessibilityLabel={t('map.gpsAccuracyGood', { m: accuracyM })}
           testID="map.gpsStatus.accuracy"
         >
-          <Text style={[touchChipText, { color: colors.text }]}>{t('map.gpsAccuracyShort', { m: accuracyM })}</Text>
+          <Text style={[touchChipText, { color: colors.text }]} numberOfLines={1}>
+            {t('map.gpsAccuracyShort', { m: accuracyM })}
+          </Text>
         </View>
       ) : null}
       {showAccuracyChip && !showAccuracyGood ? (
@@ -192,7 +202,7 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           style={chipColors(colors.warningBg, colors.warningBorder)}
           testID="map.gpsStatus.accuracy"
         >
-          <Text style={[touchChipText, { color: colors.warningText }]}>
+          <Text style={[touchChipText, { color: colors.warningText }]} numberOfLines={1}>
             {t('map.gpsAccuracyShort', { m: accuracyM ?? '—' })}
           </Text>
         </Pressable>
@@ -206,7 +216,9 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           style={chipColors(gpsPalette.bg, gpsPalette.border)}
           testID="map.gpsStatus.gps"
         >
-          <Text style={[touchChipText, { color: gpsPalette.text }]}>{gpsLabel}</Text>
+          <Text style={[touchChipText, { color: gpsPalette.text }]} numberOfLines={1}>
+            {gpsLabel}
+          </Text>
         </Pressable>
       ) : null}
       {showBattery ? (
@@ -215,9 +227,25 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
           accessibilityLabel={t('map.batteryLevel', { pct: batteryPct })}
           testID="map.gpsStatus.battery"
         >
-          <Text style={[touchChipText, { color: colors.text }]}>{t('map.batteryLevel', { pct: batteryPct })}</Text>
+          <Text style={[touchChipText, { color: colors.text }]} numberOfLines={1}>
+            {t('map.batteryLevel', { pct: batteryPct })}
+          </Text>
         </View>
       ) : null}
+    </>
+  );
+
+  if (compact) {
+    return (
+      <View style={chipRow.rowScroll} testID="map.gpsStatus">
+        {chips}
+      </View>
+    );
+  }
+
+  return (
+    <View style={[chipRow.row, styles.rowSpaced]} testID="map.gpsStatus">
+      {chips}
     </View>
   );
 }

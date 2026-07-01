@@ -3,8 +3,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { computeMapChromeLayout } from '../features/map/mapChromeLayout';
 import { mapChromeInsets } from '../features/map/mapChromeInsets';
+import { usesBottomTabBar } from '../lib/navigation/tabBarGeometry';
 import { useTheme } from '../theme/ThemeContext';
-import { useEffectiveLayoutPreset } from './useEffectiveLayoutPreset';
+import { useFormFactor } from './useFormFactor';
+import { useMapSurfaceMode } from './useMapSurfaceMode';
 
 type Options = {
   showSideActions?: boolean;
@@ -14,8 +16,10 @@ type Options = {
 export function useMapBottomLayout(options: Options = {}) {
   const insets = useSafeAreaInsets();
   const { spacing, minTouch } = useTheme();
-  const layoutPreset = useEffectiveLayoutPreset();
-  const showSideActions = options.showSideActions ?? layoutPreset !== 'minimal';
+  const surface = useMapSurfaceMode();
+  const showSideActions = options.showSideActions ?? true;
+  const { formFactor, isLandscape } = useFormFactor();
+  const tabBarAtBottom = usesBottomTabBar(formFactor, isLandscape);
   const chrome = mapChromeInsets(insets, spacing.lg);
 
   return useMemo(
@@ -27,9 +31,14 @@ export function useMapBottomLayout(options: Options = {}) {
         chromeBottom: chrome.bottom,
         minTouch,
         spacingSm: spacing.sm,
-        layoutPreset,
+        spacingMd: spacing.md,
+        formFactor,
+        layoutPreset: surface.dockLayoutPreset,
         tabBarInsetBottom: insets.bottom,
         showSideActions,
+        expandedInstrumentDock: surface.expandedInstrumentDock,
+        tabBarAtBottom,
+        extraBottomReserved: surface.bottomChromeReserve,
       }),
     [
       chrome.left,
@@ -38,9 +47,14 @@ export function useMapBottomLayout(options: Options = {}) {
       chrome.bottom,
       minTouch,
       spacing.sm,
-      layoutPreset,
+      spacing.md,
+      formFactor,
+      surface.dockLayoutPreset,
+      surface.expandedInstrumentDock,
+      surface.bottomChromeReserve,
       insets.bottom,
       showSideActions,
+      tabBarAtBottom,
     ],
   );
 }

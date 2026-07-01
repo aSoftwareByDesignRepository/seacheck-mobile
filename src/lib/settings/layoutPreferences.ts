@@ -6,7 +6,17 @@ export function isLayoutPreset(value: unknown): value is LayoutPreset {
   return typeof value === 'string' && (LAYOUT_PRESETS as readonly string[]).includes(value);
 }
 
+/** Legacy presets removed in favour of the single stacked map + instruments layout. */
+const LEGACY_LAYOUT_PRESETS: Record<string, LayoutPreset> = {
+  'instruments-forward': 'map-forward',
+  split: 'map-forward',
+  coordinates: 'map-forward',
+};
+
 export function normalizeLayoutPreset(value: unknown, fallback: LayoutPreset = 'map-forward'): LayoutPreset {
+  if (typeof value === 'string' && value in LEGACY_LAYOUT_PRESETS) {
+    return LEGACY_LAYOUT_PRESETS[value]!;
+  }
   return isLayoutPreset(value) ? value : fallback;
 }
 

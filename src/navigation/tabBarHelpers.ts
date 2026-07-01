@@ -8,7 +8,6 @@ import type { TabName } from './tabBarLayout';
 export const TAB_ICONS: Record<TabName, keyof typeof MaterialIcons.glyphMap> = {
   Map: 'map',
   Passage: 'route',
-  Waypoints: 'place',
   Tracks: 'timeline',
   Downloads: 'download',
   Settings: 'settings',

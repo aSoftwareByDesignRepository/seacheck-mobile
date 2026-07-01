@@ -5,6 +5,9 @@ import { distanceNm, type LonLat } from './navigation';
 /** ~37 m at equator — tap pick radius for saved waypoints on the chart. */
 export const WAYPOINT_MAP_PICK_RADIUS_NM = 0.02;
 
+/** ~74 m — more forgiving pick radius while planning a passage on the chart. */
+export const PLANNING_WAYPOINT_PICK_RADIUS_NM = 0.04;
+
 export type NearestWaypointHit = {
   waypoint: WaypointRow;
   distanceNm: number;

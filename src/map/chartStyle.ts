@@ -2,8 +2,7 @@ import type { StyleSpecification } from '@maplibre/maplibre-react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { MAP_ATTRIBUTION } from './constants';
-import type { ChartBaseStyle } from '../lib/settings/chartBaseStyle';
-import { chartBaseStyleTileUrl, DEFAULT_CHART_BASE_STYLE } from '../lib/settings/chartBaseStyle';
+import { CHART_BASE_TILE_URL } from '../lib/settings/chartBaseStyle';
 
 export const CHART_STYLE_FILENAME = 'chart-style.json';
 
@@ -12,8 +11,8 @@ export type ChartLayerVisibility = {
   seamarks: boolean;
 };
 
-/** MapLibre style with base + OpenSeaMap seamark raster sources. */
-export function buildChartStyleSpec(baseStyle: ChartBaseStyle = DEFAULT_CHART_BASE_STYLE): StyleSpecification {
+/** MapLibre style with Voyager base + OpenSeaMap seamark raster sources. */
+export function buildChartStyleSpec(): StyleSpecification {
   const seamarkTiles = 'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png';
 
   return {
@@ -22,7 +21,7 @@ export function buildChartStyleSpec(baseStyle: ChartBaseStyle = DEFAULT_CHART_BA
     sources: {
       'carto-base': {
         type: 'raster',
-        tiles: [chartBaseStyleTileUrl(baseStyle)],
+        tiles: [CHART_BASE_TILE_URL],
         tileSize: 256,
         maxzoom: 19,
         attribution: '© OpenStreetMap contributors © CARTO',
@@ -63,24 +62,44 @@ export function chartStyleDirectory(): string {
 }
 
 export function chartStyleFileUri(): string {
+  return toMapLibreStyleUri(chartStyleFilesystemPath());
+}
+
+export function chartStyleFilesystemPath(): string {
   return `${chartStyleDirectory()}${CHART_STYLE_FILENAME}`;
 }
 
+/** MapLibre offline expects file:// URIs for on-disk style JSON. */
+export function toMapLibreStyleUri(uri: string): string {
+  if (/^https?:\/\//i.test(uri) || uri.startsWith('file://') || uri.startsWith('asset://')) {
+    return uri;
+  }
+  if (uri.startsWith('/')) {
+    return `file://${uri}`;
+  }
+  return uri;
+}
+
 /** Writes chart style JSON to app documents; required for OfflineManager + offline Map. */
-export async function ensureChartStyleFile(baseStyle: ChartBaseStyle = DEFAULT_CHART_BASE_STYLE): Promise<string> {
+export async function ensureChartStyleFile(): Promise<string> {
   const dir = chartStyleDirectory();
-  const uri = chartStyleFileUri();
+  const fsPath = chartStyleFilesystemPath();
+  const mapStyleUri = chartStyleFileUri();
   try {
     const dirInfo = await FileSystem.getInfoAsync(dir);
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
     }
-    const spec = JSON.stringify(buildChartStyleSpec(baseStyle));
-    const existing = await FileSystem.readAsStringAsync(uri).catch(() => null);
+    const spec = JSON.stringify(buildChartStyleSpec());
+    const existing = await FileSystem.readAsStringAsync(fsPath).catch(() => null);
     if (existing !== spec) {
-      await FileSystem.writeAsStringAsync(uri, spec);
+      await FileSystem.writeAsStringAsync(fsPath, spec);
     }
-    return uri;
+    const fileInfo = await FileSystem.getInfoAsync(fsPath);
+    if (!fileInfo.exists) {
+      throw new Error('chart style file missing after write');
+    }
+    return mapStyleUri;
   } catch (error) {
     console.error('[chartStyle] ensureChartStyleFile failed', error);
     throw error;

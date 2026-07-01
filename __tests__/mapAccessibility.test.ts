@@ -32,6 +32,19 @@ describe('buildMapChartAccessibilityLabel', () => {
     expect(label).toContain('54.5');
     expect(label).toContain('54.32');
   });
+
+  it('announces when the screen is locked', () => {
+    const label = buildMapChartAccessibilityLabel({
+      centerLatitude: 54.32,
+      centerLongitude: 10.14,
+      coordFormat: 'ddm',
+      followMode: true,
+      followActive: true,
+      screenLocked: true,
+      zoom: 13,
+    });
+    expect(label).toContain('Screen locked');
+  });
 });
 
 describe('buildMapChartAccessibilityLabel offline context', () => {

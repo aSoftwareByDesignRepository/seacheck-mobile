@@ -1,5 +1,6 @@
 import type { DistanceUnit } from '../../settings/defaults';
 import { distanceUnitLabel, formatDistanceNm } from '../geo/units';
+import { formatEtaLocalFromIso } from '../time/formatEta';
 
 export function escapeXml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -76,7 +77,7 @@ export function buildPassageSummaryText(
   const dist = (nm: number) => `${formatDistanceNm(nm, distanceUnit, 1)} ${unitLabel}`;
   const lines = [`${name}`, ''];
   for (const leg of legs) {
-    const eta = leg.etaUtc ? leg.etaUtc.slice(11, 16) + ' UTC' : '—';
+    const eta = formatEtaLocalFromIso(leg.etaUtc) ?? '—';
     lines.push(
       `${leg.fromName} → ${leg.toName}: ${Math.round(leg.bearingDeg)}° · ${dist(leg.distanceNm)} · SOG ${leg.sogKn.toFixed(1)} kn · ${leg.durationHours.toFixed(1)} h · ETA ${eta}${leg.note ? ` · ${leg.note}` : ''}`,
     );

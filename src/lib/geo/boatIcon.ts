@@ -1,6 +1,6 @@
 import { destinationPoint, type LonLat } from './navigation';
 
-/** Overall boat length on chart (~100 m) — readable at reference zoom (z13); scaled by zoom elsewhere. */
+/** Base boat length in NM at scale 1 — screen size is fixed via chartSymbolScaleForZoom. */
 export const BOAT_ICON_LENGTH_NM = 0.054;
 
 /** Maximum beam (~40 m). */

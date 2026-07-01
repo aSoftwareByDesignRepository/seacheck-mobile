@@ -1,23 +1,19 @@
 import { StyleSheet, View } from 'react-native';
 
 import { useMapBottomLayout } from '../../hooks/useMapBottomLayout';
+import { useSafetyActionsMetrics } from '../../hooks/useSafetyActionsMetrics';
 import { MapActions } from './MapActions';
-import { useTheme } from '../../theme/ThemeContext';
 
 type Props = {
-  showRangeRings: boolean;
-  onToggleRangeRings: () => void;
+  onMobDropped?: () => void;
+  showAnchor?: boolean;
   screenLocked?: boolean;
 };
 
-/** Right-side map action stack for non-minimal layouts. */
-export function MapChrome({
-  showRangeRings,
-  onToggleRangeRings,
-  screenLocked = false,
-}: Props) {
-  const { minTouch } = useTheme();
+/** Right-side safety stack — lock, anchor, MOB — above bottom chrome when present. */
+export function MapChrome({ onMobDropped, showAnchor = true, screenLocked = false }: Props) {
   const layout = useMapBottomLayout({ showSideActions: true });
+  const metrics = useSafetyActionsMetrics('side', showAnchor);
 
   if (screenLocked) return null;
 
@@ -27,14 +23,14 @@ export function MapChrome({
       style={[
         styles.actions,
         {
-          bottom: layout.actionsBottom,
+          bottom: layout.actionsColumnBottom,
           right: layout.right,
-          minHeight: minTouch,
+          minHeight: metrics.buttonSize,
         },
       ]}
       testID="map.actionsColumn"
     >
-      <MapActions showRangeRings={showRangeRings} onToggleRangeRings={onToggleRangeRings} inline />
+      <MapActions variant="side" onMobDropped={onMobDropped} showAnchor={showAnchor} />
     </View>
   );
 }

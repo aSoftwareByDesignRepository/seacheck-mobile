@@ -36,11 +36,25 @@ describe('sheetHost store', () => {
 
   it('keeps sheetTop when feedback overlay is registered', () => {
     const store = createSheetHostStoreForTests();
-    store.register('tools', 0, () => null, () => {});
+    store.register('map.sheet', 0, () => null, () => {});
     store.register(FEEDBACK_SHEET_ID, 0, () => null, () => {});
     const snap = store.getSnapshot();
-    expect(snap.sheetTop?.id).toBe('tools');
+    expect(snap.sheetTop?.id).toBe('map.sheet');
     expect(snap.feedback?.id).toBe(FEEDBACK_SHEET_ID);
     expect(snap.top?.id).toBe(FEEDBACK_SHEET_ID);
+  });
+
+  it('dismissAll closes every registered sheet', () => {
+    const store = createSheetHostStoreForTests();
+    const closed: string[] = [];
+    store.register('a', 0, () => null, () => {
+      closed.push('a');
+    });
+    store.register('b', CONFIRM_SHEET_PRIORITY, () => null, () => {
+      closed.push('b');
+    });
+    store.dismissAll();
+    expect(store.getSnapshot().hasEntries).toBe(false);
+    expect(closed).toEqual(['a', 'b']);
   });
 });

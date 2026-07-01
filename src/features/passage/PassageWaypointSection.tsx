@@ -10,29 +10,26 @@ import { usePassageStore } from '../../store/passageStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
-import { FilterChip } from '../../ui/FilterChip';
 import { StatusBadge } from '../../ui/StatusBadge';
 
 type Props = {
   detail: PassageWithLegs;
-  allWaypoints: WaypointRow[];
-  onAdd: (waypointId: string) => void;
   onRemove: (waypointId: string) => void;
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
   onPlanOnMap: () => void;
+  onShowOnMap: () => void;
   onAddByCoords: () => void;
   onEditWaypoint: (waypoint: WaypointRow) => void;
 };
 
 export function PassageWaypointSection({
   detail,
-  allWaypoints,
-  onAdd,
   onRemove,
   onMoveUp,
   onMoveDown,
   onPlanOnMap,
+  onShowOnMap,
   onAddByCoords,
   onEditWaypoint,
 }: Props) {
@@ -46,8 +43,6 @@ export function PassageWaypointSection({
   const isFollowingThisPassage = activePassageId === detail.id;
   const nextWaypointIndex = isFollowingThisPassage ? activeLegIndex + 1 : -1;
 
-  const inPassage = new Set(detail.waypoints.map((w) => w.id));
-  const available = allWaypoints.filter((w) => !inPassage.has(w.id));
   const lastIndex = detail.waypoints.length - 1;
 
   return (
@@ -61,8 +56,18 @@ export function PassageWaypointSection({
       <Text style={[styles.body, { color: colors.textMuted }]}>{t('passage.waypointsBody')}</Text>
 
       <View style={[styles.primaryActions, { gap: spacing.sm }]}>
+        {detail.waypoints.length > 0 ? (
+          <Button
+            label={t('passage.showPassageOnMap')}
+            onPress={onShowOnMap}
+            testID="passage.showOnMap"
+            style={{ minHeight: minTouch }}
+            accessibilityHint={t('passage.showPassageOnMapHint')}
+          />
+        ) : null}
         <Button
           label={t('passage.planOnMap')}
+          variant={detail.waypoints.length > 0 ? 'secondary' : 'primary'}
           onPress={onPlanOnMap}
           testID="passage.planOnMap"
           style={{ minHeight: minTouch }}
@@ -160,19 +165,6 @@ export function PassageWaypointSection({
           );
         })
       )}
-
-      {available.length > 0 ? (
-        <>
-          <Text style={[styles.addLabel, { color: colors.textMuted }]}>{t('passage.addWaypoint')}</Text>
-          <View style={styles.chips}>
-            {available.map((wp) => (
-              <FilterChip key={wp.id} label={wp.name} selected={false} onPress={() => onAdd(wp.id)} testID={`passage.add.${wp.id}`} />
-            ))}
-          </View>
-        </>
-      ) : detail.waypoints.length > 0 ? (
-        <Text style={[styles.hint, { color: colors.textMuted }]}>{t('passage.noMoreWaypoints')}</Text>
-      ) : null}
     </View>
   );
 }
@@ -202,7 +194,4 @@ const styles = StyleSheet.create({
   legMeta: { fontSize: 13, marginTop: 4, lineHeight: 18, fontVariant: ['tabular-nums'] },
   actions: { gap: 8 },
   actionsRow: { flexDirection: 'row', flexWrap: 'wrap', width: '100%' },
-  addLabel: { fontSize: 13, fontWeight: '700', marginTop: 8, textTransform: 'uppercase', letterSpacing: 0.4 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  hint: { fontSize: 14, lineHeight: 20 },
 });

@@ -18,6 +18,12 @@ export function computePathDistanceNm(points: readonly LatLon[]): number {
   return total;
 }
 
+/** Live track polyline [[lon, lat], …] while recording. */
+export function computeLiveTrailDistanceNm(trail: readonly LonLat[]): number {
+  if (trail.length < 2) return 0;
+  return computePathDistanceNm(trail.map(([lon, lat]) => ({ latitude: lat, longitude: lon })));
+}
+
 export function legMidpoint(from: LatLon, to: LatLon): LonLat {
   return [(from.longitude + to.longitude) / 2, (from.latitude + to.latitude) / 2];
 }

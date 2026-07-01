@@ -1,8 +1,8 @@
 import { GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Feature, FeatureCollection, LineString, Point, Polygon } from 'geojson';
 
-import { normalizeBounds } from '../../lib/map/bounds';
+import { squareBoundsFromAnchor } from '../../lib/map/bounds';
 import { useCustomDownloadStore } from '../../store/customDownloadStore';
 import { bearingTrue, destinationPoint, distanceNm, type LonLat } from '../../lib/geo/navigation';
 import { formatBearing, magneticDeclinationDeg } from '../../lib/geo/magnetic';
@@ -14,10 +14,7 @@ import { useWaypointStore } from '../../store/waypointStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { isFixStale, useLocationStore } from '../../services/locationService';
 import { useTrackStore } from '../../store/trackStore';
-
-type Props = {
-  showRangeRings: boolean;
-};
+import { mobWaypointsOnMap } from '../../lib/map/mapVisibleWaypoints';
 
 function circlePolygon(center: LonLat, radiusNm: number, steps = 64): Polygon {
   const coords: [number, number][] = [];
@@ -29,7 +26,18 @@ function circlePolygon(center: LonLat, radiusNm: number, steps = 64): Polygon {
   return { type: 'Polygon', coordinates: [coords] };
 }
 
-export function MapOverlays({ showRangeRings }: Props) {
+type Props = {
+  /**
+   * Passage planning mode — strip the chart to just the passage being edited.
+   * Hides go-to, MOB, anchor, MOB marks and track trails so the navigator can
+   * place passage waypoints without competing overlays.
+   */
+  planningMode?: boolean;
+  /** Highlight the selected passage waypoint while planning. */
+  planningSelectedWaypointId?: string | null;
+};
+
+export function MapOverlays({ planningMode = false, planningSelectedWaypointId = null }: Props) {
   const fix = useLocationStore((s) => s.fix);
   const goToTarget = useNavigationStore((s) => s.goToTarget);
   const mobTarget = useNavigationStore((s) => s.mobTarget);
@@ -45,7 +53,7 @@ export function MapOverlays({ showRangeRings }: Props) {
     const a = s.cornerA;
     const b = s.cornerB;
     if (!a || !b) return null;
-    return normalizeBounds(a, b);
+    return squareBoundsFromAnchor(a, b);
   });
   const customCornerA = useCustomDownloadStore((s) => s.cornerA);
 
@@ -71,20 +79,7 @@ export function MapOverlays({ showRangeRings }: Props) {
       });
     }
 
-    if (fix) {
-      const pos: LonLat = [fix.longitude, fix.latitude];
-      if (showRangeRings) {
-        for (const r of [0.5, 1, 2]) {
-          features.push({
-            type: 'Feature',
-            properties: { kind: 'range', radiusNm: r },
-            geometry: circlePolygon(pos, r),
-          });
-        }
-      }
-    }
-
-    if (goToTarget && fix && !isFixStale(fix)) {
+    if (goToTarget && fix && !isFixStale(fix) && !activePassageId) {
       const line: LineString = {
         type: 'LineString',
         coordinates: [
@@ -148,23 +143,23 @@ export function MapOverlays({ showRangeRings }: Props) {
     }
 
     return { type: 'FeatureCollection', features } satisfies FeatureCollection;
-  }, [fix, goToTarget, mobTarget, anchorAlarm, showRangeRings, customBounds, customCornerA, bearingReference, distanceUnit]);
+  }, [fix, goToTarget, mobTarget, anchorAlarm, customBounds, customCornerA, bearingReference, distanceUnit, activePassageId]);
+
+  // Planning mode: show only the passage being planned. No go-to, MOB, anchor,
+  // MOB marks or track trails — the navigator works on a clean chart.
+  if (planningMode) {
+    return planningPassageId ? (
+      <PassagePlanningOverlay
+        passageId={planningPassageId}
+        revision={planningRevision}
+        selectedWaypointId={planningSelectedWaypointId}
+      />
+    ) : null;
+  }
 
   return (
     <>
       <GeoJSONSource id="seacheck-overlays" data={geojson}>
-        <Layer
-          id="seacheck-range-fill"
-          type="fill"
-          filter={['==', ['get', 'kind'], 'range']}
-          paint={{ 'fill-color': '#0073ad', 'fill-opacity': 0.06 }}
-        />
-        <Layer
-          id="seacheck-range-line"
-          type="line"
-          filter={['==', ['get', 'kind'], 'range']}
-          paint={{ 'line-color': '#0073ad', 'line-width': 1, 'line-opacity': 0.35, 'line-dasharray': [2, 2] }}
-        />
         <Layer
           id="seacheck-goto-line"
           type="line"
@@ -248,7 +243,6 @@ export function MapOverlays({ showRangeRings }: Props) {
       <WaypointsOverlay />
       <TrackTrailOverlay />
       <SavedTrackOverlay />
-      <StaleFixOverlay />
     </>
   );
 }
@@ -257,37 +251,44 @@ function PassagePlanningOverlay({
   passageId,
   revision,
   showRouteLines = true,
+  selectedWaypointId = null,
 }: {
   passageId: string;
   revision: number;
   showRouteLines?: boolean;
+  selectedWaypointId?: string | null;
 }) {
-  const passages = usePassageStore((s) => s.passages);
+  const routeRevision = usePassageStore((s) => s.routeRevision);
   const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
-  const [waypoints, setWaypoints] = useState<{ longitude: number; latitude: number }[]>([]);
+  const [waypoints, setWaypoints] = useState<{ id: string; longitude: number; latitude: number }[]>([]);
+  const requestSeqRef = useRef(0);
 
   useEffect(() => {
+    const seq = ++requestSeqRef.current;
     void getPassageDetail(passageId).then((detail) => {
+      if (seq !== requestSeqRef.current) return;
       setWaypoints(detail?.waypoints ?? []);
     });
-  }, [passageId, passages, getPassageDetail, revision]);
+  }, [passageId, revision, routeRevision, getPassageDetail]);
 
   if (waypoints.length < 1) return null;
 
   const lineData =
     waypoints.length >= 2
-      ? buildPlanningPassageGeoJson(waypoints)
+      ? buildPlanningPassageGeoJson(waypoints, selectedWaypointId)
       : {
           type: 'FeatureCollection' as const,
           features: waypoints.map((wp) => ({
             type: 'Feature' as const,
-            properties: { kind: 'planning-wp' },
+            properties: { kind: 'planning-wp', selected: wp.id === selectedWaypointId },
             geometry: { type: 'Point' as const, coordinates: [wp.longitude, wp.latitude] },
           })),
         };
 
+  const sourceKey = `${passageId}-${revision}-${routeRevision}-${selectedWaypointId ?? 'none'}-${waypoints.map((wp) => wp.id).join(',')}`;
+
   return (
-    <GeoJSONSource id="seacheck-passage-planning" data={lineData}>
+    <GeoJSONSource key={sourceKey} id="seacheck-passage-planning" data={lineData}>
       {waypoints.length >= 2 && showRouteLines ? (
         <Layer
           id="seacheck-passage-planning-line"
@@ -300,7 +301,12 @@ function PassagePlanningOverlay({
         id="seacheck-passage-planning-wp"
         type="circle"
         filter={['==', ['get', 'kind'], 'planning-wp']}
-        paint={{ 'circle-radius': 7, 'circle-color': '#e65100', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' }}
+        paint={{
+          'circle-radius': ['case', ['get', 'selected'], 10, 7],
+          'circle-color': ['case', ['get', 'selected'], '#0073ad', '#e65100'],
+          'circle-stroke-width': ['case', ['get', 'selected'], 3, 2],
+          'circle-stroke-color': '#fff',
+        }}
       />
     </GeoJSONSource>
   );
@@ -339,20 +345,57 @@ function PassageOverlay({
   return (
     <GeoJSONSource id="seacheck-passage" data={data}>
       <Layer
-        id="seacheck-passage-line"
+        id="seacheck-passage-line-completed"
         type="line"
-        filter={['==', ['get', 'kind'], 'passage-leg']}
+        filter={['all', ['==', ['get', 'kind'], 'passage-leg'], ['==', ['get', 'phase'], 'completed']]}
+        paint={{ 'line-color': '#64748b', 'line-width': 2, 'line-opacity': 0.35 }}
+      />
+      <Layer
+        id="seacheck-passage-line-upcoming"
+        type="line"
+        filter={['all', ['==', ['get', 'kind'], 'passage-leg'], ['==', ['get', 'phase'], 'upcoming']]}
         paint={{
-          'line-color': ['case', ['get', 'active'], '#0073ad', '#486581'],
-          'line-width': ['case', ['get', 'active'], 4, 2],
-          'line-opacity': 0.9,
+          'line-color': '#7eb8d4',
+          'line-width': 2.5,
+          'line-opacity': 0.55,
         }}
       />
       <Layer
-        id="seacheck-passage-wp"
+        id="seacheck-passage-line-active-casing"
+        type="line"
+        filter={['all', ['==', ['get', 'kind'], 'passage-leg'], ['==', ['get', 'phase'], 'active']]}
+        layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+        paint={{ 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.95 }}
+      />
+      <Layer
+        id="seacheck-passage-line-active"
+        type="line"
+        filter={['all', ['==', ['get', 'kind'], 'passage-leg'], ['==', ['get', 'phase'], 'active']]}
+        layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+        paint={{ 'line-color': '#0073ad', 'line-width': 5, 'line-opacity': 1 }}
+      />
+      <Layer
+        id="seacheck-passage-wp-passed"
         type="circle"
-        filter={['==', ['get', 'kind'], 'passage-wp']}
-        paint={{ 'circle-radius': 6, 'circle-color': '#0073ad', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' }}
+        filter={['all', ['==', ['get', 'kind'], 'passage-wp'], ['==', ['get', 'phase'], 'passed']]}
+        paint={{
+          'circle-radius': 4,
+          'circle-color': '#64748b',
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#fff',
+          'circle-opacity': 0.6,
+        }}
+      />
+      <Layer
+        id="seacheck-passage-wp-upcoming"
+        type="circle"
+        filter={['all', ['==', ['get', 'kind'], 'passage-wp'], ['==', ['get', 'phase'], 'upcoming']]}
+        paint={{
+          'circle-radius': ['case', ['get', 'isNext'], 9, 5],
+          'circle-color': ['case', ['get', 'isNext'], '#0073ad', '#7eb8d4'],
+          'circle-stroke-width': ['case', ['get', 'isNext'], 3, 2],
+          'circle-stroke-color': '#fff',
+        }}
       />
     </GeoJSONSource>
   );
@@ -366,9 +409,11 @@ export function buildPassageGeoJson(
   for (let i = 1; i < waypoints.length; i++) {
     const from = waypoints[i - 1];
     const to = waypoints[i];
+    const legIndex = i - 1;
+    const phase = legIndex < activeLegIndex ? 'completed' : legIndex === activeLegIndex ? 'active' : 'upcoming';
     features.push({
       type: 'Feature',
-      properties: { kind: 'passage-leg', active: i - 1 === activeLegIndex },
+      properties: { kind: 'passage-leg', phase },
       geometry: {
         type: 'LineString',
         coordinates: [
@@ -378,10 +423,13 @@ export function buildPassageGeoJson(
       },
     });
   }
-  for (const wp of waypoints) {
+  for (let i = 0; i < waypoints.length; i++) {
+    const wp = waypoints[i];
+    const phase = i <= activeLegIndex ? 'passed' : 'upcoming';
+    const isNext = i === activeLegIndex + 1;
     features.push({
       type: 'Feature',
-      properties: { kind: 'passage-wp' },
+      properties: { kind: 'passage-wp', phase, isNext },
       geometry: { type: 'Point', coordinates: [wp.longitude, wp.latitude] },
     });
   }
@@ -389,7 +437,8 @@ export function buildPassageGeoJson(
 }
 
 export function buildPlanningPassageGeoJson(
-  waypoints: { longitude: number; latitude: number }[],
+  waypoints: { id?: string; longitude: number; latitude: number }[],
+  selectedWaypointId: string | null = null,
 ): FeatureCollection {
   const features: Feature[] = [];
   for (let i = 1; i < waypoints.length; i++) {
@@ -410,7 +459,7 @@ export function buildPlanningPassageGeoJson(
   for (const wp of waypoints) {
     features.push({
       type: 'Feature',
-      properties: { kind: 'planning-wp' },
+      properties: { kind: 'planning-wp', selected: wp.id != null && wp.id === selectedWaypointId },
       geometry: { type: 'Point', coordinates: [wp.longitude, wp.latitude] },
     });
   }
@@ -439,15 +488,16 @@ const WP_COLORS: Record<string, string> = {
 function WaypointsOverlay() {
   const waypoints = useWaypointStore((s) => s.items);
   const goToId = useNavigationStore((s) => s.goToTarget?.id);
+  const mobMarks = useMemo(() => mobWaypointsOnMap(waypoints), [waypoints]);
 
   const data = useMemo(() => {
-    const features: Feature[] = waypoints.map((wp) => ({
+    const features: Feature[] = mobMarks.map((wp) => ({
       type: 'Feature',
       properties: { kind: 'saved-wp', wpType: wp.type, selected: wp.id === goToId },
       geometry: { type: 'Point', coordinates: [wp.longitude, wp.latitude] },
     }));
     return { type: 'FeatureCollection' as const, features };
-  }, [waypoints, goToId]);
+  }, [mobMarks, goToId]);
 
   if (data.features.length === 0) return null;
 
@@ -541,40 +591,6 @@ function TrackTrailOverlay() {
         type="line"
         filter={['==', ['get', 'kind'], 'track-trail']}
         paint={{ 'line-color': '#7b1fa2', 'line-width': 3, 'line-opacity': 0.75 }}
-      />
-    </GeoJSONSource>
-  );
-}
-
-function StaleFixOverlay() {
-  const fix = useLocationStore((s) => s.fix);
-  const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
-  const stale = isFixStale(fix);
-  const show = stale && lastGoodFix;
-
-  const data = useMemo(() => {
-    if (!show || !lastGoodFix) return { type: 'FeatureCollection' as const, features: [] };
-    return {
-      type: 'FeatureCollection' as const,
-      features: [
-        {
-          type: 'Feature' as const,
-          properties: { kind: 'stale-fix' },
-          geometry: { type: 'Point' as const, coordinates: [lastGoodFix.longitude, lastGoodFix.latitude] },
-        },
-      ],
-    };
-  }, [show, lastGoodFix]);
-
-  if (data.features.length === 0) return null;
-
-  return (
-    <GeoJSONSource id="seacheck-stale-fix" data={data}>
-      <Layer
-        id="seacheck-stale-fix-point"
-        type="circle"
-        filter={['==', ['get', 'kind'], 'stale-fix']}
-        paint={{ 'circle-radius': 12, 'circle-color': '#486581', 'circle-opacity': 0.45, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' }}
       />
     </GeoJSONSource>
   );

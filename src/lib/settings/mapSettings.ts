@@ -22,7 +22,7 @@ export const COURSE_VECTOR_SCALE_MULTIPLIER: Record<CourseVectorVisualScale, num
   extra: 2,
 };
 
-export const DEFAULT_COURSE_VECTOR_SCALE: CourseVectorVisualScale = 'long';
+export const DEFAULT_COURSE_VECTOR_SCALE: CourseVectorVisualScale = 'standard';
 
 export function normalizeCourseVectorScale(value: unknown): CourseVectorVisualScale {
   if (value === 'standard' || value === 'long' || value === 'extra') return value;

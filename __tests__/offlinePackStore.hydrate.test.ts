@@ -19,6 +19,10 @@ jest.mock('../src/lib/network/connectivity', () => ({
   fetchIsEffectivelyOnline: jest.fn(async () => false),
 }));
 
+jest.mock('../src/lib/offline/downloadStallWatchdog', () => ({
+  startDownloadStallWatchdog: jest.fn(() => () => {}),
+}));
+
 const STORAGE_KEY = 'seacheck.offline.v1';
 const KIEL = REGION_PACKS[0]!;
 
@@ -36,11 +40,11 @@ function mockNativePack(
       id,
       state: status.state,
       percentage: status.percentage,
-      completedResourceCount: 0,
-      completedResourceSize: 0,
-      completedTileCount: 0,
-      completedTileSize: 0,
-      requiredResourceCount: 1,
+      completedResourceCount: status.state === 'complete' ? 10 : 0,
+      completedResourceSize: status.state === 'complete' ? 1000 : 0,
+      completedTileCount: status.state === 'complete' ? 8 : 0,
+      completedTileSize: status.state === 'complete' ? 800 : 0,
+      requiredResourceCount: 10,
     }),
     resume: jest.fn(async () => {}),
   };

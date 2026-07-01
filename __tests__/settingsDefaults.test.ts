@@ -11,7 +11,7 @@ describe('CRUISE_PASSAGE_DEFAULTS', () => {
       mapCourseUp: true,
       mapShowCourseVector: true,
       mapCourseVectorMinutes: 6,
-      mapCourseVectorScale: 'long',
+      mapCourseVectorScale: 'standard',
       mapFollowZoom: 13,
       followMode: true,
       keepAwakeUnderway: true,

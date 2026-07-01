@@ -18,10 +18,11 @@ import {
   MAP_COURSE_VECTOR_STALE,
 } from '../../lib/map/mapChartColors';
 import { isFixStale, useLocationStore, useMapDisplayFix } from '../../services/locationService';
+import { usePassageStore } from '../../store/passageStore';
 import { useSettingsStore } from '../../store/settingsStore';
 
 type Props = {
-  mapZoom: number | null;
+  mapZoom: number;
   fallbackZoom?: number;
 };
 
@@ -31,6 +32,7 @@ type Props = {
  */
 export function CourseVectorOverlay({ mapZoom, fallbackZoom = 13 }: Props) {
   const show = useSettingsStore((s) => s.mapShowCourseVector);
+  const activePassageId = usePassageStore((s) => s.activePassageId);
   const vectorMinutes = useSettingsStore((s) => s.mapCourseVectorMinutes);
   const vectorScale = useSettingsStore((s) => s.mapCourseVectorScale);
   const fix = useLocationStore((s) => s.fix);
@@ -38,7 +40,7 @@ export function CourseVectorOverlay({ mapZoom, fallbackZoom = 13 }: Props) {
   const mapDisplayFix = useMapDisplayFix();
 
   const { data, lineWidth, casingWidth } = useMemo(() => {
-    if (!show) return { data: { type: 'FeatureCollection' as const, features: [] }, lineWidth: 3, casingWidth: 5 };
+    if (!show || activePassageId) return { data: { type: 'FeatureCollection' as const, features: [] }, lineWidth: 3, casingWidth: 5 };
 
     const displayFix = mapDisplayFix ?? fix ?? lastGoodFix;
     if (!displayFix) return { data: { type: 'FeatureCollection' as const, features: [] }, lineWidth: 3, casingWidth: 5 };
@@ -102,7 +104,7 @@ export function CourseVectorOverlay({ mapZoom, fallbackZoom = 13 }: Props) {
       lineWidth: stroke,
       casingWidth: stroke + 2,
     };
-  }, [show, vectorMinutes, vectorScale, fix, lastGoodFix, mapDisplayFix, mapZoom, fallbackZoom]);
+  }, [show, activePassageId, vectorMinutes, vectorScale, fix, lastGoodFix, mapDisplayFix, mapZoom, fallbackZoom]);
 
   if (data.features.length === 0) return null;
 

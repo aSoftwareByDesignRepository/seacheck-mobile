@@ -24,6 +24,12 @@ export const touchChipText: TextStyle = {
   ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
 };
 
+/** Minimum row height for status badges — avoids vertical clipping in flex layouts. */
+export function statusBadgeMinHeight(): number {
+  const paddingVertical = Platform.OS === 'android' ? 5 : 6;
+  return paddingVertical * 2 + 16 + 2;
+}
+
 /** Informational status badge — not a primary touch target. */
 export function statusBadgeStyle(extra: ViewStyle = {}): ViewStyle {
   return {
@@ -31,8 +37,9 @@ export function statusBadgeStyle(extra: ViewStyle = {}): ViewStyle {
     borderRadius: radius.pill,
     borderWidth: 1,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: Platform.OS === 'android' ? 5 : 6,
     justifyContent: 'center',
+    flexShrink: 0,
     ...extra,
   };
 }

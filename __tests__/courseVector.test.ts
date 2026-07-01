@@ -19,6 +19,18 @@ describe('courseVector', () => {
     expect(courseVectorLengthNm(null)).toBe(COURSE_VECTOR_STUB_NM);
   });
 
+  it('uses pixel-based stub on chart when stopped', () => {
+    const geom = buildCourseVectorGeometry(
+      { latitude: 54.3, longitude: 10.1, speedKn: 0, bearingDeg: 90 },
+      6,
+      'standard',
+      { chartZoom: 13, latitudeDeg: 54.3 },
+    );
+    expect(geom).not.toBeNull();
+    expect(geom!.visualLengthNm).toBeGreaterThan(0);
+    expect(geom!.visualLengthNm).toBeLessThan(0.25);
+  });
+
   it('caps projection at max NM', () => {
     expect(courseVectorLengthNm(200)).toBe(COURSE_VECTOR_MAX_NM);
   });

@@ -1,10 +1,12 @@
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 
+import type { SettingsStackParamList } from './SettingsStack';
+import type { PassageStackParamList } from './PassageStack';
+
 export type RootTabParamList = {
   Map: undefined;
-  Passage: undefined;
-  Waypoints: undefined;
+  Passage: NavigatorScreenParams<PassageStackParamList> | undefined;
   Tracks: undefined;
   Downloads:
     | {
@@ -14,7 +16,7 @@ export type RootTabParamList = {
         passageName?: string;
       }
     | undefined;
-  Settings: undefined;
+  Settings: NavigatorScreenParams<SettingsStackParamList> | undefined;
 };
 
 export type RootTabScreenProps<T extends keyof RootTabParamList> = BottomTabScreenProps<RootTabParamList, T>;

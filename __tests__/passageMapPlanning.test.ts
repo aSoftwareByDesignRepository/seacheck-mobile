@@ -1,5 +1,5 @@
 import { parseCoordField } from '../src/lib/map/coordInput';
-import { notifyPassagePlanningChanged } from '../src/lib/passage/passageMapPlanning';
+import { notifyPassagePlanningChanged, startPassageMapView } from '../src/lib/passage/passageMapPlanning';
 import { resetPassageMapPlanningStoreForTests, usePassageMapPlanningStore } from '../src/store/passageMapPlanningStore';
 
 describe('coordInput', () => {
@@ -45,5 +45,11 @@ describe('passageMapPlanningStore', () => {
     expect(usePassageMapPlanningStore.getState().revision).toBe(0);
     notifyPassagePlanningChanged('pass-1');
     expect(usePassageMapPlanningStore.getState().revision).toBe(1);
+  });
+
+  it('startPassageMapView opens read-only planning', async () => {
+    await startPassageMapView('pass-view');
+    expect(usePassageMapPlanningStore.getState().passageId).toBe('pass-view');
+    expect(usePassageMapPlanningStore.getState().allowRouteEdits).toBe(false);
   });
 });

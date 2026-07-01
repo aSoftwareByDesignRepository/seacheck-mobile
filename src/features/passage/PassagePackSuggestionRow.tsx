@@ -6,44 +6,43 @@ import { t } from '../../i18n';
 import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
 import { StatusBadge } from '../../ui/StatusBadge';
+import { DownloadProgressBar } from '../downloads/DownloadProgressBar';
+import {
+  isPackDownloadActive,
+  packStatusBadgeVariant,
+  packStatusLabel,
+  seamarkStatusLabel,
+} from '../downloads/packDownloadPresentation';
 
 type Props = {
   suggestion: PassagePackSuggestionDetail;
+  activeDownloadRegionId: string | null;
   busy: boolean;
   onDownload: () => void;
   onCancel?: () => void;
   onBrowsePack?: () => void;
 };
 
-export function PassagePackSuggestionRow({ suggestion, busy, onDownload, onCancel, onBrowsePack }: Props) {
-  const { colors, minTouch } = useTheme();
+export function PassagePackSuggestionRow({
+  suggestion,
+  activeDownloadRegionId,
+  busy,
+  onDownload,
+  onCancel,
+  onBrowsePack,
+}: Props) {
+  const { colors, minTouch, spacing } = useTheme();
   const { status } = suggestion;
   const largePack = isLargeRegionPack(suggestion.pack);
+  const downloadActive = isPackDownloadActive(suggestion.packId, status, activeDownloadRegionId);
+  const stateLabel = packStatusLabel(status);
+  const seamarkLabel = seamarkStatusLabel(status);
 
-  const stateVariant =
-    status.state === 'ready'
-      ? 'success'
-      : status.state === 'error'
-        ? 'danger'
-        : status.state === 'downloading'
-          ? 'warning'
-          : 'neutral';
-
-  const stateLabel =
-    status.state === 'ready'
-      ? t('downloads.statusReady')
-      : status.state === 'downloading'
-        ? t('downloads.statusDownloading', { percent: Math.round(status.percentage) })
-        : status.state === 'error'
-          ? t('downloads.statusError')
-          : t('downloads.statusIdle');
-
-  const downloadLabel =
-    status.state === 'downloading'
-      ? t('downloads.downloading')
-      : status.state === 'error'
-        ? t('downloads.retryDownload')
-        : t('passage.downloadPack');
+  const downloadLabel = downloadActive
+    ? t('downloads.downloading')
+    : status.state === 'error'
+      ? t('downloads.retryDownload')
+      : t('passage.downloadPack');
 
   return (
     <View
@@ -58,18 +57,18 @@ export function PassagePackSuggestionRow({ suggestion, busy, onDownload, onCance
         <Text style={[styles.meta, { color: colors.textMuted }]}>
           {t('passage.suggestionLegs', { count: suggestion.coversLegCount })} · ~{suggestion.sizeLabel}
         </Text>
-        <StatusBadge label={stateLabel} variant={stateVariant} />
+        <StatusBadge label={stateLabel} variant={packStatusBadgeVariant(status)} />
+        {downloadActive ? (
+          <DownloadProgressBar percentage={status.percentage} label={stateLabel} testID={`passage.suggestion.progress.${suggestion.packId}`} />
+        ) : null}
         {largePack && status.state !== 'ready' ? (
           <Text style={[styles.meta, { color: colors.warningText }]}>{t('downloads.largePackHint')}</Text>
         ) : null}
-        {status.state === 'ready' && status.seamarksIndexing ? (
-          <Text style={[styles.meta, { color: colors.textMuted }]}>{t('downloads.seamarksIndexing')}</Text>
-        ) : null}
-        {status.state === 'ready' && status.seamarksIndexed ? (
-          <Text style={[styles.meta, { color: colors.success }]}>{t('downloads.seamarksReady')}</Text>
+        {seamarkLabel ? (
+          <Text style={[styles.meta, { color: colors.textMuted, marginTop: spacing.xs }]}>{seamarkLabel}</Text>
         ) : null}
         {status.error ? (
-          <Text style={[styles.error, { color: colors.danger }]} accessibilityLiveRegion="polite">
+          <Text style={[styles.error, { color: colors.danger }]} accessibilityRole="alert" accessibilityLiveRegion="polite">
             {status.error}
           </Text>
         ) : null}
@@ -80,13 +79,13 @@ export function PassagePackSuggestionRow({ suggestion, busy, onDownload, onCance
             label={t('downloads.previewPack')}
             variant="secondary"
             onPress={onBrowsePack}
-            disabled={busy}
+            disabled={busy && !downloadActive}
             fullWidth={false}
             style={styles.actionBtn}
             testID={`passage.suggestion.preview.${suggestion.packId}`}
           />
         ) : null}
-        {status.state === 'ready' ? null : status.state === 'downloading' ? (
+        {status.state === 'ready' ? null : downloadActive ? (
           <>
             <Button label={downloadLabel} onPress={() => {}} disabled loading fullWidth={false} style={styles.actionBtn} />
             {onCancel ? (
@@ -94,7 +93,7 @@ export function PassagePackSuggestionRow({ suggestion, busy, onDownload, onCance
                 label={t('downloads.cancelDownload')}
                 variant="secondary"
                 onPress={onCancel}
-                disabled={busy}
+                disabled={busy && activeDownloadRegionId !== suggestion.packId}
                 fullWidth={false}
                 style={styles.actionBtn}
                 testID={`passage.suggestion.cancel.${suggestion.packId}`}

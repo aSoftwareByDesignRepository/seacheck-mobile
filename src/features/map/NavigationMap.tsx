@@ -22,19 +22,21 @@ import { PassageMapPlanningPanel } from '../passage/PassageMapPlanningPanel';
 import { activateAnchorAlarmAt } from '../../lib/anchor/activateAnchorAlarm';
 import {
   addMapWaypointToPassage,
+  relocateMapWaypointInPassage,
   startNewPassageFromMap,
 } from '../../lib/passage/passageMapPlanning';
 import { pulseUiAcknowledgement } from '../../services/alarmFeedbackService';
 import { ResponsiveMapShell } from '../responsive/ResponsiveMapShell';
 import { useEffectiveLayoutPreset } from '../../hooks/useEffectiveLayoutPreset';
 import { useMapBottomLayout } from '../../hooks/useMapBottomLayout';
+import { useMobLayoutSwitch } from '../../hooks/useMobLayoutSwitch';
+import { useMapSurfaceMode } from '../../hooks/useMapSurfaceMode';
 import { configureMapLogging } from '../../map/mapLogging';
 import { formatCoordinates } from '../../map/coords';
 import { t } from '../../i18n';
 import type { RootTabParamList } from '../../navigation/types';
 import { useLocationStore, isFixStale } from '../../services/locationService';
 import { useCustomDownloadStore } from '../../store/customDownloadStore';
-import { useMeasureDistanceStore } from '../../store/measureDistanceStore';
 import { useFeedbackStore } from '../../store/feedbackStore';
 import { useConfirmStore } from '../../store/confirmStore';
 import { useNavigationStore } from '../../store/navigationStore';
@@ -42,11 +44,13 @@ import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { usePassageMapPlanningStore } from '../../store/passageMapPlanningStore';
 import { usePassageStore } from '../../store/passageStore';
 import { useTrackStore } from '../../store/trackStore';
-import { mapChartHasOpenDetail, pickMapChartFeatures, resolveMapChartTapAction, resolvePlanningMapTapAction } from '../../lib/map/mapChartInteraction';
+import { PLANNING_WAYPOINT_PICK_RADIUS_NM } from '../../lib/geo/nearestWaypoint';
+import { mapChartHasOpenDetail, pickMapChartFeatures, resolveMapChartTapAction } from '../../lib/map/mapChartInteraction';
 import { buildMapChartAccessibilityLabel } from '../../lib/map/mapAccessibility';
 import { resolveBoatHeadingDeg } from '../../lib/geo/cog';
 import { isValidCoordinate } from '../../lib/geo/fixQuality';
 import { distanceNm } from '../../lib/geo/navigation';
+import { mapTappableWaypoints } from '../../lib/map/mapVisibleWaypoints';
 import { resolveMapInitialCenter, shouldPauseFollowOnRegionChange } from '../../lib/map/mapCameraFollow';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useWaypointStore } from '../../store/waypointStore';
@@ -58,26 +62,22 @@ import { ExpoLocationPuck } from './ExpoLocationPuck';
 import { CourseVectorOverlay } from './CourseVectorOverlay';
 import { MapBottomDock } from './MapBottomDock';
 import { MapChrome } from './MapChrome';
+import { MapInstrumentDock } from './MapInstrumentDock';
 import { InstrumentsOnlyShell } from './InstrumentsOnlyShell';
-import { MapInstruments } from './MapInstruments';
 import { MapTopChrome } from './MapTopChrome';
 import { MobNavigateBackOverlay } from './MobNavigateBackOverlay';
 import { SeamarkDetailSheet } from './SeamarkDetailSheet';
 import { TrackPointMapDetailSheet } from './TrackPointMapDetailSheet';
 import { WaypointMapDetailSheet } from './WaypointMapDetailSheet';
 import { MapOverlays } from './MapOverlays';
-import { MeasureDistanceOverlay } from './MeasureDistanceOverlay';
-import { MeasureDistancePanel } from './MeasureDistancePanel';
-import { PlanningSeamarksOverlay } from './PlanningSeamarksOverlay';
 import { mapChromeInsets } from './mapChromeInsets';
+import { PASSAGE_PLANNING_PANEL_CONTENT_MAX } from './mapChromeLayout';
 import { boundsFromLonLat, boundsFromWaypoints } from '../../lib/map/passageBounds';
 import {
   lookupChartObjectOnline,
-  planningMarkToSeamarkHit,
   queryLocalSeamarkAtTap,
   type SeamarkHit,
 } from '../../lib/seamarks/querySeamark';
-import type { PlanningSeamarkFeature } from '../../lib/seamarks/queryPlanningSeamarks';
 import type { TrackPointRow, WaypointRow } from '../../lib/db/database';
 
 export function NavigationMap() {
@@ -95,22 +95,18 @@ export function NavigationMap() {
   const tracks = useTrackStore((s) => s.tracks);
   const followMode = useSettingsStore((s) => s.followMode);
   const mapFollowZoom = useSettingsStore((s) => s.mapFollowZoom);
-  const seamarkPlanning = useSettingsStore((s) => s.seamarkPlanning);
-  const chartBaseStyle = useSettingsStore((s) => s.chartBaseStyle);
   const mapCourseUp = useSettingsStore((s) => s.mapCourseUp);
   const keepAwakeUnderway = useSettingsStore((s) => s.keepAwakeUnderway);
   const coordFormat = useSettingsStore((s) => s.coordFormat);
   const fix = useLocationStore((s) => s.fix);
   const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
   const screenLocked = useNavigationStore((s) => s.screenLocked);
-  const setScreenLocked = useNavigationStore((s) => s.setScreenLocked);
   const mobTarget = useNavigationStore((s) => s.mobTarget);
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
   const offlineHydrated = useOfflinePackStore((s) => s.hydrated);
   const hydrateOffline = useOfflinePackStore((s) => s.hydrate);
   const offlineRegions = useOfflinePackStore((s) => s.regions);
   const hasReadyPack = selectHasReadyOfflinePack(offlineRegions);
-  const createWaypoint = useWaypointStore((s) => s.create);
   const savedWaypoints = useWaypointStore((s) => s.items);
   const showInfo = useFeedbackStore((s) => s.showInfo);
   const showError = useFeedbackStore((s) => s.showError);
@@ -120,21 +116,29 @@ export function NavigationMap() {
   const allowRouteEdits = usePassageMapPlanningStore((s) => s.allowRouteEdits);
   const passageMapPlanning = planningPassageId != null;
   const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
-  const measureActive = useMeasureDistanceStore((s) => s.active);
-  const addMeasurePoint = useMeasureDistanceStore((s) => s.addPoint);
+  const activePassageId = usePassageStore((s) => s.activePassageId);
+  const passages = usePassageStore((s) => s.passages);
   const setCustomCorner = useCustomDownloadStore((s) => s.setCorner);
-  const [showRangeRings, setShowRangeRings] = useState(false);
   const [followActive, setFollowActive] = useState(followMode);
   const layoutPreset = useEffectiveLayoutPreset();
   const isMinimalLayout = layoutPreset === 'minimal';
+  const isMapForwardLayout = layoutPreset === 'map-forward';
   const isInstrumentsOnlyLayout = layoutPreset === 'instruments-only';
-  const showChartInInstrumentsOnly = customSelecting || passageMapPlanning;
+  const showChartInInstrumentsOnly = customSelecting || passageMapPlanning || mobTarget != null;
+  const switchLayoutOnMob = useMobLayoutSwitch();
+  const surface = useMapSurfaceMode();
   const showRecenter =
     followMode && !followActive && !screenLocked && (!isInstrumentsOnlyLayout || showChartInInstrumentsOnly);
-  const mapBottom = useMapBottomLayout({ showSideActions: !isMinimalLayout && !screenLocked });
+  /** Ashore / planning / download area pick — no lock, anchor, or MOB on the chart edge. */
+  const showSideActions =
+    !screenLocked && !mobTarget && !passageMapPlanning && !customSelecting;
+  const showRootSafetyColumn = showSideActions;
+  const mapBottom = useMapBottomLayout({ showSideActions });
+  const instrumentsTopChromeLayout = useMapBottomLayout({ showSideActions: showRootSafetyColumn });
   const [seamarkHit, setSeamarkHit] = useState<SeamarkHit | null>(null);
   const [waypointHit, setWaypointHit] = useState<WaypointRow | null>(null);
   const [trackPointHit, setTrackPointHit] = useState<TrackPointRow | null>(null);
+  const [activePassageWaypoints, setActivePassageWaypoints] = useState<WaypointRow[]>([]);
   const [seamarkLoading, setSeamarkLoading] = useState(false);
   const initialMapCenter = useMemo(
     () => resolveMapInitialCenter(fix ?? lastGoodFix),
@@ -144,18 +148,34 @@ export function NavigationMap() {
     latitude: initialMapCenter[1],
     longitude: initialMapCenter[0],
   }));
-  const [mapZoom, setMapZoom] = useState<number | null>(null);
+  const [mapZoom, setMapZoom] = useState<number>(() => (followMode ? mapFollowZoom : 11));
   const [chartRetryBusy, setChartRetryBusy] = useState(false);
   const [mapStyleLoaded, setMapStyleLoaded] = useState(false);
   const [longPressAction, setLongPressAction] = useState<{ lat: number; lon: number; coordLabel: string } | null>(null);
+  const [planningSelectedWaypointId, setPlanningSelectedWaypointId] = useState<string | null>(null);
   const suppressNextPressRef = useRef(false);
-  const planningMarkTapRef = useRef(false);
   const planningCameraFitRef = useRef<{ passageId: string; revision: number } | null>(null);
+  const addingPlanningWaypointRef = useRef(false);
   const isOffline = useIsEffectivelyOffline();
   const chartCoverage = useChartCoverageAtPoint(mapCenter.latitude, mapCenter.longitude);
   const showScaleBar = Platform.OS === 'ios' || Device.isDevice;
   const chartRasterVisible = shouldShowChartRasterTiles(isOffline, hasReadyPack, chartCoverage.covered);
   const boatFix = fix ?? lastGoodFix;
+
+  useEffect(() => {
+    if (!activePassageId) {
+      setActivePassageWaypoints([]);
+      return;
+    }
+    void getPassageDetail(activePassageId).then((detail) => {
+      setActivePassageWaypoints(detail?.waypoints ?? []);
+    });
+  }, [activePassageId, passages, getPassageDetail, planningRevision]);
+
+  const mapTapWaypoints = useMemo(
+    () => mapTappableWaypoints(savedWaypoints, activePassageWaypoints),
+    [savedWaypoints, activePassageWaypoints],
+  );
 
   const mapAccessibilityLabel = useMemo(
     () =>
@@ -201,41 +221,36 @@ export function NavigationMap() {
   }, []);
 
   useEffect(() => {
+    if (passageMapPlanning) return;
+    setPlanningSelectedWaypointId(null);
+  }, [passageMapPlanning]);
+
+  useEffect(() => {
+    if (!planningPassageId) {
+      setPlanningSelectedWaypointId(null);
+    }
+  }, [planningPassageId]);
+
+  useEffect(() => {
     setFollowActive(followMode);
   }, [followMode]);
 
-  useEffect(() => {
-    if (measureActive) {
-      setFollowActive(false);
-    }
-  }, [measureActive]);
-
-  useEffect(() => {
-    if (isInstrumentsOnlyLayout && measureActive) {
-      useMeasureDistanceStore.getState().stop();
-      showInfo(t('map.measureNeedsChart'));
-    }
-  }, [isInstrumentsOnlyLayout, measureActive, showInfo]);
-
-  useEffect(() => {
-    if (passageMapPlanning && measureActive) {
-      useMeasureDistanceStore.getState().stop();
-      showInfo(t('map.measureStoppedForPlanning'));
-    }
-  }, [passageMapPlanning, measureActive, showInfo]);
-
   const handleAddPlanningWaypoint = useCallback(
     async (lat: number, lon: number) => {
-      if (!planningPassageId) return;
+      if (!planningPassageId || addingPlanningWaypointRef.current) return;
+      addingPlanningWaypointRef.current = true;
       try {
+        setPlanningSelectedWaypointId(null);
+        setWaypointHit(null);
         await addMapWaypointToPassage(planningPassageId, lat, lon);
         void pulseUiAcknowledgement();
-        showInfo(t('passage.mapWaypointAdded'));
       } catch {
         showError(t('passage.coordsSaveFailed'));
+      } finally {
+        addingPlanningWaypointRef.current = false;
       }
     },
-    [planningPassageId, showInfo, showError],
+    [planningPassageId, showError],
   );
 
   const handleStartNewPassageFromMap = useCallback(
@@ -244,7 +259,6 @@ export function NavigationMap() {
         const id = await startNewPassageFromMap(lat, lon);
         if (!id) return;
         void pulseUiAcknowledgement();
-        showInfo(t('passage.mapPassageStarted'));
       } catch {
         showError(t('passage.mapPassageStartFailed'));
       }
@@ -291,7 +305,7 @@ export function NavigationMap() {
       if (!bounds) return;
       setFollowActive(false);
       cameraRef.current?.fitBounds(bounds, {
-        padding: { top: 120, right: 48, bottom: 300, left: 48 },
+        padding: { top: 96, right: 48, bottom: PASSAGE_PLANNING_PANEL_CONTENT_MAX, left: 48 },
         duration: 400,
       });
     });
@@ -313,7 +327,7 @@ export function NavigationMap() {
 
   useEffect(() => {
     setMapStyleLoaded(false);
-  }, [chartStyleUri, chartBaseStyle]);
+  }, [chartStyleUri]);
 
   useMapCameraFollow({
     cameraRef,
@@ -321,19 +335,30 @@ export function NavigationMap() {
       followActive &&
       followMode &&
       Boolean(boatFix) &&
-      (!isInstrumentsOnlyLayout || showChartInInstrumentsOnly) &&
-      !measureActive,
+      (!isInstrumentsOnlyLayout || showChartInInstrumentsOnly),
     mapReady: mapStyleLoaded,
     courseUp: mapCourseUp,
     followZoom: mapFollowZoom,
     fix: boatFix,
   });
 
+  useEffect(() => {
+    if (followActive && followMode && mapStyleLoaded) {
+      setMapZoom(mapFollowZoom);
+    }
+  }, [followActive, followMode, mapFollowZoom, mapStyleLoaded]);
+
   const dismissChartDetails = useCallback(() => {
     setWaypointHit(null);
     setTrackPointHit(null);
     setSeamarkHit(null);
   }, []);
+
+  useEffect(() => {
+    if (!screenLocked) return;
+    setLongPressAction(null);
+    dismissChartDetails();
+  }, [screenLocked, dismissChartDetails]);
 
   const openLocationMenu = useCallback(
     (lat: number, lon: number) => {
@@ -344,21 +369,9 @@ export function NavigationMap() {
     [coordFormat, dismissChartDetails],
   );
 
-  const handlePlanningMarkPress = useCallback(
-    (mark: PlanningSeamarkFeature) => {
-      if (screenLocked || measureActive) return;
-      planningMarkTapRef.current = true;
-      void pulseUiAcknowledgement();
-      setWaypointHit(null);
-      setTrackPointHit(null);
-      setSeamarkHit(planningMarkToSeamarkHit(mark));
-    },
-    [measureActive, screenLocked],
-  );
-
   const handleSeamarkLookup = useCallback(
     async (lon: number, lat: number) => {
-      if (mobTarget || screenLocked || measureActive) return;
+      if (mobTarget || screenLocked) return;
       setSeamarkLoading(true);
       try {
         const local = await queryLocalSeamarkAtTap(lat, lon);
@@ -382,18 +395,18 @@ export function NavigationMap() {
         setSeamarkLoading(false);
       }
     },
-    [measureActive, mobTarget, screenLocked, showInfo],
+    [mobTarget, screenLocked, showInfo],
   );
 
   const handleMapTap = useCallback(
     (lon: number, lat: number) => {
-      if (mobTarget || screenLocked || measureActive) return;
+      if (mobTarget || screenLocked) return;
 
       const tap = resolveMapChartTapAction(
         lat,
         lon,
         {
-          savedWaypoints,
+          savedWaypoints: mapTapWaypoints,
           recordingTrackId,
           liveInspectPoints,
           mapPreviewPoints,
@@ -423,10 +436,9 @@ export function NavigationMap() {
       dismissChartDetails,
       liveInspectPoints,
       mapPreviewPoints,
-      measureActive,
       mobTarget,
       recordingTrackId,
-      savedWaypoints,
+      mapTapWaypoints,
       screenLocked,
       seamarkHit,
       trackPointHit,
@@ -438,64 +450,72 @@ export function NavigationMap() {
     async (lon: number, lat: number) => {
       if (!planningPassageId) return;
       const detail = await getPassageDetail(planningPassageId);
+      // Planning chart only shows this passage's waypoints, so they are the only
+      // tappable features. Saved/MOB marks and track points are hidden here and
+      // must not become invisible tap targets.
       const pickCtx = {
-        savedWaypoints,
+        savedWaypoints: [],
         passageWaypoints: detail?.waypoints ?? [],
-        recordingTrackId,
-        liveInspectPoints,
-        mapPreviewPoints,
+        recordingTrackId: null,
+        liveInspectPoints: [],
+        mapPreviewPoints: [],
       };
       const detailsOpen = mapChartHasOpenDetail({ seamarkHit, waypointHit, trackPointHit });
+      const pick = pickMapChartFeatures(lat, lon, pickCtx, PLANNING_WAYPOINT_PICK_RADIUS_NM);
+
+      if (pick.kind === 'waypoint') {
+        if (pick.waypoint.id === planningSelectedWaypointId) {
+          if (waypointHit) {
+            setWaypointHit(null);
+          } else {
+            setPlanningSelectedWaypointId(null);
+          }
+          return;
+        }
+        setTrackPointHit(null);
+        setSeamarkHit(null);
+        setPlanningSelectedWaypointId(pick.waypoint.id);
+        setWaypointHit(pick.waypoint);
+        return;
+      }
+
+      if (detailsOpen) {
+        dismissChartDetails();
+        setPlanningSelectedWaypointId(null);
+        return;
+      }
 
       if (!allowRouteEdits) {
-        const pick = pickMapChartFeatures(lat, lon, pickCtx);
-        if (pick.kind === 'waypoint') {
-          setTrackPointHit(null);
-          setSeamarkHit(null);
-          setWaypointHit(pick.waypoint);
-        } else if (pick.kind === 'track-point') {
-          setWaypointHit(null);
-          setSeamarkHit(null);
-          setTrackPointHit(pick.point);
-        } else if (detailsOpen) {
-          dismissChartDetails();
+        return;
+      }
+
+      if (planningSelectedWaypointId) {
+        try {
+          await relocateMapWaypointInPassage(planningPassageId, planningSelectedWaypointId, lat, lon);
+          void pulseUiAcknowledgement();
+          showInfo(t('passage.mapWaypointMoved'));
+          const moved = useWaypointStore.getState().items.find((w) => w.id === planningSelectedWaypointId);
+          if (moved) setWaypointHit(moved);
+        } catch {
+          showError(t('passage.coordsSaveFailed'));
         }
         return;
       }
 
-      const tap = resolvePlanningMapTapAction(lat, lon, pickCtx, detailsOpen);
-      switch (tap.action) {
-        case 'open-waypoint':
-          setTrackPointHit(null);
-          setSeamarkHit(null);
-          setWaypointHit(tap.waypoint);
-          break;
-        case 'open-track-point':
-          setWaypointHit(null);
-          setSeamarkHit(null);
-          setTrackPointHit(tap.point);
-          break;
-        case 'dismiss-details':
-          dismissChartDetails();
-          break;
-        case 'add-waypoint':
-          void handleAddPlanningWaypoint(lat, lon);
-          break;
-      }
+      await handleAddPlanningWaypoint(lat, lon);
     },
     [
       planningPassageId,
       allowRouteEdits,
       getPassageDetail,
-      savedWaypoints,
-      recordingTrackId,
-      liveInspectPoints,
-      mapPreviewPoints,
       seamarkHit,
       waypointHit,
       trackPointHit,
       dismissChartDetails,
       handleAddPlanningWaypoint,
+      planningSelectedWaypointId,
+      showInfo,
+      showError,
     ],
   );
 
@@ -552,30 +572,29 @@ export function NavigationMap() {
     })();
   }
 
-  const mapOverlays = !customSelecting ? (
-    <>
-      <View pointerEvents="box-none" style={[styles.topOverlay, { top: mapBottom.top, left: mapBottom.left, right: mapBottom.right }]}>
-        <MapTopChrome
-          actionColumnWidth={mapBottom.actionColumnWidth}
-          onOpenDownloads={() => navigation.navigate('Downloads')}
-          onOpenSettings={() => navigation.navigate('Settings')}
-          onOpenPassage={() => navigation.navigate('Passage')}
-          showRecenter={showRecenter}
-          onRecenter={() => setFollowActive(true)}
-          viewportLatitude={mapCenter.latitude}
-          viewportLongitude={mapCenter.longitude}
-          showPassageFollow={isMinimalLayout || isInstrumentsOnlyLayout}
-          modeHint={planningModeHint}
-        />
-      </View>
-      {!isMinimalLayout ? (
-        <MapChrome
-          showRangeRings={showRangeRings}
-          onToggleRangeRings={() => setShowRangeRings((v) => !v)}
-          screenLocked={screenLocked}
-        />
-      ) : null}
-    </>
+  const openPassage = useCallback(() => {
+    if (activePassageId) {
+      navigation.navigate('Passage', { screen: 'PassageDetail', params: { passageId: activePassageId } });
+      return;
+    }
+    navigation.navigate('Passage');
+  }, [navigation, activePassageId]);
+  const openTracks = useCallback(() => navigation.navigate('Tracks'), [navigation]);
+
+  const mapOverlays = !customSelecting && !passageMapPlanning ? (
+    <View pointerEvents="box-none" style={[styles.topOverlay, { top: mapBottom.top, left: mapBottom.left, right: mapBottom.right }]}>
+      <MapTopChrome
+        actionColumnWidth={showRootSafetyColumn ? mapBottom.actionColumnWidth : 0}
+        onOpenDownloads={() => navigation.navigate('Downloads')}
+        onOpenSettings={() => navigation.navigate('Settings')}
+        onOpenTracks={openTracks}
+        showRecenter={showRecenter}
+        onRecenter={() => setFollowActive(true)}
+        viewportLatitude={mapCenter.latitude}
+        viewportLongitude={mapCenter.longitude}
+        modeHint={planningModeHint}
+      />
+    </View>
   ) : null;
 
   const mapNode = !offlineHydrated ? (
@@ -583,9 +602,10 @@ export function NavigationMap() {
       <Text style={{ color: colors.textMuted }}>{t('boot.loading')}</Text>
     </View>
   ) : chartStyleUri ? (
-    <View style={styles.map} pointerEvents={screenLocked ? 'none' : 'box-none'}>
-      <Map
-        key={`nav-chart-${chartBaseStyle}`}
+    <View style={styles.mapHost} pointerEvents={screenLocked ? 'none' : 'box-none'}>
+      <View style={styles.mapClip}>
+        <Map
+        key="nav-chart"
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         accessible
@@ -600,7 +620,7 @@ export function NavigationMap() {
         }}
         compass
         compassPosition={{
-          bottom: mapBottom.actionsBottom + mapBottom.actionStackHeight + 12,
+          bottom: mapBottom.compassBottom,
           right: mapBottom.right,
         }}
         scaleBar={showScaleBar}
@@ -630,7 +650,7 @@ export function NavigationMap() {
         }
       }}
       onLongPress={(e) => {
-        if (customSelecting || screenLocked || measureActive || mobTarget) return;
+        if (customSelecting || screenLocked || mobTarget) return;
         suppressNextPressRef.current = true;
         const [lon, lat] = e.nativeEvent.lngLat;
         openLocationMenu(lat, lon);
@@ -639,10 +659,6 @@ export function NavigationMap() {
         if (screenLocked) return;
         if (suppressNextPressRef.current) {
           suppressNextPressRef.current = false;
-          return;
-        }
-        if (planningMarkTapRef.current) {
-          planningMarkTapRef.current = false;
           return;
         }
         const [lon, lat] = e.nativeEvent.lngLat;
@@ -662,11 +678,6 @@ export function NavigationMap() {
           void handlePlanningMapTap(lon, lat);
           return;
         }
-        if (measureActive) {
-          addMeasurePoint(lat, lon);
-          void pulseUiAcknowledgement();
-          return;
-        }
         handleMapTap(lon, lat);
       }}
     >
@@ -677,18 +688,11 @@ export function NavigationMap() {
           zoom: followMode ? mapFollowZoom : 11,
         }}
       />
-      <CourseVectorOverlay mapZoom={mapZoom} fallbackZoom={mapFollowZoom} />
+      {!passageMapPlanning ? <CourseVectorOverlay mapZoom={mapZoom} fallbackZoom={mapFollowZoom} /> : null}
       <ExpoLocationPuck mapZoom={mapZoom} fallbackZoom={mapFollowZoom} />
-      <PlanningSeamarksOverlay
-        centerLatitude={mapCenter.latitude}
-        centerLongitude={mapCenter.longitude}
-        zoom={mapZoom ?? mapFollowZoom}
-        config={seamarkPlanning}
-        onMarkPress={handlePlanningMarkPress}
-      />
-      <MapOverlays showRangeRings={showRangeRings} />
-      <MeasureDistanceOverlay />
+      <MapOverlays planningMode={passageMapPlanning} planningSelectedWaypointId={planningSelectedWaypointId} />
     </Map>
+      </View>
       {!customSelecting ? (
         <View pointerEvents="box-none" style={styles.mapOverlayLayer}>
           {mapOverlays}
@@ -717,31 +721,29 @@ export function NavigationMap() {
       {isInstrumentsOnlyLayout && !showChartInInstrumentsOnly ? (
         <InstrumentsOnlyShell
           fix={fix}
+          onOpenPassage={openPassage}
           topChrome={
             <MapTopChrome
-              actionColumnWidth={mapBottom.actionColumnWidth}
+              actionColumnWidth={instrumentsTopChromeLayout.actionColumnWidth}
               onOpenDownloads={() => navigation.navigate('Downloads')}
               onOpenSettings={() => navigation.navigate('Settings')}
-              onOpenPassage={() => navigation.navigate('Passage')}
+              onOpenTracks={openTracks}
               showRecenter={false}
               onRecenter={() => setFollowActive(true)}
               viewportLatitude={mapCenter.latitude}
               viewportLongitude={mapCenter.longitude}
-              showPassageFollow
               modeHint={planningModeHint}
             />
           }
-          showRangeRings={showRangeRings}
-          onToggleRangeRings={() => setShowRangeRings((v) => !v)}
           screenLocked={screenLocked}
         />
       ) : showChartInInstrumentsOnly && isInstrumentsOnlyLayout ? (
         <View style={styles.mapOnlyHost}>{mapNode}</View>
       ) : (
-        <ResponsiveMapShell map={mapNode} panel={<MapInstruments fix={fix} />} />
+        <ResponsiveMapShell map={mapNode} />
       )}
 
-      {customSelecting ? (
+      {customSelecting && !mobTarget ? (
         <>
           <View pointerEvents="box-none" style={[styles.topOverlay, { top: chrome.top, left: chrome.left, right: chrome.right }]}>
             <View style={[styles.hint, { backgroundColor: colors.primary, borderColor: colors.primary, marginBottom: spacing.sm }]}>
@@ -752,15 +754,19 @@ export function NavigationMap() {
         </>
       ) : null}
 
-      {passageMapPlanning && !customSelecting ? <PassageMapPlanningPanel /> : null}
+      {passageMapPlanning && !customSelecting && !mobTarget ? <PassageMapPlanningPanel /> : null}
 
-      {measureActive && !customSelecting && !passageMapPlanning ? <MeasureDistancePanel /> : null}
-
-      {isMinimalLayout && !customSelecting && !passageMapPlanning && !mobTarget && !screenLocked && !measureActive ? (
-        <MapBottomDock
-          fix={fix}
-          showRangeRings={showRangeRings}
-          onToggleRangeRings={() => setShowRangeRings((v) => !v)}
+      {surface.showBottomDock && (isMinimalLayout || (isInstrumentsOnlyLayout && showChartInInstrumentsOnly)) ? (
+        <MapBottomDock fix={fix} onOpenPassage={openPassage} />
+      ) : null}
+      {surface.showBottomDock && isMapForwardLayout ? (
+        <MapInstrumentDock fix={fix} onOpenPassage={openPassage} />
+      ) : null}
+      {showRootSafetyColumn ? (
+        <MapChrome
+          onMobDropped={switchLayoutOnMob}
+          showAnchor={!(isInstrumentsOnlyLayout && !showChartInInstrumentsOnly)}
+          screenLocked={screenLocked}
         />
       ) : null}
       {mobTarget ? <MobNavigateBackOverlay /> : null}
@@ -768,6 +774,9 @@ export function NavigationMap() {
         waypoint={waypointHit}
         onClose={() => setWaypointHit(null)}
         onCopied={() => showInfo(t('map.coordsCopied'))}
+        onDeleted={() => setPlanningSelectedWaypointId(null)}
+        planningPassageId={passageMapPlanning ? planningPassageId : null}
+        allowRouteEdits={allowRouteEdits}
       />
       <TrackPointMapDetailSheet
         point={trackPointHit}
@@ -792,6 +801,30 @@ export function NavigationMap() {
             ? [
                 ...(passageMapPlanning && allowRouteEdits
                   ? [
+                      ...(planningSelectedWaypointId
+                        ? [
+                            {
+                              label: t('passage.mapRelocateWaypointHere'),
+                              testID: 'map.longPress.passageRelocate',
+                              onPress: () =>
+                                void relocateMapWaypointInPassage(
+                                  planningPassageId!,
+                                  planningSelectedWaypointId,
+                                  longPressAction.lat,
+                                  longPressAction.lon,
+                                )
+                                  .then(() => {
+                                    void pulseUiAcknowledgement();
+                                    showInfo(t('passage.mapWaypointMoved'));
+                                    const moved = useWaypointStore
+                                      .getState()
+                                      .items.find((w) => w.id === planningSelectedWaypointId);
+                                    if (moved) setWaypointHit(moved);
+                                  })
+                                  .catch(() => showError(t('passage.coordsSaveFailed'))),
+                            },
+                          ]
+                        : []),
                       {
                         label: t('passage.mapAddWaypointHere'),
                         testID: 'map.longPress.passageAdd',
@@ -805,29 +838,17 @@ export function NavigationMap() {
                           testID: 'map.longPress.startPassage',
                           onPress: () => void handleStartNewPassageFromMap(longPressAction.lat, longPressAction.lon),
                         },
-                        {
-                          label: t('map.dropWaypointConfirm'),
-                          testID: 'map.longPress.waypoint',
-                          onPress: () =>
-                            void createWaypoint({
-                              name: t('map.newWaypoint'),
-                              latitude: longPressAction.lat,
-                              longitude: longPressAction.lon,
-                              type: 'generic',
-                            })
-                              .then(() => {
-                                void pulseUiAcknowledgement();
-                                showInfo(t('map.waypointSaved'));
-                              })
-                              .catch(() => showError(t('passage.coordsSaveFailed'))),
-                        },
                       ]
                     : []),
-                {
-                  label: t('map.anchorHere'),
-                  testID: 'map.longPress.anchor',
-                  onPress: () => handleLongPressAnchor(longPressAction.lat, longPressAction.lon),
-                },
+                ...(!passageMapPlanning
+                  ? [
+                      {
+                        label: t('map.anchorHere'),
+                        testID: 'map.longPress.anchor',
+                        onPress: () => handleLongPressAnchor(longPressAction.lat, longPressAction.lon),
+                      },
+                    ]
+                  : []),
                 {
                   label: t('map.copyCoordsAction'),
                   testID: 'map.longPress.copy',
@@ -856,9 +877,11 @@ export function NavigationMap() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   mapOnlyHost: { flex: 1, minHeight: 0 },
+  mapHost: { flex: 1, minHeight: 0 },
+  mapClip: { ...StyleSheet.absoluteFill, overflow: 'hidden' },
   map: { flex: 1, minHeight: 0, overflow: 'hidden' },
   mapOverlayLayer: { ...StyleSheet.absoluteFill, zIndex: 50, elevation: 50 },
-  topOverlay: { position: 'absolute', zIndex: 20 },
+  topOverlay: { position: 'absolute', left: 0, right: 0, zIndex: 20 },
   hint: { borderWidth: 1, borderRadius: 12, padding: 10 },
   hintText: { fontSize: 13, lineHeight: 18, textAlign: 'center' },
   seamarkLoading: { position: 'absolute', top: '45%', alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, borderWidth: 1 },

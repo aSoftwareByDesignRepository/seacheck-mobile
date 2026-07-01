@@ -93,9 +93,14 @@ jest.mock('@maplibre/maplibre-react-native', () => {
       start: jest.fn(),
       stop: jest.fn(),
     },
+    NetworkManager: {
+      setConnected: jest.fn(),
+    },
     OfflineManager: {
       getPacks: jest.fn(async () => []),
       addListener: jest.fn(async () => {}),
+      setTileCountLimit: jest.fn(),
+      setProgressEventThrottle: jest.fn(),
       createPack: jest.fn(async (_opts: unknown, onProgress: (p: { id: string }, s: { state: string; percentage: number }) => void) => {
         const pack = {
           id: 'mock-pack',
@@ -105,14 +110,19 @@ jest.mock('@maplibre/maplibre-react-native', () => {
             id: 'mock-pack',
             state: 'complete',
             percentage: 100,
-            completedResourceCount: 1,
-            completedResourceSize: 1,
-            completedTileCount: 1,
-            completedTileSize: 1,
-            requiredResourceCount: 1,
+            completedResourceCount: 10,
+            completedResourceSize: 1000,
+            completedTileCount: 8,
+            completedTileSize: 800,
+            requiredResourceCount: 10,
           }),
         };
-        onProgress(pack, { state: 'complete', percentage: 100 });
+        onProgress(pack, {
+          state: 'complete',
+          percentage: 100,
+          requiredResourceCount: 10,
+          completedResourceCount: 10,
+        });
         return pack;
       }),
       deletePack: jest.fn(async () => {}),

@@ -1,4 +1,4 @@
-import { computePathDistanceNm, formatGotoNavLabel, formatMapDistanceLabel, legMidpoint } from '../src/lib/geo/pathDistance';
+import { computeLiveTrailDistanceNm, computePathDistanceNm, formatGotoNavLabel, formatMapDistanceLabel, legMidpoint } from '../src/lib/geo/pathDistance';
 
 describe('pathDistance', () => {
   it('sums rhumb distances along a path', () => {
@@ -14,6 +14,17 @@ describe('pathDistance', () => {
   it('returns zero for fewer than two points', () => {
     expect(computePathDistanceNm([])).toBe(0);
     expect(computePathDistanceNm([{ latitude: 54, longitude: 10 }])).toBe(0);
+    expect(computeLiveTrailDistanceNm([])).toBe(0);
+    expect(computeLiveTrailDistanceNm([[10, 54]])).toBe(0);
+  });
+
+  it('computes live trail distance from lon/lat pairs', () => {
+    const nm = computeLiveTrailDistanceNm([
+      [10.0, 54.0],
+      [10.1, 54.1],
+      [10.2, 54.2],
+    ]);
+    expect(nm).toBeGreaterThan(0);
   });
 
   it('computes leg midpoint for map labels', () => {

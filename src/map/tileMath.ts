@@ -9,6 +9,16 @@ function latToTileY(lat: number, zoom: number): number {
   return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** zoom);
 }
 
+/** Web mercator tile index for a point at a given zoom. */
+export function tileCoordsAt(lon: number, lat: number, zoom: number): { x: number; y: number } {
+  return { x: lonToTileX(lon, zoom), y: latToTileY(lat, zoom) };
+}
+
+/** Substitute z/x/y into a MapLibre raster tile URL template. */
+export function formatRasterTileUrl(template: string, z: number, x: number, y: number): string {
+  return template.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y));
+}
+
 /** Approximate raster tile count for a bounds box across zoom levels (both layers ≈ ×2). */
 export function estimateTileCount(bounds: LngLatBounds, minZoom: number, maxZoom: number, layerCount = 2): number {
   const [west, south, east, north] = bounds;

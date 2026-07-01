@@ -5,6 +5,9 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { stopPassageMapPlanning, isPassageMapPlanningActive } from '../../lib/passage/passageMapPlanning';
 import { ensureDownloadAllowed } from '../../lib/network/downloadPolicy';
+import { runLockedChartDownloadPreflight } from '../../lib/offline/downloadPreflight';
+import { reportDownloadFailureFromError } from '../../lib/offline/reportDownloadFailure';
+import { reportDownloadOutcome } from '../../lib/offline/reportDownloadOutcome';
 import { validateDownloadBounds } from '../../lib/map/bounds';
 import { estimateDownloadKb, estimateTileCount, formatStorageSize } from '../../map/tileMath';
 import { t } from '../../i18n';
@@ -15,17 +18,30 @@ import { useFeedbackStore } from '../../store/feedbackStore';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
-import { SectionHeader } from '../../ui/SectionHeader';
+import { ButtonStack } from '../../ui/Screen';
+import { downloadsStyles } from './downloadsStyles';
 
 const CUSTOM_DELTA = 0.12;
+
+type PassagePrefill = {
+  bounds: [number, number, number, number];
+  defaultName: string;
+  passageLabel: string;
+};
 
 type Props = {
   downloadLocked?: boolean;
   actionBusyId?: string | null;
   onActionBusyChange?: (id: string | null) => void;
+  passagePrefill?: PassagePrefill | null;
 };
 
-export function CustomDownloadSection({ downloadLocked = false, actionBusyId, onActionBusyChange }: Props) {
+export function CustomDownloadSection({
+  downloadLocked = false,
+  actionBusyId,
+  onActionBusyChange,
+  passagePrefill = null,
+}: Props) {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const { colors, spacing, minTouch } = useTheme();
   const fix = useLocationStore((s) => s.fix);
@@ -33,6 +49,7 @@ export function CustomDownloadSection({ downloadLocked = false, actionBusyId, on
   const posFix = fix && !isFixStale(fix) ? fix : lastGoodFix && !isFixStale(lastGoodFix) ? lastGoodFix : null;
   const startSelecting = useCustomDownloadStore((s) => s.startSelecting);
   const startCustomDownload = useOfflinePackStore((s) => s.startCustomDownload);
+  const ensureChartStyle = useOfflinePackStore((s) => s.ensureChartStyle);
   const showError = useFeedbackStore((s) => s.showError);
   const showInfo = useFeedbackStore((s) => s.showInfo);
   const [busy, setBusy] = useState(false);
@@ -50,12 +67,16 @@ export function CustomDownloadSection({ downloadLocked = false, actionBusyId, on
   const quickEstimate = quickBounds ? formatStorageSize(estimateDownloadKb(estimateTileCount(quickBounds, 10, 14))) : null;
   const quickValid = quickBounds ? validateDownloadBounds(quickBounds, 10, 14).ok : false;
 
-  function openMapPicker() {
+  function openMapPicker(prefill?: PassagePrefill) {
     if (isPassageMapPlanningActive()) {
       showInfo(t('passage.mapPlanningPaused'));
     }
     stopPassageMapPlanning();
-    startSelecting();
+    if (prefill) {
+      useCustomDownloadStore.getState().prefillFromBounds(prefill.bounds, prefill.defaultName);
+    } else {
+      startSelecting();
+    }
     navigation.navigate('Map');
   }
 
@@ -77,13 +98,16 @@ export function CustomDownloadSection({ downloadLocked = false, actionBusyId, on
       lat: posFix.latitude.toFixed(2),
       lon: posFix.longitude.toFixed(2),
     });
+    const regionId = `custom_${Date.now().toString(36)}`;
     setBusy(true);
     onActionBusyChange?.('custom_quick');
     try {
-      await startCustomDownload(name, quickBounds, 10, 14);
-      showInfo(t('downloads.customStartedBody'));
+      await runLockedChartDownloadPreflight(regionId, ensureChartStyle);
+      await startCustomDownload(name, quickBounds, 10, 14, regionId);
+      reportDownloadOutcome(regionId, { showInfo, showError });
     } catch (err) {
-      showError(err instanceof Error ? err.message : t('downloads.downloadFailed'));
+      useOfflinePackStore.getState().releasePreflightDownloadLock(regionId);
+      reportDownloadFailureFromError(regionId, err, 'preflight');
     } finally {
       setBusy(false);
       const stillDownloading = useOfflinePackStore.getState().activeDownloadRegionId != null;
@@ -92,34 +116,60 @@ export function CustomDownloadSection({ downloadLocked = false, actionBusyId, on
   }
 
   return (
-    <View style={{ marginTop: spacing.lg }}>
-      <SectionHeader title={t('downloads.customTitle')} description={t('downloads.customBody')} />
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, gap: spacing.md }]}>
-        <Text style={[styles.lead, { color: colors.text }]}>{t('downloads.customMapLead')}</Text>
-        <Button label={t('downloads.customSelectOnMap')} onPress={openMapPicker} testID="downloads.custom.selectMap" />
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        <Text style={[styles.meta, { color: colors.textMuted }]}>{t('downloads.customQuickTitle')}</Text>
-        <Text style={[styles.meta, { color: colors.textMuted }]}>
+    <View testID="downloads.customSection" style={{ gap: spacing.md }}>
+      {passagePrefill ? (
+        <View
+          testID="downloads.passageCustomBanner"
+          style={[styles.passageCallout, { backgroundColor: colors.warningBg, borderColor: colors.warningBorder }]}
+          accessibilityRole="summary"
+        >
+          <Text style={[downloadsStyles.optionTitle, { color: colors.warningText }]} accessibilityRole="header">
+            {t('downloads.passageCustomTitle')}
+          </Text>
+          <Text style={[downloadsStyles.optionBody, { color: colors.text }]}>
+            {t('downloads.passageCustomBody', { name: passagePrefill.passageLabel })}
+          </Text>
+          <Button
+            label={t('downloads.passageCustomOpenMap')}
+            variant="secondary"
+            onPress={() => openMapPicker(passagePrefill)}
+            testID="downloads.passageCustomOpenMap"
+          />
+        </View>
+      ) : null}
+
+      <View style={[styles.option, { borderTopColor: passagePrefill ? colors.border : 'transparent', borderTopWidth: passagePrefill ? StyleSheet.hairlineWidth : 0, paddingTop: passagePrefill ? spacing.md : 0 }]}>
+        <Text style={[downloadsStyles.optionTitle, { color: colors.text }]}>{t('downloads.customMapOptionTitle')}</Text>
+        <Text style={[downloadsStyles.optionBody, { color: colors.textMuted }]}>{t('downloads.customMapLead')}</Text>
+        <Button label={t('downloads.customSelectOnMap')} onPress={() => openMapPicker()} testID="downloads.custom.selectMap" />
+      </View>
+
+      <View style={[styles.divider, { backgroundColor: colors.border }]} accessibilityElementsHidden importantForAccessibility="no" />
+
+      <View style={styles.option}>
+        <Text style={[downloadsStyles.optionTitle, { color: colors.text }]}>{t('downloads.customQuickTitle')}</Text>
+        <Text style={[downloadsStyles.optionBody, { color: colors.textMuted }]}>
           {quickBounds
             ? t('downloads.customEstimate', { size: quickEstimate ?? '—' })
             : t('downloads.customAwaitingGps')}
         </Text>
-        <Button
-          label={t('downloads.customQuickDownload')}
-          variant="secondary"
-          onPress={() => void handleQuickDownload()}
-          loading={busy}
-          disabled={busy || downloadLocked || actionBusyId != null || !quickBounds || !quickValid}
-          testID="downloads.custom.quick"
-        />
+        <ButtonStack>
+          <Button
+            label={t('downloads.customQuickDownload')}
+            variant="secondary"
+            onPress={() => void handleQuickDownload()}
+            loading={busy}
+            disabled={busy || downloadLocked || actionBusyId != null || !quickBounds || !quickValid}
+            testID="downloads.custom.quick"
+          />
+        </ButtonStack>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 16, padding: 16, minHeight: 48 },
-  lead: { fontSize: 15, lineHeight: 22, fontWeight: '600' },
-  meta: { fontSize: 14, lineHeight: 20 },
-  divider: { height: StyleSheet.hairlineWidth, marginVertical: 4 },
+  passageCallout: { borderWidth: 1, borderRadius: 12, padding: 14, gap: 10 },
+  option: { gap: 8 },
+  divider: { height: StyleSheet.hairlineWidth },
 });

@@ -3,8 +3,6 @@ import { create } from 'zustand';
 
 import {
   CRUISE_PASSAGE_DEFAULTS,
-  DEFAULT_SEAMARK_PLANNING,
-  DEFAULT_CHART_BASE_STYLE,
   type BearingReference,
   type CoordFormat,
   type AnchorRadiusNm,
@@ -12,18 +10,14 @@ import {
   type CourseVectorVisualScale,
   type DistanceUnit,
   type FollowZoomLevel,
-  type ChartBaseStyle,
   type LayoutPreset,
   type PanelSide,
-  type SeamarkPlanningConfig,
   type SogUnit,
 } from '../settings/defaults';
 import { layoutContextKey, normalizeLayoutPreset, type LayoutContext } from '../lib/settings/layoutPreferences';
-import { normalizeChartBaseStyle } from '../lib/settings/chartBaseStyle';
 import { enqueuePersist } from '../lib/persist/asyncPersistQueue';
 import { buildActivityProfileSettingsPatch, getActivityProfile, normalizeActivityProfileId } from '../settings/profiles';
 import { normalizeAnchorRadiusNm, normalizeCourseVectorMinutes, normalizeCourseVectorScale, normalizeFollowZoom } from '../lib/settings/mapSettings';
-import { normalizeSeamarkPlanning } from '../lib/settings/seamarkSettings';
 
 const STORAGE_KEY = 'seacheck.settings.v1';
 
@@ -51,9 +45,9 @@ type PersistPayload = {
   mapCourseVectorMinutes: CourseVectorMinutes;
   mapCourseVectorScale: CourseVectorVisualScale;
   mapFollowZoom: FollowZoomLevel;
-  chartBaseStyle: ChartBaseStyle;
   mapShowPassageRouteLines: boolean;
-  seamarkPlanning: SeamarkPlanningConfig;
+  /** Live track distance chip on the map while recording. */
+  mapShowRecordingDistance: boolean;
   anchorRadiusNm: AnchorRadiusNm;
   followMode: boolean;
   keepAwakeUnderway: boolean;
@@ -98,9 +92,8 @@ async function persist(state: SettingsState) {
     mapCourseVectorMinutes: state.mapCourseVectorMinutes,
     mapCourseVectorScale: state.mapCourseVectorScale,
     mapFollowZoom: state.mapFollowZoom,
-    chartBaseStyle: state.chartBaseStyle,
     mapShowPassageRouteLines: state.mapShowPassageRouteLines,
-    seamarkPlanning: state.seamarkPlanning,
+    mapShowRecordingDistance: state.mapShowRecordingDistance,
     anchorRadiusNm: state.anchorRadiusNm,
     followMode: state.followMode,
     keepAwakeUnderway: state.keepAwakeUnderway,
@@ -132,9 +125,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   layoutPreset: 'map-forward',
   layoutOverrides: {},
   ...CRUISE_PASSAGE_DEFAULTS,
-  chartBaseStyle: DEFAULT_CHART_BASE_STYLE,
   mapShowPassageRouteLines: true,
-  seamarkPlanning: DEFAULT_SEAMARK_PLANNING,
+  mapShowRecordingDistance: false,
   vessel: emptyVessel,
   downloadWifiOnly: true,
   gloveMode: false,
@@ -171,9 +163,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           mapCourseVectorMinutes: normalizeCourseVectorMinutes(parsed.mapCourseVectorMinutes),
           mapCourseVectorScale: normalizeCourseVectorScale(parsed.mapCourseVectorScale),
           mapFollowZoom: normalizeFollowZoom(parsed.mapFollowZoom),
-          chartBaseStyle: normalizeChartBaseStyle(parsed.chartBaseStyle),
           mapShowPassageRouteLines: parsed.mapShowPassageRouteLines ?? true,
-          seamarkPlanning: normalizeSeamarkPlanning(parsed.seamarkPlanning),
+          mapShowRecordingDistance: parsed.mapShowRecordingDistance ?? false,
           anchorRadiusNm: normalizeAnchorRadiusNm(parsed.anchorRadiusNm),
           followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode,
           keepAwakeUnderway: parsed.keepAwakeUnderway ?? CRUISE_PASSAGE_DEFAULTS.keepAwakeUnderway,

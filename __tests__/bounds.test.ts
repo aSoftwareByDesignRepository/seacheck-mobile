@@ -1,4 +1,11 @@
-import { expandLngLatBounds, normalizeBounds, pointInLngLatBounds, validateDownloadBounds } from '../src/lib/map/bounds';
+import {
+  expandLngLatBounds,
+  normalizeBounds,
+  pointInLngLatBounds,
+  squareBoundsContaining,
+  squareBoundsFromAnchor,
+  validateDownloadBounds,
+} from '../src/lib/map/bounds';
 
 describe('download bounds', () => {
   it('normalizes corner order', () => {
@@ -7,6 +14,26 @@ describe('download bounds', () => {
       { latitude: 54.3, longitude: 10.0 },
     );
     expect(bounds).toEqual([10.0, 54.3, 10.2, 54.5]);
+  });
+
+  it('builds a square from anchor and pointer', () => {
+    const bounds = squareBoundsFromAnchor(
+      { latitude: 54.3, longitude: 10.0 },
+      { latitude: 54.36, longitude: 10.08 },
+    );
+    const [west, south, east, north] = bounds;
+    expect(west).toBeCloseTo(10.0, 5);
+    expect(south).toBeCloseTo(54.3, 5);
+    expect(north - south).toBeCloseTo(east - west, 5);
+    expect(east - west).toBeCloseTo(0.08, 5);
+  });
+
+  it('expands rectangles to a containing square', () => {
+    const square = squareBoundsContaining([10.0, 54.0, 10.3, 54.1]);
+    const [west, south, east, north] = square;
+    expect(north - south).toBeCloseTo(east - west, 5);
+    expect(west).toBeLessThanOrEqual(10.0);
+    expect(east).toBeGreaterThanOrEqual(10.3);
   });
 
   it('rejects tiny areas', () => {

@@ -26,8 +26,8 @@ import { isFixStale, useLocationStore, useMapDisplayFix } from '../../services/l
 const DIAMOND_BASE_RADIUS_NM = 0.014;
 
 type Props = {
-  /** Live chart zoom — symbols scale so the boat stays visible when zoomed out. */
-  mapZoom: number | null;
+  /** Live chart zoom — symbols scale so the boat stays a fixed screen size. */
+  mapZoom: number;
   fallbackZoom?: number;
 };
 

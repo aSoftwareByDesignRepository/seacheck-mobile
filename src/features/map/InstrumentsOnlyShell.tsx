@@ -1,31 +1,29 @@
-import { StyleSheet, View } from 'react-native';
 import type { ReactNode } from 'react';
+import { StyleSheet, View } from 'react-native';
 
-import { t } from '../../i18n';
 import { useMapBottomLayout } from '../../hooks/useMapBottomLayout';
+import { t } from '../../i18n';
 import type { LocationFix } from '../../services/locationService';
 import { useTheme } from '../../theme/ThemeContext';
-import { MapChrome } from './MapChrome';
 import { MapInstruments } from './MapInstruments';
 
 type Props = {
   fix: LocationFix | null;
-  topChrome: ReactNode;
-  showRangeRings: boolean;
-  onToggleRangeRings: () => void;
+  /** Top map chrome (GPS strip, banners) rendered above the instruments. */
+  topChrome?: ReactNode;
   screenLocked?: boolean;
+  onOpenPassage: () => void;
 };
 
-/** Full-screen instruments without a chart — GPS, anchor, MOB, and tools stay available. */
+/** Full-screen instruments — safety actions overlay via MapChrome (same as map layouts). */
 export function InstrumentsOnlyShell({
   fix,
   topChrome,
-  showRangeRings,
-  onToggleRangeRings,
   screenLocked = false,
+  onOpenPassage,
 }: Props) {
   const { colors, spacing } = useTheme();
-  const layout = useMapBottomLayout({ showSideActions: !screenLocked });
+  const layout = useMapBottomLayout({ showSideActions: false });
 
   return (
     <View
@@ -34,23 +32,26 @@ export function InstrumentsOnlyShell({
       accessibilityLabel={t('map.instrumentsOnlyA11y')}
       testID="map.instrumentsOnly"
     >
-      <View
-        style={{
-          paddingTop: layout.top,
-          paddingLeft: layout.left,
-          paddingRight: layout.right,
-          paddingBottom: spacing.xs,
-        }}
-        pointerEvents="box-none"
-      >
-        {topChrome}
-      </View>
-      <View style={styles.panelRegion}>
-        <MapInstruments fix={fix} fullScreen />
-      </View>
-      {!screenLocked ? (
-        <MapChrome showRangeRings={showRangeRings} onToggleRangeRings={onToggleRangeRings} screenLocked={screenLocked} />
+      {topChrome ? (
+        <View
+          style={{
+            paddingTop: layout.top,
+            paddingLeft: layout.left,
+            paddingRight: layout.right,
+            paddingBottom: spacing.xs,
+          }}
+          pointerEvents="box-none"
+        >
+          {topChrome}
+        </View>
       ) : null}
+      <View style={styles.panelRegion}>
+        {!screenLocked ? (
+          <MapInstruments fix={fix} onOpenPassage={onOpenPassage} />
+        ) : (
+          <View style={styles.lockedPlaceholder} />
+        )}
+      </View>
     </View>
   );
 }
@@ -58,4 +59,5 @@ export function InstrumentsOnlyShell({
 const styles = StyleSheet.create({
   fill: { flex: 1, minHeight: 0 },
   panelRegion: { flex: 1, minHeight: 0 },
+  lockedPlaceholder: { flex: 1 },
 });

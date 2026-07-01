@@ -1,10 +1,17 @@
-import { packStateFromNative } from '../src/store/offlinePackStore';
+import { packStateFromNative, isNativeDownloadComplete } from '../src/store/offlinePackStore';
 import { pointCoveredByReadyPacks } from '../src/lib/map/coverage';
 import { REGION_PACKS } from '../src/map/regionPacks';
 
 describe('packStateFromNative', () => {
-  it('maps complete to ready', () => {
-    expect(packStateFromNative({ state: 'complete', percentage: 100 } as never)).toBe('ready');
+  it('maps complete to ready when resources are cached', () => {
+    expect(
+      packStateFromNative({
+        state: 'complete',
+        percentage: 100,
+        requiredResourceCount: 10,
+        completedResourceCount: 10,
+      } as never),
+    ).toBe('ready');
   });
 
   it('maps active to downloading', () => {
@@ -15,12 +22,46 @@ describe('packStateFromNative', () => {
     expect(packStateFromNative({ state: 'inactive', percentage: 55 } as never)).toBe('downloading');
   });
 
+  it('maps inactive pack with pending resources to downloading', () => {
+    expect(
+      packStateFromNative({
+        state: 'inactive',
+        percentage: 0,
+        requiredResourceCount: 120,
+        completedResourceCount: 0,
+      } as never),
+    ).toBe('downloading');
+  });
+
   it('maps inactive empty pack to idle', () => {
     expect(packStateFromNative({ state: 'inactive', percentage: 0 } as never)).toBe('idle');
   });
 
-  it('maps complete at 100 percent to ready', () => {
-    expect(packStateFromNative({ state: 'inactive', percentage: 100 } as never)).toBe('ready');
+  it('maps complete at 100 percent to ready when resources match', () => {
+    expect(
+      packStateFromNative({
+        state: 'inactive',
+        percentage: 100,
+        requiredResourceCount: 4,
+        completedResourceCount: 4,
+      } as never),
+    ).toBe('ready');
+  });
+
+  it('does not mark false-complete empty packs as ready', () => {
+    expect(
+      packStateFromNative({ state: 'complete', percentage: 100, requiredResourceCount: 0, completedResourceCount: 0 } as never),
+    ).toBe('idle');
+  });
+});
+
+describe('isNativeDownloadComplete', () => {
+  it('rejects complete status with zero required resources', () => {
+    expect(isNativeDownloadComplete({ state: 'complete', percentage: 100, requiredResourceCount: 0, completedResourceCount: 0 } as never)).toBe(false);
+  });
+
+  it('accepts fully downloaded packs', () => {
+    expect(isNativeDownloadComplete({ state: 'complete', percentage: 100, requiredResourceCount: 50, completedResourceCount: 50 } as never)).toBe(true);
   });
 });
 

@@ -1,6 +1,11 @@
 import { BOAT_BOW_OFFSET_NM, scaledBoatBowOffsetNm } from './boatIcon';
 import { destinationPoint, type LonLat } from './navigation';
-import { pixelLengthToNm, COURSE_VECTOR_MIN_LENGTH_PX } from '../map/chartSymbolScale';
+import {
+  clampCourseVectorDrawLengthNm,
+  courseVectorStubDrawLengthNm,
+  COURSE_VECTOR_STUB_TARGET_PX,
+  pixelLengthToNm,
+} from '../map/chartSymbolScale';
 import {
   COURSE_VECTOR_SCALE_MULTIPLIER,
   DEFAULT_COURSE_VECTOR_SCALE,
@@ -10,11 +15,11 @@ import {
 /** Standard chart-plotter projection time (minutes at current SOG). */
 export const COURSE_VECTOR_MINUTES = 6;
 
-/** Visible stub when stopped or below SOG threshold but heading is known. */
-export const COURSE_VECTOR_STUB_NM = 0.28;
+/** Legacy NM stub — prefer pixel-based stub via chart zoom; kept for tests and fallbacks. */
+export const COURSE_VECTOR_STUB_NM = 0.12;
 
-/** Minimum drawn length so the vector reads on the chart (Navionics-style prominence). */
-export const COURSE_VECTOR_MIN_VISUAL_NM = 0.55;
+/** Minimum drawn length at scale 1 for moving vectors (before zoom clamp). */
+export const COURSE_VECTOR_MIN_VISUAL_NM = 0.35;
 
 /** Cap projection length — avoids absurd vectors at high speed. */
 export const COURSE_VECTOR_MAX_NM = 20;
@@ -95,19 +100,24 @@ export type CourseVectorChartContext = {
   arrowheadScale?: number;
 };
 
-/** Ensures the vector reads on screen when zoomed out — true NM length unchanged in metadata. */
+/** Pixel-based heading stub at chart zoom — Navionics-style short H-vector when stopped. */
+export function courseVectorStubLengthNm(
+  chartZoom: number | null | undefined,
+  latitudeDeg: number,
+  stubPixels: number = COURSE_VECTOR_STUB_TARGET_PX,
+): number {
+  const drawn = courseVectorStubDrawLengthNm(chartZoom, latitudeDeg, stubPixels);
+  return drawn > 0 ? drawn : COURSE_VECTOR_STUB_NM;
+}
+
+/** Ensures the vector reads on screen — true NM length unchanged in metadata. */
 export function courseVectorDrawLengthNm(
   visualLengthNm: number,
   chartZoom: number | null | undefined,
   latitudeDeg: number,
-  minPixels: number = COURSE_VECTOR_MIN_LENGTH_PX,
+  headingStub = false,
 ): number {
-  if (chartZoom == null || !Number.isFinite(chartZoom) || !Number.isFinite(latitudeDeg)) {
-    return visualLengthNm;
-  }
-  const minNm = pixelLengthToNm(minPixels, chartZoom, latitudeDeg);
-  if (minNm <= 0) return visualLengthNm;
-  return Math.max(visualLengthNm, minNm);
+  return clampCourseVectorDrawLengthNm(visualLengthNm, chartZoom, latitudeDeg, { headingStub });
 }
 
 /**
@@ -128,10 +138,16 @@ export function buildCourseVectorGeometry(
   const arrowheadScale = chart?.arrowheadScale ?? symbolScale;
   const bowOffset = chart ? scaledBoatBowOffsetNm(symbolScale) : BOAT_BOW_OFFSET_NM;
   const from = destinationPoint(center, bearing, bowOffset);
+  const kn = input.speedKn ?? 0;
+  const headingStub = kn <= 0;
   const lengthNm = courseVectorLengthNm(input.speedKn, minutes);
   let visualLengthNm = courseVectorVisualLengthNm(lengthNm, input.speedKn, scale);
   if (chart) {
-    visualLengthNm = courseVectorDrawLengthNm(visualLengthNm, chart.chartZoom, chart.latitudeDeg);
+    if (headingStub) {
+      visualLengthNm = courseVectorStubLengthNm(chart.chartZoom, chart.latitudeDeg);
+    } else {
+      visualLengthNm = courseVectorDrawLengthNm(visualLengthNm, chart.chartZoom, chart.latitudeDeg, false);
+    }
   }
   const to = destinationPoint(from, bearing, visualLengthNm);
 

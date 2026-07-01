@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import type { TrackPointRow, TrackRow } from '../../lib/db/database';
 import { computePathDistanceNm } from '../../lib/geo/pathDistance';
+import { formatDateTimeLocal } from '../../lib/time/formatDateTimeLocal';
 import { formatDistanceNm } from '../../lib/geo/units';
 import { t } from '../../i18n';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -52,9 +53,9 @@ export function TrackDetailPanel({ track, points, onExport, onDelete, onShowOnMa
           <StatusBadge label={t('tracks.open')} variant="warning" />
         )}
       </View>
-      <Text style={[styles.meta, { color: colors.textMuted }]}>{t('tracks.detailStarted', { when: new Date(track.started_at).toLocaleString() })}</Text>
+      <Text style={[styles.meta, { color: colors.textMuted }]}>{t('tracks.detailStarted', { when: formatDateTimeLocal(track.started_at) })}</Text>
       {track.ended_at ? (
-        <Text style={[styles.meta, { color: colors.textMuted }]}>{t('tracks.detailEnded', { when: new Date(track.ended_at).toLocaleString() })}</Text>
+        <Text style={[styles.meta, { color: colors.textMuted }]}>{t('tracks.detailEnded', { when: formatDateTimeLocal(track.ended_at) })}</Text>
       ) : null}
       <View style={[styles.stats, { marginTop: spacing.md, gap: spacing.sm }]}>
         <Stat label={t('tracks.detailPoints')} value={String(points.length)} colors={colors} />

@@ -1,6 +1,10 @@
 import { useCallback, useState } from 'react';
 
 import { ensureDownloadAllowed } from '../lib/network/downloadPolicy';
+import { runLockedChartDownloadPreflight } from '../lib/offline/downloadPreflight';
+import { reportDownloadFailureFromError } from '../lib/offline/reportDownloadFailure';
+import { reportDownloadOutcome } from '../lib/offline/reportDownloadOutcome';
+import { isPackDownloadActive } from '../features/downloads/packDownloadPresentation';
 import { t } from '../i18n';
 import { useFeedbackStore } from '../store/feedbackStore';
 import { useOfflinePackStore } from '../store/offlinePackStore';
@@ -23,10 +27,10 @@ export function usePackDownloadActions() {
   const packBusy = useCallback(
     (packId: string) => {
       if (!hydrated) return true;
-      if (regions[packId]?.state === 'downloading') return false;
+      if (isPackDownloadActive(packId, regions[packId] ?? { state: 'idle' }, activeDownloadRegionId)) return false;
       return downloadLocksOtherPacks || (actionBusyId != null && actionBusyId !== packId);
     },
-    [hydrated, activeDownloadRegionId, downloadLocksOtherPacks, actionBusyId],
+    [hydrated, activeDownloadRegionId, downloadLocksOtherPacks, actionBusyId, regions],
   );
 
   const handleDownload = useCallback(
@@ -40,7 +44,8 @@ export function usePackDownloadActions() {
         return false;
       }
       const status = regions[regionId];
-      if (status?.state === 'downloading') {
+      if (status?.state === 'downloading' || activeDownloadRegionId === regionId) {
+        showInfo(t('downloads.downloadAlreadyActive'));
         return false;
       }
       const allowed = await ensureDownloadAllowed();
@@ -50,7 +55,7 @@ export function usePackDownloadActions() {
       }
       setActionBusyId(regionId);
       try {
-        await ensureChartStyle();
+        await runLockedChartDownloadPreflight(regionId, ensureChartStyle);
         const latest = useOfflinePackStore.getState().regions[regionId];
         if (latest?.custom || latest?.state === 'error') {
           await retryDownload(regionId);
@@ -58,19 +63,20 @@ export function usePackDownloadActions() {
           await startDownload(regionId);
         }
         const next = useOfflinePackStore.getState().regions[regionId];
-        if (next?.state === 'ready') {
-          showInfo(t('downloads.downloadSuccess'));
-        } else if (next?.state === 'error') {
-          showError(next.error ?? t('downloads.downloadFailed'));
-        }
-        return next?.state === 'ready';
+        reportDownloadOutcome(regionId, { showInfo, showError });
+        return next?.state === 'ready' && !next?.error;
       } catch (err) {
-        const next = useOfflinePackStore.getState().regions[regionId];
-        showError(next?.error ?? (err instanceof Error ? err.message : t('downloads.downloadFailed')));
+        useOfflinePackStore.getState().releasePreflightDownloadLock(regionId);
+        reportDownloadFailureFromError(regionId, err, 'preflight');
         return false;
       } finally {
-        const stillDownloading = useOfflinePackStore.getState().regions[regionId]?.state === 'downloading';
-        if (!stillDownloading) setActionBusyId(null);
+        const next = useOfflinePackStore.getState().regions[regionId];
+        const stillActive = isPackDownloadActive(
+          regionId,
+          next ?? { state: 'idle' },
+          useOfflinePackStore.getState().activeDownloadRegionId,
+        );
+        if (!stillActive) setActionBusyId(null);
       }
     },
     [
@@ -110,7 +116,7 @@ export function usePackDownloadActions() {
       for (const regionId of pending) {
         const ok = await handleDownload(regionId);
         const state = useOfflinePackStore.getState().regions[regionId]?.state;
-        if (ok || state === 'ready') ready += 1;
+        if (ok || state === 'ready' || state === 'downloading') ready += 1;
         else if (state === 'error') failed += 1;
         else break;
       }
@@ -122,6 +128,7 @@ export function usePackDownloadActions() {
   return {
     hydrated,
     actionBusyId,
+    activeDownloadRegionId,
     downloadLocksOtherPacks,
     packBusy,
     handleDownload,

@@ -17,14 +17,20 @@ import {
   registerSeamarkIndexExecutor,
 } from '../lib/seamarks/seamarkIndexQueue';
 import { fetchIsEffectivelyOnline } from '../lib/network/connectivity';
+import { assertChartDownloadNetworkReady } from '../lib/network/downloadNetwork';
+import { ensureMapLibreNetworkForDownload } from '../lib/network/mapLibreNetworkGate';
 import {
   downloadCoordinator,
   formatDownloadError,
   loadNativePacksWithRetry,
   resetDownloadCoordinatorForTests,
 } from '../lib/offline/downloadCoordinator';
+import { startDownloadStallWatchdog, type StallDiagnostics } from '../lib/offline/downloadStallWatchdog';
+import { rememberDownloadFailureDiagnostics } from '../lib/offline/downloadFailureDiagnostics';
+import { isNativeDownloadKickstarted } from '../lib/offline/nativePackProgress';
+import { resetOfflineManagerSetupForTests } from '../lib/offline/offlineManagerSetup';
+import { warmupOfflineEngine } from '../lib/offline/warmupOfflineEngine';
 import { ensureStorageForDownload } from '../lib/offline/storageCheck';
-import { useSettingsStore } from './settingsStore';
 
 const STORAGE_KEY = 'seacheck.offline.v1';
 
@@ -72,6 +78,9 @@ type OfflinePackStore = {
   hasReadyPack: () => boolean;
   retryPendingSeamarkIndexing: () => Promise<void>;
   ensureChartStyle: () => Promise<string>;
+  /** Reserve download slot before async preflight — keeps MapLibre network on during warmup. */
+  preflightDownloadLock: (regionId: string) => boolean;
+  releasePreflightDownloadLock: (regionId: string) => void;
 };
 
 function emptyStatus(regionId: string): RegionPackStatus {
@@ -92,19 +101,62 @@ async function saveIndex(index: PersistedIndex) {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(index));
 }
 
+/** Whether native pack status indicates a fully cached, usable offline region. */
+export function isNativeDownloadComplete(status: OfflinePackStatus): boolean {
+  const nominallyComplete = status.state === 'complete' || status.percentage >= 100;
+  if (!nominallyComplete) return false;
+  if (status.requiredResourceCount <= 0) return false;
+  return status.completedResourceCount >= status.requiredResourceCount;
+}
+
 /** Map native MapLibre pack status to app download state (exported for tests). */
 export function packStateFromNative(native: OfflinePackStatus): PackDownloadState {
-  if (native.state === 'complete') return 'ready';
-  if (native.percentage >= 100) return 'ready';
+  if (isNativeDownloadComplete(native)) return 'ready';
   if (native.state === 'active') return 'downloading';
   if (native.percentage > 0 && native.percentage < 100) return 'downloading';
+  if (
+    native.requiredResourceCount > 0 &&
+    native.completedResourceCount < native.requiredResourceCount
+  ) {
+    return 'downloading';
+  }
   return 'idle';
 }
 
-function statusFromNative(regionId: string, packId: string, native: OfflinePackStatus): RegionPackStatus {
+type NativeStatusOptions = {
+  /** Keep downloading UI while coordinator holds this region (native often reports inactive/0% before first tick). */
+  sessionActive?: boolean;
+  current?: RegionPackStatus;
+};
+
+function resolvePackState(
+  regionId: string,
+  native: OfflinePackStatus,
+  options?: NativeStatusOptions,
+): PackDownloadState {
+  const fromNative = packStateFromNative(native);
+  if (fromNative !== 'idle') return fromNative;
+  const sessionActive =
+    options?.sessionActive ??
+    (downloadCoordinator.getActiveRegionId() === regionId);
+  if (sessionActive && !isNativeDownloadComplete(native)) {
+    return 'downloading';
+  }
+  if (options?.current?.state === 'downloading' && !isNativeDownloadComplete(native)) {
+    return 'downloading';
+  }
+  return 'idle';
+}
+
+function statusFromNative(
+  regionId: string,
+  packId: string,
+  native: OfflinePackStatus,
+  options?: NativeStatusOptions,
+): RegionPackStatus {
   return {
     regionId,
-    state: packStateFromNative(native),
+    state: resolvePackState(regionId, native, options),
     percentage: native.percentage,
     packId,
     error: null,
@@ -213,12 +265,20 @@ function createDownloadSession(
   set: (partial: Partial<OfflinePackStore> | ((state: OfflinePackStore) => Partial<OfflinePackStore>)) => void,
   get: () => OfflinePackStore,
 ) {
-  let finished = false;
+  type FinalizeOutcome = 'pending' | 'ready' | 'failed';
+  let finalizeOutcome: FinalizeOutcome = 'pending';
+  let stopWatchdog: (() => void) | null = null;
+
+  const clearWatchdog = () => {
+    stopWatchdog?.();
+    stopWatchdog = null;
+  };
 
   const markReady = async (packId: string, status: OfflinePackStatus) => {
-    if (finished) return;
+    if (finalizeOutcome !== 'pending') return;
     if (!isNativeDownloadComplete(status)) return;
-    finished = true;
+    finalizeOutcome = 'ready';
+    clearWatchdog();
     await finalizeReadyDownload(
       ctx.regionId,
       packId,
@@ -244,9 +304,12 @@ function createDownloadSession(
     finishDownloadSession(ctx.regionId, set);
   };
 
-  const markFailed = async (packId: string | null, message: string) => {
-    if (finished) return;
-    finished = true;
+  const markFailed = async (packId: string | null, message: string, diagnostics?: StallDiagnostics) => {
+    if (finalizeOutcome !== 'pending') return;
+    finalizeOutcome = 'failed';
+    clearWatchdog();
+    finishDownloadSession(ctx.regionId, set);
+    if (diagnostics) rememberDownloadFailureDiagnostics(ctx.regionId, diagnostics);
     await removeNativePack(packId);
 
     if (ctx.restoreOnFailure) {
@@ -256,7 +319,6 @@ function createDownloadSession(
           [ctx.regionId]: { ...ctx.restoreOnFailure!, error: message },
         },
       }));
-      finishDownloadSession(ctx.regionId, set);
       return;
     }
 
@@ -275,8 +337,10 @@ function createDownloadSession(
           ...ctx.customMeta,
         },
       },
+      ...(ctx.customMeta && ctx.bounds
+        ? { customBoundsIndex: { ...state.customBoundsIndex, [ctx.regionId]: ctx.bounds } }
+        : {}),
     }));
-    finishDownloadSession(ctx.regionId, set);
   };
 
   const onProgress = (_offlinePack: OfflinePack, status: OfflinePackStatus) => {
@@ -285,7 +349,7 @@ function createDownloadSession(
       regions: {
         ...state.regions,
         [ctx.regionId]: {
-          ...statusFromNative(ctx.regionId, _offlinePack.id, status),
+          ...statusFromNative(ctx.regionId, _offlinePack.id, status, { sessionActive: true }),
           ...ctx.customMeta,
           seamarksIndexed: state.regions[ctx.regionId]?.seamarksIndexed,
           seamarksIndexing: state.regions[ctx.regionId]?.seamarksIndexing,
@@ -300,7 +364,35 @@ function createDownloadSession(
     void markFailed(_offlinePack.id, formatDownloadError(error, t('downloads.statusError')));
   };
 
-  return { markReady, markFailed, onProgress, onError };
+  const attachWatchdog = (pack: OfflinePack) => {
+    clearWatchdog();
+    stopWatchdog = startDownloadStallWatchdog(
+      ctx.regionId,
+      ctx.session,
+      pack,
+      (message, diagnostics) => {
+        void markFailed(pack.id, message, diagnostics);
+      },
+      t('downloads.errorDownloadStalled'),
+      (status) => {
+        if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
+        set((state) => ({
+          regions: {
+            ...state.regions,
+            [ctx.regionId]: {
+              ...statusFromNative(ctx.regionId, pack.id, status, { sessionActive: true }),
+              ...ctx.customMeta,
+              seamarksIndexed: state.regions[ctx.regionId]?.seamarksIndexed,
+              seamarksIndexing: state.regions[ctx.regionId]?.seamarksIndexing,
+            },
+          },
+        }));
+        void markReady(pack.id, status);
+      },
+    );
+  };
+
+  return { markReady, markFailed, onProgress, onError, attachWatchdog, clearWatchdog };
 }
 
 async function reattachDownloadingPack(
@@ -311,49 +403,78 @@ async function reattachDownloadingPack(
 ) {
   if (!downloadCoordinator.restoreActive(ctx.regionId)) return;
 
-  const { markReady, markFailed, onProgress, onError } = createDownloadSession(ctx, set, get);
+  const { markReady, markFailed, onProgress, onError, attachWatchdog } = createDownloadSession(ctx, set, get);
   try {
+    ensureMapLibreNetworkForDownload();
     await OfflineManager.addListener(pack.id, onProgress, onError);
-    const status = await pack.status();
+    const status = await kickstartNativeDownload(pack);
     set((state) => ({
       ...syncActiveDownloadId(),
       regions: {
         ...state.regions,
         [ctx.regionId]: {
-          ...statusFromNative(ctx.regionId, pack.id, status),
+          ...statusFromNative(ctx.regionId, pack.id, status, { sessionActive: true, current: state.regions[ctx.regionId] }),
           ...ctx.customMeta,
           seamarksIndexed: state.regions[ctx.regionId]?.seamarksIndexed,
           seamarksIndexing: state.regions[ctx.regionId]?.seamarksIndexing,
         },
       },
     }));
-    if (packStateFromNative(status) === 'downloading') {
-      try {
-        await pack.resume();
-      } catch {
-        /* native may already be active */
-      }
-    }
+    attachWatchdog(pack);
     await markReady(pack.id, status);
   } catch (err) {
     await markFailed(pack.id, formatDownloadError(err, t('downloads.statusError')));
   }
 }
 
-function isNativeDownloadComplete(status: OfflinePackStatus): boolean {
-  return status.state === 'complete' || status.percentage >= 100;
-}
+/** Some native builds need an explicit resume and polling after createPack before tiles download. */
+export async function kickstartNativeDownload(pack: OfflinePack): Promise<OfflinePackStatus> {
+  ensureMapLibreNetworkForDownload();
 
-/** Some native builds need an explicit resume after createPack before tiles download. */
-async function kickstartNativeDownload(pack: OfflinePack): Promise<OfflinePackStatus> {
+  const tryResume = async (usePauseCycle = false) => {
+    ensureMapLibreNetworkForDownload();
+    try {
+      await warmupOfflineEngine();
+    } catch {
+      /* best effort */
+    }
+    if (usePauseCycle) {
+      try {
+        await pack.pause();
+      } catch {
+        /* native may already be inactive */
+      }
+    }
+    ensureMapLibreNetworkForDownload();
+    try {
+      await pack.resume();
+    } catch {
+      /* native may already be active */
+    }
+  };
+
   let status = await pack.status();
   if (isNativeDownloadComplete(status)) return status;
-  try {
-    await pack.resume();
-  } catch {
-    /* native may already be active */
+
+  await tryResume();
+  status = await pack.status();
+  if (isNativeDownloadComplete(status)) return status;
+  if (isNativeDownloadKickstarted(status)) return status;
+
+  // Native often reports requiredResourceCount=0–1 / active before tile enumeration — poll until
+  // resources are queued or bytes move (otherwise downloads appear to "do nothing").
+  for (let attempt = 0; attempt < 20; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    ensureMapLibreNetworkForDownload();
+    status = await pack.status();
+    if (isNativeDownloadComplete(status)) return status;
+    if (isNativeDownloadKickstarted(status)) return status;
+    if (attempt === 1 || attempt === 4 || attempt === 8 || attempt === 12 || attempt === 16) {
+      await tryResume(attempt >= 8);
+    }
   }
-  return pack.status();
+
+  return status;
 }
 
 async function finalizeReadyDownload(
@@ -388,11 +509,16 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
   regions: Object.fromEntries(REGION_PACKS.map((p) => [p.id, emptyStatus(p.id)])),
 
   hydrate: async () => {
+    try {
+      await warmupOfflineEngine();
+    } catch (error) {
+      console.warn('[offlinePackStore] offline engine warmup failed', error);
+    }
     const emptyRegions = Object.fromEntries(REGION_PACKS.map((p) => [p.id, emptyStatus(p.id)]));
 
     let chartStyleUri: string | null = null;
     try {
-      chartStyleUri = await ensureChartStyleFile(useSettingsStore.getState().chartBaseStyle);
+      chartStyleUri = await ensureChartStyleFile();
     } catch (error) {
       console.warn('[offlinePackStore] chart style unavailable', error);
     }
@@ -492,7 +618,12 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       for (const [regionId, regionStatus] of Object.entries(regions)) {
         if (regionStatus.state !== 'downloading' || !regionStatus.packId) continue;
         if (restoredDownloadId) {
-          console.warn('[offlinePackStore] multiple in-progress downloads; only reattaching first');
+          regions[regionId] = {
+            ...regionStatus,
+            state: 'error',
+            packId: null,
+            error: t('downloads.errorDownloadInterrupted'),
+          };
           continue;
         }
         const native = nativePacks.find((p) => p.id === regionStatus.packId);
@@ -515,13 +646,13 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
             customMeta,
             finalizeExtra: entry?.custom
               ? {
-                  name: entry.name,
-                  custom: true,
-                  displayName: entry.name,
-                  bounds: entry.bounds,
-                  minZoom: entry.minZoom,
-                  maxZoom: entry.maxZoom,
-                }
+                name: entry.name,
+                custom: true,
+                displayName: entry.name,
+                bounds: entry.bounds,
+                minZoom: entry.minZoom,
+                maxZoom: entry.maxZoom,
+              }
               : undefined,
           },
           set,
@@ -573,6 +704,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
     }
 
     await assertStorageForBounds(packDef.bounds, packDef.minZoom, packDef.maxZoom);
+    await assertChartDownloadNetworkReady();
 
     const session = downloadCoordinator.tryBegin(regionId);
     if (session == null) {
@@ -603,12 +735,14 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       restoreOnFailure: previousWasReady ? previous : undefined,
       bounds: packDef.bounds,
     };
-    const { markReady, markFailed, onProgress, onError } = createDownloadSession(ctx, set, get);
+    const { markReady, markFailed, onProgress, onError, attachWatchdog } = createDownloadSession(ctx, set, get);
 
     let newPackId: string | null = null;
 
     try {
       const chartStyleUri = await get().ensureChartStyle();
+      await warmupOfflineEngine();
+      ensureMapLibreNetworkForDownload();
 
       const pack = await OfflineManager.createPack(
         {
@@ -623,9 +757,34 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       );
 
       newPackId = pack.id;
+      try {
+        await OfflineManager.addListener(pack.id, onProgress, onError);
+      } catch {
+        /* createPack callbacks may already be wired */
+      }
+      set((state) => ({
+        regions: {
+          ...state.regions,
+          [regionId]: {
+            ...(state.regions[regionId] ?? emptyStatus(regionId)),
+            regionId,
+            state: 'downloading',
+            percentage: 0,
+            packId: pack.id,
+            error: null,
+          },
+        },
+      }));
+      attachWatchdog(pack);
       const status = await kickstartNativeDownload(pack);
       set((state) => ({
-        regions: { ...state.regions, [regionId]: statusFromNative(regionId, pack.id, status) },
+        regions: {
+          ...state.regions,
+          [regionId]: statusFromNative(regionId, pack.id, status, {
+            sessionActive: true,
+            current: state.regions[regionId],
+          }),
+        },
       }));
       await markReady(pack.id, status);
     } catch (err) {
@@ -638,10 +797,16 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
     const regionId = existingRegionId ?? `custom_${Date.now().toString(36)}`;
 
     await assertStorageForBounds(bounds, minZoom, maxZoom);
+    await assertChartDownloadNetworkReady();
 
     const session = downloadCoordinator.tryBegin(regionId);
     if (session == null) {
       throw new Error(t('downloads.errorDownloadBusy'));
+    }
+
+    const previous = get().regions[regionId] ?? emptyStatus(regionId);
+    if (previous.packId && previous.state !== 'ready') {
+      await removeNativePack(previous.packId);
     }
 
     const customMeta = { custom: true as const, displayName: name };
@@ -654,15 +819,18 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       customMeta,
       finalizeExtra: { name, custom: true, displayName: name, bounds, minZoom, maxZoom },
     };
-    const { markReady, markFailed, onProgress, onError } = createDownloadSession(ctx, set, get);
+    const { markReady, markFailed, onProgress, onError, attachWatchdog } = createDownloadSession(ctx, set, get);
 
     let newPackId: string | null = null;
 
     try {
       const chartStyleUri = await get().ensureChartStyle();
+      await warmupOfflineEngine();
+      ensureMapLibreNetworkForDownload();
 
       set({
         ...syncActiveDownloadId(),
+        customBoundsIndex: { ...get().customBoundsIndex, [regionId]: bounds },
         regions: {
           ...get().regions,
           [regionId]: { regionId, state: 'downloading', percentage: 0, packId: null, error: null, ...customMeta },
@@ -682,9 +850,35 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       );
 
       newPackId = pack.id;
+      try {
+        await OfflineManager.addListener(pack.id, onProgress, onError);
+      } catch {
+        /* createPack callbacks may already be wired */
+      }
+      set((state) => ({
+        regions: {
+          ...state.regions,
+          [regionId]: {
+            ...(state.regions[regionId] ?? { regionId, ...customMeta }),
+            regionId,
+            state: 'downloading',
+            percentage: 0,
+            packId: pack.id,
+            error: null,
+            ...customMeta,
+          },
+        },
+      }));
+      attachWatchdog(pack);
       const status = await kickstartNativeDownload(pack);
       set((state) => ({
-        regions: { ...state.regions, [regionId]: { ...statusFromNative(regionId, pack.id, status), ...customMeta } },
+        regions: {
+          ...state.regions,
+          [regionId]: {
+            ...statusFromNative(regionId, pack.id, status, { sessionActive: true, current: state.regions[regionId] }),
+            ...customMeta,
+          },
+        },
       }));
       await markReady(pack.id, status);
     } catch (err) {
@@ -719,16 +913,31 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
 
   cancelDownload: async (regionId) => {
     const current = get().regions[regionId];
-    if (!current || current.state !== 'downloading') return;
+    const sessionActive = downloadCoordinator.getActiveRegionId() === regionId;
+    if (!current || (current.state !== 'downloading' && !sessionActive)) return;
 
     downloadCoordinator.invalidate(regionId);
-    await removeNativePack(current.packId);
+    const packId = current.packId;
+    if (packId) {
+      await removeNativePack(packId);
+    } else {
+      try {
+        const nativePacks = await OfflineManager.getPacks();
+        for (const pack of nativePacks) {
+          if (pack.metadata?.regionId === regionId) {
+            await removeNativePack(pack.id);
+          }
+        }
+      } catch {
+        /* best effort */
+      }
+    }
 
     const index = await loadIndex();
     const indexedPackId = index[regionId]?.packId;
     const nextCustom = { ...get().customBoundsIndex };
 
-    if (indexedPackId && indexedPackId !== current.packId) {
+    if (indexedPackId && indexedPackId !== packId) {
       try {
         const nativePacks = await OfflineManager.getPacks();
         const native = nativePacks.find((p) => p.id === indexedPackId);
@@ -776,7 +985,8 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
 
   deleteRegion: async (regionId) => {
     const current = get().regions[regionId];
-    if (current?.state === 'downloading') {
+    const sessionActive = downloadCoordinator.getActiveRegionId() === regionId;
+    if (current?.state === 'downloading' || sessionActive) {
       await get().cancelDownload(regionId);
       return;
     }
@@ -800,10 +1010,10 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         ...get().regions,
         ...(get().regions[regionId]
           ? {
-              [regionId]: current?.custom
-                ? { ...emptyStatus(regionId), custom: true, displayName: current.displayName }
-                : emptyStatus(regionId),
-            }
+            [regionId]: current?.custom
+              ? { ...emptyStatus(regionId), custom: true, displayName: current.displayName }
+              : emptyStatus(regionId),
+          }
           : {}),
       },
     });
@@ -812,9 +1022,21 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
   hasReadyPack: () => Object.values(get().regions).some((r) => r.state === 'ready'),
 
   ensureChartStyle: async () => {
-    const uri = await ensureChartStyleFile(useSettingsStore.getState().chartBaseStyle);
+    const uri = await ensureChartStyleFile();
     set({ chartStyleUri: uri });
     return uri;
+  },
+
+  preflightDownloadLock: (regionId) => {
+    if (!downloadCoordinator.preflightLock(regionId)) return false;
+    set(syncActiveDownloadId());
+    ensureMapLibreNetworkForDownload();
+    return true;
+  },
+
+  releasePreflightDownloadLock: (regionId) => {
+    downloadCoordinator.releasePreflightLock(regionId);
+    set(syncActiveDownloadId());
   },
 
   retryPendingSeamarkIndexing: async () => {
@@ -839,6 +1061,7 @@ registerSeamarkIndexExecutor(async (regionId, bounds) => {
 /** Test-only store reset. */
 export function resetOfflinePackStoreForTests(): void {
   resetDownloadCoordinatorForTests();
+  resetOfflineManagerSetupForTests();
   useOfflinePackStore.setState({
     hydrated: false,
     chartStyleUri: null,

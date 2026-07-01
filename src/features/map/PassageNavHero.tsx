@@ -13,7 +13,7 @@ type Props = {
   bearingSuffix: 'T' | 'M';
   distanceNm: number | null;
   distanceUnit: DistanceUnit;
-  etaUtc: string | null;
+  etaLocal: string | null;
   xteNm: number | null;
   xteSide: 'L' | 'R' | null;
   legNumber: number;
@@ -30,7 +30,7 @@ export function PassageNavHero({
   bearingSuffix,
   distanceNm,
   distanceUnit,
-  etaUtc,
+  etaLocal,
   xteNm,
   xteSide,
   legNumber,
@@ -80,13 +80,13 @@ export function PassageNavHero({
           heroSize={heroSize}
         />
         <InstrumentCell label={t('map.distTo')} value={distValue} unit={unitLabel} hero heroSize={heroSize} />
-        {etaUtc && !stackEta ? (
-          <InstrumentCell label={t('map.eta')} value={etaUtc} hero heroSize={etaSize} />
+        {etaLocal && !stackEta ? (
+          <InstrumentCell label={t('map.eta')} value={etaLocal} hero heroSize={etaSize} />
         ) : null}
       </View>
-      {etaUtc && stackEta ? (
+      {etaLocal && stackEta ? (
         <View style={[styles.row, { gap: spacing.sm, marginTop: spacing.xs }]}>
-          <InstrumentCell label={t('map.eta')} value={etaUtc} hero heroSize={etaSize} />
+          <InstrumentCell label={t('map.eta')} value={etaLocal} hero heroSize={etaSize} />
         </View>
       ) : null}
       {xteNm != null ? (

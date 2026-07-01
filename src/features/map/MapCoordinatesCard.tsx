@@ -1,8 +1,10 @@
 import * as Clipboard from 'expo-clipboard';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
+import { useFormFactor } from '../../hooks/useFormFactor';
+import { resolveCoordDisplay } from '../../lib/map/coordDisplayLayout';
 import { coordFormatTitleKey } from '../../lib/settings/coordFormats';
-import { formatLatitude, formatLongitude } from '../../map/coords';
+import { formatCoordinates } from '../../map/coords';
 import { t } from '../../i18n';
 import type { CoordFormat } from '../../settings/defaults';
 import { useTheme } from '../../theme/ThemeContext';
@@ -16,23 +18,24 @@ type Props = {
   onCycleFormat?: () => void;
 };
 
-/** Prominent lat/lon card for the Coordinates map layout. */
+/** Standalone coordinates card — same compact layout as InstrumentCoordsLine. */
 export function MapCoordinatesCard({ latitude, longitude, format, stale = false, onCopied, onCycleFormat }: Props) {
   const { colors, spacing, minTouch } = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  const { instrumentCoordsSize } = useFormFactor();
   const formatTitle = t(coordFormatTitleKey(format));
-  const latText = formatLatitude(format, latitude);
-  const lonText = formatLongitude(format, longitude);
+  const display = resolveCoordDisplay(format, latitude, longitude, windowWidth);
   const textColor = stale ? colors.textMuted : colors.text;
 
   async function copyCoords() {
-    await Clipboard.setStringAsync(`${latText}\n${lonText}`);
+    await Clipboard.setStringAsync(formatCoordinates(format, latitude, longitude));
     onCopied?.();
   }
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={t('map.coordsCardA11y', { format: formatTitle, lat: latText, lon: lonText })}
+      accessibilityLabel={t('map.coordsCardA11y', { format: formatTitle, lat: display.lat, lon: display.lon })}
       accessibilityHint={t('map.coordFormatCycleHint')}
       onPress={() => void copyCoords()}
       onLongPress={onCycleFormat}
@@ -44,32 +47,56 @@ export function MapCoordinatesCard({ latitude, longitude, format, stale = false,
           borderColor: colors.border,
           backgroundColor: colors.background,
           padding: spacing.md,
-          gap: spacing.sm,
+          gap: spacing.xs,
         },
       ]}
       testID="map.coords.card"
     >
-      <View style={styles.header}>
-        <Text style={[styles.formatLabel, { color: colors.textMuted }]} accessibilityRole="text">
+      <View style={[styles.header, { gap: spacing.sm }]}>
+        <Text style={[styles.formatLabel, { color: colors.textMuted }]} numberOfLines={1}>
           {formatTitle}
         </Text>
-        <Text style={[styles.actionHint, { color: colors.primary }]}>{t('map.coordsTapCopy')}</Text>
+        <Text style={[styles.actionHint, { color: colors.primary }]} numberOfLines={1}>
+          {t('map.coordsTapCopy')}
+        </Text>
       </View>
-      <View style={styles.coordRows}>
-        <View style={styles.coordRow}>
-          <Text style={[styles.axisLabel, { color: colors.textMuted }]}>{t('map.latitude')}</Text>
-          <Text style={[styles.coordValue, { color: textColor }]} selectable>
-            {latText}
+
+      {display.layout === 'inline' ? (
+        <Text
+          style={[
+            styles.coordValue,
+            { color: textColor, fontSize: instrumentCoordsSize, lineHeight: instrumentCoordsSize * 1.3 },
+          ]}
+          numberOfLines={2}
+          selectable
+        >
+          {display.inline}
+        </Text>
+      ) : (
+        <View style={styles.stacked}>
+          <Text
+            style={[
+              styles.coordValue,
+              { color: textColor, fontSize: instrumentCoordsSize, lineHeight: instrumentCoordsSize * 1.3 },
+            ]}
+            numberOfLines={1}
+            selectable
+          >
+            {display.lat}
+          </Text>
+          <Text
+            style={[
+              styles.coordValue,
+              { color: textColor, fontSize: instrumentCoordsSize, lineHeight: instrumentCoordsSize * 1.3 },
+            ]}
+            numberOfLines={1}
+            selectable
+          >
+            {display.lon}
           </Text>
         </View>
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        <View style={styles.coordRow}>
-          <Text style={[styles.axisLabel, { color: colors.textMuted }]}>{t('map.longitude')}</Text>
-          <Text style={[styles.coordValue, { color: textColor }]} selectable>
-            {lonText}
-          </Text>
-        </View>
-      </View>
+      )}
+
       {stale ? (
         <Text style={[styles.staleHint, { color: colors.warningText }]} accessibilityLiveRegion="polite">
           {t('map.staleCoordsHint')}
@@ -81,13 +108,10 @@ export function MapCoordinatesCard({ latitude, longitude, format, stale = false,
 
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 14 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  formatLabel: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
-  actionHint: { fontSize: 12, fontWeight: '700' },
-  coordRows: { gap: 10 },
-  coordRow: { gap: 4 },
-  axisLabel: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
-  coordValue: { fontSize: 22, fontWeight: '800', lineHeight: 30, fontVariant: ['tabular-nums'] },
-  divider: { height: StyleSheet.hairlineWidth },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minWidth: 0 },
+  formatLabel: { flexShrink: 1, fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  actionHint: { flexShrink: 0, fontSize: 12, fontWeight: '700' },
+  coordValue: { fontWeight: '800', fontVariant: ['tabular-nums'] },
+  stacked: { gap: 1 },
   staleHint: { fontSize: 12, fontWeight: '600', lineHeight: 16 },
 });

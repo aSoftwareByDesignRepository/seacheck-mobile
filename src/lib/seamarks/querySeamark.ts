@@ -1,6 +1,5 @@
 import { bearingTrue, distanceNm, type LonLat } from '../geo/navigation';
 import { fetchIsEffectivelyOffline } from '../network/connectivity';
-import type { PlanningSeamarkFeature } from './queryPlanningSeamarks';
 import { fetchOverpass } from './overpassClient';
 
 export type SeamarkHit = {
@@ -114,19 +113,6 @@ export function unknownChartObject(lat: number, lon: number): SeamarkHit {
     longitude: lon,
     distanceM: 0,
     source: 'unknown',
-    rawTags: {},
-  };
-}
-
-/** Build a detail-sheet hit from a visible planning mark. */
-export function planningMarkToSeamarkHit(mark: PlanningSeamarkFeature): SeamarkHit {
-  return {
-    name: mark.name,
-    type: mark.category,
-    latitude: mark.latitude,
-    longitude: mark.longitude,
-    distanceM: 0,
-    source: 'local',
     rawTags: {},
   };
 }

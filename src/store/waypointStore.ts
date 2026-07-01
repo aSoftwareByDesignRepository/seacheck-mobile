@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { getDatabase, newId, withDatabaseTransaction, type WaypointRow, type WaypointType } from '../lib/db/database';
+import { notifyPassagePlanningChanged } from '../lib/passage/passageMapPlanning';
 import { t } from '../i18n';
 import { useNavigationStore, waypointToTarget } from './navigationStore';
 import { usePassageStore } from './passageStore';
@@ -76,23 +77,39 @@ export const useWaypointStore = create<WaypointStore>((set, get) => ({
     );
     set({ items: get().items.map((w) => (w.id === id ? next : w)) });
     await syncNavigationAfterWaypointChange(id, next);
+    usePassageStore.getState().bumpRouteRevision();
   },
 
   remove: async (id) => {
-    await withDatabaseTransaction(async (db) => {
-      await db.runAsync('DELETE FROM passage_waypoints WHERE waypoint_id = ?', id);
-      await db.runAsync(
+    const db = await getDatabase();
+    const passageLinks = await db.getAllAsync<{ passage_id: string }>(
+      'SELECT passage_id FROM passage_waypoints WHERE waypoint_id = ?',
+      id,
+    );
+    const passageIds = [...new Set(passageLinks.map((row) => row.passage_id))];
+
+    for (const passageId of passageIds) {
+      await usePassageStore.getState().removeWaypointFromPassage(passageId, id);
+    }
+
+    await withDatabaseTransaction(async (txn) => {
+      await txn.runAsync(
         'DELETE FROM passage_leg_overrides WHERE from_waypoint_id = ? OR to_waypoint_id = ?',
         id,
         id,
       );
-      await db.runAsync('DELETE FROM waypoints WHERE id = ?', id);
+      await txn.runAsync('DELETE FROM waypoints WHERE id = ?', id);
     });
+
     set({ items: get().items.filter((w) => w.id !== id) });
     await syncNavigationAfterWaypointChange(id, null);
-    const activePassageId = usePassageStore.getState().activePassageId;
-    if (activePassageId) {
-      await usePassageStore.getState().syncActivePassageNavigation(activePassageId);
+
+    for (const passageId of passageIds) {
+      notifyPassagePlanningChanged(passageId);
+    }
+
+    if (passageIds.length === 0) {
+      usePassageStore.getState().bumpRouteRevision();
     }
   },
 }));

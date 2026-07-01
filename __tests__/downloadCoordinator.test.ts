@@ -2,12 +2,12 @@ import {
   downloadCoordinator,
   formatDownloadError,
   loadNativePacksWithRetry,
+  resetDownloadCoordinatorForTests,
 } from '../src/lib/offline/downloadCoordinator';
 
 describe('downloadCoordinator', () => {
   beforeEach(() => {
-    downloadCoordinator.end('a');
-    downloadCoordinator.end('b');
+    resetDownloadCoordinatorForTests();
   });
 
   it('allows only one active download at a time', () => {
@@ -31,12 +31,35 @@ describe('downloadCoordinator', () => {
     expect(downloadCoordinator.tryBegin('b')).toBeNull();
     downloadCoordinator.end('a');
   });
+
+  it('preflight lock keeps slot for same region then converts on tryBegin', () => {
+    expect(downloadCoordinator.preflightLock('a')).toBe(true);
+    expect(downloadCoordinator.hasActiveDownload()).toBe(true);
+    expect(downloadCoordinator.tryBegin('b')).toBeNull();
+    expect(downloadCoordinator.tryBegin('a')).toBe(1);
+    expect(downloadCoordinator.tryBegin('a')).toBeNull();
+    downloadCoordinator.end('a');
+  });
+
+  it('releasePreflightLock clears slot without a session', () => {
+    expect(downloadCoordinator.preflightLock('kiel-bay')).toBe(true);
+    downloadCoordinator.releasePreflightLock('kiel-bay');
+    expect(downloadCoordinator.hasActiveDownload()).toBe(false);
+    expect(downloadCoordinator.tryBegin('kiel-bay')).toBe(1);
+    downloadCoordinator.end('kiel-bay');
+  });
 });
 
 describe('formatDownloadError', () => {
   it('falls back when message missing', () => {
     expect(formatDownloadError({}, 'fallback')).toBe('fallback');
     expect(formatDownloadError(new Error('boom'), 'fallback')).toBe('boom');
+  });
+
+  it('reads message from native offline error payloads', () => {
+    expect(formatDownloadError({ id: 'p1', message: 'Mapbox tile limit exceeded 6000' }, 'fallback')).toBe(
+      'Mapbox tile limit exceeded 6000',
+    );
   });
 });
 

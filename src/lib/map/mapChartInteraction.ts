@@ -1,6 +1,6 @@
 import type { TrackPointRow, WaypointRow } from '../db/database';
 import { nearestTrackPoint } from '../geo/nearestTrackPoint';
-import { nearestWaypoint } from '../geo/nearestWaypoint';
+import { nearestWaypoint, PLANNING_WAYPOINT_PICK_RADIUS_NM, WAYPOINT_MAP_PICK_RADIUS_NM } from '../geo/nearestWaypoint';
 
 export type MapChartTapPick =
   | { kind: 'waypoint'; waypoint: WaypointRow }
@@ -16,13 +16,18 @@ type TapPickContext = {
 };
 
 /** Synchronous chart picks — passage waypoints, saved waypoints, and track points within tap radius. */
-export function pickMapChartFeatures(lat: number, lon: number, ctx: TapPickContext): MapChartTapPick {
+export function pickMapChartFeatures(
+  lat: number,
+  lon: number,
+  ctx: TapPickContext,
+  pickRadiusNm = WAYPOINT_MAP_PICK_RADIUS_NM,
+): MapChartTapPick {
   if (ctx.passageWaypoints?.length) {
-    const passageHit = nearestWaypoint(lat, lon, ctx.passageWaypoints);
+    const passageHit = nearestWaypoint(lat, lon, ctx.passageWaypoints, pickRadiusNm);
     if (passageHit) return { kind: 'waypoint', waypoint: passageHit.waypoint };
   }
 
-  const waypoint = nearestWaypoint(lat, lon, ctx.savedWaypoints);
+  const waypoint = nearestWaypoint(lat, lon, ctx.savedWaypoints, pickRadiusNm);
   if (waypoint) return { kind: 'waypoint', waypoint: waypoint.waypoint };
 
   if (ctx.recordingTrackId && ctx.liveInspectPoints.length > 0) {
@@ -72,8 +77,9 @@ export function resolvePlanningMapTapAction(
   lon: number,
   ctx: TapPickContext,
   detailsOpen: boolean,
+  pickRadiusNm = PLANNING_WAYPOINT_PICK_RADIUS_NM,
 ): MapChartTapAction | { action: 'add-waypoint' } {
-  const pick = pickMapChartFeatures(lat, lon, ctx);
+  const pick = pickMapChartFeatures(lat, lon, ctx, pickRadiusNm);
   if (pick.kind === 'waypoint') return { action: 'open-waypoint', waypoint: pick.waypoint };
   if (pick.kind === 'track-point') return { action: 'open-track-point', point: pick.point };
   if (detailsOpen) return { action: 'dismiss-details' };
