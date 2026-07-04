@@ -8,14 +8,14 @@ const STYLE_ENSURE_ATTEMPTS = 4;
 const STYLE_RELOAD_SETTLE_MS = 350;
 
 let loadedStyleUri: string | null = null;
-/** Matches `styleReloadNonce` when the style was last confirmed loaded. */
+/** Matches `styleReloadNonce` when the hidden engine last confirmed style + render. */
 let loadedStyleGeneration = -1;
 let styleReloadNonce = 0;
 let styleWaiters: Array<(ready: boolean) => void> = [];
 const reloadListeners = new Set<() => void>();
 
 /**
- * Called when a MapLibre map finishes loading the chart style (hidden host or main map).
+ * Called only from the hidden OfflineMapEngineHost once style is parsed and the map has rendered.
  * `generation` must match the current reload nonce — stale callbacks from unmounted maps are ignored.
  */
 export function markOfflineMapEngineStyleLoaded(styleUri: string, generation = styleReloadNonce): void {
@@ -63,6 +63,7 @@ export function resetOfflineMapEngineHostForTests(): void {
   reloadListeners.clear();
 }
 
+/** True when the hidden Android map engine parsed the style and rendered at least one frame. */
 export function isOfflineMapEngineStyleLoaded(styleUri: string): boolean {
   return loadedStyleUri === styleUri && loadedStyleGeneration === styleReloadNonce;
 }
@@ -96,7 +97,7 @@ export async function waitForOfflineMapEngineStyle(
 }
 
 /**
- * Wait for the hidden map engine (or main map) to parse the chart style.
+ * Wait for the hidden map engine to parse the chart style and render.
  * Retries with host remounts — required before OfflineManager can enumerate tiles on Android.
  */
 export async function ensureOfflineMapEngineStyle(styleUri: string): Promise<void> {
@@ -116,4 +117,18 @@ export async function ensureOfflineMapEngineStyle(styleUri: string): Promise<voi
   }
 
   throw new Error(t('downloads.errorMapEngineStyle'));
+}
+
+/**
+ * Remount the hidden map and wait until it is ready for offline tile enumeration.
+ * Skips work when the current host generation is already primed for this style.
+ */
+export async function ensureOfflineMapEnginePrimedBeforeDownload(styleUri: string): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  if (isOfflineMapEngineStyleLoaded(styleUri)) return;
+
+  requestOfflineMapEngineStyleReload();
+  await yieldToUi();
+  await new Promise((resolve) => setTimeout(resolve, STYLE_RELOAD_SETTLE_MS));
+  await ensureOfflineMapEngineStyle(styleUri);
 }

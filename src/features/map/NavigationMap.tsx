@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Device from 'expo-device';
 
 import {
-  markOfflineMapEngineStyleLoaded,
   getOfflineMapEngineStyleReloadNonce,
   subscribeOfflineMapEngineStyleReload,
 } from '../../lib/offline/offlineMapEngineHost';
@@ -641,7 +640,6 @@ export function NavigationMap() {
         }}
       onDidFinishLoadingStyle={() => {
         setMapStyleLoaded(true);
-        if (chartStyleUri) markOfflineMapEngineStyleLoaded(chartStyleUri, getOfflineMapEngineStyleReloadNonce());
       }}
       onDidFailLoadingMap={() => setMapStyleLoaded(false)}
       onRegionWillChange={(e) => {

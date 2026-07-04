@@ -39,4 +39,9 @@ describe('nativePackProgress', () => {
     expect(hasMeasurableDownloadProgress(s)).toBe(true);
     expect(isNativePackInitializing(s)).toBe(false);
   });
+
+  it('treats completed tile count as measurable progress', () => {
+    const s = status({ state: 'active', requiredResourceCount: 10, completedTileCount: 1 });
+    expect(hasMeasurableDownloadProgress(s)).toBe(true);
+  });
 });

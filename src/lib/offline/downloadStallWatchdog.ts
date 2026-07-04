@@ -7,16 +7,13 @@ import { hasMeasurableDownloadProgress } from './nativePackProgress';
 import { initializingNativePackStatus, pollNativePackStatus } from './nativePackStatus';
 import { warmupOfflineEngine } from './warmupOfflineEngine';
 import { yieldToUi } from '../async/yieldToUi';
+import { getDownloadTiming } from './downloadTiming';
 
-const STALL_POLL_MS = 3_000;
-const ZERO_PROGRESS_TIMEOUT_MS = 120_000;
-const INITIALIZING_TIMEOUT_MS = 180_000;
-const STYLE_ENGINE_TIMEOUT_MS = 240_000;
-const PARTIAL_STALL_TIMEOUT_MS = 3 * 60_000;
-/** Resume retries while stuck at 0% — spaced to recover from transient network gates. */
-const RESUME_AT_MS = [3_000, 8_000, 20_000, 45_000, 75_000, 105_000] as const;
 /** Attempt pause → warmup → resume on these resume indices (0-based, after threshold crossed). */
 const PAUSE_RESUME_AT = new Set([1, 3]);
+/** Recreate the native pack when enumeration never starts — after these resume indices. */
+const RECREATE_AT = new Set([2, 4]);
+const MAX_PACK_RECREATES = 2;
 
 export type StallDiagnostics = {
   nativeState: string;
@@ -24,6 +21,13 @@ export type StallDiagnostics = {
   completedResourceCount: number;
   requiredResourceCount: number;
   mapEngineStyleLoaded?: boolean;
+};
+
+export type DownloadStallWatchdogOptions = {
+  chartStyleUri?: string;
+  mapEngineStallMessage?: string;
+  /** Replace a pack stuck at style-only enumeration. Returns the new pack when recreated. */
+  onRecreatePack?: (currentPack: OfflinePack) => Promise<OfflinePack | null>;
 };
 
 function isNativeDownloadComplete(status: OfflinePackStatus | null | undefined): boolean {
@@ -44,13 +48,18 @@ function stallDiagnostics(status: OfflinePackStatus | null | undefined, chartSty
   };
 }
 
+/**
+ * Recover a stalled pack without remounting the hidden map when the style is already loaded.
+ * Remounting during an active download destroys the GL context and prevents tile enumeration.
+ */
 async function recoverStalledPack(
   pack: OfflinePack,
   usePauseCycle: boolean,
   chartStyleUri?: string,
 ): Promise<void> {
   ensureMapLibreNetworkForDownload();
-  if (chartStyleUri && !isOfflineMapEngineStyleLoaded(chartStyleUri)) {
+  const styleReady = !chartStyleUri || isOfflineMapEngineStyleLoaded(chartStyleUri);
+  if (chartStyleUri && !styleReady) {
     requestOfflineMapEngineStyleReload();
     await yieldToUi();
   }
@@ -85,15 +94,22 @@ export function startDownloadStallWatchdog(
   onStall: (message: string, diagnostics: StallDiagnostics) => void,
   stallMessage: string,
   onStatus?: (status: OfflinePackStatus) => void,
-  chartStyleUri?: string,
-  mapEngineStallMessage?: string,
+  options?: DownloadStallWatchdogOptions,
 ): () => void {
+  const chartStyleUri = options?.chartStyleUri;
+  const mapEngineStallMessage = options?.mapEngineStallMessage;
+  const onRecreatePack = options?.onRecreatePack;
+  const timing = getDownloadTiming();
+
   const startedAt = Date.now();
   let lastPercentage = 0;
   let lastCompletedResources = 0;
   let lastRequiredResources = 0;
   let lastAdvanceAt = startedAt;
   let resumeAttemptIndex = 0;
+  let packRecreateCount = 0;
+  let recreateInFlight = false;
+  let currentPack = pack;
   let lastDiagnostics: StallDiagnostics = {
     nativeState: 'unknown',
     percentage: 0,
@@ -118,14 +134,14 @@ export function startDownloadStallWatchdog(
           return;
         }
         ensureMapLibreNetworkForDownload();
-        const rawStatus = await pollNativePackStatus(pack);
+        const rawStatus = await pollNativePackStatus(currentPack);
         if (downloadCoordinator.isStale(regionId, session)) return;
         lastDiagnostics = stallDiagnostics(rawStatus, chartStyleUri);
         if (isNativeDownloadComplete(rawStatus)) {
           stop();
           return;
         }
-        const status = rawStatus ?? initializingNativePackStatus(pack.id);
+        const status = rawStatus ?? initializingNativePackStatus(currentPack.id);
         onStatus?.(status);
         if (rawStatus) {
           if (rawStatus.percentage > lastPercentage) {
@@ -137,18 +153,53 @@ export function startDownloadStallWatchdog(
           } else if (rawStatus.requiredResourceCount > lastRequiredResources) {
             lastRequiredResources = rawStatus.requiredResourceCount;
             lastAdvanceAt = Date.now();
+          } else if (rawStatus.completedTileCount > 0) {
+            lastAdvanceAt = Date.now();
           }
         }
         const now = Date.now();
         const styleReady = !chartStyleUri || isOfflineMapEngineStyleLoaded(chartStyleUri);
         if (
           !hasMeasurableDownloadProgress(status) &&
-          resumeAttemptIndex < RESUME_AT_MS.length &&
-          now - startedAt >= RESUME_AT_MS[resumeAttemptIndex]!
+          resumeAttemptIndex < timing.resumeAtMs.length &&
+          now - startedAt >= timing.resumeAtMs[resumeAttemptIndex]!
         ) {
           const usePauseCycle = PAUSE_RESUME_AT.has(resumeAttemptIndex);
+          const shouldRecreate =
+            onRecreatePack != null &&
+            RECREATE_AT.has(resumeAttemptIndex) &&
+            packRecreateCount < MAX_PACK_RECREATES &&
+            styleReady &&
+            status.requiredResourceCount <= 1 &&
+            !recreateInFlight;
           resumeAttemptIndex += 1;
-          void recoverStalledPack(pack, usePauseCycle, chartStyleUri);
+          if (shouldRecreate) {
+            recreateInFlight = true;
+            packRecreateCount += 1;
+            if (__DEV__) {
+              console.info('[downloadStallWatchdog] recreating native pack — enumeration stuck', {
+                regionId,
+                packId: currentPack.id,
+                attempt: packRecreateCount,
+              });
+            }
+            try {
+              const replacement = await onRecreatePack(currentPack);
+              if (replacement?.id) {
+                currentPack = replacement;
+                lastPercentage = 0;
+                lastCompletedResources = 0;
+                lastRequiredResources = 0;
+                lastAdvanceAt = Date.now();
+              }
+            } catch {
+              /* keep polling — stall timeout will surface a user-visible error */
+            } finally {
+              recreateInFlight = false;
+            }
+          } else {
+            void recoverStalledPack(currentPack, usePauseCycle, chartStyleUri);
+          }
         }
         const stillInitializing =
           !hasMeasurableDownloadProgress(status) && status.requiredResourceCount <= 1;
@@ -157,10 +208,10 @@ export function startDownloadStallWatchdog(
           now - startedAt >=
             (stillInitializing
               ? styleReady
-                ? INITIALIZING_TIMEOUT_MS
-                : STYLE_ENGINE_TIMEOUT_MS
-              : ZERO_PROGRESS_TIMEOUT_MS);
-        const partialStuck = lastPercentage > 0 && now - lastAdvanceAt >= PARTIAL_STALL_TIMEOUT_MS;
+                ? timing.initializingTimeoutMs
+                : timing.styleEngineTimeoutMs
+              : timing.zeroProgressTimeoutMs);
+        const partialStuck = lastPercentage > 0 && now - lastAdvanceAt >= timing.partialStallTimeoutMs;
         if (zeroStuck || partialStuck) {
           stop();
           if (stillInitializing && !styleReady && mapEngineStallMessage) {
@@ -178,7 +229,7 @@ export function startDownloadStallWatchdog(
   };
 
   poll();
-  interval = setInterval(poll, STALL_POLL_MS);
+  interval = setInterval(poll, timing.stallPollMs);
 
   return stop;
 }

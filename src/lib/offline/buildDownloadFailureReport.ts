@@ -9,7 +9,7 @@ import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useSettingsStore } from '../../store/settingsStore';
 
 import { peekDownloadFailureDiagnostics } from './downloadFailureDiagnostics';
-import { isOfflineMapEngineStyleLoaded } from './offlineMapEngineHost';
+import { isOfflineMapEngineStyleLoaded, getOfflineMapEngineStyleReloadNonce } from './offlineMapEngineHost';
 import { peekChartTileProbeDiagnostics } from '../network/chartTileReachability';
 
 export type DownloadFailureSource = 'async' | 'preflight' | 'hydrate' | 'manual';
@@ -59,6 +59,7 @@ export async function buildDownloadFailureReport(input: DownloadFailureInput): P
     line('hydrated', store.hydrated),
     line('chartStyleUri', store.chartStyleUri ? 'present' : 'missing'),
     line('mapEngineStyleLoaded', store.chartStyleUri ? isOfflineMapEngineStyleLoaded(store.chartStyleUri) : false),
+    line('mapEngineReloadNonce', store.chartStyleUri ? getOfflineMapEngineStyleReloadNonce() : null),
     '',
     'Bounds',
     '------',

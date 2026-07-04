@@ -1,7 +1,9 @@
 import { Platform } from 'react-native';
 
 import {
+  ensureOfflineMapEnginePrimedBeforeDownload,
   ensureOfflineMapEngineStyle,
+  getOfflineMapEngineStyleReloadNonce,
   isOfflineMapEngineStyleLoaded,
   markOfflineMapEngineStyleLoaded,
   requestOfflineMapEngineStyleReload,
@@ -53,6 +55,18 @@ describe('offlineMapEngineHost', () => {
 
     markOfflineMapEngineStyleLoaded(styleUri, 1);
     expect(isOfflineMapEngineStyleLoaded(styleUri)).toBe(true);
+
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: original });
+  });
+
+  it('remounts before download when the hidden host is not primed', () => {
+    const original = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
+
+    const styleUri = 'file:///data/chart-style-download.json';
+    void ensureOfflineMapEnginePrimedBeforeDownload(styleUri);
+    expect(getOfflineMapEngineStyleReloadNonce()).toBe(1);
+    expect(isOfflineMapEngineStyleLoaded(styleUri)).toBe(false);
 
     Object.defineProperty(Platform, 'OS', { configurable: true, value: original });
   });

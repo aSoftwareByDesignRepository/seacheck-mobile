@@ -1,5 +1,5 @@
-import { useSyncExternalStore } from 'react';
-import { Camera, Map } from '@maplibre/maplibre-react-native';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { Camera, Map, type CameraRef } from '@maplibre/maplibre-react-native';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import {
@@ -8,10 +8,11 @@ import {
   markOfflineMapEngineStyleLoaded,
   subscribeOfflineMapEngineStyleReload,
 } from '../../lib/offline/offlineMapEngineHost';
+import { resolveOfflineEngineCamera } from '../../lib/offline/resolveOfflineEngineCamera';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 
-/** Baltic center — ensures raster sources initialize on the hidden engine. */
-const ENGINE_CENTER: [number, number] = [10.15, 54.32];
+/** Fallback when tiny hidden maps never emit a full-map render event on some Android builds. */
+const RENDER_CONFIRM_FALLBACK_MS = 2_500;
 
 /**
  * Keeps a MapLibre map instance alive on Android so OfflineManager can enumerate tiles
@@ -19,17 +20,75 @@ const ENGINE_CENTER: [number, number] = [10.15, 54.32];
  */
 export function OfflineMapEngineHost() {
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
+  const activeDownloadRegionId = useOfflinePackStore((s) => s.activeDownloadRegionId);
+  const customBoundsIndex = useOfflinePackStore((s) => s.customBoundsIndex);
   const reloadNonce = useSyncExternalStore(
     subscribeOfflineMapEngineStyleReload,
     getOfflineMapEngineStyleReloadNonce,
     getOfflineMapEngineStyleReloadNonce,
   );
+  const styleParsedRef = useRef(false);
+  const renderConfirmedRef = useRef(false);
+  const cameraRef = useRef<CameraRef>(null);
+  const renderFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const camera = resolveOfflineEngineCamera(activeDownloadRegionId, customBoundsIndex);
+
+  useEffect(() => {
+    styleParsedRef.current = false;
+    renderConfirmedRef.current = false;
+    if (renderFallbackTimerRef.current) {
+      clearTimeout(renderFallbackTimerRef.current);
+      renderFallbackTimerRef.current = null;
+    }
+  }, [reloadNonce, chartStyleUri]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !chartStyleUri) return;
+    cameraRef.current?.jumpTo({ center: camera.center, zoom: camera.zoom });
+  }, [chartStyleUri, camera.center, camera.zoom, reloadNonce]);
 
   if (Platform.OS !== 'android' || !chartStyleUri) return null;
 
   const generation = reloadNonce;
-  const markLoaded = () => markOfflineMapEngineStyleLoaded(chartStyleUri, generation);
-  const markFailed = () => markOfflineMapEngineStyleFailed(chartStyleUri, generation);
+
+  const clearRenderFallback = () => {
+    if (renderFallbackTimerRef.current) {
+      clearTimeout(renderFallbackTimerRef.current);
+      renderFallbackTimerRef.current = null;
+    }
+  };
+
+  const scheduleRenderFallback = () => {
+    clearRenderFallback();
+    renderFallbackTimerRef.current = setTimeout(() => {
+      renderConfirmedRef.current = true;
+      tryMarkReady();
+    }, RENDER_CONFIRM_FALLBACK_MS);
+  };
+
+  const tryMarkReady = () => {
+    if (!styleParsedRef.current || !renderConfirmedRef.current) return;
+    clearRenderFallback();
+    markOfflineMapEngineStyleLoaded(chartStyleUri, generation);
+  };
+
+  const markRenderConfirmed = () => {
+    renderConfirmedRef.current = true;
+    tryMarkReady();
+  };
+
+  const markStyleParsed = () => {
+    if (styleParsedRef.current) return;
+    styleParsedRef.current = true;
+    scheduleRenderFallback();
+    tryMarkReady();
+  };
+
+  const markFailed = () => {
+    clearRenderFallback();
+    markOfflineMapEngineStyleFailed(chartStyleUri, generation);
+  };
 
   return (
     <View
@@ -44,14 +103,28 @@ export function OfflineMapEngineHost() {
         style={styles.map}
         mapStyle={chartStyleUri}
         androidView="texture"
-        onDidFinishLoadingStyle={markLoaded}
-        onDidFinishLoadingMap={markLoaded}
+        onDidFinishLoadingStyle={() => {
+          markStyleParsed();
+        }}
+        onDidFinishLoadingMap={() => {
+          markStyleParsed();
+        }}
+        onDidFinishRenderingMapFully={() => {
+          markRenderConfirmed();
+        }}
+        onDidFinishRenderingFrameFully={() => {
+          markRenderConfirmed();
+        }}
         onDidFailLoadingMap={() => {
           console.warn('[OfflineMapEngineHost] hidden map failed to load chart style');
           markFailed();
         }}
       >
-        <Camera initialViewState={{ center: ENGINE_CENTER, zoom: 10 }} />
+        <Camera
+          ref={cameraRef}
+          key={`offline-engine-camera-${activeDownloadRegionId ?? 'idle'}-${reloadNonce}`}
+          initialViewState={{ center: camera.center, zoom: camera.zoom }}
+        />
       </Map>
     </View>
   );
@@ -61,19 +134,20 @@ const styles = StyleSheet.create({
   /**
    * Must stay in the viewport — Android skips GL rendering for off-screen maps,
    * which stalls OfflineManager tile enumeration when the Map tab is not visible.
+   * Avoid zIndex below zero; some Android builds stop compositing invisible layers.
    */
   host: {
     position: 'absolute',
-    width: 64,
-    height: 64,
+    width: 128,
+    height: 128,
     overflow: 'hidden',
     left: 0,
     bottom: 0,
-    opacity: 0,
-    zIndex: -1,
+    opacity: 0.01,
+    elevation: 0,
   },
   map: {
-    width: 64,
-    height: 64,
+    width: 128,
+    height: 128,
   },
 });

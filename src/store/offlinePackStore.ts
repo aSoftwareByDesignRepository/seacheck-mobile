@@ -1,5 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { OfflineManager, type LngLatBounds, type OfflinePack, type OfflinePackStatus } from '@maplibre/maplibre-react-native';
+import {
+  OfflineManager,
+  type LngLatBounds,
+  type OfflinePack,
+  type OfflinePackCreateOptions,
+  type OfflinePackStatus,
+} from '@maplibre/maplibre-react-native';
 import { create } from 'zustand';
 
 import { ensureChartStyleFile } from '../map/chartStyle';
@@ -29,10 +35,14 @@ import {
   resetDownloadCoordinatorForTests,
 } from '../lib/offline/downloadCoordinator';
 import { startDownloadStallWatchdog, type StallDiagnostics } from '../lib/offline/downloadStallWatchdog';
+import { recreateOfflinePack } from '../lib/offline/nativePackRecovery';
 import { rememberDownloadFailureDiagnostics } from '../lib/offline/downloadFailureDiagnostics';
 import { isNativeDownloadKickstarted, isNativePackInitializing } from '../lib/offline/nativePackProgress';
 import { initializingNativePackStatus, pollNativePackStatus, readNativePackStatus, resolveNativePackStatus } from '../lib/offline/nativePackStatus';
-import { requestOfflineMapEngineStyleReload, waitForOfflineMapEngineStyle, isOfflineMapEngineStyleLoaded } from '../lib/offline/offlineMapEngineHost';
+import {
+  ensureOfflineMapEnginePrimedBeforeDownload,
+  isOfflineMapEngineStyleLoaded,
+} from '../lib/offline/offlineMapEngineHost';
 import { yieldToUi } from '../lib/async/yieldToUi';
 import { resetOfflineManagerSetupForTests } from '../lib/offline/offlineManagerSetup';
 import { resetOfflineMapEngineHostForTests } from '../lib/offline/offlineMapEngineHost';
@@ -324,6 +334,8 @@ type DownloadSessionContext = {
   previousWasReady: boolean;
   restoreOnFailure?: RegionPackStatus;
   bounds: LngLatBounds;
+  minZoom: number;
+  maxZoom: number;
   customMeta?: { custom: true; displayName: string };
   finalizeExtra?: {
     custom?: boolean;
@@ -334,6 +346,19 @@ type DownloadSessionContext = {
     bounds?: LngLatBounds;
   };
 };
+
+function buildPackCreateOptions(ctx: DownloadSessionContext): OfflinePackCreateOptions {
+  const name = ctx.customMeta?.displayName ?? ctx.finalizeExtra?.name ?? ctx.regionId;
+  return {
+    mapStyle: ctx.chartStyleUri,
+    bounds: ctx.bounds,
+    minZoom: ctx.minZoom,
+    maxZoom: ctx.maxZoom,
+    metadata: ctx.customMeta
+      ? { regionId: ctx.regionId, name, custom: true, minZoom: ctx.minZoom, maxZoom: ctx.maxZoom }
+      : { regionId: ctx.regionId, name: ctx.regionId },
+  };
+}
 
 function createDownloadSession(
   ctx: DownloadSessionContext,
@@ -442,34 +467,69 @@ function createDownloadSession(
     void markFailed(offlinePack?.id ?? null, formatDownloadError(error, t('downloads.statusError')));
   };
 
-  const attachWatchdog = (pack: OfflinePack) => {
+  const sessionPackRef = { current: null as OfflinePack | null };
+
+  const attachWatchdog = (initialPack: OfflinePack) => {
+    sessionPackRef.current = initialPack;
     clearWatchdog();
     stopWatchdog = startDownloadStallWatchdog(
       ctx.regionId,
       ctx.session,
-      pack,
+      initialPack,
       (message, diagnostics) => {
-        void markFailed(pack.id, message, diagnostics);
+        void markFailed(sessionPackRef.current?.id ?? null, message, diagnostics);
       },
       t('downloads.errorDownloadStalled'),
       (status) => {
         if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
-        const normalized = resolveNativePackStatus(status, pack.id);
+        const packId = sessionPackRef.current?.id;
+        if (!packId) return;
+        const normalized = resolveNativePackStatus(status, packId);
         set((state) => ({
           regions: {
             ...state.regions,
             [ctx.regionId]: {
-              ...statusFromNative(ctx.regionId, pack.id, normalized, { sessionActive: true }),
+              ...statusFromNative(ctx.regionId, packId, normalized, { sessionActive: true }),
               ...ctx.customMeta,
               seamarksIndexed: state.regions[ctx.regionId]?.seamarksIndexed,
               seamarksIndexing: state.regions[ctx.regionId]?.seamarksIndexing,
             },
           },
         }));
-        void markReady(pack.id, normalized);
+        void markReady(packId, normalized);
       },
-      ctx.chartStyleUri,
-      t('downloads.errorMapEngineStyle'),
+      {
+        chartStyleUri: ctx.chartStyleUri,
+        mapEngineStallMessage: t('downloads.errorMapEngineStyle'),
+        onRecreatePack: async (currentPack) => {
+          if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return null;
+          if (!ctx.chartStyleUri) return null;
+          const replacement = await recreateOfflinePack(
+            currentPack,
+            buildPackCreateOptions(ctx),
+            onProgress,
+            onError,
+            () => !downloadCoordinator.isStale(ctx.regionId, ctx.session),
+          );
+          if (!replacement?.id || downloadCoordinator.isStale(ctx.regionId, ctx.session)) return replacement;
+          sessionPackRef.current = replacement;
+          set((state) => ({
+            regions: {
+              ...state.regions,
+              [ctx.regionId]: {
+                ...(state.regions[ctx.regionId] ?? emptyStatus(ctx.regionId)),
+                regionId: ctx.regionId,
+                state: 'downloading',
+                percentage: 0,
+                packId: replacement.id,
+                error: null,
+                ...ctx.customMeta,
+              },
+            },
+          }));
+          return replacement;
+        },
+      },
     );
   };
 
@@ -572,10 +632,7 @@ export async function kickstartNativeDownload(
   if (!sessionLive()) return status ?? initializingNativePackStatus(pack.id);
 
   if (!isNativeDownloadKickstarted(status) && chartStyleUri && !isOfflineMapEngineStyleLoaded(chartStyleUri)) {
-    requestOfflineMapEngineStyleReload();
-    await yieldToUi();
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    await waitForOfflineMapEngineStyle(chartStyleUri, 15_000);
+    await ensureOfflineMapEnginePrimedBeforeDownload(chartStyleUri);
     if (!sessionLive()) return status ?? initializingNativePackStatus(pack.id);
     await tryResume(true);
     for (let attempt = 0; attempt < 10; attempt++) {
@@ -758,6 +815,9 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         const entry = index[regionId];
         const bounds = entry?.bounds ?? getRegionPack(regionId)?.bounds;
         if (!bounds) continue;
+        const regionDef = getRegionPack(regionId);
+        const minZoom = entry?.minZoom ?? regionDef?.minZoom ?? 10;
+        const maxZoom = entry?.maxZoom ?? regionDef?.maxZoom ?? 14;
         restoredDownloadId = regionId;
         const customMeta = entry?.custom
           ? { custom: true as const, displayName: entry.name ?? regionId }
@@ -771,6 +831,8 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
             previousPackId: null,
             previousWasReady: false,
             bounds,
+            minZoom,
+            maxZoom,
             customMeta,
             finalizeExtra: entry?.custom
               ? {
@@ -918,6 +980,8 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       previousWasReady,
       restoreOnFailure: previousWasReady ? previous : undefined,
       bounds: packDef.bounds,
+      minZoom: packDef.minZoom,
+      maxZoom: packDef.maxZoom,
     };
     const { markReady, markFailed, onProgress, onError, attachWatchdog } = createDownloadSession(ctx, set, get);
 
@@ -928,20 +992,11 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       ctx.chartStyleUri = chartStyleUri;
       await yieldToUi();
       await removeOrphanNativePacksForRegion(regionId);
-      await warmupOfflineEngine(chartStyleUri, { requireStyleLoaded: true, requireFileSource: true });
+      await warmupOfflineEngine(chartStyleUri, { requireStyleLoaded: false, requireFileSource: true });
+      await ensureOfflineMapEnginePrimedBeforeDownload(chartStyleUri);
       ensureMapLibreNetworkForDownload();
 
-      const pack = await OfflineManager.createPack(
-        {
-          mapStyle: chartStyleUri,
-          bounds: packDef.bounds,
-          minZoom: packDef.minZoom,
-          maxZoom: packDef.maxZoom,
-          metadata: { regionId, name: packDef.id },
-        },
-        onProgress,
-        onError,
-      );
+      const pack = await OfflineManager.createPack(buildPackCreateOptions(ctx), onProgress, onError);
       if (!pack?.id) {
         throw new Error(t('downloads.errorStatusFailed'));
       }
@@ -1023,6 +1078,8 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       previousPackId: null,
       previousWasReady: false,
       bounds,
+      minZoom,
+      maxZoom,
       customMeta,
       finalizeExtra: { name, custom: true, displayName: name, bounds, minZoom, maxZoom },
     };
@@ -1035,7 +1092,8 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       ctx.chartStyleUri = chartStyleUri;
       await yieldToUi();
       await removeOrphanNativePacksForRegion(regionId);
-      await warmupOfflineEngine(chartStyleUri, { requireStyleLoaded: true, requireFileSource: true });
+      await warmupOfflineEngine(chartStyleUri, { requireStyleLoaded: false, requireFileSource: true });
+      await ensureOfflineMapEnginePrimedBeforeDownload(chartStyleUri);
       ensureMapLibreNetworkForDownload();
 
       set({
@@ -1047,17 +1105,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         },
       });
 
-      const pack = await OfflineManager.createPack(
-        {
-          mapStyle: chartStyleUri,
-          bounds,
-          minZoom,
-          maxZoom,
-          metadata: { regionId, name, custom: true, minZoom, maxZoom },
-        },
-        onProgress,
-        onError,
-      );
+      const pack = await OfflineManager.createPack(buildPackCreateOptions(ctx), onProgress, onError);
       if (!pack?.id) {
         throw new Error(t('downloads.errorStatusFailed'));
       }

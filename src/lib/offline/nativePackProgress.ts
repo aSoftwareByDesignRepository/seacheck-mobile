@@ -3,7 +3,11 @@ import type { OfflinePackStatus } from '@maplibre/maplibre-react-native';
 /** Bytes or percentage moved — not merely queued or marked active. */
 export function hasMeasurableDownloadProgress(status: OfflinePackStatus | null | undefined): boolean {
   if (!status) return false;
-  return status.percentage > 0 || status.completedResourceCount > 0;
+  return (
+    status.percentage > 0 ||
+    status.completedResourceCount > 0 ||
+    status.completedTileCount > 0
+  );
 }
 
 /** Native registered resources still to fetch (includes style + tiles). */

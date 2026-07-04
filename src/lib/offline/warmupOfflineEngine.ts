@@ -4,7 +4,10 @@ import { OfflineManager } from '@maplibre/maplibre-react-native';
 import { promiseWithTimeout, TimeoutError } from '../async/promiseWithTimeout';
 import { yieldToUi } from '../async/yieldToUi';
 import { ensureOfflineManagerConfigured } from './offlineManagerSetup';
-import { ensureOfflineMapEngineStyle, waitForOfflineMapEngineStyle } from './offlineMapEngineHost';
+import {
+  ensureOfflineMapEnginePrimedBeforeDownload,
+  waitForOfflineMapEngineStyle,
+} from './offlineMapEngineHost';
 import { ensureMapLibreNetworkForDownload } from '../network/mapLibreNetworkGate';
 
 export type WarmupOfflineEngineOptions = {
@@ -45,7 +48,7 @@ export async function warmupOfflineEngine(
   const requireStyleLoaded = options?.requireStyleLoaded ?? Platform.OS === 'android';
   if (requireStyleLoaded) {
     await yieldToUi();
-    await ensureOfflineMapEngineStyle(chartStyleUri);
+    await ensureOfflineMapEnginePrimedBeforeDownload(chartStyleUri);
     return;
   }
 

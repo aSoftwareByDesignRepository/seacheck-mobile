@@ -17,6 +17,9 @@
     "a11y:touch": "node scripts/a11y-touch-target-audit.mjs",
     "i18n:parity": "node scripts/i18n-parity.mjs",
     "test": "jest",
+    "test:downloads": "jest --testPathPattern='downloadTiming|downloadStallWatchdog|nativePackProgress|nativePackStatus|offlinePackStore.startDownload|offlinePackStore.hydrate|resolveOfflineEngineCamera|offlineMapEngineHost|downloadNetwork|downloadCoordinator|reportDownloadFailure'",
+    "reload": "bash scripts/reload-js.sh",
+    "logs:downloads": "bash scripts/watch-download-logs.sh",
     "preflight": "bash scripts/preflight.sh",
     "sync:regions": "node scripts/sync-planning-regions.mjs",
     "icons": "node scripts/generate-app-icons.mjs"
