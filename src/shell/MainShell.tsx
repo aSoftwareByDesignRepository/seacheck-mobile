@@ -10,7 +10,6 @@ import { TabOverflowMenu } from '../navigation/TabOverflowMenu';
 import { useResumeBackgroundSync } from '../hooks/useResumeBackgroundSync';
 import { useDownloadFailureAlerts } from '../hooks/useDownloadFailureAlerts';
 import { useDownloadKeepAwake } from '../hooks/useDownloadKeepAwake';
-import { useMapLibreNetworkSync } from '../hooks/useMapLibreNetworkSync';
 import { useAppLocationWatch } from '../hooks/useAppLocationWatch';
 import { useMaritimeMonitors } from '../hooks/useMaritimeMonitors';
 import { useForegroundTrackRecording } from '../hooks/useForegroundTrackRecording';
@@ -30,7 +29,6 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 export function MainShell() {
   const { colors, isDark } = useTheme();
   useAppLocationWatch();
-  useMapLibreNetworkSync();
   useDownloadKeepAwake();
   useDownloadFailureAlerts();
   useResumeBackgroundSync();
@@ -75,7 +73,11 @@ export function MainShell() {
               },
         }}
       >
-        <Tab.Screen name="Map" component={MapScreen} options={{ title: t('tabs.map'), tabBarButtonTestID: 'tab.map' }} />
+        <Tab.Screen
+          name="Map"
+          component={MapScreen}
+          options={{ title: t('tabs.map'), tabBarButtonTestID: 'tab.map', lazy: false }}
+        />
         <Tab.Screen
           name="Passage"
           component={PassageStack}

@@ -2,7 +2,7 @@ import type { StyleSpecification } from '@maplibre/maplibre-react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { MAP_ATTRIBUTION } from './constants';
-import { CHART_BASE_TILE_URL } from '../lib/settings/chartBaseStyle';
+import { CHART_BASE_TILE_URL, SEAMARK_TILE_URL } from '../lib/settings/chartBaseStyle';
 
 export const CHART_STYLE_FILENAME = 'chart-style.json';
 
@@ -13,8 +13,6 @@ export type ChartLayerVisibility = {
 
 /** MapLibre style with Voyager base + OpenSeaMap seamark raster sources. */
 export function buildChartStyleSpec(): StyleSpecification {
-  const seamarkTiles = 'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png';
-
   return {
     version: 8,
     name: 'SeaCheck Chart',
@@ -28,7 +26,7 @@ export function buildChartStyleSpec(): StyleSpecification {
       },
       'openseamap-seamarks': {
         type: 'raster',
-        tiles: [seamarkTiles],
+        tiles: [SEAMARK_TILE_URL],
         tileSize: 256,
         maxzoom: 18,
         attribution: '© OpenSeaMap contributors',

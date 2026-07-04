@@ -1,8 +1,8 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useIsDeviceDisconnected } from '../lib/network/connectivity';
-import { syncMapLibreNetworkState } from '../lib/network/mapLibreNetworkGate';
-import { downloadCoordinator } from '../lib/offline/downloadCoordinator';
+import { ensureMapLibreNetworkForDownload, syncMapLibreNetworkState } from '../lib/network/mapLibreNetworkGate';
+import { downloadCoordinator, subscribeDownloadCoordinatorActivity } from '../lib/offline/downloadCoordinator';
 import { useOfflinePackStore } from '../store/offlinePackStore';
 
 /**
@@ -16,16 +16,28 @@ export function useMapLibreNetworkSync(): void {
   const disconnected = useIsDeviceDisconnected();
   const activeDownloadRegionId = useOfflinePackStore((s) => s.activeDownloadRegionId);
   const regions = useOfflinePackStore((s) => s.regions);
+  const [coordinatorTick, setCoordinatorTick] = useState(0);
   const hasDownloadingRegion = useMemo(
     () => Object.values(regions).some((r) => r.state === 'downloading'),
     [regions],
   );
 
+  useEffect(() => subscribeDownloadCoordinatorActivity(() => setCoordinatorTick((n) => n + 1)), []);
+
+  const downloadActive =
+    downloadCoordinator.hasActiveDownload() ||
+    activeDownloadRegionId != null ||
+    hasDownloadingRegion;
+
   useEffect(() => {
-    const downloadActive =
-      downloadCoordinator.hasActiveDownload() ||
-      activeDownloadRegionId != null ||
-      hasDownloadingRegion;
     syncMapLibreNetworkState(disconnected, downloadActive);
-  }, [disconnected, activeDownloadRegionId, hasDownloadingRegion]);
+  }, [disconnected, downloadActive, coordinatorTick]);
+
+  /** Belt-and-suspenders: native tile fetches must stay online for the whole download session. */
+  useEffect(() => {
+    if (!downloadActive) return;
+    ensureMapLibreNetworkForDownload();
+    const interval = setInterval(() => ensureMapLibreNetworkForDownload(), 2_000);
+    return () => clearInterval(interval);
+  }, [downloadActive, coordinatorTick]);
 }

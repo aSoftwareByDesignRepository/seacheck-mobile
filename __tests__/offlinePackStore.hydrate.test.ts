@@ -129,6 +129,41 @@ describe('offlinePackStore.hydrate', () => {
     expect(index[KIEL.id]).toBeDefined();
   });
 
+  it('recovers indexed packs when hydrate throws unexpectedly', async () => {
+    await AsyncStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        [KIEL.id]: { packId: 'pack-kiel', seamarksIndexed: true },
+      }),
+    );
+    getPacks.mockResolvedValue([]);
+    const setItem = AsyncStorage.setItem as jest.Mock;
+    const originalImpl = setItem.getMockImplementation();
+    let persistCalls = 0;
+    setItem.mockImplementation(async (key: string, ...args: unknown[]) => {
+      if (key === STORAGE_KEY) {
+        persistCalls += 1;
+        if (persistCalls >= 1) {
+          throw new Error('persist failed');
+        }
+      }
+      if (originalImpl) return originalImpl(key, ...args);
+    });
+
+    try {
+      await useOfflinePackStore.getState().hydrate();
+
+      const status = useOfflinePackStore.getState().regions[KIEL.id];
+      expect(status?.state).toBe('error');
+      expect(status?.packId).toBe('pack-kiel');
+      expect(status?.error).toMatch(/verify/i);
+      expect(useOfflinePackStore.getState().hydrated).toBe(true);
+    } finally {
+      if (originalImpl) setItem.mockImplementation(originalImpl);
+      else setItem.mockReset();
+    }
+  });
+
   it('reattaches in-progress download and locks coordinator', async () => {
     await AsyncStorage.setItem(
       STORAGE_KEY,

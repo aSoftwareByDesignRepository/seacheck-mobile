@@ -3,6 +3,8 @@ import NetInfo from '@react-native-community/netinfo';
 import { t } from '../../i18n';
 
 import { assertChartTileReachability } from './chartTileReachability';
+import type { LonLatPoint } from '../map/bounds';
+import { ensureMapLibreNetworkForDownload } from './mapLibreNetworkGate';
 
 export { ensureMapLibreNetworkForDownload, syncMapLibreNetworkState } from './mapLibreNetworkGate';
 
@@ -14,8 +16,9 @@ export async function assertNetworkForDownload(): Promise<void> {
   }
 }
 
-/** NetInfo gate plus a live Carto tile fetch — fails fast before native download stalls. */
-export async function assertChartDownloadNetworkReady(): Promise<void> {
+/** NetInfo gate plus live Carto + OpenSeaMap tile fetches — fails fast before native download stalls. */
+export async function assertChartDownloadNetworkReady(probeCenter?: LonLatPoint): Promise<void> {
+  ensureMapLibreNetworkForDownload();
   await assertNetworkForDownload();
-  await assertChartTileReachability();
+  await assertChartTileReachability(fetch, probeCenter);
 }

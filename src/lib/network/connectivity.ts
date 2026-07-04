@@ -1,6 +1,10 @@
 import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
 import { useEffect, useState } from 'react';
 
+import { promiseWithTimeout, TimeoutError } from '../async/promiseWithTimeout';
+
+const NETINFO_FETCH_TIMEOUT_MS = 4_000;
+
 /**
  * Conservative offline detection for safety banners and skipping network calls.
  * Treats unknown reachability as online so we do not hide warnings on flaky NetInfo startup.
@@ -22,13 +26,27 @@ export function isEffectivelyOnline(state: Pick<NetInfoState, 'isConnected' | 'i
   return state.isConnected === true && state.isInternetReachable === true;
 }
 
+export async function fetchNetInfoState(timeoutMs = NETINFO_FETCH_TIMEOUT_MS): Promise<NetInfoState | null> {
+  try {
+    return await promiseWithTimeout(NetInfo.fetch(), timeoutMs, 'NetInfo.fetch');
+  } catch (error) {
+    if (error instanceof TimeoutError) {
+      console.warn('[connectivity] NetInfo.fetch timed out — treating as offline for this check');
+      return null;
+    }
+    throw error;
+  }
+}
+
 export async function fetchIsEffectivelyOffline(): Promise<boolean> {
-  const state = await NetInfo.fetch();
+  const state = await fetchNetInfoState();
+  if (!state) return false;
   return isEffectivelyOffline(state);
 }
 
 export async function fetchIsEffectivelyOnline(): Promise<boolean> {
-  const state = await NetInfo.fetch();
+  const state = await fetchNetInfoState();
+  if (!state) return false;
   return isEffectivelyOnline(state);
 }
 

@@ -42,6 +42,10 @@ describe('packDownloadPresentation', () => {
     expect(packStatusLabel({ state: 'downloading', percentage: 42 })).toMatch(/42/);
   });
 
+  it('shows initializing label before native enumeration', () => {
+    expect(packStatusLabel({ state: 'downloading', percentage: 0, downloadInitializing: true })).toMatch(/prepar/i);
+  });
+
   it('treats ready pack with error as failed', () => {
     expect(packHasDownloadFailure({ state: 'ready', error: 'Network lost' })).toBe(true);
     expect(packStatusLabel({ state: 'ready', percentage: 100, error: 'Network lost' })).toMatch(/failed/i);

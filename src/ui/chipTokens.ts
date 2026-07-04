@@ -65,6 +65,5 @@ export const filterChipText: TextStyle = {
 };
 
 export const chipRow = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  rowScroll: { flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', gap: 8 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
 });

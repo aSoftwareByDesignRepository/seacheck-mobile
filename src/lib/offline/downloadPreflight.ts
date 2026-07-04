@@ -1,4 +1,5 @@
 import { t } from '../../i18n';
+import type { LonLatPoint } from '../map/bounds';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { prepareChartDownload } from './prepareChartDownload';
 
@@ -9,12 +10,13 @@ import { prepareChartDownload } from './prepareChartDownload';
 export async function runLockedChartDownloadPreflight(
   regionId: string,
   ensureChartStyle: () => Promise<string>,
+  probeCenterOverride?: LonLatPoint,
 ): Promise<void> {
   if (!useOfflinePackStore.getState().preflightDownloadLock(regionId)) {
     throw new Error(t('downloads.errorDownloadBusy'));
   }
   try {
-    await prepareChartDownload(ensureChartStyle);
+    await prepareChartDownload(ensureChartStyle, regionId, probeCenterOverride);
   } catch (error) {
     useOfflinePackStore.getState().releasePreflightDownloadLock(regionId);
     throw error;

@@ -8,10 +8,16 @@ import {
 } from '@maplibre/maplibre-react-native';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Clipboard from 'expo-clipboard';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Device from 'expo-device';
+
+import {
+  markOfflineMapEngineStyleLoaded,
+  getOfflineMapEngineStyleReloadNonce,
+  subscribeOfflineMapEngineStyleReload,
+} from '../../lib/offline/offlineMapEngineHost';
 
 import { useIsEffectivelyOffline } from '../../lib/network/connectivity';
 import { useChartCoverageAtPoint } from '../../hooks/useChartCoverageAtPoint';
@@ -103,6 +109,11 @@ export function NavigationMap() {
   const screenLocked = useNavigationStore((s) => s.screenLocked);
   const mobTarget = useNavigationStore((s) => s.mobTarget);
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
+  const styleEngineReloadNonce = useSyncExternalStore(
+    subscribeOfflineMapEngineStyleReload,
+    getOfflineMapEngineStyleReloadNonce,
+    getOfflineMapEngineStyleReloadNonce,
+  );
   const offlineHydrated = useOfflinePackStore((s) => s.hydrated);
   const hydrateOffline = useOfflinePackStore((s) => s.hydrate);
   const offlineRegions = useOfflinePackStore((s) => s.regions);
@@ -327,7 +338,7 @@ export function NavigationMap() {
 
   useEffect(() => {
     setMapStyleLoaded(false);
-  }, [chartStyleUri]);
+  }, [chartStyleUri, styleEngineReloadNonce]);
 
   useMapCameraFollow({
     cameraRef,
@@ -605,7 +616,7 @@ export function NavigationMap() {
     <View style={styles.mapHost} pointerEvents={screenLocked ? 'none' : 'box-none'}>
       <View style={styles.mapClip}>
         <Map
-        key="nav-chart"
+        key={Platform.OS === 'android' ? `nav-chart-${styleEngineReloadNonce}` : 'nav-chart'}
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         accessible
@@ -628,7 +639,10 @@ export function NavigationMap() {
           bottom: mapBottom.attributionBottom + 8,
           left: mapBottom.left,
         }}
-      onDidFinishLoadingStyle={() => setMapStyleLoaded(true)}
+      onDidFinishLoadingStyle={() => {
+        setMapStyleLoaded(true);
+        if (chartStyleUri) markOfflineMapEngineStyleLoaded(chartStyleUri, getOfflineMapEngineStyleReloadNonce());
+      }}
       onDidFailLoadingMap={() => setMapStyleLoaded(false)}
       onRegionWillChange={(e) => {
         if (shouldPauseFollowOnRegionChange(e.nativeEvent.userInteraction, followMode)) {

@@ -8,7 +8,7 @@ import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { GpsStatusStrip } from './GpsStatusStrip';
-import { MapChipScrollRow } from './MapChipScrollRow';
+import { MapStatusChipRow } from './MapStatusChipRow';
 import { MapPreviewTrackBanner } from './MapPreviewTrackBanner';
 import { MapRecordingChip } from './MapRecordingChip';
 import { MAP_CHROME_GAP } from './mapChromeLayout';
@@ -37,7 +37,7 @@ function topChromeMaxHeight(screenHeight: number, formFactor: 'compact' | 'mediu
 }
 
 /**
- * Top map chrome — scrollable when stacked; GPS chips scroll horizontally without clipping.
+ * Top map chrome — scrollable when stacked; status chips wrap instead of clipping.
  */
 export function MapTopChrome({
   actionColumnWidth,
@@ -92,15 +92,15 @@ export function MapTopChrome({
           />
         ) : null}
 
-        <MapChipScrollRow minHeight={chipStripMinHeight} reserveRight={0} testID="map.statusChips">
+        <MapStatusChipRow minHeight={chipStripMinHeight} testID="map.statusChips">
           <GpsStatusStrip
             onOpenSettings={onOpenSettings}
             showRecenter={showRecenter}
             onRecenter={onRecenter}
-            compact
+            inline
           />
           <MapRecordingChip onOpenTracks={onOpenTracks} />
-        </MapChipScrollRow>
+        </MapStatusChipRow>
 
         <MapPreviewTrackBanner compact />
       </View>

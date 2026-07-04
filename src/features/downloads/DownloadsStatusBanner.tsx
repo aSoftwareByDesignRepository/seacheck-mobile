@@ -110,7 +110,12 @@ function ActiveDownloadBanner({
       {downloading ? (
         <DownloadProgressBar
           percentage={percent}
-          label={packStatusLabel({ state: 'downloading', percentage: percent, error: null })}
+          label={packStatusLabel({
+            state: 'downloading',
+            percentage: percent,
+            error: null,
+            downloadInitializing: active?.downloadInitializing,
+          })}
           testID="downloads.statusBanner.progress"
         />
       ) : null}

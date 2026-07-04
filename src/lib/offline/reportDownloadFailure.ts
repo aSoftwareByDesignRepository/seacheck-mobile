@@ -43,5 +43,10 @@ export function reportDownloadFailureFromError(regionId: string, error: unknown,
     status?.error?.trim() ||
     (error instanceof Error ? error.message : String(error ?? '')).trim() ||
     t('downloads.downloadFailed');
+
+  if (source === 'preflight') {
+    useOfflinePackStore.getState().markPreflightDownloadFailed(regionId, message);
+  }
+
   void reportDownloadFailure({ regionId, message, source });
 }

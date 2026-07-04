@@ -17,11 +17,11 @@ type Props = {
   onOpenSettings?: () => void;
   showRecenter?: boolean;
   onRecenter?: () => void;
-  /** Inside horizontal scroll — chips stay on one row and scroll when needed. */
-  compact?: boolean;
+  /** Chips only — parent row handles wrap layout (MapStatusChipRow). */
+  inline?: boolean;
 };
 
-export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecenter, compact = false }: Props) {
+export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecenter, inline = false }: Props) {
   const { colors, minTouch } = useTheme();
   const keepAwake = useSettingsStore((s) => s.keepAwakeUnderway);
   const followMode = useSettingsStore((s) => s.followMode);
@@ -235,12 +235,8 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
     </>
   );
 
-  if (compact) {
-    return (
-      <View style={chipRow.rowScroll} testID="map.gpsStatus">
-        {chips}
-      </View>
-    );
+  if (inline) {
+    return <>{chips}</>;
   }
 
   return (

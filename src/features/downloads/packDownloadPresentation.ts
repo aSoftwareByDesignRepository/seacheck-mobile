@@ -45,10 +45,15 @@ export function isPackDownloadActive(
   return status.state === 'downloading' || activeDownloadRegionId === regionId;
 }
 
-export function packStatusLabel(status: Pick<RegionPackStatus, 'state' | 'percentage' | 'error'>): string {
+export function packStatusLabel(
+  status: Pick<RegionPackStatus, 'state' | 'percentage' | 'error' | 'downloadInitializing'>,
+): string {
   if (packHasDownloadFailure(status)) return t('downloads.statusError');
   if (status.state === 'ready') return t('downloads.statusReady');
   if (status.state === 'downloading') {
+    if (status.downloadInitializing || status.percentage <= 0) {
+      return t('downloads.statusInitializing');
+    }
     return t('downloads.statusDownloading', { percent: Math.round(status.percentage) });
   }
   if (status.state === 'error') return t('downloads.statusError');

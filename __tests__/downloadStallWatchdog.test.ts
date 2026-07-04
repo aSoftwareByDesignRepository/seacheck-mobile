@@ -89,4 +89,65 @@ describe('startDownloadStallWatchdog', () => {
     stop();
     downloadCoordinator.end('kiel-bay');
   });
+
+  it('waits longer when the map engine style is not loaded', async () => {
+    const stuck: OfflinePackStatus = {
+      id: 'pack-test',
+      state: 'active',
+      percentage: 0,
+      completedResourceCount: 0,
+      completedResourceSize: 0,
+      completedTileCount: 0,
+      completedTileSize: 0,
+      requiredResourceCount: 1,
+    };
+    const pack = makePack([stuck]);
+    const session = downloadCoordinator.tryBegin('kiel-bay')!;
+    const onStall = jest.fn();
+    const stop = startDownloadStallWatchdog(
+      'kiel-bay',
+      session,
+      pack,
+      onStall,
+      'stalled',
+      undefined,
+      'file:///style-not-loaded.json',
+      'engine stalled',
+    );
+
+    await Promise.resolve();
+    jest.advanceTimersByTime(185_000);
+    await Promise.resolve();
+    expect(onStall).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(60_000);
+    await Promise.resolve();
+    expect(onStall).toHaveBeenCalledWith(
+      'engine stalled',
+      expect.objectContaining({ requiredResourceCount: 1, mapEngineStyleLoaded: false }),
+    );
+
+    stop();
+    downloadCoordinator.end('kiel-bay');
+  });
+
+  it('attempts recovery when native status stays null', async () => {
+    const pack = {
+      id: 'pack-null',
+      metadata: {},
+      bounds: [0, 0, 1, 1],
+      status: jest.fn(async () => null),
+      resume: jest.fn(async () => {}),
+      pause: jest.fn(async () => {}),
+    } as unknown as OfflinePack;
+    const session = downloadCoordinator.tryBegin('kiel-bay')!;
+    const onStall = jest.fn();
+    const stop = startDownloadStallWatchdog('kiel-bay', session, pack, onStall, 'stalled');
+
+    await jest.advanceTimersByTimeAsync(3_500);
+    expect(pack.resume).toHaveBeenCalled();
+
+    stop();
+    downloadCoordinator.end('kiel-bay');
+  });
 });

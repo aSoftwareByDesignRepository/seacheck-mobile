@@ -83,8 +83,22 @@ jest.mock('@maplibre/maplibre-react-native', () => {
   const React = require('react');
   const { View } = require('react-native');
   return {
-    Map: React.forwardRef(({ children }: { children?: React.ReactNode }, _ref: unknown) =>
-      React.createElement(View, { testID: 'maplibre.map' }, children),
+    Map: React.forwardRef(
+      (
+        {
+          children,
+          onDidFinishLoadingMap,
+        }: {
+          children?: React.ReactNode;
+          onDidFinishLoadingMap?: () => void;
+        },
+        _ref: unknown,
+      ) => {
+        React.useEffect(() => {
+          onDidFinishLoadingMap?.();
+        }, [onDidFinishLoadingMap]);
+        return React.createElement(View, { testID: 'maplibre.map' }, children);
+      },
     ),
     Camera: () => null,
     UserLocation: () => null,

@@ -54,6 +54,7 @@ export function usePackDownloadActions() {
         return false;
       }
       setActionBusyId(regionId);
+      useOfflinePackStore.getState().resetDownloadErrorForRetry(regionId);
       try {
         await runLockedChartDownloadPreflight(regionId, ensureChartStyle);
         const latest = useOfflinePackStore.getState().regions[regionId];
@@ -67,7 +68,10 @@ export function usePackDownloadActions() {
         return next?.state === 'ready' && !next?.error;
       } catch (err) {
         useOfflinePackStore.getState().releasePreflightDownloadLock(regionId);
-        reportDownloadFailureFromError(regionId, err, 'preflight');
+        const current = useOfflinePackStore.getState().regions[regionId];
+        if (current?.state !== 'error') {
+          reportDownloadFailureFromError(regionId, err, 'preflight');
+        }
         return false;
       } finally {
         const next = useOfflinePackStore.getState().regions[regionId];

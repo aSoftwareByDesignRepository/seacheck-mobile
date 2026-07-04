@@ -9,6 +9,8 @@ import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useSettingsStore } from '../../store/settingsStore';
 
 import { peekDownloadFailureDiagnostics } from './downloadFailureDiagnostics';
+import { isOfflineMapEngineStyleLoaded } from './offlineMapEngineHost';
+import { peekChartTileProbeDiagnostics } from '../network/chartTileReachability';
 
 export type DownloadFailureSource = 'async' | 'preflight' | 'hydrate' | 'manual';
 
@@ -56,6 +58,7 @@ export async function buildDownloadFailureReport(input: DownloadFailureInput): P
     line('activeDownloadRegionId', store.activeDownloadRegionId),
     line('hydrated', store.hydrated),
     line('chartStyleUri', store.chartStyleUri ? 'present' : 'missing'),
+    line('mapEngineStyleLoaded', store.chartStyleUri ? isOfflineMapEngineStyleLoaded(store.chartStyleUri) : false),
     '',
     'Bounds',
     '------',
@@ -72,6 +75,21 @@ export async function buildDownloadFailureReport(input: DownloadFailureInput): P
     line('downloadWifiOnly', settings.downloadWifiOnly),
   ];
 
+  const tileProbe = peekChartTileProbeDiagnostics();
+  if (tileProbe) {
+    lines.push(
+      '',
+      'Tile probe (last attempt)',
+      '-------------------------',
+      line('probeCenter', tileProbe.probeCenter),
+      line('probeBaseUrl', tileProbe.baseUrl),
+      line('probeSeamarkUrl', tileProbe.seamarkUrl),
+      line('probeAttempts', tileProbe.attempts),
+      line('probeLastHttpStatus', tileProbe.lastHttpStatus),
+      line('probeLastError', tileProbe.lastError),
+    );
+  }
+
   const nativeDiagnostics = peekDownloadFailureDiagnostics(input.regionId);
   if (nativeDiagnostics) {
     lines.push(
@@ -82,6 +100,7 @@ export async function buildDownloadFailureReport(input: DownloadFailureInput): P
       line('nativePercentage', nativeDiagnostics.percentage),
       line('completedResourceCount', nativeDiagnostics.completedResourceCount),
       line('requiredResourceCount', nativeDiagnostics.requiredResourceCount),
+      line('mapEngineStyleLoaded', nativeDiagnostics.mapEngineStyleLoaded),
     );
   }
 

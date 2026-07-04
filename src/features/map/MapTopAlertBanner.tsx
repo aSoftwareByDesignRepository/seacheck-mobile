@@ -31,6 +31,7 @@ export function MapTopAlertBanner({ kind, onOpenDownloads, onDismissDownloadHint
         },
       ]}
       testID={`map.topAlert.${kind}`}
+      accessibilityRole="alert"
     >
       <Pressable
         accessibilityRole="button"
@@ -40,13 +41,13 @@ export function MapTopAlertBanner({ kind, onOpenDownloads, onDismissDownloadHint
         style={styles.message}
       >
         <Text
-          style={[styles.title, { color: kind === 'download' ? colors.text : colors.warningText }]}
-          numberOfLines={2}
+          style={[styles.title, { color: kind === 'download' ? colors.text : colors.warningText, flexShrink: 1 }]}
+          numberOfLines={3}
         >
           {copy.title}
         </Text>
         {kind !== 'download' ? (
-          <Text style={[styles.hint, { color: colors.warningText }]} numberOfLines={1}>
+          <Text style={[styles.hint, { color: colors.warningText }]} numberOfLines={2}>
             {copy.hint}
           </Text>
         ) : null}
@@ -73,7 +74,9 @@ export function MapTopAlertBanner({ kind, onOpenDownloads, onDismissDownloadHint
           style={[styles.actionBtn, { minHeight: minTouch, borderColor: colors.border, marginLeft: spacing.xs }]}
           testID="map.topAlert.action"
         >
-          <Text style={[styles.actionText, { color: colors.primary }]}>{t('map.openDownloadsShort')}</Text>
+          <Text style={[styles.actionText, { color: colors.primary }]} numberOfLines={2}>
+            {t('map.openDownloadsShort')}
+          </Text>
         </Pressable>
       )}
     </View>
@@ -91,7 +94,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-  message: { flex: 1, justifyContent: 'center', minWidth: 0 },
+  message: { flex: 1, flexShrink: 1, justifyContent: 'center', minWidth: 0 },
   title: { fontSize: 14, fontWeight: '700', lineHeight: 20 },
   hint: { fontSize: 13, lineHeight: 18, marginTop: 2 },
   closeBtn: {
@@ -100,6 +103,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'stretch',
+    flexShrink: 0,
   },
   closeText: { fontSize: 22, fontWeight: '300', lineHeight: 24 },
   actionBtn: {

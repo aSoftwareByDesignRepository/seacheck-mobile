@@ -1,10 +1,18 @@
+import { promiseWithTimeout, TimeoutError } from '../async/promiseWithTimeout';
 import { ensureMapLibreNetworkForDownload } from '../network/mapLibreNetworkGate';
+
+const NATIVE_PACK_LIST_TIMEOUT_MS = 8_000;
 
 /** One active offline download at a time; stale native callbacks are ignored. */
 class DownloadCoordinator {
   private activeRegionId: string | null = null;
   private preflightOnly = false;
   private sessions = new Map<string, number>();
+  private activityListeners = new Set<() => void>();
+
+  private notifyActivity(): void {
+    this.activityListeners.forEach((listener) => listener());
+  }
 
   getActiveRegionId(): string | null {
     return this.activeRegionId;
@@ -12,6 +20,11 @@ class DownloadCoordinator {
 
   hasActiveDownload(): boolean {
     return this.activeRegionId != null;
+  }
+
+  subscribeActivity(listener: () => void): () => void {
+    this.activityListeners.add(listener);
+    return () => this.activityListeners.delete(listener);
   }
 
   /**
@@ -23,6 +36,7 @@ class DownloadCoordinator {
     this.activeRegionId = regionId;
     this.preflightOnly = true;
     ensureMapLibreNetworkForDownload();
+    this.notifyActivity();
     return true;
   }
 
@@ -30,6 +44,7 @@ class DownloadCoordinator {
     if (this.preflightOnly && this.activeRegionId === regionId) {
       this.activeRegionId = null;
       this.preflightOnly = false;
+      this.notifyActivity();
     }
   }
 
@@ -42,6 +57,7 @@ class DownloadCoordinator {
     ensureMapLibreNetworkForDownload();
     const next = (this.sessions.get(regionId) ?? 0) + 1;
     this.sessions.set(regionId, next);
+    this.notifyActivity();
     return next;
   }
 
@@ -49,6 +65,7 @@ class DownloadCoordinator {
     if (this.activeRegionId === regionId) {
       this.activeRegionId = null;
       this.preflightOnly = false;
+      this.notifyActivity();
     }
   }
 
@@ -58,6 +75,7 @@ class DownloadCoordinator {
     this.activeRegionId = regionId;
     if (!this.sessions.has(regionId)) this.sessions.set(regionId, 1);
     ensureMapLibreNetworkForDownload();
+    this.notifyActivity();
     return true;
   }
 
@@ -73,6 +91,7 @@ class DownloadCoordinator {
       this.activeRegionId = null;
       this.preflightOnly = false;
     }
+    this.notifyActivity();
   }
 
   isStale(regionId: string, token: number): boolean {
@@ -84,10 +103,16 @@ class DownloadCoordinator {
     this.activeRegionId = null;
     this.preflightOnly = false;
     this.sessions.clear();
+    this.activityListeners.clear();
   }
 }
 
 export const downloadCoordinator = new DownloadCoordinator();
+
+/** Subscribe to download lock changes (preflight, start, end, cancel). */
+export function subscribeDownloadCoordinatorActivity(listener: () => void): () => void {
+  return downloadCoordinator.subscribeActivity(listener);
+}
 
 /** Test-only — clears active download lock. */
 export function resetDownloadCoordinatorForTests(): void {
@@ -109,13 +134,17 @@ export async function loadNativePacksWithRetry(
   getPacks: () => Promise<unknown[]>,
   attempts = 3,
   delayMs = 400,
+  timeoutMs = NATIVE_PACK_LIST_TIMEOUT_MS,
 ): Promise<{ packs: unknown[]; ok: boolean }> {
   let last: unknown[] = [];
   for (let i = 0; i < attempts; i++) {
     try {
-      const packs = await getPacks();
+      const packs = await promiseWithTimeout(getPacks(), timeoutMs, 'OfflineManager.getPacks');
       return { packs, ok: true };
-    } catch {
+    } catch (error) {
+      if (error instanceof TimeoutError) {
+        console.warn('[downloadCoordinator] native pack listing timed out');
+      }
       last = [];
       if (i < attempts - 1) {
         await new Promise((r) => setTimeout(r, delayMs));

@@ -8,7 +8,7 @@ import { ensureDownloadAllowed } from '../../lib/network/downloadPolicy';
 import { runLockedChartDownloadPreflight } from '../../lib/offline/downloadPreflight';
 import { reportDownloadFailureFromError } from '../../lib/offline/reportDownloadFailure';
 import { reportDownloadOutcome } from '../../lib/offline/reportDownloadOutcome';
-import { validateDownloadBounds } from '../../lib/map/bounds';
+import { validateDownloadBounds, boundsCenter } from '../../lib/map/bounds';
 import { estimateDownloadKb, estimateTileCount, formatStorageSize } from '../../map/tileMath';
 import { t } from '../../i18n';
 import type { RootTabParamList } from '../../navigation/types';
@@ -102,7 +102,7 @@ export function CustomDownloadSection({
     setBusy(true);
     onActionBusyChange?.('custom_quick');
     try {
-      await runLockedChartDownloadPreflight(regionId, ensureChartStyle);
+      await runLockedChartDownloadPreflight(regionId, ensureChartStyle, boundsCenter(quickBounds));
       await startCustomDownload(name, quickBounds, 10, 14, regionId);
       reportDownloadOutcome(regionId, { showInfo, showError });
     } catch (err) {

@@ -5,7 +5,7 @@ import { ensureDownloadAllowed } from '../../lib/network/downloadPolicy';
 import { runLockedChartDownloadPreflight } from '../../lib/offline/downloadPreflight';
 import { reportDownloadFailureFromError } from '../../lib/offline/reportDownloadFailure';
 import { reportDownloadOutcome } from '../../lib/offline/reportDownloadOutcome';
-import { validateDownloadBounds } from '../../lib/map/bounds';
+import { validateDownloadBounds, boundsCenter } from '../../lib/map/bounds';
 import { estimateDownloadKb, estimateTileCount, formatStorageSize } from '../../map/tileMath';
 import { t } from '../../i18n';
 import { useCustomDownloadStore } from '../../store/customDownloadStore';
@@ -68,7 +68,7 @@ export function CustomDownloadMapPanel() {
         return;
       }
       const name = packName.trim() || t('downloads.customDefaultName', { lat: bounds[1].toFixed(2), lon: bounds[0].toFixed(2) });
-      await runLockedChartDownloadPreflight(regionId, ensureChartStyle);
+      await runLockedChartDownloadPreflight(regionId, ensureChartStyle, boundsCenter(bounds));
       await startCustomDownload(name, bounds, minZoom, maxZoom, regionId);
       cancelSelecting();
       reportDownloadOutcome(regionId, { showInfo, showError });
