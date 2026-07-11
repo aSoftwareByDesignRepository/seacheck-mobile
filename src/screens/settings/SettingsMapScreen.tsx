@@ -24,6 +24,7 @@ export function SettingsMapScreen() {
   const barometerEnabled = useSettingsStore((s) => s.barometerEnabled);
   const mapShowPassageRouteLines = useSettingsStore((s) => s.mapShowPassageRouteLines);
   const mapShowRecordingDistance = useSettingsStore((s) => s.mapShowRecordingDistance);
+  const mapShowXte = useSettingsStore((s) => s.mapShowXte);
   const downloadWifiOnly = useSettingsStore((s) => s.downloadWifiOnly);
 
   return (
@@ -132,6 +133,15 @@ export function SettingsMapScreen() {
             value={mapShowRecordingDistance}
             onChange={(v) => void patchSettings({ mapShowRecordingDistance: v })}
             testID="settings.mapShowRecordingDistance"
+            colors={colors}
+            minTouch={minTouch}
+          />
+          <ToggleRow
+            label={t('settings.mapShowXte')}
+            hint={t('settings.mapShowXteHint')}
+            value={mapShowXte}
+            onChange={(v) => void patchSettings({ mapShowXte: v })}
+            testID="settings.mapShowXte"
             colors={colors}
             minTouch={minTouch}
           />

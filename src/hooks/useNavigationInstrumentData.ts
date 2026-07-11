@@ -48,6 +48,7 @@ export function useNavigationInstrumentData(fix: LocationFix | null): Navigation
   const sogUnit = useSettingsStore((s) => s.sogUnit);
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const barometerEnabled = useSettingsStore((s) => s.barometerEnabled);
+  const mapShowXte = useSettingsStore((s) => s.mapShowXte);
 
   const goToTarget = useNavigationStore((s) => s.goToTarget);
   const anchorAlarm = useNavigationStore((s) => s.anchorAlarm);
@@ -67,7 +68,8 @@ export function useNavigationInstrumentData(fix: LocationFix | null): Navigation
   const accuracyText = fix?.accuracyM != null && !stale ? `±${Math.round(fix.accuracyM)}` : '—';
 
   const showNavHero = Boolean(goToTarget);
-  const showXte = nav.xteNm != null && !stale && goToTarget?.kind !== 'mob' && Boolean(activePassageId);
+  const showXte =
+    mapShowXte && nav.xteNm != null && !stale && goToTarget?.kind !== 'mob' && Boolean(activePassageId);
   const showPassageMeta = Boolean(activePassageId && nav.remainingNm != null && !stale);
   const showBarometer = barometerEnabled && barometer.available && barometer.trend.currentHpa != null;
   const leeway = !stale ? computeLeeway(fix?.speedKn ?? null, displayHeading(fix), displayCog(fix)) : null;

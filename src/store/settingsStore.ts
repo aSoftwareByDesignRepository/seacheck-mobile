@@ -49,6 +49,8 @@ type PersistPayload = {
   mapShowPassageRouteLines: boolean;
   /** Live track distance chip on the map while recording. */
   mapShowRecordingDistance: boolean;
+  /** Cross-track error readout in instrument panels — alarms use navigationStore limits regardless. */
+  mapShowXte: boolean;
   anchorRadiusNm: AnchorRadiusNm;
   followMode: boolean;
   keepAwakeUnderway: boolean;
@@ -97,6 +99,7 @@ async function persist(state: SettingsState) {
     mapFollowZoom: state.mapFollowZoom,
     mapShowPassageRouteLines: state.mapShowPassageRouteLines,
     mapShowRecordingDistance: state.mapShowRecordingDistance,
+    mapShowXte: state.mapShowXte,
     anchorRadiusNm: state.anchorRadiusNm,
     followMode: state.followMode,
     keepAwakeUnderway: state.keepAwakeUnderway,
@@ -131,6 +134,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   ...CRUISE_PASSAGE_DEFAULTS,
   mapShowPassageRouteLines: true,
   mapShowRecordingDistance: false,
+  mapShowXte: CRUISE_PASSAGE_DEFAULTS.mapShowXte,
   vessel: emptyVessel,
   downloadWifiOnly: true,
   gloveMode: false,
@@ -170,6 +174,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           mapFollowZoom: normalizeFollowZoom(parsed.mapFollowZoom),
           mapShowPassageRouteLines: parsed.mapShowPassageRouteLines ?? true,
           mapShowRecordingDistance: parsed.mapShowRecordingDistance ?? false,
+          mapShowXte: parsed.mapShowXte ?? CRUISE_PASSAGE_DEFAULTS.mapShowXte,
           anchorRadiusNm: normalizeAnchorRadiusNm(parsed.anchorRadiusNm),
           followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode,
           keepAwakeUnderway: parsed.keepAwakeUnderway ?? CRUISE_PASSAGE_DEFAULTS.keepAwakeUnderway,

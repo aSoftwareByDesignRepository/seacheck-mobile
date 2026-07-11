@@ -1,11 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { useFormFactor } from '../../hooks/useFormFactor';
 import { formatDistanceNm, distanceUnitLabel, formatXteFromNm } from '../../lib/geo/units';
 import type { DistanceUnit } from '../../settings/defaults';
 import { t } from '../../i18n';
 import { useTheme } from '../../theme/ThemeContext';
-import { InstrumentCell } from '../../ui/InstrumentCell';
+import { PassageStatGrid } from './PassageStatGrid';
 
 type Props = {
   nextWaypointName: string;
@@ -14,8 +13,8 @@ type Props = {
   distanceNm: number | null;
   distanceUnit: DistanceUnit;
   etaLocal: string | null;
-  xteNm: number | null;
-  xteSide: 'L' | 'R' | null;
+  xteNm?: number | null;
+  xteSide?: 'L' | 'R' | null;
   legNumber: number;
   totalLegs: number;
   isMob?: boolean;
@@ -31,8 +30,8 @@ export function PassageNavHero({
   distanceNm,
   distanceUnit,
   etaLocal,
-  xteNm,
-  xteSide,
+  xteNm = null,
+  xteSide = null,
   legNumber,
   totalLegs,
   isMob = false,
@@ -40,13 +39,10 @@ export function PassageNavHero({
   stale = false,
 }: Props) {
   const { colors, spacing } = useTheme();
-  const { width, formFactor } = useFormFactor();
   const unitLabel = distanceUnitLabel(distanceUnit);
   const xteDisplay = formatXteFromNm(xteNm, distanceUnit, xteSide);
   const brgLabel = isMob ? t('map.brgMob') : t('passage.brgToNext');
   const distValue = distanceNm != null ? formatDistanceNm(distanceNm, distanceUnit) : '—';
-  const stackEta = width < 400 || (formFactor === 'compact' && width < 520);
-  const etaSize = Math.max(18, heroSize - 6);
 
   return (
     <View
@@ -71,29 +67,34 @@ export function PassageNavHero({
           {t('passage.followLeg', { current: legNumber, total: totalLegs })}
         </Text>
       ) : null}
-      <View style={[styles.row, { gap: spacing.sm, marginTop: spacing.sm }]}>
-        <InstrumentCell
-          label={brgLabel}
-          value={bearing != null ? String(Math.round(bearing)) : '—'}
-          unit={bearingSuffix}
-          hero
+      <View style={{ marginTop: spacing.sm }}>
+        <PassageStatGrid
           heroSize={heroSize}
+          bearing={{
+            key: 'navHero.brg',
+            label: brgLabel,
+            value: bearing != null ? String(Math.round(bearing)) : '—',
+            unit: bearingSuffix,
+          }}
+          distance={{
+            key: 'navHero.dist',
+            label: t('map.distTo'),
+            value: distValue,
+            unit: unitLabel,
+          }}
+          eta={etaLocal ? { key: 'navHero.eta', label: t('map.eta'), value: etaLocal, hero: true } : null}
+          xte={
+            xteNm != null
+              ? {
+                  key: 'navHero.xte',
+                  label: t('map.xte'),
+                  value: xteDisplay.value,
+                  unit: xteDisplay.unitLabel || undefined,
+                }
+              : null
+          }
         />
-        <InstrumentCell label={t('map.distTo')} value={distValue} unit={unitLabel} hero heroSize={heroSize} />
-        {etaLocal && !stackEta ? (
-          <InstrumentCell label={t('map.eta')} value={etaLocal} hero heroSize={etaSize} />
-        ) : null}
       </View>
-      {etaLocal && stackEta ? (
-        <View style={[styles.row, { gap: spacing.sm, marginTop: spacing.xs }]}>
-          <InstrumentCell label={t('map.eta')} value={etaLocal} hero heroSize={etaSize} />
-        </View>
-      ) : null}
-      {xteNm != null ? (
-        <View style={[styles.row, { gap: spacing.sm, marginTop: spacing.xs }]}>
-          <InstrumentCell label={t('map.xte')} value={xteDisplay.value} unit={xteDisplay.unitLabel || undefined} />
-        </View>
-      ) : null}
       {stale ? (
         <Text style={[styles.stale, { color: colors.warningText }]}>{t('map.staleCoordsHint')}</Text>
       ) : null}
@@ -105,6 +106,5 @@ const styles = StyleSheet.create({
   wrap: { borderWidth: 1, borderRadius: 14, padding: 14, minWidth: 0 },
   nextLabel: { fontSize: 14, fontWeight: '700', lineHeight: 20 },
   legHint: { fontSize: 12, fontWeight: '600', marginTop: 2, lineHeight: 16 },
-  row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', minWidth: 0 },
   stale: { fontSize: 12, lineHeight: 16, marginTop: 8, fontWeight: '600' },
 });

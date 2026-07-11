@@ -77,7 +77,13 @@ export function useNavigationInstruments(): NavigationInstruments {
       setPlannedEtaDestLocal(null);
       return;
     }
-    void getPassageDetail(activePassageId).then((detail) => {
+
+    const passageId = activePassageId;
+    let cancelled = false;
+
+    void getPassageDetail(passageId).then((detail) => {
+      if (cancelled || usePassageStore.getState().activePassageId !== passageId) return;
+
       if (!detail || detail.legs.length === 0) {
         setLegLabel(null);
         setLegNumbers(null);
@@ -86,26 +92,45 @@ export function useNavigationInstruments(): NavigationInstruments {
         setPlannedEtaDestLocal(null);
         return;
       }
-      const idx = Math.min(activeLegIndex, detail.legs.length - 1);
+
+      const idx = Math.min(useNavigationStore.getState().activeLegIndex, detail.legs.length - 1);
       const leg = detail.legs[idx];
       setLegLabel(`${leg.from.name} → ${leg.to.name}`);
       setLegNumbers({ current: idx + 1, total: detail.legs.length });
-      const xteVal = crossTrackErrorNm(
-        pos,
-        [leg.from.longitude, leg.from.latitude],
-        [leg.to.longitude, leg.to.latitude],
-      );
-      setXte({ nm: Math.abs(xteVal), side: xteVal >= 0 ? 'R' : 'L' });
 
-      const distToLegEnd = distanceNm(pos, [leg.to.longitude, leg.to.latitude]);
-      let rem = distToLegEnd;
-      for (let i = idx + 1; i < detail.legs.length; i++) {
-        rem += detail.legs[i].distanceNm;
+      const latestPos = useLocationStore.getState().fix;
+      const latestStale = isFixStale(latestPos);
+      const posForXte: LonLat | null =
+        latestPos && !latestStale ? [latestPos.longitude, latestPos.latitude] : null;
+      if (posForXte) {
+        const xteVal = crossTrackErrorNm(
+          posForXte,
+          [leg.from.longitude, leg.from.latitude],
+          [leg.to.longitude, leg.to.latitude],
+        );
+        setXte({ nm: Math.abs(xteVal), side: xteVal >= 0 ? 'R' : 'L' });
+      } else {
+        setXte(null);
       }
-      setRemainingNm(rem);
+
+      if (posForXte) {
+        const distToLegEnd = distanceNm(posForXte, [leg.to.longitude, leg.to.latitude]);
+        let rem = distToLegEnd;
+        for (let i = idx + 1; i < detail.legs.length; i++) {
+          rem += detail.legs[i].distanceNm;
+        }
+        setRemainingNm(rem);
+      } else {
+        setRemainingNm(null);
+      }
+
       const lastLeg = detail.legs[detail.legs.length - 1];
       setPlannedEtaDestLocal(formatEtaLocalFromIso(lastLeg.etaUtc));
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activePassageId, activeLegIndex, pos, stale, getPassageDetail]);
 
   return {

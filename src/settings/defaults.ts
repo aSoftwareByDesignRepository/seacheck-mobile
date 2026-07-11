@@ -26,6 +26,8 @@ export const CRUISE_PASSAGE_DEFAULTS = {
   keepAwakeUnderway: true,
   /** Off by default — pressure sensor is optional and not on all devices. */
   barometerEnabled: false,
+  /** Cross-track error in instrument panels — off by default; XTE alarms are unaffected. */
+  mapShowXte: false,
   /** Accuracy-weighted position smoothing for map display — alarms always use raw GPS. */
   gpsSmoothPosition: true,
 };

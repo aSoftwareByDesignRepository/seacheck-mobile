@@ -14,6 +14,7 @@ import { InstrumentCell } from '../../ui/InstrumentCell';
 import { InstrumentChip } from '../../ui/InstrumentChip';
 import { compactChipMinHeight } from '../../ui/instrumentLayout';
 import { PassageNavHero } from './PassageNavHero';
+import { PassageStatGrid } from './PassageStatGrid';
 
 type Props = {
   fix: LocationFix | null;
@@ -34,7 +35,7 @@ export function PassageInstrumentBlock({
   onOpenPassage,
 }: Props) {
   const { colors, spacing, minTouch } = useTheme();
-  const { instrumentHeroSize, instrumentFullScreenHeroSize, width, formFactor } = useFormFactor();
+  const { instrumentHeroSize, instrumentFullScreenHeroSize } = useFormFactor();
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const follow = usePassageFollow();
   const data = useNavigationInstrumentData(fix);
@@ -54,8 +55,6 @@ export function PassageInstrumentBlock({
         distanceNm={data.nav.distanceToTargetNm}
         distanceUnit={distanceUnit}
         etaLocal={data.nav.etaLocal}
-        xteNm={null}
-        xteSide={null}
         legNumber={0}
         totalLegs={0}
         isMob
@@ -75,9 +74,8 @@ export function PassageInstrumentBlock({
       ? `${formatDistanceNm(follow.distanceToNextNm, distanceUnit)} ${unitLabel}`
       : '—';
   const xteDisplay = formatXteFromNm(follow.xteNm, distanceUnit, follow.xteSide);
-  const stackEta = width < 400 || (formFactor === 'compact' && width < 520);
-  const etaSize = Math.max(18, heroSize - 6);
   const showExtendedStats = !isMinimalFollow;
+  const showXte = data.showXte && follow.xteNm != null;
 
   if (isMinimalFollow) {
     return (
@@ -153,34 +151,38 @@ export function PassageInstrumentBlock({
         {t('passage.nextWaypoint', { name: follow.nextWaypointName })}
       </Text>
 
-      <View style={[styles.statsRow, { gap: spacing.sm, marginTop: spacing.sm }]}>
-        <InstrumentCell
-          label={t('passage.brgToNext')}
-          value={follow.bearingToNext != null ? String(Math.round(follow.bearingToNext)) : '—'}
-          unit={follow.bearingSuffix}
-          hero
-          heroSize={heroSize}
-        />
-        <InstrumentCell
-          label={t('map.distTo')}
-          value={follow.distanceToNextNm != null ? formatDistanceNm(follow.distanceToNextNm, distanceUnit) : '—'}
-          unit={unitLabel}
-          hero
-          heroSize={heroSize}
-        />
-        {showExtendedStats && follow.etaToNext && !stackEta ? (
-          <InstrumentCell label={t('map.eta')} value={follow.etaToNext} hero heroSize={etaSize} />
-        ) : null}
-      </View>
-
-      {showExtendedStats && ((follow.etaToNext && stackEta) || follow.xteNm != null) ? (
-        <View style={[styles.statsRow, { gap: spacing.sm, marginTop: spacing.xs }]}>
-          {follow.etaToNext && stackEta ? (
-            <InstrumentCell label={t('map.eta')} value={follow.etaToNext} hero heroSize={etaSize} />
-          ) : null}
-          {follow.xteNm != null ? (
-            <InstrumentCell label={t('map.xte')} value={xteDisplay.value} unit={xteDisplay.unitLabel || undefined} />
-          ) : null}
+      {showExtendedStats ? (
+        <View style={{ marginTop: spacing.sm }}>
+          <PassageStatGrid
+            heroSize={heroSize}
+            bearing={{
+              key: 'passage.brg',
+              label: t('passage.brgToNext'),
+              value: follow.bearingToNext != null ? String(Math.round(follow.bearingToNext)) : '—',
+              unit: follow.bearingSuffix,
+            }}
+            distance={{
+              key: 'passage.dist',
+              label: t('map.distTo'),
+              value: follow.distanceToNextNm != null ? formatDistanceNm(follow.distanceToNextNm, distanceUnit) : '—',
+              unit: unitLabel,
+            }}
+            eta={
+              follow.etaToNext
+                ? { key: 'passage.eta', label: t('map.eta'), value: follow.etaToNext, hero: true }
+                : null
+            }
+            xte={
+              showXte
+                ? {
+                    key: 'passage.xte',
+                    label: t('map.xte'),
+                    value: xteDisplay.value,
+                    unit: xteDisplay.unitLabel || undefined,
+                  }
+                : null
+            }
+          />
         </View>
       ) : null}
 
@@ -273,7 +275,6 @@ const styles = StyleSheet.create({
   legMeta: { flexShrink: 0, fontSize: 12, fontWeight: '700', lineHeight: 16 },
   nextWpDock: { fontSize: 14, fontWeight: '700', lineHeight: 20, marginTop: 4 },
   nextWpFull: { fontSize: 16, fontWeight: '700', lineHeight: 24, marginTop: 6 },
-  statsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', minWidth: 0 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', minWidth: 0 },
   stale: { fontSize: 12, lineHeight: 16, marginTop: 8, fontWeight: '600' },
   passedHint: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },

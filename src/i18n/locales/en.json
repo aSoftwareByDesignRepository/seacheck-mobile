@@ -165,6 +165,8 @@
     "mapShowPassageRouteLinesHint": "Connect waypoints with lines on the main chart while planning or following a passage.",
     "mapShowRecordingDistance": "Recording distance on map",
     "mapShowRecordingDistanceHint": "Shows a chip with live track distance while recording. Tap it to open Tracks. Off by default — full stats stay on the Tracks tab.",
+    "mapShowXte": "Cross-track error (XTE)",
+    "mapShowXteHint": "Shows how far you are off the active passage leg in instrument panels. Off by default — XTE alarms in Settings → Alarms still work regardless.",
     "panelSide": "Instrument panel side",
     "panelSideAuto": "Auto",
     "panelSidePort": "Port (left)",
