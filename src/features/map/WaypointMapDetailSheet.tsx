@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { formatBearing, magneticDeclinationDeg } from '../../lib/geo/magnetic';
@@ -28,6 +28,8 @@ type Props = {
   /** When set, delete removes the mark from this passage route on the chart. */
   planningPassageId?: string | null;
   allowRouteEdits?: boolean;
+  /** Planning mode: open the coordinate editor immediately after a chart tap. */
+  autoOpenEdit?: boolean;
 };
 
 export function WaypointMapDetailSheet({
@@ -37,6 +39,7 @@ export function WaypointMapDetailSheet({
   onDeleted,
   planningPassageId = null,
   allowRouteEdits = true,
+  autoOpenEdit = false,
 }: Props) {
   const { colors, spacing } = useTheme();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -52,13 +55,22 @@ export function WaypointMapDetailSheet({
   const removeWaypoint = useWaypointStore((s) => s.remove);
   const showError = useFeedbackStore((s) => s.showError);
 
+  const planningMode = planningPassageId != null;
+  const planningEditable = planningMode && allowRouteEdits;
+
+  useEffect(() => {
+    if (!waypoint || !planningEditable || !autoOpenEdit) {
+      setEditOpen(false);
+      return;
+    }
+    setEditOpen(true);
+  }, [waypoint?.id, planningEditable, autoOpenEdit]);
+
   if (!waypoint) return null;
 
   const posFix = fix && !isFixStale(fix) ? fix : lastGoodFix;
   const isGoTo = goToTarget?.id === waypoint.id && goToTarget.kind === 'waypoint';
   const typeLabel = t(`waypoints.types.${waypoint.type}` as 'waypoints.types.generic');
-  const planningMode = planningPassageId != null;
-  const planningEditable = planningMode && allowRouteEdits;
   const showDelete = !planningMode || planningEditable;
   const showGoTo = !planningMode && !isGoTo;
 
@@ -105,6 +117,33 @@ export function WaypointMapDetailSheet({
     notifyPassagePlanningChanged(planningPassageId);
   }
 
+  if (planningEditable && autoOpenEdit) {
+    if (confirmDelete) {
+      return (
+        <BottomSheet visible onClose={() => setConfirmDelete(false)} title={t('waypoints.deleteTitle')} testID="waypointMap.deleteConfirmSheet">
+          <ConfirmPanel
+            title={t('waypoints.deleteTitle')}
+            message={waypoint.name}
+            confirmLabel={t('waypoints.delete')}
+            onConfirm={() => void handleDelete()}
+            onCancel={() => setConfirmDelete(false)}
+            testID="waypointMap.deleteConfirm"
+          />
+        </BottomSheet>
+      );
+    }
+    return (
+      <PassageWaypointCoordSheet
+        visible
+        mode="edit"
+        waypoint={waypoint}
+        onClose={onClose}
+        onSubmit={handleEditSubmit}
+        onDelete={() => setConfirmDelete(true)}
+      />
+    );
+  }
+
   return (
     <>
       <BottomSheet visible onClose={onClose} title={waypoint.name} subtitle={typeLabel} testID="waypointMap.sheet">
@@ -123,7 +162,7 @@ export function WaypointMapDetailSheet({
             {isGoTo ? (
               <Text style={[styles.activeGoTo, { color: colors.success }]}>{t('map.waypointActiveGoTo')}</Text>
             ) : null}
-            {planningEditable ? (
+            {planningEditable && !autoOpenEdit ? (
               <Text style={[styles.planningHint, { color: colors.textMuted }]}>{t('passage.mapPlanningWaypointHint')}</Text>
             ) : null}
             <CoordinateBlock latitude={waypoint.latitude} longitude={waypoint.longitude} onCopied={onCopied} />

@@ -69,7 +69,7 @@ export function PassageMapPlanningPanel() {
       ? t('passage.mapPlanningEmpty')
       : wpCount === 1
         ? t('passage.mapPlanningNeedSecond')
-        : t('passage.mapPlanningTapHint');
+        : t('passage.mapPlanningReadyHint');
 
   const hintText = readOnlyPlanning
     ? t('passage.mapPlanningViewHint')

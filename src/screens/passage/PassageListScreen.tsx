@@ -5,9 +5,12 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useFormFactor } from '../../hooks/useFormFactor';
 import { formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
+import { confirmReverseActivePassage } from '../../lib/passage/confirmReversePassage';
 import { t } from '../../i18n';
 import type { PassageStackParamList } from '../../navigation/PassageStack';
 import { usePassageStore } from '../../store/passageStore';
+import { requestConfirm } from '../../store/confirmStore';
+import { useFeedbackStore } from '../../store/feedbackStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
@@ -26,8 +29,14 @@ export function PassageListScreen() {
   const activePassageId = usePassageStore((s) => s.activePassageId);
   const createPassage = usePassageStore((s) => s.createPassage);
   const activatePassage = usePassageStore((s) => s.activatePassage);
+  const deletePassage = usePassageStore((s) => s.deletePassage);
+  const reversePassageWaypoints = usePassageStore((s) => s.reversePassageWaypoints);
   const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
+  const showInfo = useFeedbackStore((s) => s.showInfo);
+  const showError = useFeedbackStore((s) => s.showError);
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [reversingId, setReversingId] = useState<string | null>(null);
   const [summaries, setSummaries] = useState<Record<string, { legs: number; nm: number; waypoints: number }>>({});
 
   useEffect(() => {
@@ -60,6 +69,46 @@ export function PassageListScreen() {
     await activatePassage(passageId);
   }
 
+  async function handleReverse(passageId: string) {
+    const meta = summaries[passageId];
+    if ((meta?.waypoints ?? 0) < 2) {
+      showError(t('passage.reverseNeedTwo'));
+      return;
+    }
+    if (passageId === activePassageId) {
+      const ok = await confirmReverseActivePassage();
+      if (!ok) return;
+    }
+    setReversingId(passageId);
+    try {
+      await reversePassageWaypoints(passageId);
+      showInfo(t('passage.reverseSuccess'));
+    } catch {
+      showError(t('passage.reverseFailed'));
+    } finally {
+      setReversingId(null);
+    }
+  }
+
+  async function confirmDelete(passageId: string, name: string) {
+    const ok = await requestConfirm({
+      title: t('passage.deleteTitle'),
+      message: name,
+      confirmLabel: t('passage.delete'),
+      destructive: true,
+    });
+    if (!ok) return;
+    setDeletingId(passageId);
+    try {
+      await deletePassage(passageId);
+      showInfo(t('passage.deleteSuccess'));
+    } catch {
+      showError(t('passage.deleteFailed'));
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (passages.length === 0) {
     return (
       <Screen testID="screen.passage" title={t('tabs.passage')} subtitle={t('passage.listSubtitle')}>
@@ -90,6 +139,8 @@ export function PassageListScreen() {
           const meta = summaries[item.id];
           const isActive = item.id === activePassageId;
           const canActivate = (meta?.waypoints ?? 0) >= 2;
+          const canReverse = canActivate;
+          const busy = deletingId === item.id || reversingId === item.id;
           return (
             <Pressable
               onPress={() => openDetail(item.id)}
@@ -122,21 +173,75 @@ export function PassageListScreen() {
                 </Text>
               ) : null}
               <View style={[styles.cardActions, { gap: spacing.sm, marginTop: spacing.sm }]}>
-                {!isActive && canActivate ? (
+                <View style={[styles.cardActionsPrimary, { gap: spacing.sm }]}>
+                  {!isActive && canActivate ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('passage.activate')}
+                      onPress={(e) => {
+                        e.stopPropagation?.();
+                        void handleActivate(item.id, meta?.waypoints ?? 0);
+                      }}
+                      style={[styles.inlineBtn, { borderColor: colors.primary, minHeight: minTouch }]}
+                      testID={`passage.activate.${item.id}`}
+                    >
+                      <Text style={[styles.inlineBtnText, { color: colors.primary }]}>{t('passage.activate')}</Text>
+                    </Pressable>
+                  ) : null}
+                  <Text style={[styles.openHint, { color: colors.primary }]}>{t('passage.openDetail')}</Text>
+                </View>
+                <View style={[styles.cardActionsSecondary, { gap: spacing.sm }]}>
+                  {canReverse ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('passage.reverse')}
+                      accessibilityHint={t('passage.reverseFromListHint')}
+                      disabled={busy}
+                      onPress={(e) => {
+                        e.stopPropagation?.();
+                        void handleReverse(item.id);
+                      }}
+                      style={[
+                        styles.inlineBtn,
+                        {
+                          borderColor: colors.border,
+                          backgroundColor: colors.surface,
+                          minHeight: minTouch,
+                          opacity: reversingId === item.id ? 0.6 : 1,
+                        },
+                      ]}
+                      testID={`passage.reverse.${item.id}`}
+                    >
+                      <Text style={[styles.inlineBtnText, { color: colors.text }]}>
+                        {reversingId === item.id ? t('common.loading') : t('passage.reverse')}
+                      </Text>
+                    </Pressable>
+                  ) : null}
                   <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t('passage.activate')}
-                    onPress={(e) => {
-                      e.stopPropagation?.();
-                      void handleActivate(item.id, meta?.waypoints ?? 0);
-                    }}
-                    style={[styles.inlineBtn, { borderColor: colors.primary, minHeight: minTouch }]}
-                    testID={`passage.activate.${item.id}`}
-                  >
-                    <Text style={[styles.inlineBtnText, { color: colors.primary }]}>{t('passage.activate')}</Text>
-                  </Pressable>
-                ) : null}
-                <Text style={[styles.openHint, { color: colors.primary }]}>{t('passage.openDetail')}</Text>
+                  accessibilityRole="button"
+                  accessibilityLabel={t('passage.delete')}
+                  accessibilityHint={t('passage.deleteFromListHint')}
+                  disabled={busy}
+                  onPress={(e) => {
+                    e.stopPropagation?.();
+                    void confirmDelete(item.id, item.name);
+                  }}
+                  style={[
+                    styles.inlineBtn,
+                    {
+                      borderColor: colors.dangerBorder,
+                      backgroundColor: colors.dangerBg,
+                      minHeight: minTouch,
+                      opacity: deletingId === item.id ? 0.6 : 1,
+                    },
+                  ]}
+                  testID={`passage.delete.${item.id}`}
+                >
+                  <Text style={[styles.inlineBtnText, { color: colors.danger }]}>
+                    {deletingId === item.id ? t('common.loading') : t('passage.delete')}
+                  </Text>
+                </Pressable>
+                </View>
               </View>
             </Pressable>
           );
@@ -153,7 +258,9 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   name: { flex: 1, fontSize: 18, fontWeight: '700', lineHeight: 24 },
   meta: { fontSize: 14, lineHeight: 20, marginTop: 8 },
-  cardActions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' },
+  cardActions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 },
+  cardActionsPrimary: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1, minWidth: 0 },
+  cardActionsSecondary: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 },
   inlineBtn: {
     borderWidth: 1,
     borderRadius: 10,

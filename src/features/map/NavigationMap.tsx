@@ -18,16 +18,16 @@ import {
   subscribeOfflineMapEngineStyleReload,
 } from '../../lib/offline/offlineMapEngineHost';
 
-import { useIsEffectivelyOffline } from '../../lib/network/connectivity';
+import { useIsDeviceDisconnected } from '../../lib/network/connectivity';
 import { useChartCoverageAtPoint } from '../../hooks/useChartCoverageAtPoint';
-import { shouldShowChartRasterTiles, selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
+import { selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
 import { useMapCameraFollow } from '../../hooks/useMapCameraFollow';
 import { CustomDownloadMapPanel } from '../downloads/CustomDownloadMapPanel';
 import { PassageMapPlanningPanel } from '../passage/PassageMapPlanningPanel';
+import { PassageMapPlanningGuideBanner } from '../passage/PassageMapPlanningGuideBanner';
 import { activateAnchorAlarmAt } from '../../lib/anchor/activateAnchorAlarm';
 import {
   addMapWaypointToPassage,
-  relocateMapWaypointInPassage,
   startNewPassageFromMap,
 } from '../../lib/passage/passageMapPlanning';
 import { pulseUiAcknowledgement } from '../../services/alarmFeedbackService';
@@ -163,13 +163,13 @@ export function NavigationMap() {
   const [mapStyleLoaded, setMapStyleLoaded] = useState(false);
   const [longPressAction, setLongPressAction] = useState<{ lat: number; lon: number; coordLabel: string } | null>(null);
   const [planningSelectedWaypointId, setPlanningSelectedWaypointId] = useState<string | null>(null);
+  const [planningOpenEditOnTap, setPlanningOpenEditOnTap] = useState(false);
   const suppressNextPressRef = useRef(false);
   const planningCameraFitRef = useRef<{ passageId: string; revision: number } | null>(null);
   const addingPlanningWaypointRef = useRef(false);
-  const isOffline = useIsEffectivelyOffline();
+  const isOffline = useIsDeviceDisconnected();
   const chartCoverage = useChartCoverageAtPoint(mapCenter.latitude, mapCenter.longitude);
   const showScaleBar = Platform.OS === 'ios' || Device.isDevice;
-  const chartRasterVisible = shouldShowChartRasterTiles(isOffline, hasReadyPack, chartCoverage.covered);
   const boatFix = fix ?? lastGoodFix;
 
   useEffect(() => {
@@ -238,6 +238,7 @@ export function NavigationMap() {
   useEffect(() => {
     if (!planningPassageId) {
       setPlanningSelectedWaypointId(null);
+      setPlanningOpenEditOnTap(false);
     }
   }, [planningPassageId]);
 
@@ -308,8 +309,8 @@ export function NavigationMap() {
     ) {
       return;
     }
-    planningCameraFitRef.current = { passageId: planningPassageId, revision: planningRevision };
     void usePassageStore.getState().getPassageDetail(planningPassageId).then((detail) => {
+      planningCameraFitRef.current = { passageId: planningPassageId, revision: planningRevision };
       if (!detail || detail.waypoints.length === 0) return;
       const bounds = boundsFromWaypoints(detail.waypoints);
       if (!bounds) return;
@@ -320,20 +321,6 @@ export function NavigationMap() {
       });
     });
   }, [planningPassageId, planningRevision, mapStyleLoaded]);
-
-  const applyLayerVisibility = useCallback(async (visible: boolean) => {
-    try {
-      await mapRef.current?.setSourceVisibility(visible, 'carto-base');
-      await mapRef.current?.setSourceVisibility(visible, 'openseamap-seamarks');
-    } catch {
-      /* map not ready */
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!mapStyleLoaded) return;
-    void applyLayerVisibility(chartRasterVisible);
-  }, [chartRasterVisible, mapStyleLoaded, applyLayerVisibility]);
 
   useEffect(() => {
     setMapStyleLoaded(false);
@@ -460,9 +447,6 @@ export function NavigationMap() {
     async (lon: number, lat: number) => {
       if (!planningPassageId) return;
       const detail = await getPassageDetail(planningPassageId);
-      // Planning chart only shows this passage's waypoints, so they are the only
-      // tappable features. Saved/MOB marks and track points are hidden here and
-      // must not become invisible tap targets.
       const pickCtx = {
         savedWaypoints: [],
         passageWaypoints: detail?.waypoints ?? [],
@@ -474,45 +458,19 @@ export function NavigationMap() {
       const pick = pickMapChartFeatures(lat, lon, pickCtx, PLANNING_WAYPOINT_PICK_RADIUS_NM);
 
       if (pick.kind === 'waypoint') {
-        if (pick.waypoint.id === planningSelectedWaypointId) {
-          if (waypointHit) {
-            setWaypointHit(null);
-          } else {
-            setPlanningSelectedWaypointId(null);
-          }
-          return;
-        }
         setTrackPointHit(null);
         setSeamarkHit(null);
         setPlanningSelectedWaypointId(pick.waypoint.id);
         setWaypointHit(pick.waypoint);
+        setPlanningOpenEditOnTap(allowRouteEdits);
         return;
       }
 
       if (detailsOpen) {
         dismissChartDetails();
         setPlanningSelectedWaypointId(null);
-        return;
+        setPlanningOpenEditOnTap(false);
       }
-
-      if (!allowRouteEdits) {
-        return;
-      }
-
-      if (planningSelectedWaypointId) {
-        try {
-          await relocateMapWaypointInPassage(planningPassageId, planningSelectedWaypointId, lat, lon);
-          void pulseUiAcknowledgement();
-          showInfo(t('passage.mapWaypointMoved'));
-          const moved = useWaypointStore.getState().items.find((w) => w.id === planningSelectedWaypointId);
-          if (moved) setWaypointHit(moved);
-        } catch {
-          showError(t('passage.coordsSaveFailed'));
-        }
-        return;
-      }
-
-      await handleAddPlanningWaypoint(lat, lon);
     },
     [
       planningPassageId,
@@ -522,17 +480,13 @@ export function NavigationMap() {
       waypointHit,
       trackPointHit,
       dismissChartDetails,
-      handleAddPlanningWaypoint,
-      planningSelectedWaypointId,
-      showInfo,
-      showError,
     ],
   );
 
   const planningModeHint = passageMapPlanning
     ? allowRouteEdits
-      ? t('passage.mapPlanningBanner')
-      : t('passage.mapPlanningViewBanner')
+      ? t('passage.mapPlanningBannerShort')
+      : t('passage.mapPlanningViewBannerShort')
     : null;
 
   function handleLongPressAnchor(lat: number, lon: number) {
@@ -665,6 +619,10 @@ export function NavigationMap() {
         if (customSelecting || screenLocked || mobTarget) return;
         suppressNextPressRef.current = true;
         const [lon, lat] = e.nativeEvent.lngLat;
+        if (passageMapPlanning && allowRouteEdits) {
+          void handleAddPlanningWaypoint(lat, lon);
+          return;
+        }
         openLocationMenu(lat, lon);
       }}
       onPress={(e) => {
@@ -708,6 +666,25 @@ export function NavigationMap() {
       {!customSelecting ? (
         <View pointerEvents="box-none" style={styles.mapOverlayLayer}>
           {mapOverlays}
+          {passageMapPlanning && !mobTarget ? (
+            <View
+              pointerEvents="box-none"
+              style={[styles.topOverlay, { top: mapBottom.top, left: mapBottom.left, right: mapBottom.right }]}
+            >
+              <PassageMapPlanningGuideBanner allowRouteEdits={allowRouteEdits} />
+              <MapTopChrome
+                actionColumnWidth={0}
+                onOpenDownloads={() => navigation.navigate('Downloads')}
+                onOpenSettings={() => navigation.navigate('Settings')}
+                onOpenTracks={openTracks}
+                showRecenter={showRecenter}
+                onRecenter={() => setFollowActive(true)}
+                viewportLatitude={mapCenter.latitude}
+                viewportLongitude={mapCenter.longitude}
+                modeHint={planningModeHint}
+              />
+            </View>
+          ) : null}
         </View>
       ) : null}
     </View>
@@ -784,11 +761,19 @@ export function NavigationMap() {
       {mobTarget ? <MobNavigateBackOverlay /> : null}
       <WaypointMapDetailSheet
         waypoint={waypointHit}
-        onClose={() => setWaypointHit(null)}
+        onClose={() => {
+          setWaypointHit(null);
+          setPlanningSelectedWaypointId(null);
+          setPlanningOpenEditOnTap(false);
+        }}
         onCopied={() => showInfo(t('map.coordsCopied'))}
-        onDeleted={() => setPlanningSelectedWaypointId(null)}
+        onDeleted={() => {
+          setPlanningSelectedWaypointId(null);
+          setPlanningOpenEditOnTap(false);
+        }}
         planningPassageId={passageMapPlanning ? planningPassageId : null}
         allowRouteEdits={allowRouteEdits}
+        autoOpenEdit={planningOpenEditOnTap}
       />
       <TrackPointMapDetailSheet
         point={trackPointHit}
@@ -811,49 +796,13 @@ export function NavigationMap() {
         options={
           longPressAction
             ? [
-                ...(passageMapPlanning && allowRouteEdits
-                  ? [
-                      ...(planningSelectedWaypointId
-                        ? [
-                            {
-                              label: t('passage.mapRelocateWaypointHere'),
-                              testID: 'map.longPress.passageRelocate',
-                              onPress: () =>
-                                void relocateMapWaypointInPassage(
-                                  planningPassageId!,
-                                  planningSelectedWaypointId,
-                                  longPressAction.lat,
-                                  longPressAction.lon,
-                                )
-                                  .then(() => {
-                                    void pulseUiAcknowledgement();
-                                    showInfo(t('passage.mapWaypointMoved'));
-                                    const moved = useWaypointStore
-                                      .getState()
-                                      .items.find((w) => w.id === planningSelectedWaypointId);
-                                    if (moved) setWaypointHit(moved);
-                                  })
-                                  .catch(() => showError(t('passage.coordsSaveFailed'))),
-                            },
-                          ]
-                        : []),
-                      {
-                        label: t('passage.mapAddWaypointHere'),
-                        testID: 'map.longPress.passageAdd',
-                        onPress: () => void handleAddPlanningWaypoint(longPressAction.lat, longPressAction.lon),
-                      },
-                    ]
-                  : !passageMapPlanning
-                    ? [
-                        {
-                          label: t('passage.mapStartPassageHere'),
-                          testID: 'map.longPress.startPassage',
-                          onPress: () => void handleStartNewPassageFromMap(longPressAction.lat, longPressAction.lon),
-                        },
-                      ]
-                    : []),
                 ...(!passageMapPlanning
                   ? [
+                      {
+                        label: t('passage.mapStartPassageHere'),
+                        testID: 'map.longPress.startPassage',
+                        onPress: () => void handleStartNewPassageFromMap(longPressAction.lat, longPressAction.lon),
+                      },
                       {
                         label: t('map.anchorHere'),
                         testID: 'map.longPress.anchor',

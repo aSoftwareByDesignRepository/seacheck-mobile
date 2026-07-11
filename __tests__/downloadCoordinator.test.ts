@@ -48,6 +48,13 @@ describe('downloadCoordinator', () => {
     expect(downloadCoordinator.tryBegin('kiel-bay')).toBe(1);
     downloadCoordinator.end('kiel-bay');
   });
+
+  it('preflightLock refuses when the same region already has an active download', () => {
+    expect(downloadCoordinator.tryBegin('kiel-bay')).toBe(1);
+    expect(downloadCoordinator.preflightLock('kiel-bay')).toBe(false);
+    expect(downloadCoordinator.hasPreflightLock('kiel-bay')).toBe(false);
+    downloadCoordinator.end('kiel-bay');
+  });
 });
 
 describe('formatDownloadError', () => {

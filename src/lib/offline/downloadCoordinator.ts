@@ -18,6 +18,10 @@ class DownloadCoordinator {
     return this.activeRegionId;
   }
 
+  hasPreflightLock(regionId: string): boolean {
+    return this.preflightOnly && this.activeRegionId === regionId;
+  }
+
   hasActiveDownload(): boolean {
     return this.activeRegionId != null;
   }
@@ -33,6 +37,7 @@ class DownloadCoordinator {
    */
   preflightLock(regionId: string): boolean {
     if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;
+    if (this.activeRegionId === regionId && !this.preflightOnly) return false;
     this.activeRegionId = regionId;
     this.preflightOnly = true;
     ensureMapLibreNetworkForDownload();

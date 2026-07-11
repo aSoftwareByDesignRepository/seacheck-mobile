@@ -8,7 +8,8 @@ import { useOfflinePackStore } from '../store/offlinePackStore';
 /**
  * Android: tell MapLibre Native to serve cached offline tiles instead of attempting network fetches.
  * Without this, airplane mode often shows blank charts even after a successful pack download.
- * Uses isConnected only — isInternetReachable false-positives would block tile downloads while online.
+ * Uses isConnected only — isInternetReachable false-positives on Android would block live tile fetches while on Wi‑Fi.
+ * Active downloads still force network on so tile fetches are not blocked.
  * Keeps network enabled while a pack download session is active (coordinator, store lock, or downloading UI).
  * iOS native module is currently a no-op; offline packs still work via the system network stack.
  */

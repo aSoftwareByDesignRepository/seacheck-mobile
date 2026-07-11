@@ -28,6 +28,7 @@ import { promiseWithTimeout } from '../lib/async/promiseWithTimeout';
 import { assertChartDownloadNetworkReady } from '../lib/network/downloadNetwork';
 import { resolveChartTileProbeCenter } from '../lib/network/chartTileProbeCenter';
 import { ensureMapLibreNetworkForDownload } from '../lib/network/mapLibreNetworkGate';
+import { abandonDownloadSession, beginDownloadSession } from '../lib/offline/beginDownloadSession';
 import {
   downloadCoordinator,
   formatDownloadError,
@@ -943,62 +944,63 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
   },
 
   startDownload: async (regionId) => {
-    const packDef = getRegionPack(regionId);
-    if (!packDef) {
-      throw new Error(t('downloads.downloadFailed'));
-    }
-
-    if (isLegacyRegionPackId(regionId)) {
-      throw new Error(t('downloads.errorPackRetired'));
-    }
-
-    const packValidation = validateRegionPack(packDef);
-    if (!packValidation.ok) {
-      throw new Error(t('downloads.errorPackTooLarge'));
-    }
-
-    await assertStorageForBounds(packDef.bounds, packDef.minZoom, packDef.maxZoom);
-    await assertChartDownloadNetworkReady(
-      resolveChartTileProbeCenter(regionId, get().customBoundsIndex),
-    );
-
-    const session = downloadCoordinator.tryBegin(regionId);
-    if (session == null) {
-      throw new Error(t('downloads.errorDownloadBusy'));
-    }
-
-    const previous = get().regions[regionId] ?? emptyStatus(regionId);
-    const previousPackId = previous.state === 'ready' ? previous.packId : null;
-    const previousWasReady = previous.state === 'ready';
-
-    if (previous.packId && previous.state !== 'ready') {
-      await removeNativePack(previous.packId);
-    }
-
-    set({
-      ...syncActiveDownloadId(),
-      regions: {
-        ...get().regions,
-        [regionId]: { regionId, state: 'downloading', percentage: 0, packId: null, error: null },
-      },
-    });
-
-    const ctx: DownloadSessionContext = {
-      regionId,
-      session,
-      chartStyleUri: '',
-      previousPackId,
-      previousWasReady,
-      restoreOnFailure: previousWasReady ? previous : undefined,
-      bounds: packDef.bounds,
-      minZoom: packDef.minZoom,
-      maxZoom: packDef.maxZoom,
-    };
-    const { markReady, markFailed, onProgress, onError, attachWatchdog } = createDownloadSession(ctx, set, get);
-
+    let session: number | null = null;
     let newPackId: string | null = null;
+    let markFailed: ((packId: string | null, message: string, diagnostics?: StallDiagnostics) => Promise<void>) | null = null;
 
     try {
+      const packDef = getRegionPack(regionId);
+      if (!packDef) {
+        throw new Error(t('downloads.downloadFailed'));
+      }
+
+      if (isLegacyRegionPackId(regionId)) {
+        throw new Error(t('downloads.errorPackRetired'));
+      }
+
+      const packValidation = validateRegionPack(packDef);
+      if (!packValidation.ok) {
+        throw new Error(t('downloads.errorPackTooLarge'));
+      }
+
+      await assertStorageForBounds(packDef.bounds, packDef.minZoom, packDef.maxZoom);
+      await assertChartDownloadNetworkReady(
+        resolveChartTileProbeCenter(regionId, get().customBoundsIndex),
+      );
+
+      session = beginDownloadSession(regionId);
+
+      const previous = get().regions[regionId] ?? emptyStatus(regionId);
+      const previousPackId = previous.state === 'ready' ? previous.packId : null;
+      const previousWasReady = previous.state === 'ready';
+
+      if (previous.packId && previous.state !== 'ready') {
+        await removeNativePack(previous.packId);
+      }
+
+      set({
+        ...syncActiveDownloadId(),
+        regions: {
+          ...get().regions,
+          [regionId]: { regionId, state: 'downloading', percentage: 0, packId: null, error: null },
+        },
+      });
+
+      const ctx: DownloadSessionContext = {
+        regionId,
+        session,
+        chartStyleUri: '',
+        previousPackId,
+        previousWasReady,
+        restoreOnFailure: previousWasReady ? previous : undefined,
+        bounds: packDef.bounds,
+        minZoom: packDef.minZoom,
+        maxZoom: packDef.maxZoom,
+      };
+      const sessionHandlers = createDownloadSession(ctx, set, get);
+      markFailed = sessionHandlers.markFailed;
+      const { markReady, onProgress, onError, attachWatchdog } = sessionHandlers;
+
       const chartStyleUri = await get().ensureChartStyle();
       ctx.chartStyleUri = chartStyleUri;
       await yieldToUi();
@@ -1036,11 +1038,11 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       void kickstartNativeDownload(
         pack,
         chartStyleUri,
-        () => !downloadCoordinator.isStale(regionId, session),
+        () => !downloadCoordinator.isStale(regionId, session!),
         offlineEngineViewportFromBounds(ctx.bounds, ctx.minZoom),
       )
         .then((status) => {
-          if (downloadCoordinator.isStale(regionId, session)) return;
+          if (downloadCoordinator.isStale(regionId, session!)) return;
           set((state) => ({
             regions: {
               ...state.regions,
@@ -1053,54 +1055,61 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
           void markReady(pack.id, status);
         })
         .catch((kickErr) => {
-          if (downloadCoordinator.isStale(regionId, session)) return;
-          void markFailed(pack.id, formatDownloadError(kickErr, t('downloads.statusError')));
+          if (downloadCoordinator.isStale(regionId, session!)) return;
+          void markFailed!(pack.id, formatDownloadError(kickErr, t('downloads.statusError')));
         });
     } catch (err) {
-      await markFailed(newPackId, formatDownloadError(err, t('downloads.statusError')));
+      if (session == null) {
+        abandonDownloadSession(regionId);
+        set(syncActiveDownloadId());
+        throw err;
+      }
+      if (markFailed) {
+        await markFailed(newPackId, formatDownloadError(err, t('downloads.statusError')));
+      }
       throw err;
     }
   },
 
   startCustomDownload: async (name, bounds, minZoom = 10, maxZoom = 14, existingRegionId) => {
     const regionId = existingRegionId ?? `custom_${Date.now().toString(36)}`;
-
-    const boundsValidation = validateDownloadBounds(bounds, minZoom, maxZoom);
-    if (!boundsValidation.ok) {
-      throw new Error(t(`downloads.customInvalid.${boundsValidation.code}` as 'downloads.customInvalid.too_small'));
-    }
-
-    await assertStorageForBounds(bounds, minZoom, maxZoom);
-    await assertChartDownloadNetworkReady(boundsCenter(bounds));
-
-    const session = downloadCoordinator.tryBegin(regionId);
-    if (session == null) {
-      throw new Error(t('downloads.errorDownloadBusy'));
-    }
-
-    const previous = get().regions[regionId] ?? emptyStatus(regionId);
-    if (previous.packId && previous.state !== 'ready') {
-      await removeNativePack(previous.packId);
-    }
-
-    const customMeta = { custom: true as const, displayName: name };
-    const ctx: DownloadSessionContext = {
-      regionId,
-      session,
-      chartStyleUri: '',
-      previousPackId: null,
-      previousWasReady: false,
-      bounds,
-      minZoom,
-      maxZoom,
-      customMeta,
-      finalizeExtra: { name, custom: true, displayName: name, bounds, minZoom, maxZoom },
-    };
-    const { markReady, markFailed, onProgress, onError, attachWatchdog } = createDownloadSession(ctx, set, get);
-
+    let session: number | null = null;
     let newPackId: string | null = null;
+    let markFailed: ((packId: string | null, message: string, diagnostics?: StallDiagnostics) => Promise<void>) | null = null;
 
     try {
+      const boundsValidation = validateDownloadBounds(bounds, minZoom, maxZoom);
+      if (!boundsValidation.ok) {
+        throw new Error(t(`downloads.customInvalid.${boundsValidation.code}` as 'downloads.customInvalid.too_small'));
+      }
+
+      await assertStorageForBounds(bounds, minZoom, maxZoom);
+      await assertChartDownloadNetworkReady(boundsCenter(bounds));
+
+      session = beginDownloadSession(regionId);
+
+      const previous = get().regions[regionId] ?? emptyStatus(regionId);
+      if (previous.packId && previous.state !== 'ready') {
+        await removeNativePack(previous.packId);
+      }
+
+      const customMeta = { custom: true as const, displayName: name };
+      const ctx: DownloadSessionContext = {
+        regionId,
+        session,
+        chartStyleUri: '',
+        previousPackId: null,
+        previousWasReady: false,
+        bounds,
+        minZoom,
+        maxZoom,
+        customMeta,
+        finalizeExtra: { name, custom: true, displayName: name, bounds, minZoom, maxZoom },
+      };
+      const sessionHandlers = createDownloadSession(ctx, set, get);
+      markFailed = sessionHandlers.markFailed;
+      const { markReady, onProgress, onError, attachWatchdog } = sessionHandlers;
+
       const chartStyleUri = await get().ensureChartStyle();
       ctx.chartStyleUri = chartStyleUri;
       await yieldToUi();
@@ -1148,11 +1157,11 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       void kickstartNativeDownload(
         pack,
         chartStyleUri,
-        () => !downloadCoordinator.isStale(regionId, session),
+        () => !downloadCoordinator.isStale(regionId, session!),
         offlineEngineViewportFromBounds(ctx.bounds, ctx.minZoom),
       )
         .then((status) => {
-          if (downloadCoordinator.isStale(regionId, session)) return;
+          if (downloadCoordinator.isStale(regionId, session!)) return;
           set((state) => ({
             regions: {
               ...state.regions,
@@ -1165,11 +1174,18 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
           void markReady(pack.id, status);
         })
         .catch((kickErr) => {
-          if (downloadCoordinator.isStale(regionId, session)) return;
-          void markFailed(pack.id, formatDownloadError(kickErr, t('downloads.statusError')));
+          if (downloadCoordinator.isStale(regionId, session!)) return;
+          void markFailed!(pack.id, formatDownloadError(kickErr, t('downloads.statusError')));
         });
     } catch (err) {
-      await markFailed(newPackId, formatDownloadError(err, t('downloads.statusError')));
+      if (session == null) {
+        abandonDownloadSession(regionId);
+        set(syncActiveDownloadId());
+        throw err;
+      }
+      if (markFailed) {
+        await markFailed(newPackId, formatDownloadError(err, t('downloads.statusError')));
+      }
       throw err;
     }
   },

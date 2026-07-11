@@ -32,6 +32,7 @@ type PersistPayload = {
   onboardingCompleted: boolean;
   batteryGuidanceAcknowledged: boolean;
   downloadHintDismissed: boolean;
+  passagePlanningGuideDismissed: boolean;
   activityProfileId: string;
   /** @deprecated Use layoutOverrides + resolveLayoutPreset — kept for migration only */
   layoutPreset: LayoutPreset;
@@ -69,6 +70,7 @@ type SettingsState = PersistPayload & {
   completeOnboarding: () => Promise<void>;
   acknowledgeBatteryGuidance: () => Promise<void>;
   dismissDownloadHint: () => Promise<void>;
+  dismissPassagePlanningGuide: () => Promise<void>;
   updateVessel: (patch: Partial<VesselProfile>) => Promise<void>;
   patchSettings: (patch: Partial<PersistPayload>) => Promise<void>;
   setLayoutOverride: (preset: LayoutPreset, ctx: LayoutContext) => Promise<void>;
@@ -80,6 +82,7 @@ async function persist(state: SettingsState) {
     onboardingCompleted: state.onboardingCompleted,
     batteryGuidanceAcknowledged: state.batteryGuidanceAcknowledged,
     downloadHintDismissed: state.downloadHintDismissed,
+    passagePlanningGuideDismissed: state.passagePlanningGuideDismissed,
     activityProfileId: state.activityProfileId,
     layoutPreset: state.layoutPreset,
     layoutOverrides: state.layoutOverrides,
@@ -118,6 +121,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   onboardingCompleted: false,
   batteryGuidanceAcknowledged: false,
   downloadHintDismissed: false,
+  passagePlanningGuideDismissed: false,
   backgroundTrackRecording: false,
   alarmSoundEnabled: true,
   alarmHapticEnabled: true,
@@ -151,6 +155,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           onboardingCompleted: Boolean(parsed.onboardingCompleted),
           batteryGuidanceAcknowledged: Boolean(parsed.batteryGuidanceAcknowledged),
           downloadHintDismissed: Boolean(parsed.downloadHintDismissed),
+          passagePlanningGuideDismissed: Boolean(parsed.passagePlanningGuideDismissed),
           activityProfileId: normalizeActivityProfileId(parsed.activityProfileId),
           layoutPreset: legacyPreset,
           layoutOverrides,
@@ -198,6 +203,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   dismissDownloadHint: async () => {
     set({ downloadHintDismissed: true });
+    await persist(get());
+  },
+
+  dismissPassagePlanningGuide: async () => {
+    set({ passagePlanningGuideDismissed: true });
     await persist(get());
   },
 

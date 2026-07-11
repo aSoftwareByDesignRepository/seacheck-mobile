@@ -52,4 +52,12 @@ describe('passageMapPlanningStore', () => {
     expect(usePassageMapPlanningStore.getState().passageId).toBe('pass-view');
     expect(usePassageMapPlanningStore.getState().allowRouteEdits).toBe(false);
   });
+
+  it('resets guide dismissal when a new planning session starts', () => {
+    usePassageMapPlanningStore.getState().startPlanning('pass-1');
+    usePassageMapPlanningStore.getState().dismissGuideForSession();
+    expect(usePassageMapPlanningStore.getState().guideDismissedForSession).toBe(true);
+    usePassageMapPlanningStore.getState().startPlanning('pass-2');
+    expect(usePassageMapPlanningStore.getState().guideDismissedForSession).toBe(false);
+  });
 });

@@ -16,6 +16,8 @@ import {
   type LegOverride,
   type PassageLeg,
 } from '../lib/passage/computeLegs';
+import { notifyPassagePlanningChanged } from '../lib/passage/passageMapPlanning';
+import { remapActiveLegIndexAfterReversal, remapLegOverridesForReversal } from '../lib/passage/reversePassageOrder';
 
 export type { PassageLeg } from '../lib/passage/computeLegs';
 
@@ -39,6 +41,7 @@ type PassageStore = {
   addWaypointToPassage: (passageId: string, waypointId: string) => Promise<void>;
   removeWaypointFromPassage: (passageId: string, waypointId: string) => Promise<void>;
   reorderWaypointInPassage: (passageId: string, fromIndex: number, toIndex: number) => Promise<void>;
+  reversePassageWaypoints: (passageId: string) => Promise<void>;
   setPassageMeta: (id: string, patch: Partial<Pick<PassageRow, 'name' | 'planned_departure' | 'default_sog_kn'>>) => Promise<void>;
   setLegOverride: (passageId: string, fromWaypointId: string, toWaypointId: string, patch: LegOverride) => Promise<void>;
   activatePassage: (id: string) => Promise<void>;
@@ -84,9 +87,10 @@ async function persistLegOverride(
   fromWaypointId: string,
   toWaypointId: string,
   patch: LegOverride,
+  db?: Awaited<ReturnType<typeof getDatabase>>,
 ): Promise<void> {
-  const db = await getDatabase();
-  const existing = await db.getFirstAsync<PassageLegOverrideRow>(
+  const conn = db ?? (await getDatabase());
+  const existing = await conn.getFirstAsync<PassageLegOverrideRow>(
     'SELECT * FROM passage_leg_overrides WHERE passage_id = ? AND from_waypoint_id = ? AND to_waypoint_id = ?',
     passageId,
     fromWaypointId,
@@ -95,7 +99,7 @@ async function persistLegOverride(
   const sogKn = patch.sogKn ?? existing?.sog_kn ?? null;
   const note = patch.note ?? existing?.note ?? '';
   if (sogKn == null && !note.trim()) {
-    await db.runAsync(
+    await conn.runAsync(
       'DELETE FROM passage_leg_overrides WHERE passage_id = ? AND from_waypoint_id = ? AND to_waypoint_id = ?',
       passageId,
       fromWaypointId,
@@ -103,7 +107,7 @@ async function persistLegOverride(
     );
     return;
   }
-  await db.runAsync(
+  await conn.runAsync(
     `INSERT INTO passage_leg_overrides (passage_id, from_waypoint_id, to_waypoint_id, sog_kn, note)
      VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(passage_id, from_waypoint_id, to_waypoint_id)
@@ -277,6 +281,34 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
     );
     await get().syncActivePassageNavigation(passageId);
     get().bumpRouteRevision();
+  },
+
+  reversePassageWaypoints: async (passageId) => {
+    const waypoints = await loadPassageWaypoints(passageId);
+    if (waypoints.length < 2) return;
+
+    const overrides = await loadLegOverrides(passageId);
+    const orderedIds = waypoints.map((w) => w.id);
+    const reversedIds = [...orderedIds].reverse();
+    const remappedOverrides = remapLegOverridesForReversal(orderedIds, overrides);
+    const wasActive = get().activePassageId === passageId;
+    const oldLegIndex = wasActive ? useNavigationStore.getState().activeLegIndex : null;
+
+    await withDatabaseTransaction(async (db) => {
+      await rewriteWaypointOrder(passageId, reversedIds, db);
+      await db.runAsync('DELETE FROM passage_leg_overrides WHERE passage_id = ?', passageId);
+      for (const entry of remappedOverrides) {
+        await persistLegOverride(passageId, entry.fromWaypointId, entry.toWaypointId, entry.patch, db);
+      }
+    });
+
+    get().bumpRouteRevision();
+    notifyPassagePlanningChanged(passageId);
+
+    if (wasActive && oldLegIndex != null) {
+      const newLegIndex = remapActiveLegIndexAfterReversal(waypoints.length, oldLegIndex);
+      await get().setPassageActiveLeg(newLegIndex);
+    }
   },
 
   setPassageMeta: async (id, patch) => {

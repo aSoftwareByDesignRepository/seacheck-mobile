@@ -21,6 +21,7 @@ type Props = {
   onShowOnMap: () => void;
   onAddByCoords: () => void;
   onEditWaypoint: (waypoint: WaypointRow) => void;
+  onReverse?: () => void;
 };
 
 export function PassageWaypointSection({
@@ -32,6 +33,7 @@ export function PassageWaypointSection({
   onShowOnMap,
   onAddByCoords,
   onEditWaypoint,
+  onReverse,
 }: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const { formFactor } = useFormFactor();
@@ -80,6 +82,16 @@ export function PassageWaypointSection({
           testID="passage.addByCoords"
           style={{ minHeight: minTouch }}
         />
+        {detail.waypoints.length >= 2 && onReverse ? (
+          <Button
+            label={t('passage.reverse')}
+            variant="secondary"
+            onPress={onReverse}
+            testID="passage.reverse"
+            style={{ minHeight: minTouch }}
+            accessibilityHint={t('passage.reverseHint')}
+          />
+        ) : null}
       </View>
 
       {detail.waypoints.length === 0 ? (

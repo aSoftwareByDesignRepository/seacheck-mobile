@@ -9,6 +9,7 @@ type PersistPayload = {
   passageId: string | null;
   revision: number;
   allowRouteEdits: boolean;
+  guideDismissedForSession: boolean;
 };
 
 type PassageMapPlanningState = PersistPayload & {
@@ -19,6 +20,7 @@ type PassageMapPlanningState = PersistPayload & {
   stopPlanning: () => void;
   bumpRevision: () => void;
   unlockRouteEdits: () => void;
+  dismissGuideForSession: () => void;
 };
 
 async function persist(state: PersistPayload): Promise<void> {
@@ -30,6 +32,7 @@ export const usePassageMapPlanningStore = create<PassageMapPlanningState>((set, 
   passageId: null,
   revision: 0,
   allowRouteEdits: true,
+  guideDismissedForSession: false,
 
   hydrate: async () => {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -40,6 +43,7 @@ export const usePassageMapPlanningStore = create<PassageMapPlanningState>((set, 
           passageId: typeof parsed.passageId === 'string' ? parsed.passageId : null,
           revision: Math.max(0, Number(parsed.revision) || 0),
           allowRouteEdits: parsed.allowRouteEdits !== false,
+          guideDismissedForSession: false,
         });
       } catch (error) {
         console.warn('[passageMapPlanningStore] hydrate failed', error);
@@ -50,13 +54,13 @@ export const usePassageMapPlanningStore = create<PassageMapPlanningState>((set, 
 
   startPlanning: (passageId, options) => {
     const allowRouteEdits = options?.allowRouteEdits ?? true;
-    set({ passageId, revision: 0, allowRouteEdits });
-    void persist({ passageId, revision: 0, allowRouteEdits });
+    set({ passageId, revision: 0, allowRouteEdits, guideDismissedForSession: false });
+    void persist({ passageId, revision: 0, allowRouteEdits, guideDismissedForSession: false });
   },
 
   stopPlanning: () => {
-    set({ passageId: null, revision: 0, allowRouteEdits: true });
-    void persist({ passageId: null, revision: 0, allowRouteEdits: true });
+    set({ passageId: null, revision: 0, allowRouteEdits: true, guideDismissedForSession: false });
+    void persist({ passageId: null, revision: 0, allowRouteEdits: true, guideDismissedForSession: false });
   },
 
   bumpRevision: () => {
@@ -66,6 +70,7 @@ export const usePassageMapPlanningStore = create<PassageMapPlanningState>((set, 
       passageId: get().passageId,
       revision: next,
       allowRouteEdits: get().allowRouteEdits,
+      guideDismissedForSession: get().guideDismissedForSession,
     });
   },
 
@@ -75,6 +80,17 @@ export const usePassageMapPlanningStore = create<PassageMapPlanningState>((set, 
       passageId: get().passageId,
       revision: get().revision,
       allowRouteEdits: true,
+      guideDismissedForSession: get().guideDismissedForSession,
+    });
+  },
+
+  dismissGuideForSession: () => {
+    set({ guideDismissedForSession: true });
+    void persist({
+      passageId: get().passageId,
+      revision: get().revision,
+      allowRouteEdits: get().allowRouteEdits,
+      guideDismissedForSession: true,
     });
   },
 }));
@@ -86,5 +102,6 @@ export function resetPassageMapPlanningStoreForTests(): void {
     passageId: null,
     revision: 0,
     allowRouteEdits: true,
+    guideDismissedForSession: false,
   });
 }

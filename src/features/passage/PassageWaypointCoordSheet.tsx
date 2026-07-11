@@ -16,9 +16,11 @@ type Props = {
   waypoint?: WaypointRow;
   onClose: () => void;
   onSubmit: (input: { name: string; latitude: number; longitude: number }) => Promise<void>;
+  /** Planning on chart: show delete control (parent handles confirmation). */
+  onDelete?: () => void;
 };
 
-export function PassageWaypointCoordSheet({ visible, mode, waypoint, onClose, onSubmit }: Props) {
+export function PassageWaypointCoordSheet({ visible, mode, waypoint, onClose, onSubmit, onDelete }: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
@@ -110,6 +112,15 @@ export function PassageWaypointCoordSheet({ visible, mode, waypoint, onClose, on
             testID="passage.waypointCoord.save"
             style={{ minHeight: minTouch }}
           />
+          {mode === 'edit' && onDelete ? (
+            <Button
+              label={t('waypoints.delete')}
+              variant="danger"
+              onPress={onDelete}
+              testID="passage.waypointCoord.delete"
+              style={{ minHeight: minTouch }}
+            />
+          ) : null}
           <Button label={t('common.dismiss')} variant="secondary" onPress={onClose} testID="passage.waypointCoord.cancel" style={{ minHeight: minTouch }} />
         </View>
       </View>

@@ -10,6 +10,7 @@ import { PassageCoverageCard } from '../../features/passage/PassageCoverageCard'
 import { PassageMetaSection } from '../../features/passage/PassageMetaSection';
 import { PassageWaypointSection } from '../../features/passage/PassageWaypointSection';
 import { PassageWaypointCoordSheet } from '../../features/passage/PassageWaypointCoordSheet';
+import { confirmReverseActivePassage } from '../../lib/passage/confirmReversePassage';
 import {
   addMapWaypointToPassage,
   notifyPassagePlanningChanged,
@@ -50,6 +51,7 @@ export function PassageDetailScreen() {
   const deactivatePassage = usePassageStore((s) => s.deactivatePassage);
   const removeWaypointFromPassage = usePassageStore((s) => s.removeWaypointFromPassage);
   const reorderWaypointInPassage = usePassageStore((s) => s.reorderWaypointInPassage);
+  const reversePassageWaypoints = usePassageStore((s) => s.reversePassageWaypoints);
   const setPassageMeta = usePassageStore((s) => s.setPassageMeta);
   const exportPassageGpx = usePassageStore((s) => s.exportPassageGpx);
   const buildPassageSummary = usePassageStore((s) => s.buildPassageSummary);
@@ -181,6 +183,21 @@ export function PassageDetailScreen() {
           onShowOnMap={handleShowOnMap}
           onAddByCoords={() => setCoordSheet({ mode: 'add' })}
           onEditWaypoint={(wp) => setCoordSheet({ mode: 'edit', waypoint: wp })}
+          onReverse={() => {
+            void (async () => {
+              if (passageId === activePassageId) {
+                const ok = await confirmReverseActivePassage();
+                if (!ok) return;
+              }
+              try {
+                await reversePassageWaypoints(passageId);
+                void loadDetail();
+                showInfo(t('passage.reverseSuccess'));
+              } catch {
+                showError(t('passage.reverseFailed'));
+              }
+            })();
+          }}
         />
         <PassageCoverageCard
           detail={detail}

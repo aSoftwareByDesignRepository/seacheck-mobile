@@ -4,6 +4,7 @@ import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 import { CollapsibleDownloadsSection } from '../features/downloads/CollapsibleDownloadsSection';
+import { OfflineChartsGuide } from '../features/downloads/OfflineChartsGuide';
 import { CustomDownloadSection } from '../features/downloads/CustomDownloadSection';
 import { CustomPackCard } from '../features/downloads/CustomPackCard';
 import { DownloadsSectionCard } from '../features/downloads/DownloadsSectionCard';
@@ -291,6 +292,8 @@ export function DownloadsScreen() {
         onRetryFailed={(regionId) => void handleDownload(regionId)}
         retryBusyId={actionBusyId}
       />
+
+      <OfflineChartsGuide />
 
       <DownloadsSectionCard
         title={t('downloads.beforeYouDownloadTitle')}

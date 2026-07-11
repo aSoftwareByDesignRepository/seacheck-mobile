@@ -1,9 +1,10 @@
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { useFormFactor } from '../../hooks/useFormFactor';
-import { useIsEffectivelyOffline } from '../../lib/network/connectivity';
+import { useIsDeviceDisconnected } from '../../lib/network/connectivity';
 import { useChartCoverageAtPoint } from '../../hooks/useChartCoverageAtPoint';
-import { selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
+import { resolveChartMapAlert, selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme } from '../../theme/ThemeContext';
@@ -53,21 +54,26 @@ export function MapTopChrome({
 }: Props) {
   const { spacing, minTouch } = useTheme();
   const { formFactor, height } = useFormFactor();
-  const isOffline = useIsEffectivelyOffline();
+  const isOffline = useIsDeviceDisconnected();
   const offlineHydrated = useOfflinePackStore((s) => s.hydrated);
   const offlineRegions = useOfflinePackStore((s) => s.regions);
   const hasReadyPack = selectHasReadyOfflinePack(offlineRegions);
   const downloadHintDismissed = useSettingsStore((s) => s.downloadHintDismissed);
   const coverage = useChartCoverageAtPoint(viewportLatitude, viewportLongitude);
+  const [offlineChartAlertDismissed, setOfflineChartAlertDismissed] = useState(false);
 
-  const showOfflineAlert = offlineHydrated && isOffline && !hasReadyPack;
-  const showCoverageAlert = offlineHydrated && isOffline && hasReadyPack && !coverage.covered && coverage.readyPackCount > 0;
-  const showDownloadHint = !isOffline && !hasReadyPack && !downloadHintDismissed;
+  useEffect(() => {
+    if (!isOffline) setOfflineChartAlertDismissed(false);
+  }, [isOffline]);
 
-  let alertKind: 'offline' | 'coverage' | 'download' | null = null;
-  if (showOfflineAlert) alertKind = 'offline';
-  else if (showCoverageAlert) alertKind = 'coverage';
-  else if (showDownloadHint) alertKind = 'download';
+  const alertKind = resolveChartMapAlert({
+    offlineHydrated,
+    isOffline,
+    hasReadyPack,
+    chartCovered: coverage.covered,
+    downloadHintDismissed,
+    offlineChartAlertDismissed,
+  });
 
   const chromeMaxHeight = topChromeMaxHeight(height, formFactor);
   const chipStripMinHeight = minTouch + spacing.xs * 2 + 4;
@@ -88,7 +94,13 @@ export function MapTopChrome({
           <MapTopAlertBanner
             kind={alertKind}
             onOpenDownloads={onOpenDownloads}
-            onDismissDownloadHint={() => void useSettingsStore.getState().dismissDownloadHint()}
+            onDismiss={() => {
+              if (alertKind === 'download') {
+                void useSettingsStore.getState().dismissDownloadHint();
+                return;
+              }
+              setOfflineChartAlertDismissed(true);
+            }}
           />
         ) : null}
 

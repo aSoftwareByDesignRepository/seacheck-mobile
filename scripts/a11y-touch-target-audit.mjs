@@ -54,6 +54,7 @@ const TARGETS = [
   'src/features/passage/PassageWaypointSection.tsx',
   'src/features/passage/PassageMetaSection.tsx',
   'src/features/passage/PassageMapPlanningPanel.tsx',
+  'src/features/passage/PassageMapPlanningGuideBanner.tsx',
   'src/ui/FilterChip.tsx',
   'src/ui/InstrumentCell.tsx',
 ];

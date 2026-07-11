@@ -26,7 +26,7 @@ export async function warmupOfflineEngine(
   chartStyleUri?: string,
   options?: WarmupOfflineEngineOptions,
 ): Promise<void> {
-  ensureOfflineManagerConfigured();
+  await ensureOfflineManagerConfigured();
   ensureMapLibreNetworkForDownload();
   const getPacksTimeoutMs = options?.getPacksTimeoutMs ?? DEFAULT_GET_PACKS_TIMEOUT_MS;
   const requireFileSource = options?.requireFileSource ?? false;
