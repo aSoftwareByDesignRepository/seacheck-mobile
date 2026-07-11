@@ -25,7 +25,16 @@ export const DEV_DOWNLOAD_TIMING = {
   recreateKickstartIntervalMs: 250,
 } as const;
 
-export type DownloadTiming = typeof PRODUCTION_DOWNLOAD_TIMING;
+export type DownloadTiming = {
+  stallPollMs: number;
+  zeroProgressTimeoutMs: number;
+  initializingTimeoutMs: number;
+  styleEngineTimeoutMs: number;
+  partialStallTimeoutMs: number;
+  resumeAtMs: readonly number[];
+  recreateKickstartPolls: number;
+  recreateKickstartIntervalMs: number;
+};
 
 function useDevDownloadTiming(): boolean {
   return typeof __DEV__ !== 'undefined' && __DEV__ === true && process.env.NODE_ENV !== 'test';

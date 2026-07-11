@@ -2,7 +2,12 @@ import type { OfflinePack, OfflinePackStatus } from '@maplibre/maplibre-react-na
 
 import { ensureMapLibreNetworkForDownload } from '../network/mapLibreNetworkGate';
 import { downloadCoordinator } from './downloadCoordinator';
-import { isOfflineMapEngineStyleLoaded, requestOfflineMapEngineStyleReload } from './offlineMapEngineHost';
+import {
+  ensureOfflineMapEngineViewportPrimed,
+  isOfflineMapEngineStyleLoaded,
+  requestOfflineMapEngineStyleReload,
+  type OfflineEngineViewport,
+} from './offlineMapEngineHost';
 import { hasMeasurableDownloadProgress } from './nativePackProgress';
 import { initializingNativePackStatus, pollNativePackStatus } from './nativePackStatus';
 import { warmupOfflineEngine } from './warmupOfflineEngine';
@@ -26,6 +31,7 @@ export type StallDiagnostics = {
 export type DownloadStallWatchdogOptions = {
   chartStyleUri?: string;
   mapEngineStallMessage?: string;
+  viewport?: OfflineEngineViewport;
   /** Replace a pack stuck at style-only enumeration. Returns the new pack when recreated. */
   onRecreatePack?: (currentPack: OfflinePack) => Promise<OfflinePack | null>;
 };
@@ -56,11 +62,15 @@ async function recoverStalledPack(
   pack: OfflinePack,
   usePauseCycle: boolean,
   chartStyleUri?: string,
+  viewport?: OfflineEngineViewport,
 ): Promise<void> {
   ensureMapLibreNetworkForDownload();
   const styleReady = !chartStyleUri || isOfflineMapEngineStyleLoaded(chartStyleUri);
   if (chartStyleUri && !styleReady) {
     requestOfflineMapEngineStyleReload();
+    await yieldToUi();
+  } else if (chartStyleUri && viewport && styleReady) {
+    await ensureOfflineMapEngineViewportPrimed(chartStyleUri, viewport);
     await yieldToUi();
   }
   try {
@@ -98,6 +108,7 @@ export function startDownloadStallWatchdog(
 ): () => void {
   const chartStyleUri = options?.chartStyleUri;
   const mapEngineStallMessage = options?.mapEngineStallMessage;
+  const viewport = options?.viewport;
   const onRecreatePack = options?.onRecreatePack;
   const timing = getDownloadTiming();
 
@@ -198,7 +209,7 @@ export function startDownloadStallWatchdog(
               recreateInFlight = false;
             }
           } else {
-            void recoverStalledPack(currentPack, usePauseCycle, chartStyleUri);
+            void recoverStalledPack(currentPack, usePauseCycle, chartStyleUri, viewport);
           }
         }
         const stillInitializing =

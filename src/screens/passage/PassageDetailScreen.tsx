@@ -38,7 +38,7 @@ export function PassageDetailScreen() {
   const route = useRoute<DetailRoute>();
   const stackNav = useNavigation<StackNav>();
   const tabNav = useNavigation<TabNav>();
-  const { spacing } = useTheme();
+  const { spacing, minTouch } = useTheme();
   const { formFactor } = useFormFactor();
   const compactActions = formFactor === 'compact';
   const passageId = route.params.passageId;
@@ -186,7 +186,13 @@ export function PassageDetailScreen() {
           detail={detail}
           onOpenDownloads={(opts) => tabNav.navigate('Downloads', opts)}
         />
-        <View style={[styles.actions, !compactActions ? styles.actionsRow : null, { gap: spacing.sm }]}>
+        <View
+          style={[
+            styles.actions,
+            !compactActions ? styles.actionsRow : null,
+            { gap: spacing.sm, minHeight: minTouch },
+          ]}
+        >
           {detail.id === activePassageId ? (
             <Button
               label={t('passage.deactivate')}

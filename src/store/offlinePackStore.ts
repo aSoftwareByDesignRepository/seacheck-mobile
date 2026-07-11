@@ -39,9 +39,12 @@ import { recreateOfflinePack } from '../lib/offline/nativePackRecovery';
 import { rememberDownloadFailureDiagnostics } from '../lib/offline/downloadFailureDiagnostics';
 import { isNativeDownloadKickstarted, isNativePackInitializing } from '../lib/offline/nativePackProgress';
 import { initializingNativePackStatus, pollNativePackStatus, readNativePackStatus, resolveNativePackStatus } from '../lib/offline/nativePackStatus';
+import type { OfflineEngineViewport } from '../lib/offline/offlineMapEngineHost';
 import {
-  ensureOfflineMapEnginePrimedBeforeDownload,
+  ensureOfflineMapEngineReadyForDownload,
   isOfflineMapEngineStyleLoaded,
+  isOfflineMapEngineViewportPrimed,
+  offlineEngineViewportFromBounds,
 } from '../lib/offline/offlineMapEngineHost';
 import { yieldToUi } from '../lib/async/yieldToUi';
 import { resetOfflineManagerSetupForTests } from '../lib/offline/offlineManagerSetup';
@@ -501,6 +504,7 @@ function createDownloadSession(
       {
         chartStyleUri: ctx.chartStyleUri,
         mapEngineStallMessage: t('downloads.errorMapEngineStyle'),
+        viewport: offlineEngineViewportFromBounds(ctx.bounds, ctx.minZoom),
         onRecreatePack: async (currentPack) => {
           if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return null;
           if (!ctx.chartStyleUri) return null;
@@ -553,6 +557,7 @@ async function reattachDownloadingPack(
       pack,
       ctx.chartStyleUri,
       () => !downloadCoordinator.isStale(ctx.regionId, ctx.session),
+      offlineEngineViewportFromBounds(ctx.bounds, ctx.minZoom),
     );
     set((state) => ({
       ...syncActiveDownloadId(),
@@ -577,6 +582,7 @@ export async function kickstartNativeDownload(
   pack: OfflinePack,
   chartStyleUri?: string,
   isSessionActive?: () => boolean,
+  viewport?: OfflineEngineViewport,
 ): Promise<OfflinePackStatus> {
   const sessionLive = () => isSessionActive?.() !== false;
 
@@ -631,8 +637,13 @@ export async function kickstartNativeDownload(
 
   if (!sessionLive()) return status ?? initializingNativePackStatus(pack.id);
 
-  if (!isNativeDownloadKickstarted(status) && chartStyleUri && !isOfflineMapEngineStyleLoaded(chartStyleUri)) {
-    await ensureOfflineMapEnginePrimedBeforeDownload(chartStyleUri);
+  const needsEnginePriming =
+    chartStyleUri != null &&
+    viewport != null &&
+    (!isOfflineMapEngineStyleLoaded(chartStyleUri) || !isOfflineMapEngineViewportPrimed(viewport));
+
+  if (!isNativeDownloadKickstarted(status) && needsEnginePriming) {
+    await ensureOfflineMapEngineReadyForDownload(chartStyleUri!, viewport!);
     if (!sessionLive()) return status ?? initializingNativePackStatus(pack.id);
     await tryResume(true);
     for (let attempt = 0; attempt < 10; attempt++) {
@@ -993,7 +1004,8 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       await yieldToUi();
       await removeOrphanNativePacksForRegion(regionId);
       await warmupOfflineEngine(chartStyleUri, { requireStyleLoaded: false, requireFileSource: true });
-      await ensureOfflineMapEnginePrimedBeforeDownload(chartStyleUri);
+      const downloadViewport = offlineEngineViewportFromBounds(ctx.bounds, ctx.minZoom);
+      await ensureOfflineMapEngineReadyForDownload(chartStyleUri, downloadViewport);
       ensureMapLibreNetworkForDownload();
 
       const pack = await OfflineManager.createPack(buildPackCreateOptions(ctx), onProgress, onError);
@@ -1025,6 +1037,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         pack,
         chartStyleUri,
         () => !downloadCoordinator.isStale(regionId, session),
+        offlineEngineViewportFromBounds(ctx.bounds, ctx.minZoom),
       )
         .then((status) => {
           if (downloadCoordinator.isStale(regionId, session)) return;
@@ -1093,7 +1106,8 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       await yieldToUi();
       await removeOrphanNativePacksForRegion(regionId);
       await warmupOfflineEngine(chartStyleUri, { requireStyleLoaded: false, requireFileSource: true });
-      await ensureOfflineMapEnginePrimedBeforeDownload(chartStyleUri);
+      const downloadViewport = offlineEngineViewportFromBounds(ctx.bounds, ctx.minZoom);
+      await ensureOfflineMapEngineReadyForDownload(chartStyleUri, downloadViewport);
       ensureMapLibreNetworkForDownload();
 
       set({
@@ -1135,6 +1149,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         pack,
         chartStyleUri,
         () => !downloadCoordinator.isStale(regionId, session),
+        offlineEngineViewportFromBounds(ctx.bounds, ctx.minZoom),
       )
         .then((status) => {
           if (downloadCoordinator.isStale(regionId, session)) return;

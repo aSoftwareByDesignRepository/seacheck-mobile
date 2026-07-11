@@ -2,11 +2,15 @@ import { Platform } from 'react-native';
 
 import {
   ensureOfflineMapEnginePrimedBeforeDownload,
+  ensureOfflineMapEngineReadyForDownload,
   ensureOfflineMapEngineStyle,
   getOfflineMapEngineStyleReloadNonce,
   isOfflineMapEngineStyleLoaded,
+  isOfflineMapEngineViewportPrimed,
   markOfflineMapEngineStyleLoaded,
+  markOfflineMapEngineViewportPrimed,
   requestOfflineMapEngineStyleReload,
+  requestOfflineMapEngineViewport,
   resetOfflineMapEngineHostForTests,
   waitForOfflineMapEngineStyle,
 } from '../src/lib/offline/offlineMapEngineHost';
@@ -70,6 +74,42 @@ describe('offlineMapEngineHost', () => {
 
     Object.defineProperty(Platform, 'OS', { configurable: true, value: original });
   });
+
+  it('tracks viewport priming separately from style load', async () => {
+    const original = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
+
+    const styleUri = 'file:///data/chart-style.json';
+    const viewport = { center: [10.15, 54.32] as [number, number], zoom: 10 };
+    markOfflineMapEngineStyleLoaded(styleUri);
+    expect(isOfflineMapEngineViewportPrimed(viewport)).toBe(false);
+
+    requestOfflineMapEngineViewport(viewport);
+    markOfflineMapEngineViewportPrimed(viewport);
+    expect(isOfflineMapEngineViewportPrimed(viewport)).toBe(true);
+
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: original });
+  });
+
+  it('re-aims viewport even when style is already loaded', async () => {
+    jest.useFakeTimers();
+    const original = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
+
+    const styleUri = 'file:///data/chart-style-ready.json';
+    const viewport = { center: [10.15, 54.32] as [number, number], zoom: 10 };
+    markOfflineMapEngineStyleLoaded(styleUri);
+
+    const pending = ensureOfflineMapEngineReadyForDownload(styleUri, viewport);
+    await jest.advanceTimersByTimeAsync(400);
+    markOfflineMapEngineViewportPrimed(viewport);
+    await pending;
+
+    expect(isOfflineMapEngineViewportPrimed(viewport)).toBe(true);
+
+    jest.useRealTimers();
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: original });
+  }, 15_000);
 
   it('throws when Android style never loads after retries', async () => {
     jest.useFakeTimers();

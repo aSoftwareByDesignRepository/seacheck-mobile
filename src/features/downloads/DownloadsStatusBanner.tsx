@@ -95,13 +95,17 @@ function ActiveDownloadBanner({
   const name = resolvePackDisplayName(active ?? { regionId: activeDownloadRegionId });
   const downloading = active && isPackDownloadActive(activeDownloadRegionId, active, activeDownloadRegionId);
   const percent = active?.percentage ?? 0;
+  const initializing = downloading && (active?.downloadInitializing || percent <= 0);
+  const summaryLabel = initializing
+    ? t('downloads.statusSummaryActiveInitializing', { name })
+    : t('downloads.statusSummaryActive', { name, percent: Math.round(percent) });
 
   return (
     <View
       style={[styles.banner, { backgroundColor: colors.warningBg, borderColor: colors.warningBorder }]}
       testID="downloads.statusBanner.active"
       accessibilityRole="summary"
-      accessibilityLabel={t('downloads.statusSummaryActive', { name, percent: Math.round(percent) })}
+      accessibilityLabel={summaryLabel}
     >
       <Text style={[styles.title, { color: colors.warningText }]} accessibilityRole="header">
         {t('downloads.statusSummaryActiveTitle')}
@@ -110,6 +114,7 @@ function ActiveDownloadBanner({
       {downloading ? (
         <DownloadProgressBar
           percentage={percent}
+          indeterminate={initializing}
           label={packStatusLabel({
             state: 'downloading',
             percentage: percent,

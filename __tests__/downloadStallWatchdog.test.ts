@@ -14,7 +14,11 @@ jest.mock('../src/lib/offline/warmupOfflineEngine', () => ({
 }));
 
 jest.mock('../src/lib/offline/offlineMapEngineHost', () => ({
+  ...jest.requireActual('../src/lib/offline/offlineMapEngineHost'),
   isOfflineMapEngineStyleLoaded: jest.fn(() => true),
+  isOfflineMapEngineViewportPrimed: jest.fn(() => true),
+  ensureOfflineMapEngineViewportPrimed: jest.fn(async () => true),
+  ensureOfflineMapEngineReadyForDownload: jest.fn(async () => {}),
   requestOfflineMapEngineStyleReload: jest.fn(),
   ensureOfflineMapEnginePrimedBeforeDownload: jest.fn(async () => {}),
 }));

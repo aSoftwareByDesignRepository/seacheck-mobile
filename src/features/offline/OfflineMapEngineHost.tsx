@@ -4,9 +4,14 @@ import { Platform, StyleSheet, View } from 'react-native';
 
 import {
   getOfflineMapEngineStyleReloadNonce,
+  getOfflineMapEngineViewportGeneration,
+  getPendingOfflineMapEngineViewport,
   markOfflineMapEngineStyleFailed,
   markOfflineMapEngineStyleLoaded,
+  markOfflineMapEngineViewportPrimed,
   subscribeOfflineMapEngineStyleReload,
+  subscribeOfflineMapEngineViewport,
+  type OfflineEngineViewport,
 } from '../../lib/offline/offlineMapEngineHost';
 import { resolveOfflineEngineCamera } from '../../lib/offline/resolveOfflineEngineCamera';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
@@ -27,16 +32,29 @@ export function OfflineMapEngineHost() {
     getOfflineMapEngineStyleReloadNonce,
     getOfflineMapEngineStyleReloadNonce,
   );
+  const viewportGeneration = useSyncExternalStore(
+    subscribeOfflineMapEngineViewport,
+    getOfflineMapEngineViewportGeneration,
+    getOfflineMapEngineViewportGeneration,
+  );
+  const pendingViewport = useSyncExternalStore(
+    subscribeOfflineMapEngineViewport,
+    getPendingOfflineMapEngineViewport,
+    getPendingOfflineMapEngineViewport,
+  );
   const styleParsedRef = useRef(false);
   const renderConfirmedRef = useRef(false);
   const cameraRef = useRef<CameraRef>(null);
   const renderFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeViewportRef = useRef<OfflineEngineViewport | null>(null);
 
-  const camera = resolveOfflineEngineCamera(activeDownloadRegionId, customBoundsIndex);
+  const fallbackCamera = resolveOfflineEngineCamera(activeDownloadRegionId, customBoundsIndex);
+  const camera = pendingViewport ?? fallbackCamera;
 
   useEffect(() => {
     styleParsedRef.current = false;
     renderConfirmedRef.current = false;
+    activeViewportRef.current = null;
     if (renderFallbackTimerRef.current) {
       clearTimeout(renderFallbackTimerRef.current);
       renderFallbackTimerRef.current = null;
@@ -45,8 +63,10 @@ export function OfflineMapEngineHost() {
 
   useEffect(() => {
     if (Platform.OS !== 'android' || !chartStyleUri) return;
+    activeViewportRef.current = camera;
+    renderConfirmedRef.current = false;
     cameraRef.current?.jumpTo({ center: camera.center, zoom: camera.zoom });
-  }, [chartStyleUri, camera.center, camera.zoom, reloadNonce]);
+  }, [chartStyleUri, camera.center, camera.zoom, reloadNonce, viewportGeneration]);
 
   if (Platform.OS !== 'android' || !chartStyleUri) return null;
 
@@ -71,6 +91,10 @@ export function OfflineMapEngineHost() {
     if (!styleParsedRef.current || !renderConfirmedRef.current) return;
     clearRenderFallback();
     markOfflineMapEngineStyleLoaded(chartStyleUri, generation);
+    const viewport = activeViewportRef.current;
+    if (viewport) {
+      markOfflineMapEngineViewportPrimed(viewport);
+    }
   };
 
   const markRenderConfirmed = () => {
@@ -122,7 +146,6 @@ export function OfflineMapEngineHost() {
       >
         <Camera
           ref={cameraRef}
-          key={`offline-engine-camera-${activeDownloadRegionId ?? 'idle'}-${reloadNonce}`}
           initialViewState={{ center: camera.center, zoom: camera.zoom }}
         />
       </Map>
@@ -138,8 +161,8 @@ const styles = StyleSheet.create({
    */
   host: {
     position: 'absolute',
-    width: 128,
-    height: 128,
+    width: 256,
+    height: 256,
     overflow: 'hidden',
     left: 0,
     bottom: 0,
@@ -147,7 +170,7 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   map: {
-    width: 128,
-    height: 128,
+    width: 256,
+    height: 256,
   },
 });

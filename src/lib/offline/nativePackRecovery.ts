@@ -11,7 +11,7 @@ import { ensureMapLibreNetworkForDownload } from '../network/mapLibreNetworkGate
 import { isNativeDownloadKickstarted } from './nativePackProgress';
 import { pollNativePackStatus } from './nativePackStatus';
 import { getDownloadTiming } from './downloadTiming';
-import { ensureOfflineMapEnginePrimedBeforeDownload } from './offlineMapEngineHost';
+import { ensureOfflineMapEngineReadyForDownload, offlineEngineViewportFromBounds } from './offlineMapEngineHost';
 import { warmupOfflineEngine } from './warmupOfflineEngine';
 
 async function removeNativePack(packId: string): Promise<void> {
@@ -45,7 +45,8 @@ export async function recreateOfflinePack(
   await yieldToUi();
 
   await warmupOfflineEngine(options.mapStyle, { requireStyleLoaded: false, requireFileSource: true });
-  await ensureOfflineMapEnginePrimedBeforeDownload(options.mapStyle);
+  const viewport = offlineEngineViewportFromBounds(options.bounds, options.minZoom ?? 10);
+  await ensureOfflineMapEngineReadyForDownload(options.mapStyle, viewport);
   if (isSessionActive?.() === false) return null;
 
   ensureMapLibreNetworkForDownload();

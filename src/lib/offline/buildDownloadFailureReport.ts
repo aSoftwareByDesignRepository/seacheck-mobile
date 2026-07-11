@@ -9,7 +9,12 @@ import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useSettingsStore } from '../../store/settingsStore';
 
 import { peekDownloadFailureDiagnostics } from './downloadFailureDiagnostics';
-import { isOfflineMapEngineStyleLoaded, getOfflineMapEngineStyleReloadNonce } from './offlineMapEngineHost';
+import {
+  isOfflineMapEngineStyleLoaded,
+  getOfflineMapEngineStyleReloadNonce,
+  isOfflineMapEngineViewportPrimed,
+} from './offlineMapEngineHost';
+import { resolveOfflineEngineCamera } from './resolveOfflineEngineCamera';
 import { peekChartTileProbeDiagnostics } from '../network/chartTileReachability';
 
 export type DownloadFailureSource = 'async' | 'preflight' | 'hydrate' | 'manual';
@@ -35,6 +40,10 @@ export async function buildDownloadFailureReport(input: DownloadFailureInput): P
   const settings = useSettingsStore.getState();
   const api = Platform.OS === 'android' ? Number(Platform.Version) : 0;
 
+  const viewport = resolveOfflineEngineCamera(input.regionId, store.customBoundsIndex);
+  const mapEngineStyleLoaded = store.chartStyleUri ? isOfflineMapEngineStyleLoaded(store.chartStyleUri) : false;
+  const mapEngineViewportPrimed = store.chartStyleUri ? isOfflineMapEngineViewportPrimed(viewport) : false;
+
   const lines: string[] = [
     'SeaCheck Download Failure Report',
     '================================',
@@ -58,7 +67,8 @@ export async function buildDownloadFailureReport(input: DownloadFailureInput): P
     line('activeDownloadRegionId', store.activeDownloadRegionId),
     line('hydrated', store.hydrated),
     line('chartStyleUri', store.chartStyleUri ? 'present' : 'missing'),
-    line('mapEngineStyleLoaded', store.chartStyleUri ? isOfflineMapEngineStyleLoaded(store.chartStyleUri) : false),
+    line('mapEngineStyleLoaded', mapEngineStyleLoaded),
+    line('mapEngineViewportPrimed', mapEngineViewportPrimed),
     line('mapEngineReloadNonce', store.chartStyleUri ? getOfflineMapEngineStyleReloadNonce() : null),
     '',
     'Bounds',

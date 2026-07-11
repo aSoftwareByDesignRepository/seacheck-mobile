@@ -4,8 +4,9 @@ import { resolveChartTileProbeCenter } from '../network/chartTileProbeCenter';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { yieldToUi } from '../async/yieldToUi';
 
-import { ensureOfflineMapEnginePrimedBeforeDownload } from './offlineMapEngineHost';
+import { ensureOfflineMapEngineReadyForDownload } from './offlineMapEngineHost';
 import { warmupOfflineEngine } from './warmupOfflineEngine';
+import { resolveOfflineEngineCamera } from './resolveOfflineEngineCamera';
 
 /** Shared preflight before any chart tile download (region or custom). */
 export async function prepareChartDownload(
@@ -20,6 +21,8 @@ export async function prepareChartDownload(
   const chartStyleUri = await ensureChartStyle();
   await yieldToUi();
   await warmupOfflineEngine(chartStyleUri, { requireStyleLoaded: false, requireFileSource: true });
-  await ensureOfflineMapEnginePrimedBeforeDownload(chartStyleUri);
+  const store = useOfflinePackStore.getState();
+  const viewport = resolveOfflineEngineCamera(regionId ?? null, store.customBoundsIndex);
+  await ensureOfflineMapEngineReadyForDownload(chartStyleUri, viewport);
   return chartStyleUri;
 }
