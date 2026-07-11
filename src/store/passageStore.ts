@@ -195,8 +195,12 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
     });
     if (wasActive) {
       const nav = useNavigationStore.getState();
-      await nav.setGoTo(null);
-      await nav.setActiveLegIndex(0);
+      if (nav.mobTarget != null) {
+        await nav.clearMob();
+      } else {
+        await nav.setGoTo(null);
+        await nav.setActiveLegIndex(0);
+      }
       await syncPassageBackgroundMonitoring();
     }
   },
@@ -343,6 +347,10 @@ export const usePassageStore = create<PassageStore>((set, get) => ({
     const detail = await get().getPassageDetail(id);
     if (!detail || detail.waypoints.length < 2) {
       throw new Error('passage_need_two_waypoints');
+    }
+    const nav = useNavigationStore.getState();
+    if (nav.mobTarget != null) {
+      await nav.clearMob();
     }
     await withDatabaseTransaction(async (db) => {
       await db.runAsync('UPDATE passages SET is_active = 0');

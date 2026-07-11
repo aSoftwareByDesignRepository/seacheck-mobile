@@ -133,6 +133,22 @@ export function AnchorWatchLimitedSheet() {
             </ButtonStack>
           </View>
         ) : null}
+        {prompt.reducedAccuracy ? (
+          <View style={[styles.block, { borderColor: colors.border, backgroundColor: colors.background }]}>
+            <Text style={[styles.blockTitle, { color: colors.text }]}>{t('permissions.preciseLocationTitle')}</Text>
+            <Text style={[styles.blockBody, { color: colors.textMuted }]}>{t('permissions.reducedAccuracyHint')}</Text>
+            <ButtonStack>
+              <Button
+                label={t('permissions.openSettings')}
+                variant="secondary"
+                onPress={() => {
+                  void openSystemSettings().then(() => afterFixStep());
+                }}
+                testID="anchorWatch.preciseLocation"
+              />
+            </ButtonStack>
+          </View>
+        ) : null}
         {prompt.foregroundGranted && prompt.backgroundGranted && !prompt.backgroundTaskRunning ? (
           <View style={[styles.block, { borderColor: colors.border, backgroundColor: colors.background }]}>
             <Text style={[styles.blockTitle, { color: colors.text }]}>{t('settings.backgroundGpsTitle')}</Text>

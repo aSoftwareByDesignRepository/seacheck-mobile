@@ -137,9 +137,17 @@ async function runStartupHydrate(): Promise<string[]> {
 }
 
 function startPostBootServices(): void {
-  if (!useSettingsStore.getState().onboardingCompleted) return;
   void import('../lib/permissions/initializeAppServices')
-    .then(({ initializeAppServices }) => initializeAppServices())
+    .then(async ({ initializeAppServices }) => {
+      if (useSettingsStore.getState().onboardingCompleted) {
+        await initializeAppServices();
+        return;
+      }
+      const { shouldRunBackgroundLocation } = await import('../lib/alarms/alarmCoordinator');
+      if (await shouldRunBackgroundLocation()) {
+        await initializeAppServices();
+      }
+    })
     .catch((error) => {
       console.warn('[BootGate] background services init failed', error);
     });

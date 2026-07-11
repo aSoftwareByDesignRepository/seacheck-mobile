@@ -28,10 +28,10 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 
 export function MainShell() {
   const { colors, isDark } = useTheme();
+  useResumeBackgroundSync();
   useAppLocationWatch();
   useDownloadKeepAwake();
   useDownloadFailureAlerts();
-  useResumeBackgroundSync();
   useMaritimeMonitors();
   useForegroundTrackRecording();
   const { formFactor, isLandscape } = useFormFactor();

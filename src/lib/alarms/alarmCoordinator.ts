@@ -26,6 +26,7 @@ function passageStore() {
 
 type NavPersist = {
   goToTarget: NavigationTarget | null;
+  mobTarget: NavigationTarget | null;
   anchorAlarm: AnchorAlarmState | null;
   activeLegIndex: number;
   alarmLimits: AlarmLimits;
@@ -40,6 +41,7 @@ type SettingsPersist = {
 export type AlarmLiveState = {
   anchorAlarm: AnchorAlarmState | null;
   goToTarget: NavigationTarget | null;
+  mobTarget: NavigationTarget | null;
   alarmLimits: AlarmLimits;
   activeLegIndex: number;
   activePassageId: string | null;
@@ -71,11 +73,26 @@ function enqueueAlarmProcessing<T>(fn: () => Promise<T>): Promise<T> {
   return next;
 }
 
+const DEFAULT_ALARM_LIMITS: AlarmLimits = { xteNm: 0.05, arrivalNm: 0.25 };
+
+/** Infer mobTarget from legacy payloads that only persisted goToTarget.kind === 'mob'. */
+export function normalizeNavPersist(raw: Partial<NavPersist>): NavPersist {
+  const goToTarget = raw.goToTarget ?? null;
+  const mobTarget = raw.mobTarget ?? (goToTarget?.kind === 'mob' ? goToTarget : null);
+  return {
+    goToTarget,
+    mobTarget,
+    anchorAlarm: raw.anchorAlarm ?? null,
+    activeLegIndex: Math.max(0, Number(raw.activeLegIndex) || 0),
+    alarmLimits: raw.alarmLimits ?? DEFAULT_ALARM_LIMITS,
+  };
+}
+
 export async function loadNavPersist(): Promise<NavPersist | null> {
   const raw = await AsyncStorage.getItem(NAV_STORAGE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as NavPersist;
+    return normalizeNavPersist(JSON.parse(raw) as Partial<NavPersist>);
   } catch {
     return null;
   }
@@ -215,9 +232,12 @@ async function resolveAlarmInputs(options: ProcessFixOptions): Promise<{
     // XTE / leg-advance alarms are not silently skipped on the first fixes after launch.
     const passageDetail =
       live.passageDetail ?? (activePassageId ? await fetchPassageDetailById(activePassageId) : null);
+    const mobTarget =
+      live.mobTarget ?? (live.goToTarget?.kind === 'mob' ? live.goToTarget : null);
     return {
       navPersist: {
         goToTarget: live.goToTarget,
+        mobTarget,
         anchorAlarm: live.anchorAlarm,
         activeLegIndex: live.activeLegIndex,
         alarmLimits: live.alarmLimits,
@@ -230,12 +250,7 @@ async function resolveAlarmInputs(options: ProcessFixOptions): Promise<{
     };
   }
 
-  const navPersist = (await loadNavPersist()) ?? {
-    goToTarget: null,
-    anchorAlarm: null,
-    activeLegIndex: 0,
-    alarmLimits: { xteNm: 0.05, arrivalNm: 0.25 },
-  };
+  const navPersist = (await loadNavPersist()) ?? normalizeNavPersist({});
   const settings = (await loadSettingsPersist()) ?? {};
   const activePassageId = await loadActivePassageId();
   const passageDetail = activePassageId ? await fetchPassageDetailById(activePassageId) : null;
@@ -356,6 +371,11 @@ export async function processFixFromLocation(
   });
 }
 
+export async function isMobMonitoringNeeded(): Promise<boolean> {
+  const nav = await loadNavPersist();
+  return nav?.mobTarget != null;
+}
+
 export async function isAnchorMonitoringNeeded(): Promise<boolean> {
   const nav = await loadNavPersist();
   return Boolean(nav?.anchorAlarm?.active);
@@ -368,18 +388,32 @@ export async function isBackgroundTrackNeeded(): Promise<boolean> {
   return Boolean(settings?.backgroundTrackRecording);
 }
 
-/** Active passage with at least two waypoints — background GPS for XTE/arrival alarms. */
+/** Active passage navigation with go-to — background GPS for XTE/arrival alarms. */
 export async function isPassageMonitoringNeeded(): Promise<boolean> {
   const activePassageId = await loadActivePassageId();
   if (!activePassageId) return false;
+  const nav = await loadNavPersist();
+  const goTo = nav?.goToTarget;
+  if (!goTo || goTo.kind === 'mob') return false;
   const detail = await fetchPassageDetailById(activePassageId);
   return Boolean(detail && detail.waypoints.length >= 2);
+}
+
+/** Standalone go-to (no active passage) — background GPS for arrival alarms. */
+export async function isGoToMonitoringNeeded(): Promise<boolean> {
+  const nav = await loadNavPersist();
+  const goTo = nav?.goToTarget;
+  if (!goTo || goTo.kind === 'mob') return false;
+  const activePassageId = await loadActivePassageId();
+  return activePassageId == null;
 }
 
 export async function shouldRunBackgroundLocation(): Promise<boolean> {
   return (
     (await isAnchorMonitoringNeeded()) ||
+    (await isMobMonitoringNeeded()) ||
     (await isPassageMonitoringNeeded()) ||
+    (await isGoToMonitoringNeeded()) ||
     (await isBackgroundTrackNeeded())
   );
 }

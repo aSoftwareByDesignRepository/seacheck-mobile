@@ -85,13 +85,20 @@
     "foregroundGrantedHint": "Location enabled — GPS position and alarms are available.",
     "foregroundDeniedHint": "Location denied — SeaCheck needs GPS for navigation and alarms.",
     "foregroundBlockedHint": "Location was blocked — open system settings to enable GPS access.",
-    "reducedAccuracyHint": "Precise location is off — enable full accuracy in system settings for reliable anchor alarms."
+    "reducedAccuracyHint": "Precise location is off — enable full accuracy in system settings for reliable anchor alarms.",
+    "preciseLocationTitle": "Precise location"
   },
   "location": {
     "backgroundAnchorTitle": "SeaCheck — anchor watch",
     "backgroundAnchorBody": "Monitoring anchor position in the background",
+    "backgroundSafetyTitle": "SeaCheck — safety monitoring",
+    "backgroundSafetyBody": "Monitoring position for navigation and safety alarms",
     "backgroundPassageTitle": "SeaCheck — passage navigation",
-    "backgroundPassageBody": "Monitoring position for arrival and cross-track alarms"
+    "backgroundPassageBody": "Monitoring position for arrival and cross-track alarms",
+    "backgroundGoToTitle": "SeaCheck — go-to navigation",
+    "backgroundGoToBody": "Monitoring position for arrival alarms",
+    "backgroundMobTitle": "SeaCheck — MOB navigation",
+    "backgroundMobBody": "Monitoring position while navigating back to the MOB mark"
   },
   "settings": {
     "title": "Settings",

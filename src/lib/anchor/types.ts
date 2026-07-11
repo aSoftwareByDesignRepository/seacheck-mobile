@@ -4,5 +4,6 @@ export type AnchorWatchStatus = {
   notificationsGranted: boolean;
   backgroundTaskRunning: boolean;
   batteryOptimizationRestricted: boolean;
+  reducedAccuracy: boolean;
   limited: boolean;
 };

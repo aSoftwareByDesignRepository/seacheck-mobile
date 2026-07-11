@@ -81,17 +81,19 @@ TaskManager.defineTask(TRACK_LOCATION_TASK, async ({ data, error }) => {
     const payload = data as { locations?: Location.LocationObject[] } | undefined;
     if (!payload?.locations?.length) return;
 
-    const appInForeground = AppState.currentState === 'active';
     const [{ applyBackgroundLocationFix }, { processFixFromLocation }] = await Promise.all([
       import('./locationService'),
       import('../lib/alarms/alarmCoordinator'),
     ]);
 
+    const { shouldForegroundPipelineEvaluateAlarms } = await import('../lib/alarms/foregroundAlarmPipeline');
+    const foregroundOwnsAlarms = await shouldForegroundPipelineEvaluateAlarms();
+
     for (const loc of payload.locations) {
-      const inBackground = !appInForeground;
-      if (appInForeground) {
-        applyBackgroundLocationFix(loc);
-        // Foreground alarms are handled by useAlarmMonitor — skip here to avoid double evaluation.
+      if (foregroundOwnsAlarms) {
+        if (AppState.currentState === 'active') {
+          applyBackgroundLocationFix(loc);
+        }
       } else {
         await processFixFromLocation(loc, { allowLegAdvancePrompt: false, inBackground: true });
       }

@@ -12,6 +12,7 @@ import type { RootTabParamList } from '../navigation/types';
 import { requestConfirm } from '../store/confirmStore';
 import { useFeedbackStore } from '../store/feedbackStore';
 import { isBackgroundLocationRunning } from '../services/backgroundLocationService';
+import { syncForegroundLocationWatch } from '../lib/geo/syncForegroundLocationWatch';
 import { useLocationStore } from '../services/locationService';
 import type { TrackPointRow } from '../lib/db/database';
 import { useSettingsStore } from '../store/settingsStore';
@@ -42,7 +43,6 @@ export function TracksScreen() {
   const fix = useLocationStore((s) => s.fix);
   const permission = useLocationStore((s) => s.permission);
   const showError = useFeedbackStore((s) => s.showError);
-  const startWatching = useLocationStore((s) => s.startWatching);
   const [backgroundActive, setBackgroundActive] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedPoints, setSelectedPoints] = useState<TrackPointRow[]>([]);
@@ -81,13 +81,13 @@ export function TracksScreen() {
       setBackgroundActive(false);
       return;
     }
-    void startWatching();
+    void syncForegroundLocationWatch({ requestIfUndetermined: false });
     const poll = setInterval(() => {
       void isBackgroundLocationRunning().then(setBackgroundActive);
     }, 3000);
     void isBackgroundLocationRunning().then(setBackgroundActive);
     return () => clearInterval(poll);
-  }, [recordingTrackId, startWatching]);
+  }, [recordingTrackId]);
 
   async function toggleRecording() {
     if (recordingTrackId) {
@@ -96,7 +96,7 @@ export function TracksScreen() {
       if (selectedId === prevId) void loadPoints(prevId);
       return;
     }
-    const ok = await startWatching();
+    const ok = await syncForegroundLocationWatch({ requestIfUndetermined: true });
     if (!ok) {
       const fg = await requestForegroundLocationAccess();
       if (fg.status !== Location.PermissionStatus.GRANTED) {

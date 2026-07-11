@@ -10,7 +10,10 @@ import {
   type FixAcceptanceReason,
   type GpsSmoothState,
 } from '../lib/geo/gpsFilter';
-import { FOREGROUND_NAVIGATION_OPTIONS } from '../lib/geo/gpsLocationOptions';
+import {
+  foregroundGpsOptionsForProfile,
+  type ForegroundGpsProfile,
+} from '../lib/geo/gpsLocationOptions';
 import {
   mapSnapshotToPermissionState,
   readLocationPermissionSnapshot,
@@ -56,15 +59,46 @@ type LocationStore = {
   fixAcceptance: FixAcceptanceReason | null;
   error: string | null;
   watching: boolean;
+  watchProfile: ForegroundGpsProfile | null;
   refreshPermission: () => Promise<void>;
   applyPermissionSnapshot: (snapshot: LocationPermissionSnapshot) => void;
-  startWatching: (options?: StartWatchingOptions) => Promise<boolean>;
-  stopWatching: () => void;
+  startWatching: (options?: StartWatchingOptions & { profile?: ForegroundGpsProfile }) => Promise<boolean>;
+  setWatchProfile: (profile: ForegroundGpsProfile) => Promise<boolean>;
+  stopWatching: (options?: { clearFixHistory?: boolean }) => void;
 };
 
 let subscription: Location.LocationSubscription | null = null;
 let lastAcceptedFix: LocationFix | null = null;
 let smoothState: GpsSmoothState | null = null;
+let activeWatchProfile: ForegroundGpsProfile | null = null;
+
+function handleWatchLocation(loc: Location.LocationObject, set: (partial: Partial<LocationStore>) => void): void {
+  const { useSettingsStore } = require('../store/settingsStore') as typeof import('../store/settingsStore');
+  const smoothEnabled = useSettingsStore.getState().gpsSmoothPosition;
+  const processed = enrichAndStore(mapLocation(loc), smoothEnabled);
+  applyProcessedToStore(processed, set);
+}
+
+async function attachWatchSubscription(
+  profile: ForegroundGpsProfile,
+  set: (partial: Partial<LocationStore>) => void,
+  get: () => LocationStore,
+): Promise<void> {
+  subscription?.remove();
+  activeWatchProfile = profile;
+  subscription = await Location.watchPositionAsync(foregroundGpsOptionsForProfile(profile), (loc) => {
+    handleWatchLocation(loc, set);
+  });
+  set({ watching: true, watchProfile: profile, error: null });
+  void Location.getCurrentPositionAsync(foregroundGpsOptionsForProfile(profile))
+    .then((loc) => {
+      if (!get().watching || activeWatchProfile !== profile) return;
+      handleWatchLocation(loc, set);
+    })
+    .catch((error) => {
+      console.warn('[locationService] seed fix failed', error);
+    });
+}
 
 function mapLocation(loc: Location.LocationObject): Omit<LocationFix, 'cogDeg'> {
   return {
@@ -185,6 +219,7 @@ export const useLocationStore = create<LocationStore>((set, get) => ({
   fixAcceptance: null,
   error: null,
   watching: false,
+  watchProfile: null,
 
   refreshPermission: async () => {
     set(snapshotToStorePartial(await readLocationPermissionSnapshot()));
@@ -195,7 +230,8 @@ export const useLocationStore = create<LocationStore>((set, get) => ({
   },
 
   startWatching: async (options) => {
-    if (get().watching) return true;
+    const profile = options?.profile ?? 'navigation';
+    if (get().watching && activeWatchProfile === profile) return true;
     const requestIfUndetermined = options?.requestIfUndetermined !== false;
     try {
       let fg = await Location.getForegroundPermissionsAsync();
@@ -204,47 +240,49 @@ export const useLocationStore = create<LocationStore>((set, get) => ({
       }
       set(snapshotToStorePartial(await readLocationPermissionSnapshot()));
       if (fg.status !== Location.PermissionStatus.GRANTED) {
-        set({ error: 'permission_denied' });
+        set({
+          error: fg.status === Location.PermissionStatus.DENIED ? 'permission_denied' : null,
+          watching: false,
+          watchProfile: null,
+        });
         return false;
       }
-      set({ error: null, watching: true });
-      subscription?.remove();
-      subscription = await Location.watchPositionAsync(
-        FOREGROUND_NAVIGATION_OPTIONS,
-        (loc) => {
-          const { useSettingsStore } = require('../store/settingsStore') as typeof import('../store/settingsStore');
-          const smoothEnabled = useSettingsStore.getState().gpsSmoothPosition;
-          const processed = enrichAndStore(mapLocation(loc), smoothEnabled);
-          applyProcessedToStore(processed, set);
-        },
-      );
-      void Location.getCurrentPositionAsync(FOREGROUND_NAVIGATION_OPTIONS)
-        .then((loc) => {
-          if (!get().watching) return;
-          const { useSettingsStore } = require('../store/settingsStore') as typeof import('../store/settingsStore');
-          const smoothEnabled = useSettingsStore.getState().gpsSmoothPosition;
-          const processed = enrichAndStore(mapLocation(loc), smoothEnabled);
-          applyProcessedToStore(processed, set);
-        })
-        .catch((error) => {
-          console.warn('[locationService] seed fix failed', error);
-        });
+      await attachWatchSubscription(profile, set, get);
       return true;
     } catch (error) {
       console.warn('[locationService] startWatching failed', error);
       subscription?.remove();
       subscription = null;
-      set({ watching: false, error: 'watch_failed' });
+      activeWatchProfile = null;
+      set({ watching: false, watchProfile: null, error: 'watch_failed' });
       return false;
     }
   },
 
-  stopWatching: () => {
+  setWatchProfile: async (profile) => {
+    if (get().permission === 'denied') return false;
+    if (get().watching && activeWatchProfile === profile) return true;
+    if (!get().watching) {
+      return get().startWatching({ profile, requestIfUndetermined: false });
+    }
+    try {
+      await attachWatchSubscription(profile, set, get);
+      return true;
+    } catch (error) {
+      console.warn('[locationService] setWatchProfile failed', error);
+      return false;
+    }
+  },
+
+  stopWatching: (options) => {
     subscription?.remove();
     subscription = null;
-    lastAcceptedFix = null;
-    smoothState = null;
-    set({ watching: false, fixAcceptance: null });
+    activeWatchProfile = null;
+    if (options?.clearFixHistory !== false) {
+      lastAcceptedFix = null;
+      smoothState = null;
+    }
+    set({ watching: false, watchProfile: null, fixAcceptance: null });
   },
 }));
 

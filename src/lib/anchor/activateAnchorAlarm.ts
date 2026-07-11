@@ -30,30 +30,37 @@ export async function getAnchorWatchStatus(): Promise<AnchorWatchStatus> {
   const backgroundTaskRunning = await isBackgroundLocationRunning();
   const batteryStatus = await getBatteryOptimizationStatus();
   const batteryOptimizationRestricted = batteryStatus !== 'exempt';
+  const reducedAccuracy = useLocationStore.getState().reducedAccuracy;
   const limited =
     !foregroundGranted ||
     !backgroundGranted ||
     !notificationsGranted ||
     !backgroundTaskRunning ||
-    batteryOptimizationRestricted;
+    batteryOptimizationRestricted ||
+    reducedAccuracy;
   return {
     foregroundGranted,
     backgroundGranted,
     notificationsGranted,
     backgroundTaskRunning,
     batteryOptimizationRestricted,
+    reducedAccuracy,
     limited,
   };
 }
 
-/** Re-check anchor-watch readiness after permission or battery changes; updates the limited sheet only when already open. */
+/** Re-check anchor-watch readiness after permission or battery changes. */
 export async function refreshAnchorWatchPromptIfNeeded(): Promise<AnchorWatchStatus | null> {
   const nav = useNavigationStore.getState();
   if (!nav.anchorAlarm?.active) return null;
 
   const status = await getAnchorWatchStatus();
-  if (nav.anchorWatchPrompt) {
-    useNavigationStore.getState().setAnchorWatchPrompt(status.limited ? status : null);
+  if (status.limited) {
+    if (nav.anchorWatchPrompt || !nav.anchorWatchPromptDismissed) {
+      useNavigationStore.getState().setAnchorWatchPrompt(status);
+    }
+  } else {
+    useNavigationStore.getState().setAnchorWatchPrompt(null);
   }
   return status;
 }

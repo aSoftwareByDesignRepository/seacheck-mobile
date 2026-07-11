@@ -85,13 +85,20 @@
     "foregroundGrantedHint": "Standort aktiv — GPS-Position und Alarme sind verfügbar.",
     "foregroundDeniedHint": "Standort verweigert — SeaCheck benötigt GPS für Navigation und Alarme.",
     "foregroundBlockedHint": "Standort blockiert — in den Systemeinstellungen GPS-Zugriff aktivieren.",
-    "reducedAccuracyHint": "Genaue Position ist aus — für zuverlässige Ankeralarme volle Genauigkeit in den Systemeinstellungen aktivieren."
+    "reducedAccuracyHint": "Genaue Position ist aus — für zuverlässige Ankeralarme volle Genauigkeit in den Systemeinstellungen aktivieren.",
+    "preciseLocationTitle": "Genaue Position"
   },
   "location": {
     "backgroundAnchorTitle": "SeaCheck — Ankerwache",
     "backgroundAnchorBody": "Ankerposition wird im Hintergrund überwacht",
+    "backgroundSafetyTitle": "SeaCheck — Sicherheitsüberwachung",
+    "backgroundSafetyBody": "Position wird für Navigations- und Sicherheitsalarme überwacht",
     "backgroundPassageTitle": "SeaCheck — Passage-Navigation",
-    "backgroundPassageBody": "Position wird für Ankunfts- und XTE-Alarme überwacht"
+    "backgroundPassageBody": "Position wird für Ankunfts- und XTE-Alarme überwacht",
+    "backgroundGoToTitle": "SeaCheck — Go-to-Navigation",
+    "backgroundGoToBody": "Position wird für Ankunftsalarme überwacht",
+    "backgroundMobTitle": "SeaCheck — MOB-Navigation",
+    "backgroundMobBody": "Position wird während der Rücknavigation zum MOB überwacht"
   },
   "settings": {
     "title": "Einstellungen",

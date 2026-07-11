@@ -6,7 +6,7 @@ import {
   type BatteryOptimizationStatus,
 } from '../lib/permissions/batteryOptimization';
 
-/** Polls Android battery optimization status; iOS always exempt. */
+/** Reads Android battery optimization status on mount and when the app returns to foreground. */
 export function useBatteryOptimization(enabled = Platform.OS === 'android'): BatteryOptimizationStatus {
   const [status, setStatus] = useState<BatteryOptimizationStatus>(Platform.OS === 'android' ? 'unknown' : 'exempt');
 
@@ -23,11 +23,7 @@ export function useBatteryOptimization(enabled = Platform.OS === 'android'): Bat
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') void refresh();
     });
-    const interval = setInterval(() => void refresh(), 30_000);
-    return () => {
-      sub.remove();
-      clearInterval(interval);
-    };
+    return () => sub.remove();
   }, [refresh]);
 
   return status;

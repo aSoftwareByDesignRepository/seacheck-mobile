@@ -4,6 +4,7 @@ import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useBatteryLevel } from '../../hooks/useBatteryLevel';
 import { useFixAge } from '../../hooks/useFixAge';
 import { getAnchorWatchStatus } from '../../lib/anchor/activateAnchorAlarm';
+import { subscribeBackgroundLocationRunning } from '../../lib/geo/backgroundLocationHealth';
 import { MAX_ALARM_ACCURACY_M } from '../../lib/geo/fixQuality';
 import { openSystemSettings, requestForegroundLocationAccess } from '../../lib/permissions/locationPermissions';
 import { t } from '../../i18n';
@@ -26,6 +27,7 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
   const keepAwake = useSettingsStore((s) => s.keepAwakeUnderway);
   const followMode = useSettingsStore((s) => s.followMode);
   const anchorAlarm = useNavigationStore((s) => s.anchorAlarm);
+  const setAnchorWatchPrompt = useNavigationStore((s) => s.setAnchorWatchPrompt);
   const fix = useLocationStore((s) => s.fix);
   const fixAcceptance = useLocationStore((s) => s.fixAcceptance);
   const permission = useLocationStore((s) => s.permission);
@@ -52,12 +54,14 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
     };
     refresh();
     const interval = setInterval(refresh, 8_000);
+    const unsubBg = subscribeBackgroundLocationRunning(() => refresh());
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') refresh();
+      if (state === 'active' || state === 'background' || state === 'inactive') refresh();
     });
     return () => {
       cancelled = true;
       clearInterval(interval);
+      unsubBg();
       sub.remove();
     };
   }, [anchorAlarm?.active]);
@@ -160,7 +164,11 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('map.anchorWatchLimitedChip')}
-          onPress={onOpenSettings}
+          onPress={() => {
+            void getAnchorWatchStatus().then((status) => {
+              if (status.limited) setAnchorWatchPrompt(status);
+            });
+          }}
           style={chipColors(colors.warningBg, colors.warningBorder)}
           testID="map.gpsStatus.anchorLimited"
         >

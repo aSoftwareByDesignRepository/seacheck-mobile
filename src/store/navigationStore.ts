@@ -153,9 +153,12 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as Partial<PersistPayload>;
+        const goToTarget = sanitizeNavigationTarget(parsed.goToTarget);
+        const mobFromStorage = sanitizeNavigationTarget(parsed.mobTarget);
+        const mobTarget = mobFromStorage ?? (goToTarget?.kind === 'mob' ? goToTarget : null);
         set({
-          goToTarget: sanitizeNavigationTarget(parsed.goToTarget),
-          mobTarget: sanitizeNavigationTarget(parsed.mobTarget),
+          goToTarget,
+          mobTarget,
           mobDroppedAtMs: typeof parsed.mobDroppedAtMs === 'number' ? parsed.mobDroppedAtMs : null,
           anchorAlarm: sanitizeAnchorAlarm(parsed.anchorAlarm),
           activeLegIndex: Math.max(0, Number(parsed.activeLegIndex) || 0),
@@ -177,6 +180,12 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
   setGoTo: async (target) => {
     set({ goToTarget: target });
     await persist(get());
+    try {
+      const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
+      await syncBackgroundLocationMonitoring();
+    } catch (error) {
+      console.warn('[navigationStore] go-to background sync failed', error);
+    }
   },
 
   dropMob: async (lat, lon) => {
@@ -193,6 +202,12 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     };
     set({ mobTarget: target, goToTarget: target, mobDroppedAtMs: now });
     await persist(get());
+    try {
+      const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
+      await syncBackgroundLocationMonitoring();
+    } catch (error) {
+      console.warn('[navigationStore] MOB background sync failed', error);
+    }
     return target;
   },
 
@@ -205,6 +220,12 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
       mobLayoutRestoreContextKey: null,
     });
     await persist(get());
+    try {
+      const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
+      await syncBackgroundLocationMonitoring();
+    } catch (error) {
+      console.warn('[navigationStore] MOB clear background sync failed', error);
+    }
     if (mobLayoutRestoreContextKey) {
       const parts = mobLayoutRestoreContextKey.split(':');
       if (parts.length === 3) {
@@ -255,10 +276,10 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
   },
 
   clearAnchorAlarm: async () => {
-    set({ anchorAlarm: null });
-    await persist(get());
     resetAlarmFixHistory();
     await resetAlarmRuntime();
+    set({ anchorAlarm: null, anchorWatchPrompt: null });
+    await persist(get());
     const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
     await syncBackgroundLocationMonitoring();
   },
