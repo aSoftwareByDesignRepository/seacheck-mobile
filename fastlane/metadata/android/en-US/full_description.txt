@@ -1,0 +1,15 @@
+SeaCheck is a deck-side companion to paper charts for small-boat coastal sailing — not a replacement for official nautical charts.
+
+Use it for boat speed, coordinates, a quick chart position without going below, passage sketches, and anchor alarms. Aid to navigation only; not a certified chart plotter. Maps use OpenSeaMap / OpenStreetMap volunteer data and may be outdated. Always carry official, corrected nautical charts.
+
+Features:
+• GPS on chart — COG, SOG, bearing
+• Passage planning, waypoints, GPX export
+• Offline region packs (Wi‑Fi download)
+• Anchor, arrival, and off-course alarms
+• Track recording
+• English and German UI
+
+Free. No ads. No analytics. Data stays on your device.
+
+Developed by Software by Design.

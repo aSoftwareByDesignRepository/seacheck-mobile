@@ -1,0 +1,1 @@
+Personal coastal nav aid — GPS, SOG, offline map. Use with paper charts

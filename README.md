@@ -62,6 +62,10 @@ npm run play:preflight
 
 See [STORE_REVIEW.md](STORE_REVIEW.md) for reviewer smoke path.
 
+## F-Droid
+
+Store metadata lives in `fastlane/metadata/android/`. Build and submission notes: [docs/fdroid/BUILD-FDROID.md](docs/fdroid/BUILD-FDROID.md).
+
 ## Quality gates
 
 ```bash

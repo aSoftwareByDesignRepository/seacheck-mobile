@@ -1,0 +1,15 @@
+SeaCheck ist ein Begleiter zu den Papierkarten an Deck für Küstensegeln im kleinen Boot — kein Ersatz für offizielle Seekarten.
+
+Nutzen Sie die App für Fahrt, Koordinaten, schnelle Positionsanzeige ohne unter Deck zu gehen, Törnskizzen und Ankeralarme. Nur Navigationshilfe; kein zertifizierter Kartenplotter. Karten aus OpenSeaMap/OpenStreetMap-Freiwilligendaten können veraltet sein. Immer offizielle, berichtigte Seekarten mitführen.
+
+Funktionen:
+• GPS auf der Karte — Kurs, Fahrt, Peilung
+• Törnplanung, Wegpunkte, GPX-Export
+• Offline-Regionenpakete (WLAN)
+• Anker-, Ankunfts- und Abweichungsalarme
+• Track-Aufzeichnung
+• Deutsch- und Englisch-Oberfläche
+
+Kostenlos. Keine Werbung. Keine Analyse-SDKs. Daten bleiben auf dem Gerät.
+
+Entwickelt von Software by Design.

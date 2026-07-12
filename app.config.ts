@@ -37,6 +37,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: 'de.softwarebydesign.seacheck',
+    versionCode: 1,
     adaptiveIcon: {
       backgroundColor: '#0b1622',
       foregroundImage: './assets/android-icon-foreground.png',

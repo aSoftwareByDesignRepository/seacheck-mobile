@@ -1,0 +1,7 @@
+Initial release.
+
+• Offline coastal charts (OpenSeaMap seamarks + base map)
+• GPS instruments, passage planning, anchor & arrival alarms
+• Track recording and GPX export
+• Navigation disclaimer — not a replacement for official charts
+• No ads, no analytics
