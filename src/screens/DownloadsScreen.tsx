@@ -134,6 +134,7 @@ export function DownloadsScreen() {
   const regions = useOfflinePackStore((s) => s.regions);
   const hydrated = useOfflinePackStore((s) => s.hydrated);
   const activeDownloadRegionId = useOfflinePackStore((s) => s.activeDownloadRegionId);
+  const downloadMapTeardownRegionId = useOfflinePackStore((s) => s.downloadMapTeardownRegionId);
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
   const deleteRegion = useOfflinePackStore((s) => s.deleteRegion);
   const retryPendingSeamarkIndexing = useOfflinePackStore((s) => s.retryPendingSeamarkIndexing);
@@ -176,7 +177,7 @@ export function DownloadsScreen() {
         }
       : null;
 
-  const suppressActiveProgress = activeDownloadRegionId != null;
+  const suppressActiveProgress = activeDownloadRegionId != null || downloadMapTeardownRegionId != null;
 
   useEffect(() => {
     void retryPendingSeamarkIndexing();
@@ -281,20 +282,6 @@ export function DownloadsScreen() {
 
   const listPane = (
     <View>
-      <DownloadsStatusBanner
-        regions={regions}
-        activeDownloadRegionId={activeDownloadRegionId}
-        hydrated={hydrated}
-        onCancelActive={
-          activeDownloadRegionId ? () => void handleCancel(activeDownloadRegionId) : undefined
-        }
-        cancelBusy={actionBusyId === activeDownloadRegionId}
-        onRetryFailed={(regionId) => void handleDownload(regionId)}
-        retryBusyId={actionBusyId}
-      />
-
-      <OfflineChartsGuide />
-
       <DownloadsSectionCard
         title={t('downloads.beforeYouDownloadTitle')}
         description={t('downloads.wifiNote')}
@@ -471,6 +458,19 @@ export function DownloadsScreen() {
 
   return (
     <Screen testID="screen.downloads" title={t('downloads.title')} subtitle={t('downloads.subtitle')} scrollRef={scrollRef}>
+      <DownloadsStatusBanner
+        regions={regions}
+        activeDownloadRegionId={activeDownloadRegionId}
+        downloadMapTeardownRegionId={downloadMapTeardownRegionId}
+        hydrated={hydrated}
+        onCancelActive={
+          activeDownloadRegionId ? () => void handleCancel(activeDownloadRegionId) : undefined
+        }
+        cancelBusy={actionBusyId === activeDownloadRegionId}
+        onRetryFailed={(regionId) => void handleDownload(regionId)}
+        retryBusyId={actionBusyId}
+      />
+      <OfflineChartsGuide />
       <MasterDetailLayout master={listPane} detail={formFactor === 'compact' ? null : detailPane} requireDetail={formFactor !== 'compact'} />
     </Screen>
   );

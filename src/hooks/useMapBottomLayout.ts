@@ -5,6 +5,7 @@ import { computeMapChromeLayout } from '../features/map/mapChromeLayout';
 import { mapChromeInsets } from '../features/map/mapChromeInsets';
 import { usesBottomTabBar } from '../lib/navigation/tabBarGeometry';
 import { useTheme } from '../theme/ThemeContext';
+import { useEffectiveMapSplit } from './useEffectiveMapSplit';
 import { useFormFactor } from './useFormFactor';
 import { useMapSurfaceMode } from './useMapSurfaceMode';
 
@@ -19,6 +20,7 @@ export function useMapBottomLayout(options: Options = {}) {
   const surface = useMapSurfaceMode();
   const showSideActions = options.showSideActions ?? true;
   const { formFactor, isLandscape } = useFormFactor();
+  const effectiveSplit = useEffectiveMapSplit();
   const tabBarAtBottom = usesBottomTabBar(formFactor, isLandscape);
   const chrome = mapChromeInsets(insets, spacing.lg);
 
@@ -36,9 +38,10 @@ export function useMapBottomLayout(options: Options = {}) {
         layoutPreset: surface.dockLayoutPreset,
         tabBarInsetBottom: insets.bottom,
         showSideActions,
-        expandedInstrumentDock: surface.expandedInstrumentDock,
+        expandedInstrumentDock: effectiveSplit ? false : surface.expandedInstrumentDock,
         tabBarAtBottom,
         extraBottomReserved: surface.bottomChromeReserve,
+        suppressBottomDock: effectiveSplit,
       }),
     [
       chrome.left,
@@ -55,6 +58,7 @@ export function useMapBottomLayout(options: Options = {}) {
       insets.bottom,
       showSideActions,
       tabBarAtBottom,
+      effectiveSplit,
     ],
   );
 }

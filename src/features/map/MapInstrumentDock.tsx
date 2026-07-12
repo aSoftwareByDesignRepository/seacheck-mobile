@@ -20,10 +20,12 @@ import { PassageInstrumentBlock } from './PassageInstrumentBlock';
 type Props = {
   fix: LocationFix | null;
   onOpenPassage: () => void;
+  /** Side panel in split tablet layout — scrollable, wraps chips for narrow width. */
+  embedded?: boolean;
 };
 
 /** Map-forward bottom dock — primary readouts use full width; safety actions on map edge. */
-export function MapInstrumentDock({ fix, onOpenPassage }: Props) {
+export function MapInstrumentDock({ fix, onOpenPassage, embedded = false }: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const { instrumentHeroSize } = useFormFactor();
   const coordFormat = useSettingsStore((s) => s.coordFormat);
@@ -57,20 +59,21 @@ export function MapInstrumentDock({ fix, onOpenPassage }: Props) {
   ]);
 
   return (
-    <InstrumentDockFrame testID="map.instrumentDock">
+    <InstrumentDockFrame testID="map.instrumentDock" mode={embedded ? 'embedded' : 'overlay'}>
       <PassageInstrumentBlock fix={fix} density="dock" onOpenPassage={onOpenPassage} />
 
       <View style={[styles.section, { gap: spacing.sm }]}>
-        <View style={[styles.heroRow, { gap: spacing.sm }]}>
-          <InstrumentChip label={t('map.sog')} value={data.sogText} unit={sogUnit} hero heroSize={instrumentHeroSize} />
+        <View style={[styles.heroRow, { gap: spacing.sm, flexWrap: embedded ? 'wrap' : 'nowrap' }]}>
+          <InstrumentChip label={t('map.sog')} value={data.sogText} unit={sogUnit} hero heroSize={instrumentHeroSize} flex={embedded ? undefined : 1} />
           <InstrumentChip
             label={data.courseLabel}
             value={cogParts[0] ?? '—'}
             unit={cogParts.length > 1 ? cogParts.slice(1).join(' ') : undefined}
             hero
             heroSize={instrumentHeroSize}
+            flex={embedded ? undefined : 1}
           />
-          <InstrumentChip label={t('map.accuracy')} value={data.accuracyText} unit="m" />
+          <InstrumentChip label={t('map.accuracy')} value={data.accuracyText} unit="m" flex={embedded ? undefined : 1} />
         </View>
       </View>
 
@@ -91,7 +94,13 @@ export function MapInstrumentDock({ fix, onOpenPassage }: Props) {
 
       {badgeItems.length > 0 ? <StatusBadgeRow items={badgeItems} testID="map.instrumentDock.badges" /> : null}
 
-      {detailMetrics.length > 0 ? <InstrumentMetricGrid metrics={detailMetrics} layout="row" /> : null}
+      {detailMetrics.length > 0 ? (
+        <InstrumentMetricGrid
+          metrics={detailMetrics}
+          layout={embedded ? 'grid' : 'row'}
+          gridColumns={embedded ? 2 : undefined}
+        />
+      ) : null}
     </InstrumentDockFrame>
   );
 }

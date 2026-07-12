@@ -42,7 +42,28 @@ export function isPackDownloadActive(
   status: Pick<RegionPackStatus, 'state'>,
   activeDownloadRegionId: string | null,
 ): boolean {
-  return status.state === 'downloading' || activeDownloadRegionId === regionId;
+  if (status.state === 'downloading') return true;
+  return activeDownloadRegionId === regionId && status.state !== 'ready';
+}
+
+/** Visible download map should stay mounted while tiles download or finalize.
+ *  All other MapLibre surfaces must suspend during this window (Android GL crash guard). */
+export function isDownloadMapSessionActive(
+  regionId: string,
+  status: Pick<RegionPackStatus, 'state'> | undefined,
+  activeDownloadRegionId: string | null,
+  downloadMapTeardownRegionId: string | null = null,
+): boolean {
+  const ownsMap = activeDownloadRegionId === regionId || downloadMapTeardownRegionId === regionId;
+  return ownsMap && (status?.state === 'downloading' || status?.state === 'ready');
+}
+
+/** True when any chart download map owns the sole GL context (including post-session teardown). */
+export function hasExclusiveChartDownloadMap(
+  activeDownloadRegionId: string | null,
+  downloadMapTeardownRegionId: string | null,
+): boolean {
+  return activeDownloadRegionId != null || downloadMapTeardownRegionId != null;
 }
 
 export function packStatusLabel(

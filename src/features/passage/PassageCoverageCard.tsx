@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { usePackDownloadActions } from '../../hooks/usePackDownloadActions';
 import { usePassagePackSuggestions } from '../../hooks/usePassagePackSuggestions';
@@ -10,7 +12,6 @@ import type { PassageWithLegs } from '../../store/passageStore';
 import { useFeedbackStore } from '../../store/feedbackStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
-import { ButtonStack } from '../../ui/Screen';
 import { StatusBadge } from '../../ui/StatusBadge';
 import { PassagePackSuggestionRow } from './PassagePackSuggestionRow';
 
@@ -26,12 +27,25 @@ type Props = {
   onOpenDownloads: (opts?: PassageDownloadsNavOptions) => void;
 };
 
+function coverageStatusLabel(report: ReturnType<typeof usePassagePackSuggestions>): string {
+  if (report.readyPackCount === 0) return t('passage.offlineNoPacks');
+  if (report.fullyCovered) return t('passage.offlineReady');
+  return t('passage.offlineGaps', { count: report.uncoveredLegCount });
+}
+
+function coverageStatusVariant(report: ReturnType<typeof usePassagePackSuggestions>): 'success' | 'warning' | 'danger' {
+  if (report.readyPackCount === 0) return 'danger';
+  if (report.fullyCovered) return 'success';
+  return 'warning';
+}
+
 export function PassageCoverageCard({ detail, onOpenDownloads }: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const report = usePassagePackSuggestions(detail.waypoints);
   const { packBusy, handleDownload, handleDownloadAll, handleCancel, activeDownloadRegionId } = usePackDownloadActions();
   const showInfo = useFeedbackStore((s) => s.showInfo);
   const showError = useFeedbackStore((s) => s.showError);
+  const [legsExpanded, setLegsExpanded] = useState(false);
 
   if (detail.waypoints.length < 2) return null;
 
@@ -45,6 +59,11 @@ export function PassageCoverageCard({ detail, onOpenDownloads }: Props) {
     (s) => pendingPackIds.includes(s.packId) && isLargeRegionPack(s.pack),
   );
   const passageBounds = boundsFromWaypoints(detail.waypoints);
+  const coveredLegCount = report.legs.filter((leg) => leg.covered).length;
+  const totalLegCount = report.legs.length;
+  const showLegDetails = !report.fullyCovered && totalLegCount > 0;
+  const statusLabel = coverageStatusLabel(report);
+  const statusVariant = coverageStatusVariant(report);
 
   async function downloadAllRecommended() {
     const result = await handleDownloadAll(report.focusPackIds);
@@ -62,41 +81,38 @@ export function PassageCoverageCard({ detail, onOpenDownloads }: Props) {
     });
   }
 
+  function openDownloadsTab() {
+    onOpenDownloads(report.focusPackIds.length > 0 ? { focusPackIds: report.focusPackIds } : undefined);
+  }
+
+  const legToggleLabel = legsExpanded ? t('passage.offlineLegStatusCollapse') : t('passage.offlineLegStatusExpand');
+
   return (
     <View
       style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: spacing.lg }]}
       testID="passage.coverage"
+      accessibilityLabel={`${t('passage.offlineCheckTitle')}. ${statusLabel}`}
+      accessibilityHint={t('passage.offlineCheckBody')}
     >
-      <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
-        {t('passage.offlineCheckTitle')}
-      </Text>
-      <Text style={[styles.body, { color: colors.textMuted }]}>{t('passage.offlineCheckBody')}</Text>
-
-      {report.readyPackCount === 0 ? (
-        <StatusBadge label={t('passage.offlineNoPacks')} variant="danger" />
-      ) : report.fullyCovered ? (
-        <StatusBadge label={t('passage.offlineReady')} variant="success" />
-      ) : (
-        <StatusBadge label={t('passage.offlineGaps', { count: report.uncoveredLegCount })} variant="warning" />
-      )}
+      <View style={styles.headerRow}>
+        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
+          {t('passage.offlineCheckTitle')}
+        </Text>
+        <StatusBadge label={statusLabel} variant={statusVariant} />
+      </View>
 
       {showSuggestions ? (
-        <View style={[styles.section, { borderColor: colors.border }]} accessibilityRole="summary">
-          <Text style={[styles.sectionTitle, { color: colors.text }]} accessibilityRole="header">
-            {t('passage.recommendedPacksTitle')}
-          </Text>
-          <Text style={[styles.sectionBody, { color: colors.textMuted }]}>{t('passage.recommendedPacksBody')}</Text>
+        <View style={[styles.block, { borderColor: colors.border }]} accessibilityRole="summary">
           {anyLargePending ? (
             <Text style={[styles.hint, { color: colors.warningText }]}>{t('downloads.largePackHint')}</Text>
           ) : null}
-          <View style={styles.suggestionList}>
-            {report.suggestionDetails.map((suggestion) => {
-              const downloadActive = isPackDownloadActive(
-                suggestion.packId,
-                suggestion.status,
-                activeDownloadRegionId,
-              );
-              return (
+          {report.suggestionDetails.map((suggestion, index) => {
+            const downloadActive = isPackDownloadActive(
+              suggestion.packId,
+              suggestion.status,
+              activeDownloadRegionId,
+            );
+            return (
               <PassagePackSuggestionRow
                 key={suggestion.packId}
                 suggestion={suggestion}
@@ -105,101 +121,160 @@ export function PassageCoverageCard({ detail, onOpenDownloads }: Props) {
                 onDownload={() => void handleDownload(suggestion.packId)}
                 onCancel={downloadActive ? () => void handleCancel(suggestion.packId) : undefined}
                 onBrowsePack={() => onOpenDownloads({ focusPackIds: [suggestion.packId] })}
+                showDivider={index > 0}
+                suppressActiveProgress
               />
             );
-            })}
-          </View>
-          {pendingPackIds.length > 1 ? (
-            <Button
-              label={t('passage.downloadAllRecommended', { count: pendingPackIds.length })}
-              onPress={() => void downloadAllRecommended()}
-              disabled={pendingPackIds.some((id) => packBusy(id))}
-              testID="passage.downloadAllRecommended"
-            />
-          ) : null}
-          {report.needsCustomArea && report.uncoveredLegCountAfterSuggestions > 0 ? (
-            <Text style={[styles.hint, { color: colors.textMuted }]}>
-              {t('passage.remainingLegsAfterPacks', { count: report.uncoveredLegCountAfterSuggestions })}
-            </Text>
-          ) : null}
-          {report.needsCustomArea ? (
-            <>
-              <Text style={[styles.hint, { color: colors.textMuted }]}>{t('passage.recommendedPacksCustomHint')}</Text>
+          })}
+          <View style={[styles.actionRow, { minHeight: minTouch }]}>
+            {pendingPackIds.length > 1 ? (
               <Button
-                label={t('passage.openCustomDownload')}
+                label={t('passage.downloadAllRecommended', { count: pendingPackIds.length })}
+                onPress={() => void downloadAllRecommended()}
+                disabled={pendingPackIds.some((id) => packBusy(id))}
+                fullWidth={false}
+                style={styles.actionBtn}
+                testID="passage.downloadAllRecommended"
+              />
+            ) : null}
+            {report.needsCustomArea ? (
+              <Button
+                label={t('passage.openCustomDownloadShort')}
                 variant="secondary"
                 onPress={openCustomForPassage}
+                fullWidth={false}
+                style={styles.actionBtn}
                 testID="passage.openCustomDownload"
               />
-            </>
-          ) : null}
+            ) : null}
+            <Button
+              label={t('passage.openDownloadsShort')}
+              variant="ghost"
+              onPress={openDownloadsTab}
+              fullWidth={false}
+              style={styles.actionBtn}
+              testID="passage.openDownloads"
+            />
+          </View>
         </View>
       ) : null}
 
       {showCustomOnly ? (
-        <>
-          <Text style={[styles.hint, { color: colors.warningText }]}>{t('passage.offlineNeedsCustom')}</Text>
-          <Button
-            label={t('passage.openCustomDownload')}
-            variant="secondary"
-            onPress={openCustomForPassage}
-            testID="passage.openCustomDownloadOnly"
-          />
-        </>
-      ) : null}
-
-      <View style={[styles.legSection, { borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]} accessibilityRole="header">
-          {t('passage.offlineLegStatusTitle')}
-        </Text>
-        {report.legs.map((leg) => (
-          <View key={leg.legIndex} style={[styles.legRow, { borderColor: colors.border, minHeight: minTouch }]}>
-            <View style={styles.legMain}>
-              <Text style={[styles.legTitle, { color: colors.text }]}>
-                {leg.fromName} → {leg.toName}
-              </Text>
-              {leg.covered && leg.coveringPackLabels.length ? (
-                <Text style={[styles.legMeta, { color: colors.textMuted }]} numberOfLines={2}>
-                  {t('passage.offlineCoveredBy', { packs: leg.coveringPackLabels.join(', ') })}
-                </Text>
-              ) : null}
-            </View>
-            <StatusBadge
-              label={leg.covered ? t('passage.offlineLegOk') : t('passage.offlineLegGap')}
-              variant={leg.covered ? 'success' : 'warning'}
+        <View style={[styles.block, { borderColor: colors.border, gap: spacing.sm }]}>
+          <Text style={[styles.hint, { color: colors.warningText }]}>{t('passage.offlineNeedsCustomShort')}</Text>
+          <View style={[styles.actionRow, { minHeight: minTouch }]}>
+            <Button
+              label={t('passage.openCustomDownloadShort')}
+              variant="secondary"
+              onPress={openCustomForPassage}
+              fullWidth={false}
+              style={styles.actionBtn}
+              testID="passage.openCustomDownloadOnly"
+            />
+            <Button
+              label={t('passage.openDownloadsShort')}
+              variant="ghost"
+              onPress={openDownloadsTab}
+              fullWidth={false}
+              style={styles.actionBtn}
+              testID="passage.openDownloads"
             />
           </View>
-        ))}
-      </View>
+        </View>
+      ) : null}
 
-      {!report.fullyCovered ? (
-        <ButtonStack>
-          <Button
-            label={t('passage.openDownloads')}
-            variant="secondary"
-            onPress={() =>
-              onOpenDownloads(report.focusPackIds.length > 0 ? { focusPackIds: report.focusPackIds } : undefined)
-            }
-            testID="passage.openDownloads"
-          />
-        </ButtonStack>
+      {showLegDetails ? (
+        <View style={[styles.block, { borderColor: colors.border }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: legsExpanded }}
+            accessibilityLabel={legToggleLabel}
+            accessibilityHint={t('passage.offlineLegStatusSummary', {
+              covered: coveredLegCount,
+              total: totalLegCount,
+              gaps: report.uncoveredLegCount,
+            })}
+            onPress={() => setLegsExpanded((value) => !value)}
+            testID="passage.legStatus.toggle"
+            style={({ pressed }) => [
+              styles.legToggle,
+              { minHeight: minTouch, opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <View style={styles.legToggleText}>
+              <Text style={[styles.legSummary, { color: colors.text }]}>
+                {t('passage.offlineLegStatusSummary', {
+                  covered: coveredLegCount,
+                  total: totalLegCount,
+                  gaps: report.uncoveredLegCount,
+                })}
+              </Text>
+              <Text style={[styles.legToggleHint, { color: colors.textMuted }]}>{legToggleLabel}</Text>
+            </View>
+            <MaterialIcons
+              name={legsExpanded ? 'expand-less' : 'expand-more'}
+              size={22}
+              color={colors.textMuted}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
+          </Pressable>
+          {legsExpanded
+            ? report.legs.map((leg, index) => (
+                <View
+                  key={leg.legIndex}
+                  style={[
+                    styles.legRow,
+                    index > 0 ? [styles.legRowDivider, { borderTopColor: colors.border }] : null,
+                  ]}
+                >
+                  <View style={styles.legMain}>
+                    <Text style={[styles.legTitle, { color: colors.text }]}>
+                      {leg.fromName} → {leg.toName}
+                    </Text>
+                    {leg.covered && leg.coveringPackLabels.length ? (
+                      <Text style={[styles.legMeta, { color: colors.textMuted }]} numberOfLines={1}>
+                        {t('passage.offlineCoveredBy', { packs: leg.coveringPackLabels.join(', ') })}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <StatusBadge
+                    label={leg.covered ? t('passage.offlineLegOk') : t('passage.offlineLegGap')}
+                    variant={leg.covered ? 'success' : 'warning'}
+                  />
+                </View>
+              ))
+            : null}
+        </View>
+      ) : null}
+
+      {!report.fullyCovered && !showSuggestions && !showCustomOnly ? (
+        <Button
+          label={t('passage.openDownloadsShort')}
+          variant="ghost"
+          onPress={openDownloadsTab}
+          testID="passage.openDownloads"
+        />
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 12 },
-  title: { fontSize: 17, fontWeight: '800' },
-  body: { fontSize: 14, lineHeight: 20 },
-  section: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 12, gap: 10 },
-  legSection: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 12, gap: 8 },
-  sectionTitle: { fontSize: 15, fontWeight: '700' },
-  sectionBody: { fontSize: 14, lineHeight: 20 },
+  card: { borderWidth: 1, borderRadius: 16, padding: 14, gap: 10 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  title: { fontSize: 16, fontWeight: '800', flex: 1, lineHeight: 22 },
+  block: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10, gap: 8 },
   hint: { fontSize: 13, lineHeight: 18 },
-  suggestionList: { gap: 10 },
-  legRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10 },
-  legMain: { flex: 1 },
-  legTitle: { fontSize: 15, fontWeight: '600' },
-  legMeta: { fontSize: 13, marginTop: 4, lineHeight: 18 },
+  actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+  actionBtn: { flexGrow: 1, flexBasis: '48%', minWidth: 120 },
+  legToggle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  legToggleText: { flex: 1, gap: 2 },
+  legSummary: { fontSize: 14, fontWeight: '600', lineHeight: 20 },
+  legToggleHint: { fontSize: 13, lineHeight: 18 },
+  legRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
+  legRowDivider: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 2 },
+  legMain: { flex: 1, minWidth: 0 },
+  legTitle: { fontSize: 14, fontWeight: '600', lineHeight: 20 },
+  legMeta: { fontSize: 12, lineHeight: 16, marginTop: 2 },
 });

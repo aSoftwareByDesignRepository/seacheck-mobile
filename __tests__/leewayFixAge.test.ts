@@ -1,5 +1,5 @@
 import { fixAgeSeconds, isFixOlderThan, FIX_AGING_MS, FIX_STALE_MS } from '../src/lib/geo/fixAge';
-import { computeLeeway, leewayDeg } from '../src/lib/geo/leeway';
+import { computeLeeway, leewayDeg, resolveLeewayDisplay } from '../src/lib/geo/leeway';
 
 describe('fix age', () => {
   const fix = {
@@ -37,5 +37,67 @@ describe('leeway', () => {
   it('labels starboard drift', () => {
     const result = computeLeeway(5, 90, 110);
     expect(result?.side).toBe('starboard');
+  });
+});
+
+describe('resolveLeewayDisplay', () => {
+  it('hides leeway when user setting is off', () => {
+    expect(
+      resolveLeewayDisplay({
+        mapShowLeeway: false,
+        stale: false,
+        sogKn: 5,
+        headingDeg: 90,
+        cogDeg: 110,
+      }),
+    ).toEqual({ showLeeway: false, leeway: null });
+  });
+
+  it('hides leeway on stale fix even when setting is on', () => {
+    expect(
+      resolveLeewayDisplay({
+        mapShowLeeway: true,
+        stale: true,
+        sogKn: 5,
+        headingDeg: 90,
+        cogDeg: 110,
+      }),
+    ).toEqual({ showLeeway: false, leeway: null });
+  });
+
+  it('shows leeway when setting is on and GPS data is valid', () => {
+    const result = resolveLeewayDisplay({
+      mapShowLeeway: true,
+      stale: false,
+      sogKn: 5,
+      headingDeg: 90,
+      cogDeg: 110,
+    });
+    expect(result.showLeeway).toBe(true);
+    expect(result.leeway?.side).toBe('starboard');
+  });
+
+  it('hides leeway below SOG threshold', () => {
+    expect(
+      resolveLeewayDisplay({
+        mapShowLeeway: true,
+        stale: false,
+        sogKn: 1,
+        headingDeg: 90,
+        cogDeg: 110,
+      }).showLeeway,
+    ).toBe(false);
+  });
+
+  it('hides leeway without heading', () => {
+    expect(
+      resolveLeewayDisplay({
+        mapShowLeeway: true,
+        stale: false,
+        sogKn: 5,
+        headingDeg: null,
+        cogDeg: 110,
+      }).showLeeway,
+    ).toBe(false);
   });
 });

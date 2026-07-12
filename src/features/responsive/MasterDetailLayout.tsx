@@ -1,6 +1,7 @@
 import { PropsWithChildren, ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { shouldUseMasterDetail } from '../../lib/responsive/splitLayout';
 import { useFormFactor } from '../../hooks/useFormFactor';
 import { useTheme } from '../../theme/ThemeContext';
 
@@ -15,11 +16,11 @@ type Props = PropsWithChildren<{
 export function MasterDetailLayout({ master, detail, requireDetail = false }: Props) {
   const { formFactor } = useFormFactor();
   const { spacing } = useTheme();
-  const split = formFactor !== 'compact';
+  const split = shouldUseMasterDetail(formFactor);
 
   if (!split) {
     return (
-      <View style={styles.stack}>
+      <View style={styles.stackCompact}>
         {master}
         {detail}
       </View>
@@ -39,8 +40,16 @@ export function MasterDetailLayout({ master, detail, requireDetail = false }: Pr
 }
 
 const styles = StyleSheet.create({
-  stack: { gap: 0 },
-  row: { flexDirection: 'row', alignItems: 'flex-start' },
-  master: { flex: 1, minWidth: 0 },
-  detail: { flex: 1.2, minWidth: 0 },
+  stack: { flex: 1, width: '100%', alignSelf: 'stretch', minHeight: 0 },
+  stackCompact: { width: '100%', alignSelf: 'stretch' },
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    alignSelf: 'stretch',
+    width: '100%',
+    minHeight: 0,
+  },
+  master: { flex: 1, minWidth: 0, minHeight: 0 },
+  detail: { flex: 0.95, minWidth: 260, maxWidth: '44%', minHeight: 0 },
 });

@@ -1,6 +1,7 @@
 import type { LngLatBounds } from '@maplibre/maplibre-react-native';
 
 import { validateDownloadBounds } from '../map/bounds';
+import { isCacheBackedPackId } from './tileCacheDownload';
 
 export type PersistedIndexEntry = {
   packId: string;
@@ -10,6 +11,10 @@ export type PersistedIndexEntry = {
   minZoom?: number;
   maxZoom?: number;
   seamarksIndexed?: boolean;
+  /** Tiles saved via visible-map sweep into ambient cache (not native OfflineManager). */
+  cacheBacked?: boolean;
+  sweepCompleted?: number;
+  sweepTotal?: number;
 };
 
 export type PersistedIndex = Record<string, PersistedIndexEntry>;
@@ -65,6 +70,7 @@ export function sanitizePersistedIndex(raw: unknown): PersistedIndex {
     const minZoom = sanitizeZoom(row.minZoom, 10);
     const maxZoom = sanitizeZoom(row.maxZoom, 14);
     const custom = row.custom === true;
+    const cacheBacked = row.cacheBacked === true || isCacheBackedPackId(String(row.packId));
 
     if (custom && bounds && minZoom > maxZoom) continue;
 
@@ -81,6 +87,9 @@ export function sanitizePersistedIndex(raw: unknown): PersistedIndex {
       minZoom: bounds ? minZoom : undefined,
       maxZoom: bounds ? maxZoom : undefined,
       seamarksIndexed: row.seamarksIndexed === true || undefined,
+      cacheBacked: cacheBacked || undefined,
+      sweepCompleted: isFiniteNumber(row.sweepCompleted) ? Math.max(0, Math.round(row.sweepCompleted)) : undefined,
+      sweepTotal: isFiniteNumber(row.sweepTotal) ? Math.max(0, Math.round(row.sweepTotal)) : undefined,
     };
   }
 

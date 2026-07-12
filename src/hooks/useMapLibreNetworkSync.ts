@@ -16,6 +16,7 @@ import { useOfflinePackStore } from '../store/offlinePackStore';
 export function useMapLibreNetworkSync(): void {
   const disconnected = useIsDeviceDisconnected();
   const activeDownloadRegionId = useOfflinePackStore((s) => s.activeDownloadRegionId);
+  const downloadMapTeardownRegionId = useOfflinePackStore((s) => s.downloadMapTeardownRegionId);
   const regions = useOfflinePackStore((s) => s.regions);
   const [coordinatorTick, setCoordinatorTick] = useState(0);
   const hasDownloadingRegion = useMemo(
@@ -27,7 +28,9 @@ export function useMapLibreNetworkSync(): void {
 
   const downloadActive =
     downloadCoordinator.hasActiveDownload() ||
+    downloadCoordinator.hasExclusiveMapSession() ||
     activeDownloadRegionId != null ||
+    downloadMapTeardownRegionId != null ||
     hasDownloadingRegion;
 
   useEffect(() => {

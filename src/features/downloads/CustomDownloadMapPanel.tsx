@@ -55,7 +55,8 @@ export function CustomDownloadMapPanel() {
       showError(t(`downloads.customInvalid.${code}` as 'downloads.customInvalid.too_small'));
       return;
     }
-    if (useOfflinePackStore.getState().activeDownloadRegionId) {
+    const store = useOfflinePackStore.getState();
+    if (store.activeDownloadRegionId != null || store.downloadMapTeardownRegionId != null) {
       showError(t('downloads.errorDownloadBusy'));
       return;
     }

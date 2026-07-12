@@ -14,7 +14,12 @@ export const ALL_BOTTOM_TABS: TabName[] = [...PRIMARY_BOTTOM_TABS, ...OVERFLOW_B
 export const FULL_TAB_BAR_WIDTH = 400;
 
 /** Side navigation rail width — keep in sync with AdaptiveTabBar rail styles. */
-export const RAIL_WIDTH = 88;
+export const RAIL_WIDTH = 108;
+
+/** Total horizontal space occupied by the navigation rail (width + safe-area inset). */
+export function navigationRailOccupiedWidth(safeAreaLeft: number): number {
+  return RAIL_WIDTH + safeAreaLeft;
+}
 
 export function resolveBottomTabLayout(width: number): { visible: TabName[]; overflow: TabName[] } {
   if (width >= FULL_TAB_BAR_WIDTH) {

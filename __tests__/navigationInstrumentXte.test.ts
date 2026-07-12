@@ -32,6 +32,7 @@ function baseData(overrides: Partial<NavigationInstrumentData> = {}): Navigation
     showPassageMeta: false,
     showBarometer: false,
     barometer: { available: false, trend: { currentHpa: null, trend: 'steady', delta3h: null } } as NavigationInstrumentData['barometer'],
+    showLeeway: false,
     leeway: null,
     distanceLabel: 'NM',
     remainingDistText: null,

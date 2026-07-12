@@ -8,10 +8,18 @@ type Props = {
   testID?: string;
   /** True while native tile enumeration has not started (0% with no byte progress). */
   indeterminate?: boolean;
+  /** When false, only the bar is shown — use when status is already visible nearby. */
+  showLabel?: boolean;
 };
 
 /** WCAG-friendly progress: visible bar plus explicit percentage text (not color-only). */
-export function DownloadProgressBar({ percentage, label, testID, indeterminate = false }: Props) {
+export function DownloadProgressBar({
+  percentage,
+  label,
+  testID,
+  indeterminate = false,
+  showLabel = true,
+}: Props) {
   const { colors, spacing } = useTheme();
   const clamped = Math.max(0, Math.min(100, Math.round(percentage)));
   const fillWidth = indeterminate ? 36 : clamped;
@@ -21,6 +29,7 @@ export function DownloadProgressBar({ percentage, label, testID, indeterminate =
       style={{ gap: spacing.sm }}
       testID={testID}
       accessibilityRole="progressbar"
+      accessibilityLabel={showLabel ? undefined : label}
       accessibilityState={indeterminate ? { busy: true } : undefined}
       accessibilityValue={indeterminate ? undefined : { min: 0, max: 100, now: clamped }}
     >
@@ -37,9 +46,11 @@ export function DownloadProgressBar({ percentage, label, testID, indeterminate =
           ]}
         />
       </View>
-      <Text style={[styles.label, { color: colors.text }]} accessibilityLiveRegion="polite">
-        {label}
-      </Text>
+      {showLabel ? (
+        <Text style={[styles.label, { color: colors.text }]} accessibilityLiveRegion="polite">
+          {label}
+        </Text>
+      ) : null}
     </View>
   );
 }

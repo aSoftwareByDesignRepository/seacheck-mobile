@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Camera, GeoJSONSource, Layer, Map, type CameraRef } from '@maplibre/maplibre-react-native';
 import type { Feature, FeatureCollection } from 'geojson';
 
+import { useExclusiveChartDownloadSession } from '../../hooks/useExclusiveChartDownloadSession';
 import type { RegionPackDefinition } from '../../map/regionPacks';
 import { MAP_EMBED_PREVIEW_HEIGHT } from '../../map/previewConstants';
 import { KIEL_CENTER } from '../../map/constants';
@@ -17,6 +18,7 @@ type Props = {
 export function RegionPackMapPreview({ pack }: Props) {
   const { colors, minTouch } = useTheme();
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
+  const exclusiveChartDownload = useExclusiveChartDownloadSession();
   const cameraRef = useRef<CameraRef>(null);
   const [ready, setReady] = useState(false);
   const [west, south, east, north] = pack.bounds;
@@ -47,15 +49,19 @@ export function RegionPackMapPreview({ pack }: Props) {
     cameraRef.current?.fitBounds(pack.bounds, { padding: { top: 24, right: 24, bottom: 24, left: 24 }, duration: 0 });
   }, [ready, pack.id, pack.bounds]);
 
-  if (!chartStyleUri) {
+  if (!chartStyleUri || exclusiveChartDownload) {
     return (
       <View
         style={[styles.placeholder, { backgroundColor: colors.surface, borderColor: colors.border }]}
         accessibilityRole="summary"
-        accessibilityLabel={t('passage.mapPreviewOffline')}
+        accessibilityLabel={exclusiveChartDownload ? t('downloads.statusSummaryActiveTitle') : t('passage.mapPreviewOffline')}
       >
-        <Text style={[styles.placeholderTitle, { color: colors.text }]}>{t('downloads.previewUnavailableTitle')}</Text>
-        <Text style={[styles.placeholderBody, { color: colors.textMuted }]}>{t('passage.mapPreviewOffline')}</Text>
+        <Text style={[styles.placeholderTitle, { color: colors.text }]}>
+          {exclusiveChartDownload ? t('downloads.statusSummaryActiveTitle') : t('downloads.previewUnavailableTitle')}
+        </Text>
+        <Text style={[styles.placeholderBody, { color: colors.textMuted }]}>
+          {exclusiveChartDownload ? t('downloads.statusSummaryActiveHint') : t('passage.mapPreviewOffline')}
+        </Text>
       </View>
     );
   }

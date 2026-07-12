@@ -110,7 +110,9 @@ export function CustomDownloadSection({
       reportDownloadFailureFromError(regionId, err, 'preflight');
     } finally {
       setBusy(false);
-      const stillDownloading = useOfflinePackStore.getState().activeDownloadRegionId != null;
+      const store = useOfflinePackStore.getState();
+      const stillDownloading =
+        store.activeDownloadRegionId != null || store.downloadMapTeardownRegionId != null;
       if (!stillDownloading) onActionBusyChange?.(null);
     }
   }

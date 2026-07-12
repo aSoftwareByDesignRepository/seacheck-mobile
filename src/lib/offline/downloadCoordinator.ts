@@ -1,11 +1,14 @@
 import { promiseWithTimeout, TimeoutError } from '../async/promiseWithTimeout';
 import { ensureMapLibreNetworkForDownload } from '../network/mapLibreNetworkGate';
+import { downloadMapPostTeardownMs } from './downloadMapConstants';
 
 const NATIVE_PACK_LIST_TIMEOUT_MS = 8_000;
 
 /** One active offline download at a time; stale native callbacks are ignored. */
 class DownloadCoordinator {
   private activeRegionId: string | null = null;
+  private teardownRegionId: string | null = null;
+  private teardownTimer: ReturnType<typeof setTimeout> | null = null;
   private preflightOnly = false;
   private sessions = new Map<string, number>();
   private activityListeners = new Set<() => void>();
@@ -16,6 +19,19 @@ class DownloadCoordinator {
 
   getActiveRegionId(): string | null {
     return this.activeRegionId;
+  }
+
+  getTeardownRegionId(): string | null {
+    return this.teardownRegionId;
+  }
+
+  /** Region id whose DownloadMapEngine must stay mounted (active download or GL teardown). */
+  getExclusiveMapRegionId(): string | null {
+    return this.activeRegionId ?? this.teardownRegionId;
+  }
+
+  hasExclusiveMapSession(): boolean {
+    return this.activeRegionId != null || this.teardownRegionId != null;
   }
 
   hasPreflightLock(regionId: string): boolean {
@@ -74,6 +90,47 @@ class DownloadCoordinator {
     }
   }
 
+  private clearTeardownTimer(): void {
+    if (this.teardownTimer != null) {
+      clearTimeout(this.teardownTimer);
+      this.teardownTimer = null;
+    }
+  }
+
+  /**
+   * Release the coordinator lock but keep the download map as the sole GL owner
+   * until native tile/texture teardown finishes.
+   */
+  beginMapTeardown(regionId: string): void {
+    if (this.activeRegionId === regionId) {
+      this.activeRegionId = null;
+      this.preflightOnly = false;
+    }
+    this.clearTeardownTimer();
+    this.teardownRegionId = regionId;
+    const delayMs = downloadMapPostTeardownMs();
+    if (delayMs <= 0) {
+      this.teardownRegionId = null;
+      this.notifyActivity();
+      return;
+    }
+    this.teardownTimer = setTimeout(() => {
+      if (this.teardownRegionId === regionId) {
+        this.teardownRegionId = null;
+      }
+      this.teardownTimer = null;
+      this.notifyActivity();
+    }, delayMs);
+    this.notifyActivity();
+  }
+
+  cancelMapTeardown(regionId?: string): void {
+    if (regionId != null && this.teardownRegionId !== regionId) return;
+    this.clearTeardownTimer();
+    this.teardownRegionId = null;
+    this.notifyActivity();
+  }
+
   /** Re-lock after app restart when a native pack is still downloading. */
   restoreActive(regionId: string): boolean {
     if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;
@@ -96,6 +153,7 @@ class DownloadCoordinator {
       this.activeRegionId = null;
       this.preflightOnly = false;
     }
+    this.cancelMapTeardown(regionId);
     this.notifyActivity();
   }
 
@@ -106,6 +164,8 @@ class DownloadCoordinator {
   /** Test-only — clears locks and session tokens. */
   resetForTests(): void {
     this.activeRegionId = null;
+    this.clearTeardownTimer();
+    this.teardownRegionId = null;
     this.preflightOnly = false;
     this.sessions.clear();
     this.activityListeners.clear();
@@ -114,9 +174,27 @@ class DownloadCoordinator {
 
 export const downloadCoordinator = new DownloadCoordinator();
 
-/** Subscribe to download lock changes (preflight, start, end, cancel). */
+/** Subscribe to download lock changes (preflight, start, end, cancel, teardown). */
 export function subscribeDownloadCoordinatorActivity(listener: () => void): () => void {
   return downloadCoordinator.subscribeActivity(listener);
+}
+
+/** Wait until the post-download map teardown window ends (no-op when not tearing down). */
+export function waitForDownloadMapTeardown(regionId: string, timeoutMs = downloadMapPostTeardownMs() + 1_000): Promise<void> {
+  if (downloadCoordinator.getTeardownRegionId() !== regionId) return Promise.resolve();
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      unsubscribe();
+      resolve();
+    }, timeoutMs);
+    const unsubscribe = subscribeDownloadCoordinatorActivity(() => {
+      if (downloadCoordinator.getTeardownRegionId() !== regionId) {
+        clearTimeout(timer);
+        unsubscribe();
+        resolve();
+      }
+    });
+  });
 }
 
 /** Test-only — clears active download lock. */

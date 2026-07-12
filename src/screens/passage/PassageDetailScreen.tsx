@@ -3,10 +3,12 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
-import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { PassageCoverageCard } from '../../features/passage/PassageCoverageCard';
+import { PassageEditorLayout } from '../../features/passage/PassageEditorLayout';
+import { PassageMapPreviewPanel } from '../../features/passage/PassageMapPreviewPanel';
 import { PassageMetaSection } from '../../features/passage/PassageMetaSection';
 import { PassageWaypointSection } from '../../features/passage/PassageWaypointSection';
 import { PassageWaypointCoordSheet } from '../../features/passage/PassageWaypointCoordSheet';
@@ -22,6 +24,7 @@ import { useFormFactor } from '../../hooks/useFormFactor';
 import { t } from '../../i18n';
 import type { PassageStackParamList } from '../../navigation/PassageStack';
 import type { RootTabParamList } from '../../navigation/types';
+import { PassageDeactivateButton } from '../../features/passage/PassageDeactivateButton';
 import type { PassageWithLegs } from '../../store/passageStore';
 import { usePassageStore } from '../../store/passageStore';
 import type { WaypointRow } from '../../lib/db/database';
@@ -30,6 +33,8 @@ import { useFeedbackStore } from '../../store/feedbackStore';
 import { useWaypointStore } from '../../store/waypointStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
+import { ButtonStack } from '../../ui/Screen';
+import { EmptyState } from '../../ui/EmptyState';
 
 type DetailRoute = RouteProp<PassageStackParamList, 'PassageDetail'>;
 type TabNav = BottomTabNavigationProp<RootTabParamList>;
@@ -39,7 +44,7 @@ export function PassageDetailScreen() {
   const route = useRoute<DetailRoute>();
   const stackNav = useNavigation<StackNav>();
   const tabNav = useNavigation<TabNav>();
-  const { spacing, minTouch } = useTheme();
+  const { colors, spacing, minTouch } = useTheme();
   const { formFactor } = useFormFactor();
   const compactActions = formFactor === 'compact';
   const passageId = route.params.passageId;
@@ -48,7 +53,6 @@ export function PassageDetailScreen() {
   const deletePassage = usePassageStore((s) => s.deletePassage);
   const duplicatePassage = usePassageStore((s) => s.duplicatePassage);
   const activatePassage = usePassageStore((s) => s.activatePassage);
-  const deactivatePassage = usePassageStore((s) => s.deactivatePassage);
   const removeWaypointFromPassage = usePassageStore((s) => s.removeWaypointFromPassage);
   const reorderWaypointInPassage = usePassageStore((s) => s.reorderWaypointInPassage);
   const reversePassageWaypoints = usePassageStore((s) => s.reversePassageWaypoints);
@@ -63,24 +67,53 @@ export function PassageDetailScreen() {
   const planningRevision = usePassageMapPlanningStore((s) => s.revision);
 
   const [detail, setDetail] = useState<PassageWithLegs | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<'failed' | 'missing' | null>(null);
   const [coordSheet, setCoordSheet] = useState<{ mode: 'add' | 'edit'; waypoint?: WaypointRow } | null>(null);
+  const mountedRef = useRef(true);
 
-  const loadDetail = useCallback(async () => {
-    const d = await getPassageDetail(passageId);
-    setDetail(d);
-    if (d) {
-      stackNav.setOptions({ title: d.name });
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const refreshDetail = useCallback(async () => {
+    try {
+      const d = await getPassageDetail(passageId);
+      if (!mountedRef.current) return d;
+      setDetail(d);
+      setLoadError(d ? null : 'missing');
+      if (d) {
+        stackNav.setOptions({ title: d.name });
+      }
+      return d;
+    } catch {
+      if (mountedRef.current) {
+        setDetail(null);
+        setLoadError('failed');
+      }
+      return null;
     }
   }, [getPassageDetail, passageId, stackNav]);
 
+  const loadPassage = useCallback(async () => {
+    if (!mountedRef.current) return;
+    setLoading(true);
+    setLoadError(null);
+    await refreshDetail();
+    if (mountedRef.current) setLoading(false);
+  }, [refreshDetail]);
+
   useEffect(() => {
-    void loadDetail();
-  }, [loadDetail, passageId]);
+    void loadPassage();
+  }, [loadPassage, passageId]);
 
   useEffect(() => {
     if (planningPassageId !== passageId) return;
-    void loadDetail();
-  }, [planningRevision, planningPassageId, passageId, loadDetail]);
+    void refreshDetail();
+  }, [planningRevision, planningPassageId, passageId, refreshDetail]);
 
   async function handleDuplicate() {
     const copy = await duplicatePassage(passageId);
@@ -103,13 +136,13 @@ export function PassageDetailScreen() {
 
   async function handleMetaName(name: string) {
     await setPassageMeta(passageId, { name });
-    await loadDetail();
+    await refreshDetail();
     showInfo(t('passage.nameSaved'));
   }
 
   async function handleMetaSog(sogKn: number) {
     await setPassageMeta(passageId, { default_sog_kn: sogKn });
-    await loadDetail();
+    await refreshDetail();
   }
 
   async function handleCopySummary() {
@@ -140,130 +173,217 @@ export function PassageDetailScreen() {
     } else {
       await addMapWaypointToPassage(passageId, input.latitude, input.longitude, input.name);
     }
-    await loadDetail();
+    await refreshDetail();
   }
 
-  if (!detail) {
-    return <View style={styles.loading} testID="passage.detail.loading" />;
+  if (loading && !detail) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]} testID="passage.detail.loading">
+        <ActivityIndicator size="large" color={colors.primary} accessibilityLabel={t('common.loading')} />
+      </View>
+    );
   }
+
+  if (loadError || !detail) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]} testID="passage.detail.error">
+        <EmptyState
+          icon={loadError === 'missing' ? 'route' : 'error-outline'}
+          title={loadError === 'missing' ? t('passage.detailNotFound') : t('passage.detailLoadFailed')}
+          body={loadError === 'missing' ? '' : t('passage.detailLoadFailedBody')}
+          actionLabel={loadError === 'missing' ? t('common.back') : t('common.retry')}
+          onAction={() => {
+            if (loadError === 'missing') {
+              stackNav.navigate('PassageList');
+              return;
+            }
+            void loadPassage();
+          }}
+          testID="passage.detail.errorState"
+        />
+      </View>
+    );
+  }
+
+  const showMapPreview = detail.waypoints.length >= 1;
+
+  const editorPane = (
+    <View style={{ gap: spacing.lg }}>
+      <PassageMetaSection
+        detail={detail}
+        onNameChange={(name) => void handleMetaName(name)}
+        onDefaultSogChange={(sog) => void handleMetaSog(sog)}
+      />
+      <PassageWaypointSection
+        detail={detail}
+        onRemove={(wpId) => {
+          void removeWaypointFromPassage(passageId, wpId).then(() => {
+            notifyPassagePlanningChanged(passageId);
+            void refreshDetail();
+          });
+        }}
+        onMoveUp={(index) => {
+          void reorderWaypointInPassage(passageId, index, index - 1).then(() => {
+            notifyPassagePlanningChanged(passageId);
+            void refreshDetail();
+          });
+        }}
+        onMoveDown={(index) => {
+          void reorderWaypointInPassage(passageId, index, index + 1).then(() => {
+            notifyPassagePlanningChanged(passageId);
+            void refreshDetail();
+          });
+        }}
+        onPlanOnMap={handlePlanOnMap}
+        onShowOnMap={handleShowOnMap}
+        onAddByCoords={() => setCoordSheet({ mode: 'add' })}
+        onEditWaypoint={(wp) => setCoordSheet({ mode: 'edit', waypoint: wp })}
+        onReverse={() => {
+          void (async () => {
+            if (passageId === activePassageId) {
+              const ok = await confirmReverseActivePassage();
+              if (!ok) return;
+            }
+            try {
+              await reversePassageWaypoints(passageId);
+              await refreshDetail();
+              showInfo(t('passage.reverseSuccess'));
+            } catch {
+              showError(t('passage.reverseFailed'));
+            }
+          })();
+        }}
+        showMapHandoffButtons={formFactor === 'compact'}
+      />
+      <PassageCoverageCard detail={detail} onOpenDownloads={(opts) => tabNav.navigate('Downloads', opts)} />
+      <View
+        style={[
+          styles.actions,
+          !compactActions ? styles.actionsRow : null,
+          { gap: spacing.sm, minHeight: minTouch },
+        ]}
+      >
+        {compactActions ? (
+          <ButtonStack>
+            {detail.id === activePassageId ? (
+              <PassageDeactivateButton variant="panel" testID="passage.detail.deactivate" />
+            ) : (
+              <Button
+                label={t('passage.activate')}
+                disabled={detail.waypoints.length < 2}
+                onPress={() => {
+                  if (detail.waypoints.length < 2) {
+                    showError(t('passage.activateNeedTwo'));
+                    return;
+                  }
+                  void activatePassage(detail.id)
+                    .then(() => tabNav.navigate('Map'))
+                    .catch(() => showError(t('passage.activateFailed')));
+                }}
+                testID="passage.detail.activate"
+              />
+            )}
+            <Button
+              label={t('passage.exportGpx')}
+              variant="secondary"
+              onPress={() => void exportPassageGpx(detail.id)}
+              testID="passage.exportGpx"
+            />
+            <Button
+              label={t('passage.copySummary')}
+              variant="secondary"
+              onPress={() => void handleCopySummary()}
+              testID="passage.copySummary"
+            />
+            <Button
+              label={t('passage.duplicate')}
+              variant="secondary"
+              onPress={() => void handleDuplicate()}
+              testID="passage.detail.duplicate"
+            />
+            <Button
+              label={t('passage.delete')}
+              variant="danger"
+              onPress={() => void confirmDelete()}
+              testID="passage.detail.delete"
+            />
+          </ButtonStack>
+        ) : (
+          <>
+            {detail.id === activePassageId ? (
+              <PassageDeactivateButton variant="panel" fullWidth={false} style={styles.actionBtn} testID="passage.detail.deactivate" />
+            ) : (
+              <Button
+                label={t('passage.activate')}
+                disabled={detail.waypoints.length < 2}
+                fullWidth={false}
+                style={styles.actionBtn}
+                onPress={() => {
+                  if (detail.waypoints.length < 2) {
+                    showError(t('passage.activateNeedTwo'));
+                    return;
+                  }
+                  void activatePassage(detail.id)
+                    .then(() => tabNav.navigate('Map'))
+                    .catch(() => showError(t('passage.activateFailed')));
+                }}
+                testID="passage.detail.activate"
+              />
+            )}
+            <Button
+              label={t('passage.exportGpx')}
+              variant="secondary"
+              fullWidth={false}
+              style={styles.actionBtn}
+              onPress={() => void exportPassageGpx(detail.id)}
+              testID="passage.exportGpx"
+            />
+            <Button
+              label={t('passage.copySummary')}
+              variant="secondary"
+              fullWidth={false}
+              style={styles.actionBtn}
+              onPress={() => void handleCopySummary()}
+              testID="passage.copySummary"
+            />
+            <Button
+              label={t('passage.duplicate')}
+              variant="secondary"
+              fullWidth={false}
+              style={styles.actionBtn}
+              onPress={() => void handleDuplicate()}
+              testID="passage.detail.duplicate"
+            />
+            <Button
+              label={t('passage.delete')}
+              variant="danger"
+              fullWidth={false}
+              style={styles.actionBtn}
+              onPress={() => void confirmDelete()}
+              testID="passage.detail.delete"
+            />
+          </>
+        )}
+      </View>
+    </View>
+  );
+
+  const mapPreviewPane = showMapPreview ? (
+    <PassageMapPreviewPanel
+      waypoints={detail.waypoints}
+      onPlanOnMap={handlePlanOnMap}
+      onShowOnMap={handleShowOnMap}
+    />
+  ) : null;
 
   return (
     <>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { padding: spacing.lg, gap: spacing.lg }]}
+        contentContainerStyle={[styles.scroll, { padding: spacing.lg }]}
         keyboardShouldPersistTaps="handled"
         testID="passage.detail"
       >
-        <PassageMetaSection
-          detail={detail}
-          onNameChange={(name) => void handleMetaName(name)}
-          onDefaultSogChange={(sog) => void handleMetaSog(sog)}
-        />
-        <PassageWaypointSection
-          detail={detail}
-          onRemove={(wpId) => {
-            void removeWaypointFromPassage(passageId, wpId).then(() => {
-              notifyPassagePlanningChanged(passageId);
-              void loadDetail();
-            });
-          }}
-          onMoveUp={(index) => {
-            void reorderWaypointInPassage(passageId, index, index - 1).then(() => {
-              notifyPassagePlanningChanged(passageId);
-              void loadDetail();
-            });
-          }}
-          onMoveDown={(index) => {
-            void reorderWaypointInPassage(passageId, index, index + 1).then(() => {
-              notifyPassagePlanningChanged(passageId);
-              void loadDetail();
-            });
-          }}
-          onPlanOnMap={handlePlanOnMap}
-          onShowOnMap={handleShowOnMap}
-          onAddByCoords={() => setCoordSheet({ mode: 'add' })}
-          onEditWaypoint={(wp) => setCoordSheet({ mode: 'edit', waypoint: wp })}
-          onReverse={() => {
-            void (async () => {
-              if (passageId === activePassageId) {
-                const ok = await confirmReverseActivePassage();
-                if (!ok) return;
-              }
-              try {
-                await reversePassageWaypoints(passageId);
-                void loadDetail();
-                showInfo(t('passage.reverseSuccess'));
-              } catch {
-                showError(t('passage.reverseFailed'));
-              }
-            })();
-          }}
-        />
-        <PassageCoverageCard
-          detail={detail}
-          onOpenDownloads={(opts) => tabNav.navigate('Downloads', opts)}
-        />
-        <View
-          style={[
-            styles.actions,
-            !compactActions ? styles.actionsRow : null,
-            { gap: spacing.sm, minHeight: minTouch },
-          ]}
-        >
-          {detail.id === activePassageId ? (
-            <Button
-              label={t('passage.deactivate')}
-              variant="secondary"
-              fullWidth={compactActions}
-              onPress={() => void deactivatePassage()}
-              testID="passage.detail.deactivate"
-            />
-          ) : (
-            <Button
-              label={t('passage.activate')}
-              disabled={detail.waypoints.length < 2}
-              fullWidth={compactActions}
-              onPress={() => {
-                if (detail.waypoints.length < 2) {
-                  showError(t('passage.activateNeedTwo'));
-                  return;
-                }
-                void activatePassage(detail.id)
-                  .then(() => tabNav.navigate('Map'))
-                  .catch(() => showError(t('passage.activateFailed')));
-              }}
-              testID="passage.detail.activate"
-            />
-          )}
-          <Button
-            label={t('passage.exportGpx')}
-            variant="secondary"
-            fullWidth={compactActions}
-            onPress={() => void exportPassageGpx(detail.id)}
-            testID="passage.exportGpx"
-          />
-          <Button
-            label={t('passage.copySummary')}
-            variant="secondary"
-            fullWidth={compactActions}
-            onPress={() => void handleCopySummary()}
-            testID="passage.copySummary"
-          />
-          <Button
-            label={t('passage.duplicate')}
-            variant="secondary"
-            fullWidth={compactActions}
-            onPress={() => void handleDuplicate()}
-            testID="passage.detail.duplicate"
-          />
-          <Button
-            label={t('passage.delete')}
-            variant="danger"
-            fullWidth={compactActions}
-            onPress={() => void confirmDelete()}
-            testID="passage.detail.delete"
-          />
-        </View>
+        <PassageEditorLayout editor={editorPane} mapPreview={mapPreviewPane} />
       </ScrollView>
       <PassageWaypointCoordSheet
         visible={coordSheet != null}
@@ -278,7 +398,8 @@ export function PassageDetailScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flexGrow: 1 },
-  loading: { flex: 1 },
+  centered: { flex: 1, justifyContent: 'center' },
   actions: { marginTop: 4 },
   actionsRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  actionBtn: { flexGrow: 1, flexBasis: '48%', minWidth: 140 },
 });

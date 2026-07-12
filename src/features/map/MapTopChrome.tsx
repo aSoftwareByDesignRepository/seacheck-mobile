@@ -31,7 +31,12 @@ type Props = {
 };
 
 /** Max height for the whole top chrome stack — scrolls when hints, alerts, and banners pile up. */
-function topChromeMaxHeight(screenHeight: number, formFactor: 'compact' | 'medium' | 'expanded'): number {
+function topChromeMaxHeight(screenHeight: number, formFactor: 'compact' | 'medium' | 'expanded', isLandscape: boolean): number {
+  if (isLandscape) {
+    const ratio = formFactor === 'expanded' ? 0.28 : formFactor === 'medium' ? 0.3 : 0.32;
+    const cap = formFactor === 'expanded' ? 200 : formFactor === 'medium' ? 180 : 160;
+    return Math.min(cap, Math.round(screenHeight * ratio));
+  }
   const ratio = formFactor === 'expanded' ? 0.44 : formFactor === 'medium' ? 0.42 : 0.4;
   const cap = formFactor === 'expanded' ? 360 : formFactor === 'medium' ? 320 : 280;
   return Math.min(cap, Math.round(screenHeight * ratio));
@@ -53,7 +58,7 @@ export function MapTopChrome({
   onTopChromeLayout,
 }: Props) {
   const { spacing, minTouch } = useTheme();
-  const { formFactor, height } = useFormFactor();
+  const { formFactor, height, isLandscape } = useFormFactor();
   const isOffline = useIsDeviceDisconnected();
   const offlineHydrated = useOfflinePackStore((s) => s.hydrated);
   const offlineRegions = useOfflinePackStore((s) => s.regions);
@@ -75,7 +80,7 @@ export function MapTopChrome({
     offlineChartAlertDismissed,
   });
 
-  const chromeMaxHeight = topChromeMaxHeight(height, formFactor);
+  const chromeMaxHeight = topChromeMaxHeight(height, formFactor, isLandscape);
   const chipStripMinHeight = minTouch + spacing.xs * 2 + 4;
 
   return (

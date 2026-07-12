@@ -5,7 +5,13 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { t } from '../i18n';
-import { ALL_BOTTOM_TABS, FULL_TAB_BAR_WIDTH, RAIL_WIDTH, resolveBottomTabLayout, type TabName } from '../navigation/tabBarLayout';
+import {
+  ALL_BOTTOM_TABS,
+  FULL_TAB_BAR_WIDTH,
+  navigationRailOccupiedWidth,
+  resolveBottomTabLayout,
+  type TabName,
+} from '../navigation/tabBarLayout';
 import { navigateToTab, tabLabel, TAB_ICONS } from '../navigation/tabBarHelpers';
 import { useTabOverflowStore } from '../navigation/tabOverflowStore';
 import { useTheme } from '../theme/ThemeContext';
@@ -22,10 +28,22 @@ function NavigationRail({ state, descriptors, navigation }: BottomTabBarProps) {
     syncTabBarProps({ state, descriptors, navigation });
   }, [state, descriptors, navigation, setMenuOpen, syncTabBarProps]);
 
+  const railWidth = navigationRailOccupiedWidth(insets.left);
+
   return (
     <View
       accessibilityRole="tablist"
-      style={[styles.rail, { backgroundColor: colors.surface, borderRightColor: colors.border, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 8 }]}
+      style={[
+        styles.rail,
+        {
+          width: railWidth,
+          backgroundColor: colors.surface,
+          borderRightColor: colors.border,
+          paddingTop: insets.top + 8,
+          paddingBottom: insets.bottom + 8,
+          paddingLeft: insets.left + 6,
+        },
+      ]}
       testID="nav.rail"
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.railScroll}>
@@ -52,7 +70,12 @@ function NavigationRail({ state, descriptors, navigation }: BottomTabBarProps) {
               testID={`tab.${name.toLowerCase()}`}
             >
               <MaterialIcons name={TAB_ICONS[name]} size={24} color={focused ? colors.primary : colors.textMuted} />
-              <Text style={[styles.railLabel, { color: focused ? colors.primary : colors.textMuted }]} numberOfLines={1}>
+              <Text
+                style={[styles.railLabel, { color: focused ? colors.primary : colors.textMuted }]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
                 {tabLabel(name)}
               </Text>
             </Pressable>
@@ -214,10 +237,11 @@ export function AdaptiveTabBar(props: BottomTabBarProps & { variant?: 'rail' | '
 }
 
 const styles = StyleSheet.create({
-  rail: { width: RAIL_WIDTH, borderRightWidth: 1, paddingHorizontal: 6 },
+  /** Fixed width — never flex:1; custom tab bars ignore tabBarStyle.width from screenOptions. */
+  rail: { flexGrow: 0, flexShrink: 0, alignSelf: 'stretch', borderRightWidth: 1, paddingRight: 6 },
   railScroll: { gap: 4, paddingBottom: 8 },
   railItem: { borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 4, gap: 4 },
-  railLabel: { fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  railLabel: { fontSize: 11, fontWeight: '700', textAlign: 'center', lineHeight: 14 },
   tabBar: { borderTopWidth: StyleSheet.hairlineWidth },
   tabRow: { flexDirection: 'row', alignItems: 'stretch' },
   tabItem: {

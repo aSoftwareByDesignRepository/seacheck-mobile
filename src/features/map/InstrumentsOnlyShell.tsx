@@ -15,7 +15,7 @@ type Props = {
   onOpenPassage: () => void;
 };
 
-/** Full-screen instruments — safety actions overlay via MapChrome (same as map layouts). */
+/** Full-screen instruments — safety actions via MapChrome on the screen root (NavigationMap). */
 export function InstrumentsOnlyShell({
   fix,
   topChrome,

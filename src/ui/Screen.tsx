@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
+import { useFormFactor } from '../hooks/useFormFactor';
 import { t } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -23,10 +24,48 @@ type ScreenProps = PropsWithChildren<{
   error?: string | null;
   onRetry?: () => void;
   scrollRef?: RefObject<ScrollView | null>;
+  /** When false, children fill the safe area without an outer ScrollView (use for FlatList roots). */
+  scroll?: boolean;
 }>;
 
-export function Screen({ testID, title, subtitle, loading, error, onRetry, scrollRef, children }: ScreenProps) {
+export function Screen({
+  testID,
+  title,
+  subtitle,
+  loading,
+  error,
+  onRetry,
+  scrollRef,
+  scroll = true,
+  children,
+}: ScreenProps) {
   const { colors, spacing } = useTheme();
+  const { formFactor } = useFormFactor();
+  const contentMaxWidth = formFactor === 'expanded' ? 1200 : formFactor === 'medium' ? 960 : undefined;
+
+  const header = (
+    <>
+      {title ? (
+        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
+          {title}
+        </Text>
+      ) : null}
+      {subtitle ? <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
+      {error ? (
+        <View
+          style={[styles.errorBox, { backgroundColor: colors.dangerBg, borderColor: colors.dangerBorder }]}
+          accessibilityRole="alert"
+        >
+          <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
+          {onRetry ? (
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.retry')} onPress={onRetry} style={styles.retry}>
+              <Text style={[styles.retryText, { color: colors.primary }]}>{t('common.retry')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+    </>
+  );
 
   if (loading && !children) {
     return (
@@ -38,33 +77,46 @@ export function Screen({ testID, title, subtitle, loading, error, onRetry, scrol
     );
   }
 
+  if (!scroll) {
+    return (
+      <SafeAreaView edges={TAB_SCREEN_EDGES} testID={testID} style={[styles.safe, { backgroundColor: colors.background }]}>
+        <View
+          style={[
+            styles.staticBody,
+            {
+              paddingHorizontal: spacing.xl,
+              paddingVertical: spacing.xl,
+              alignItems: contentMaxWidth ? 'center' : undefined,
+            },
+          ]}
+        >
+          <View style={[styles.inner, styles.innerFill, contentMaxWidth ? { maxWidth: contentMaxWidth } : null]}>
+            {header}
+            {children}
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView edges={TAB_SCREEN_EDGES} testID={testID} style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
         ref={scrollRef}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.content, { paddingHorizontal: spacing.xl, paddingVertical: spacing.xl }]}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingHorizontal: spacing.xl,
+            paddingVertical: spacing.xl,
+            alignItems: contentMaxWidth ? 'center' : undefined,
+          },
+        ]}
       >
-        {title ? (
-          <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
-            {title}
-          </Text>
-        ) : null}
-        {subtitle ? <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
-        {error ? (
-          <View
-            style={[styles.errorBox, { backgroundColor: colors.dangerBg, borderColor: colors.dangerBorder }]}
-            accessibilityRole="alert"
-          >
-            <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
-            {onRetry ? (
-              <Pressable accessibilityRole="button" accessibilityLabel={t('common.retry')} onPress={onRetry} style={styles.retry}>
-                <Text style={[styles.retryText, { color: colors.primary }]}>{t('common.retry')}</Text>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : null}
+        <View style={[styles.inner, contentMaxWidth ? { maxWidth: contentMaxWidth } : null]}>
+        {header}
         {children}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -222,7 +274,10 @@ function TextInputLike({
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  staticBody: { flex: 1, minHeight: 0 },
   content: { flexGrow: 1 },
+  inner: { width: '100%', alignSelf: 'stretch' },
+  innerFill: { flex: 1, minHeight: 0 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 28, fontWeight: '700', marginBottom: 8 },
   subtitle: { fontSize: 15, marginBottom: 20, lineHeight: 22 },

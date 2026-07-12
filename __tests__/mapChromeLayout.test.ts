@@ -188,6 +188,22 @@ describe('computeMapChromeLayout', () => {
       layout.instrumentDockBottom + reserve + MAP_SAFETY_COLUMN_GAP + MAP_SAFETY_COLUMN_GAP,
     );
   });
+
+  it('suppresses bottom dock reserve in split map layout', () => {
+    const stacked = computeMapChromeLayout({
+      ...base,
+      layoutPreset: 'map-forward',
+      showSideActions: true,
+    });
+    const split = computeMapChromeLayout({
+      ...base,
+      layoutPreset: 'map-forward',
+      showSideActions: true,
+      suppressBottomDock: true,
+    });
+    expect(split.instrumentDockHeight).toBe(0);
+    expect(split.attributionBottom).toBeLessThan(stacked.attributionBottom);
+  });
 });
 
 describe('computeSafetyActionsMetrics', () => {

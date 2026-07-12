@@ -9,18 +9,23 @@ const TAG = 'seacheck-download';
 /** Prevent screen sleep while a chart pack download session is active. */
 export function useDownloadKeepAwake(): void {
   const activeDownloadRegionId = useOfflinePackStore((s) => s.activeDownloadRegionId);
+  const downloadMapTeardownRegionId = useOfflinePackStore((s) => s.downloadMapTeardownRegionId);
   const hasDownloadingRegion = useOfflinePackStore((s) =>
     Object.values(s.regions).some((r) => r.state === 'downloading'),
   );
 
   useEffect(() => {
     const downloadActive =
-      downloadCoordinator.hasActiveDownload() || activeDownloadRegionId != null || hasDownloadingRegion;
+      downloadCoordinator.hasActiveDownload() ||
+      downloadCoordinator.hasExclusiveMapSession() ||
+      activeDownloadRegionId != null ||
+      downloadMapTeardownRegionId != null ||
+      hasDownloadingRegion;
     if (!downloadActive) return;
 
     void activateKeepAwakeAsync(TAG);
     return () => {
       void deactivateKeepAwake(TAG);
     };
-  }, [activeDownloadRegionId, hasDownloadingRegion]);
+  }, [activeDownloadRegionId, downloadMapTeardownRegionId, hasDownloadingRegion]);
 }

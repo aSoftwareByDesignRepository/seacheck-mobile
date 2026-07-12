@@ -1,6 +1,7 @@
 import {
   countFailedPacks,
   countReadyPacks,
+  isDownloadMapSessionActive,
   isPackDownloadActive,
   listFailedPacks,
   packHasDownloadFailure,
@@ -14,6 +15,17 @@ describe('packDownloadPresentation', () => {
     expect(isPackDownloadActive('kiel-bay', { state: 'idle' }, 'kiel-bay')).toBe(true);
     expect(isPackDownloadActive('kiel-bay', { state: 'downloading' }, null)).toBe(true);
     expect(isPackDownloadActive('kiel-bay', { state: 'idle' }, 'other')).toBe(false);
+    expect(isPackDownloadActive('kiel-bay', { state: 'ready' }, 'kiel-bay')).toBe(false);
+  });
+
+  it('keeps the download map visible while finalizing a ready pack', () => {
+    expect(isDownloadMapSessionActive('kiel-bay', { state: 'ready' }, 'kiel-bay', null)).toBe(true);
+    expect(isDownloadMapSessionActive('kiel-bay', { state: 'downloading' }, 'kiel-bay', null)).toBe(true);
+    expect(isDownloadMapSessionActive('kiel-bay', { state: 'ready' }, null, null)).toBe(false);
+  });
+
+  it('keeps the download map visible during post-session teardown', () => {
+    expect(isDownloadMapSessionActive('kiel-bay', { state: 'ready' }, null, 'kiel-bay')).toBe(true);
   });
 
   it('maps pack states to badge variants', () => {
@@ -43,7 +55,7 @@ describe('packDownloadPresentation', () => {
   });
 
   it('shows initializing label before native enumeration', () => {
-    expect(packStatusLabel({ state: 'downloading', percentage: 0, downloadInitializing: true })).toMatch(/prepar/i);
+    expect(packStatusLabel({ state: 'downloading', percentage: 0, downloadInitializing: true })).toMatch(/loading charts/i);
   });
 
   it('treats ready pack with error as failed', () => {

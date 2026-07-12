@@ -18,6 +18,7 @@ import { layoutContextKey, normalizeLayoutPreset, type LayoutContext } from '../
 import { enqueuePersist } from '../lib/persist/asyncPersistQueue';
 import { buildActivityProfileSettingsPatch, getActivityProfile, normalizeActivityProfileId } from '../settings/profiles';
 import { normalizeAnchorRadiusNm, normalizeCourseVectorMinutes, normalizeCourseVectorScale, normalizeFollowZoom } from '../lib/settings/mapSettings';
+import { parsePersistedBoolean } from '../lib/settings/parsePersistedBoolean';
 
 const STORAGE_KEY = 'seacheck.settings.v1';
 
@@ -51,6 +52,8 @@ type PersistPayload = {
   mapShowRecordingDistance: boolean;
   /** Cross-track error readout in instrument panels — alarms use navigationStore limits regardless. */
   mapShowXte: boolean;
+  /** Leeway (COG vs heading) readout in instrument panels. */
+  mapShowLeeway: boolean;
   anchorRadiusNm: AnchorRadiusNm;
   followMode: boolean;
   keepAwakeUnderway: boolean;
@@ -100,6 +103,7 @@ async function persist(state: SettingsState) {
     mapShowPassageRouteLines: state.mapShowPassageRouteLines,
     mapShowRecordingDistance: state.mapShowRecordingDistance,
     mapShowXte: state.mapShowXte,
+    mapShowLeeway: state.mapShowLeeway,
     anchorRadiusNm: state.anchorRadiusNm,
     followMode: state.followMode,
     keepAwakeUnderway: state.keepAwakeUnderway,
@@ -135,6 +139,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   mapShowPassageRouteLines: true,
   mapShowRecordingDistance: false,
   mapShowXte: CRUISE_PASSAGE_DEFAULTS.mapShowXte,
+  mapShowLeeway: CRUISE_PASSAGE_DEFAULTS.mapShowLeeway,
   vessel: emptyVessel,
   downloadWifiOnly: true,
   gloveMode: false,
@@ -174,7 +179,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           mapFollowZoom: normalizeFollowZoom(parsed.mapFollowZoom),
           mapShowPassageRouteLines: parsed.mapShowPassageRouteLines ?? true,
           mapShowRecordingDistance: parsed.mapShowRecordingDistance ?? false,
-          mapShowXte: parsed.mapShowXte ?? CRUISE_PASSAGE_DEFAULTS.mapShowXte,
+          mapShowXte: parsePersistedBoolean(parsed.mapShowXte, CRUISE_PASSAGE_DEFAULTS.mapShowXte),
+          mapShowLeeway: parsePersistedBoolean(parsed.mapShowLeeway, CRUISE_PASSAGE_DEFAULTS.mapShowLeeway),
           anchorRadiusNm: normalizeAnchorRadiusNm(parsed.anchorRadiusNm),
           followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode,
           keepAwakeUnderway: parsed.keepAwakeUnderway ?? CRUISE_PASSAGE_DEFAULTS.keepAwakeUnderway,

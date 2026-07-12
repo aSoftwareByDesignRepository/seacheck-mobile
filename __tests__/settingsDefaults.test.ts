@@ -17,6 +17,7 @@ describe('CRUISE_PASSAGE_DEFAULTS', () => {
       keepAwakeUnderway: true,
       barometerEnabled: false,
       mapShowXte: false,
+      mapShowLeeway: false,
       gpsSmoothPosition: true,
     });
   });

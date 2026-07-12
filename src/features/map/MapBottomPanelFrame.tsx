@@ -25,7 +25,7 @@ export function MapBottomPanelFrame({
   accentTop = false,
   zIndex = 55,
 }: Props) {
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, minTouch } = useTheme();
   const panelMaxHeight = mapBottomPanelReserve(maxContentHeight);
 
   return (
@@ -42,7 +42,7 @@ export function MapBottomPanelFrame({
       >
         <ScrollView
           style={{ maxHeight: maxContentHeight }}
-          contentContainerStyle={[styles.scroll, { gap: spacing.sm, padding: spacing.md }]}
+          contentContainerStyle={[styles.scroll, { gap: spacing.sm, padding: spacing.md, minHeight: minTouch }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}

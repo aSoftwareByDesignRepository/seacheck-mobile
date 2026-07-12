@@ -20,6 +20,7 @@ import {
 
 import { useIsDeviceDisconnected } from '../../lib/network/connectivity';
 import { useChartCoverageAtPoint } from '../../hooks/useChartCoverageAtPoint';
+import { useExclusiveChartDownloadSession } from '../../hooks/useExclusiveChartDownloadSession';
 import { selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
 import { useMapCameraFollow } from '../../hooks/useMapCameraFollow';
 import { CustomDownloadMapPanel } from '../downloads/CustomDownloadMapPanel';
@@ -33,6 +34,9 @@ import {
 import { pulseUiAcknowledgement } from '../../services/alarmFeedbackService';
 import { ResponsiveMapShell } from '../responsive/ResponsiveMapShell';
 import { useEffectiveLayoutPreset } from '../../hooks/useEffectiveLayoutPreset';
+import { useEffectiveMapSplit } from '../../hooks/useEffectiveMapSplit';
+import { useFormFactor } from '../../hooks/useFormFactor';
+import { resolveMapSafetyChromePlacement } from '../../lib/map/mapScreenLayoutPolicy';
 import { useMapBottomLayout } from '../../hooks/useMapBottomLayout';
 import { useMobLayoutSwitch } from '../../hooks/useMobLayoutSwitch';
 import { useMapSurfaceMode } from '../../hooks/useMapSurfaceMode';
@@ -68,6 +72,7 @@ import { CourseVectorOverlay } from './CourseVectorOverlay';
 import { MapBottomDock } from './MapBottomDock';
 import { MapChrome } from './MapChrome';
 import { MapInstrumentDock } from './MapInstrumentDock';
+import { MapInstrumentPanel } from './MapInstrumentPanel';
 import { InstrumentsOnlyShell } from './InstrumentsOnlyShell';
 import { MapTopChrome } from './MapTopChrome';
 import { MobNavigateBackOverlay } from './MobNavigateBackOverlay';
@@ -108,6 +113,7 @@ export function NavigationMap() {
   const screenLocked = useNavigationStore((s) => s.screenLocked);
   const mobTarget = useNavigationStore((s) => s.mobTarget);
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
+  const exclusiveChartDownload = useExclusiveChartDownloadSession();
   const styleEngineReloadNonce = useSyncExternalStore(
     subscribeOfflineMapEngineStyleReload,
     getOfflineMapEngineStyleReloadNonce,
@@ -131,6 +137,8 @@ export function NavigationMap() {
   const setCustomCorner = useCustomDownloadStore((s) => s.setCorner);
   const [followActive, setFollowActive] = useState(followMode);
   const layoutPreset = useEffectiveLayoutPreset();
+  const effectiveSplit = useEffectiveMapSplit();
+  const { width: windowWidth, height: windowHeight } = useFormFactor();
   const isMinimalLayout = layoutPreset === 'minimal';
   const isMapForwardLayout = layoutPreset === 'map-forward';
   const isInstrumentsOnlyLayout = layoutPreset === 'instruments-only';
@@ -142,9 +150,12 @@ export function NavigationMap() {
   /** Ashore / planning / download area pick — no lock, anchor, or MOB on the chart edge. */
   const showSideActions =
     !screenLocked && !mobTarget && !passageMapPlanning && !customSelecting;
-  const showRootSafetyColumn = showSideActions;
+  const safetyChromePlacement = resolveMapSafetyChromePlacement({
+    showSideActions,
+    effectiveSplit,
+  });
   const mapBottom = useMapBottomLayout({ showSideActions });
-  const instrumentsTopChromeLayout = useMapBottomLayout({ showSideActions: showRootSafetyColumn });
+  const instrumentsTopChromeLayout = useMapBottomLayout({ showSideActions });
   const [seamarkHit, setSeamarkHit] = useState<SeamarkHit | null>(null);
   const [waypointHit, setWaypointHit] = useState<WaypointRow | null>(null);
   const [trackPointHit, setTrackPointHit] = useState<TrackPointRow | null>(null);
@@ -548,7 +559,7 @@ export function NavigationMap() {
   const mapOverlays = !customSelecting && !passageMapPlanning ? (
     <View pointerEvents="box-none" style={[styles.topOverlay, { top: mapBottom.top, left: mapBottom.left, right: mapBottom.right }]}>
       <MapTopChrome
-        actionColumnWidth={showRootSafetyColumn ? mapBottom.actionColumnWidth : 0}
+        actionColumnWidth={showSideActions ? mapBottom.actionColumnWidth : 0}
         onOpenDownloads={() => navigation.navigate('Downloads')}
         onOpenSettings={() => navigation.navigate('Settings')}
         onOpenTracks={openTracks}
@@ -565,11 +576,24 @@ export function NavigationMap() {
     <View style={[styles.map, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}>
       <Text style={{ color: colors.textMuted }}>{t('boot.loading')}</Text>
     </View>
+  ) : exclusiveChartDownload ? (
+    <View
+      style={[styles.map, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.sm }]}
+      accessibilityRole="summary"
+      accessibilityLabel={t('downloads.statusSummaryActiveTitle')}
+    >
+      <Text style={{ color: colors.text, fontWeight: '700', fontSize: 16, textAlign: 'center' }}>
+        {t('downloads.statusSummaryActiveTitle')}
+      </Text>
+      <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: 'center' }}>
+        {t('downloads.statusSummaryActiveHint')}
+      </Text>
+    </View>
   ) : chartStyleUri ? (
     <View style={styles.mapHost} pointerEvents={screenLocked ? 'none' : 'box-none'}>
       <View style={styles.mapClip}>
         <Map
-        key={Platform.OS === 'android' ? `nav-chart-${styleEngineReloadNonce}` : 'nav-chart'}
+        key={Platform.OS === 'android' ? `nav-chart-${windowWidth}x${windowHeight}-${styleEngineReloadNonce}` : `nav-chart-${windowWidth}x${windowHeight}`}
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         accessible
@@ -705,6 +729,21 @@ export function NavigationMap() {
     </View>
   );
 
+  const mapPaneHost = (
+    <View style={styles.mapPaneHost}>
+      {mapNode}
+      {safetyChromePlacement === 'mapPane' ? (
+        <View pointerEvents="box-none" style={styles.mapOverlayLayer}>
+          <MapChrome
+            onMobDropped={switchLayoutOnMob}
+            showAnchor={!(isInstrumentsOnlyLayout && !showChartInInstrumentsOnly)}
+            screenLocked={screenLocked}
+          />
+        </View>
+      ) : null}
+    </View>
+  );
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]} testID="screen.map">
       {isInstrumentsOnlyLayout && !showChartInInstrumentsOnly ? (
@@ -729,7 +768,14 @@ export function NavigationMap() {
       ) : showChartInInstrumentsOnly && isInstrumentsOnlyLayout ? (
         <View style={styles.mapOnlyHost}>{mapNode}</View>
       ) : (
-        <ResponsiveMapShell map={mapNode} />
+        <ResponsiveMapShell
+          map={mapPaneHost}
+          instrumentPanel={
+            effectiveSplit ? (
+              <MapInstrumentPanel fix={fix} onOpenPassage={openPassage} />
+            ) : null
+          }
+        />
       )}
 
       {customSelecting && !mobTarget ? (
@@ -745,13 +791,13 @@ export function NavigationMap() {
 
       {passageMapPlanning && !customSelecting && !mobTarget ? <PassageMapPlanningPanel /> : null}
 
-      {surface.showBottomDock && (isMinimalLayout || (isInstrumentsOnlyLayout && showChartInInstrumentsOnly)) ? (
+      {surface.showBottomDock && !effectiveSplit && (isMinimalLayout || (isInstrumentsOnlyLayout && showChartInInstrumentsOnly)) ? (
         <MapBottomDock fix={fix} onOpenPassage={openPassage} />
       ) : null}
-      {surface.showBottomDock && isMapForwardLayout ? (
+      {surface.showBottomDock && !effectiveSplit && isMapForwardLayout ? (
         <MapInstrumentDock fix={fix} onOpenPassage={openPassage} />
       ) : null}
-      {showRootSafetyColumn ? (
+      {safetyChromePlacement === 'root' ? (
         <MapChrome
           onMobDropped={switchLayoutOnMob}
           showAnchor={!(isInstrumentsOnlyLayout && !showChartInInstrumentsOnly)}
@@ -836,11 +882,12 @@ export function NavigationMap() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, minHeight: 0 },
+  mapPaneHost: { flex: 1, minHeight: 0, minWidth: 0 },
   mapOnlyHost: { flex: 1, minHeight: 0 },
-  mapHost: { flex: 1, minHeight: 0 },
+  mapHost: { flex: 1, minHeight: 0, width: '100%' },
   mapClip: { ...StyleSheet.absoluteFill, overflow: 'hidden' },
-  map: { flex: 1, minHeight: 0, overflow: 'hidden' },
+  map: { flex: 1, minHeight: 0, overflow: 'hidden', width: '100%' },
   mapOverlayLayer: { ...StyleSheet.absoluteFill, zIndex: 50, elevation: 50 },
   topOverlay: { position: 'absolute', left: 0, right: 0, zIndex: 20 },
   hint: { borderWidth: 1, borderRadius: 12, padding: 10 },

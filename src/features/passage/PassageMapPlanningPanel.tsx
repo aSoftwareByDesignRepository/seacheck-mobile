@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -16,6 +16,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
 import { MapBottomPanelFrame } from '../map/MapBottomPanelFrame';
 import { PASSAGE_PLANNING_PANEL_CONTENT_MAX } from '../map/mapChromeLayout';
+import { PassageDeactivateButton } from './PassageDeactivateButton';
 
 /**
  * Passage planning bar on the map — flush on the tab bar.
@@ -34,15 +35,25 @@ export function PassageMapPlanningPanel() {
   const activatePassage = usePassageStore((s) => s.activatePassage);
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const showError = useFeedbackStore((s) => s.showError);
+  const showInfo = useFeedbackStore((s) => s.showInfo);
   const [detail, setDetail] = useState<PassageWithLegs | null>(null);
   const [busy, setBusy] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!passageId) {
-      setDetail(null);
+      if (mountedRef.current) setDetail(null);
       return;
     }
-    setDetail(await getPassageDetail(passageId));
+    const d = await getPassageDetail(passageId);
+    if (mountedRef.current) setDetail(d);
   }, [passageId, getPassageDetail]);
 
   useEffect(() => {
@@ -122,6 +133,7 @@ export function PassageMapPlanningPanel() {
     try {
       await activatePassage(passageId!);
       stopPassageMapPlanning();
+      showInfo(t('passage.activated'));
     } catch {
       showError(t('passage.activateFailed'));
     } finally {
@@ -195,6 +207,13 @@ export function PassageMapPlanningPanel() {
             testID="passage.mapPlanning.activate"
             fullWidth={false}
             style={styles.actionBtn}
+          />
+        ) : isActivePassage ? (
+          <PassageDeactivateButton
+            variant="panel"
+            fullWidth={false}
+            style={styles.actionBtn}
+            testID="passage.mapPlanning.deactivate"
           />
         ) : null}
       </View>

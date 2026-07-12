@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import type { PassagePackSuggestionDetail } from '../../hooks/usePassagePackSuggestions';
 import { isLargeRegionPack } from '../../map/regionPackValidation';
@@ -7,6 +7,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
 import { StatusBadge } from '../../ui/StatusBadge';
 import { DownloadProgressBar } from '../downloads/DownloadProgressBar';
+import { downloadsStyles } from '../downloads/downloadsStyles';
 import {
   isPackDownloadActive,
   packStatusBadgeVariant,
@@ -21,6 +22,9 @@ type Props = {
   onDownload: () => void;
   onCancel?: () => void;
   onBrowsePack?: () => void;
+  showDivider?: boolean;
+  /** Hide per-row progress when another pack is downloading. */
+  suppressActiveProgress?: boolean;
 };
 
 export function PassagePackSuggestionRow({
@@ -30,13 +34,16 @@ export function PassagePackSuggestionRow({
   onDownload,
   onCancel,
   onBrowsePack,
+  showDivider = false,
+  suppressActiveProgress = false,
 }: Props) {
-  const { colors, minTouch, spacing } = useTheme();
+  const { colors, spacing, minTouch } = useTheme();
   const { status } = suggestion;
   const largePack = isLargeRegionPack(suggestion.pack);
   const downloadActive = isPackDownloadActive(suggestion.packId, status, activeDownloadRegionId);
   const stateLabel = packStatusLabel(status);
   const seamarkLabel = seamarkStatusLabel(status);
+  const showProgress = downloadActive && !(suppressActiveProgress && downloadActive);
 
   const downloadLabel = downloadActive
     ? t('downloads.downloading')
@@ -44,36 +51,67 @@ export function PassagePackSuggestionRow({
       ? t('downloads.retryDownload')
       : t('passage.downloadPack');
 
+  const a11yParts = [
+    suggestion.label,
+    stateLabel,
+    t('passage.suggestionLegs', { count: suggestion.coversLegCount }),
+    `~${suggestion.sizeLabel}`,
+  ];
+  if (seamarkLabel) a11yParts.push(seamarkLabel);
+  if (status.error) a11yParts.push(status.error);
+
   return (
     <View
-      style={[styles.row, { borderColor: colors.border, backgroundColor: colors.surface, minHeight: minTouch }]}
+      style={[
+        downloadsStyles.listItem,
+        showDivider ? [downloadsStyles.listItemDivider, { borderTopColor: colors.border }] : null,
+      ]}
       testID={`passage.suggestion.${suggestion.packId}`}
-      accessibilityLabel={`${suggestion.label}. ${stateLabel}. ${t('passage.suggestionLegs', { count: suggestion.coversLegCount })}`}
+      accessibilityLabel={a11yParts.join('. ')}
     >
-      <View style={styles.main}>
-        <Text style={[styles.name, { color: colors.text }]} accessibilityRole="header">
+      <View style={downloadsStyles.titleRow}>
+        <Text style={[downloadsStyles.packName, { color: colors.text, flex: 1 }]} accessibilityRole="header">
           {suggestion.label}
         </Text>
-        <Text style={[styles.meta, { color: colors.textMuted }]}>
-          {t('passage.suggestionLegs', { count: suggestion.coversLegCount })} · ~{suggestion.sizeLabel}
-        </Text>
-        <StatusBadge label={stateLabel} variant={packStatusBadgeVariant(status)} />
-        {downloadActive ? (
-          <DownloadProgressBar percentage={status.percentage} label={stateLabel} testID={`passage.suggestion.progress.${suggestion.packId}`} />
-        ) : null}
-        {largePack && status.state !== 'ready' ? (
-          <Text style={[styles.meta, { color: colors.warningText }]}>{t('downloads.largePackHint')}</Text>
-        ) : null}
-        {seamarkLabel ? (
-          <Text style={[styles.meta, { color: colors.textMuted, marginTop: spacing.xs }]}>{seamarkLabel}</Text>
-        ) : null}
-        {status.error ? (
-          <Text style={[styles.error, { color: colors.danger }]} accessibilityRole="alert" accessibilityLiveRegion="polite">
-            {status.error}
-          </Text>
-        ) : null}
+        <View style={downloadsStyles.badges}>
+          <StatusBadge label={stateLabel} variant={packStatusBadgeVariant(status)} />
+        </View>
       </View>
-      <View style={styles.actions}>
+
+      <Text style={[downloadsStyles.packMeta, { color: colors.textMuted }]}>
+        {t('passage.suggestionLegs', { count: suggestion.coversLegCount })} · ~{suggestion.sizeLabel}
+      </Text>
+
+      {largePack && status.state !== 'ready' ? (
+        <Text style={[downloadsStyles.packMeta, { color: colors.warningText }]}>{t('downloads.largePackHint')}</Text>
+      ) : null}
+
+      {showProgress ? (
+        <DownloadProgressBar
+          percentage={status.percentage}
+          label={stateLabel}
+          showLabel={false}
+          testID={`passage.suggestion.progress.${suggestion.packId}`}
+        />
+      ) : null}
+
+      {seamarkLabel ? (
+        <Text style={[downloadsStyles.packMeta, { color: colors.textMuted }]} accessibilityLiveRegion="polite">
+          {seamarkLabel}
+        </Text>
+      ) : null}
+
+      {status.error ? (
+        <Text
+          style={[downloadsStyles.packError, { color: colors.danger }]}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
+          {status.error}
+        </Text>
+      ) : null}
+
+      <View style={[downloadsStyles.actions, { minHeight: minTouch, marginTop: spacing.xs }]}>
         {onBrowsePack ? (
           <Button
             label={t('downloads.previewPack')}
@@ -81,13 +119,20 @@ export function PassagePackSuggestionRow({
             onPress={onBrowsePack}
             disabled={busy && !downloadActive}
             fullWidth={false}
-            style={styles.actionBtn}
+            style={downloadsStyles.actionBtn}
             testID={`passage.suggestion.preview.${suggestion.packId}`}
           />
         ) : null}
         {status.state === 'ready' ? null : downloadActive ? (
           <>
-            <Button label={downloadLabel} onPress={() => {}} disabled loading fullWidth={false} style={styles.actionBtn} />
+            <Button
+              label={downloadLabel}
+              onPress={() => {}}
+              disabled
+              loading
+              fullWidth={false}
+              style={downloadsStyles.actionBtn}
+            />
             {onCancel ? (
               <Button
                 label={t('downloads.cancelDownload')}
@@ -95,7 +140,7 @@ export function PassagePackSuggestionRow({
                 onPress={onCancel}
                 disabled={busy && activeDownloadRegionId !== suggestion.packId}
                 fullWidth={false}
-                style={styles.actionBtn}
+                style={downloadsStyles.actionBtn}
                 testID={`passage.suggestion.cancel.${suggestion.packId}`}
               />
             ) : null}
@@ -106,7 +151,7 @@ export function PassagePackSuggestionRow({
             onPress={onDownload}
             disabled={busy}
             fullWidth={false}
-            style={styles.actionBtn}
+            style={downloadsStyles.actionBtn}
             testID={`passage.suggestion.download.${suggestion.packId}`}
           />
         )}
@@ -114,18 +159,3 @@ export function PassagePackSuggestionRow({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    gap: 10,
-  },
-  main: { gap: 6 },
-  name: { fontSize: 16, fontWeight: '700' },
-  meta: { fontSize: 13, lineHeight: 18 },
-  error: { fontSize: 13, lineHeight: 18 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  actionBtn: { flexGrow: 1, flexBasis: '48%', minWidth: 120 },
-});

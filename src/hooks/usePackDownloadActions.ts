@@ -14,6 +14,7 @@ export function usePackDownloadActions() {
   const hydrated = useOfflinePackStore((s) => s.hydrated);
   const regions = useOfflinePackStore((s) => s.regions);
   const activeDownloadRegionId = useOfflinePackStore((s) => s.activeDownloadRegionId);
+  const downloadMapTeardownRegionId = useOfflinePackStore((s) => s.downloadMapTeardownRegionId);
   const startDownload = useOfflinePackStore((s) => s.startDownload);
   const retryDownload = useOfflinePackStore((s) => s.retryDownload);
   const cancelDownload = useOfflinePackStore((s) => s.cancelDownload);
@@ -22,7 +23,7 @@ export function usePackDownloadActions() {
   const showError = useFeedbackStore((s) => s.showError);
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
 
-  const downloadLocksOtherPacks = activeDownloadRegionId != null;
+  const downloadLocksOtherPacks = activeDownloadRegionId != null || downloadMapTeardownRegionId != null;
 
   const packBusy = useCallback(
     (packId: string) => {
@@ -39,7 +40,7 @@ export function usePackDownloadActions() {
         showError(t('common.loading'));
         return false;
       }
-      if (activeDownloadRegionId != null) {
+      if (activeDownloadRegionId != null || downloadMapTeardownRegionId != null) {
         showError(t('downloads.errorDownloadBusy'));
         return false;
       }
@@ -86,6 +87,7 @@ export function usePackDownloadActions() {
     [
       hydrated,
       activeDownloadRegionId,
+      downloadMapTeardownRegionId,
       regions,
       ensureChartStyle,
       startDownload,

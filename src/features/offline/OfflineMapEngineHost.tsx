@@ -13,11 +13,12 @@ import {
   subscribeOfflineMapEngineViewport,
   type OfflineEngineViewport,
 } from '../../lib/offline/offlineMapEngineHost';
+import { useExclusiveChartDownloadSession } from '../../hooks/useExclusiveChartDownloadSession';
 import { resolveOfflineEngineCamera } from '../../lib/offline/resolveOfflineEngineCamera';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 
 /** Fallback when tiny hidden maps never emit a full-map render event on some Android builds. */
-const RENDER_CONFIRM_FALLBACK_MS = 2_500;
+const RENDER_CONFIRM_FALLBACK_MS = 8_000;
 
 /**
  * Keeps a MapLibre map instance alive on Android so OfflineManager can enumerate tiles
@@ -27,6 +28,7 @@ export function OfflineMapEngineHost() {
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
   const activeDownloadRegionId = useOfflinePackStore((s) => s.activeDownloadRegionId);
   const customBoundsIndex = useOfflinePackStore((s) => s.customBoundsIndex);
+  const exclusiveDownloadMap = useExclusiveChartDownloadSession();
   const reloadNonce = useSyncExternalStore(
     subscribeOfflineMapEngineStyleReload,
     getOfflineMapEngineStyleReloadNonce,
@@ -68,7 +70,7 @@ export function OfflineMapEngineHost() {
     cameraRef.current?.jumpTo({ center: camera.center, zoom: camera.zoom });
   }, [chartStyleUri, camera.center, camera.zoom, reloadNonce, viewportGeneration]);
 
-  if (Platform.OS !== 'android' || !chartStyleUri) return null;
+  if (Platform.OS !== 'android' || !chartStyleUri || exclusiveDownloadMap) return null;
 
   const generation = reloadNonce;
 
@@ -82,8 +84,9 @@ export function OfflineMapEngineHost() {
   const scheduleRenderFallback = () => {
     clearRenderFallback();
     renderFallbackTimerRef.current = setTimeout(() => {
+      if (!styleParsedRef.current) return;
       renderConfirmedRef.current = true;
-      tryMarkReady();
+      markOfflineMapEngineStyleLoaded(chartStyleUri, generation);
     }, RENDER_CONFIRM_FALLBACK_MS);
   };
 
@@ -93,7 +96,7 @@ export function OfflineMapEngineHost() {
     markOfflineMapEngineStyleLoaded(chartStyleUri, generation);
     const viewport = activeViewportRef.current;
     if (viewport) {
-      markOfflineMapEngineViewportPrimed(viewport);
+      markOfflineMapEngineViewportPrimed(viewport, viewportGeneration);
     }
   };
 

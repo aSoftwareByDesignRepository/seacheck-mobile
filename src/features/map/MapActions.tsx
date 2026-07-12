@@ -29,7 +29,7 @@ type Props = {
  * Full labels on accessibilityLabel for WCAG 2.1 AA.
  */
 export function MapActions({ onMobDropped, showAnchor = true, variant = 'side' }: Props) {
-  const { colors } = useTheme();
+  const { colors, minTouch } = useTheme();
   const metrics = useSafetyActionsMetrics(variant, showAnchor);
   const fix = useLocationStore((s) => s.fix);
   const anchorRadiusNm = useSettingsStore((s) => s.anchorRadiusNm);
@@ -62,17 +62,23 @@ export function MapActions({ onMobDropped, showAnchor = true, variant = 'side' }
     await setScreenLocked(true);
   }
 
+  const touchSize = Math.max(metrics.buttonSize, minTouch);
   const btnStyle = {
     borderRadius: metrics.borderRadius,
     paddingHorizontal: metrics.paddingH,
     paddingVertical: metrics.paddingV,
-    minHeight: metrics.buttonSize,
-    minWidth: metrics.buttonSize,
+    minHeight: touchSize,
+    minWidth: touchSize,
+    ...(variant === 'inline' ? { flex: 1 } : null),
   };
 
   return (
     <>
-      <View style={[styles.column, { gap: metrics.gap }]} pointerEvents="box-none" testID="map.safetyActions">
+      <View
+        style={[variant === 'inline' ? styles.row : styles.column, { gap: metrics.gap }]}
+        pointerEvents="box-none"
+        testID="map.safetyActions"
+      >
         <SafetyAction
           accessibilityLabel={t('map.screenLock')}
           accessibilityHint={t('map.screenLockHint')}
@@ -192,6 +198,7 @@ function SafetyAction({
 
 const styles = StyleSheet.create({
   column: { flexDirection: 'column', alignItems: 'center' },
+  row: { flexDirection: 'row', alignItems: 'stretch', justifyContent: 'space-evenly', alignSelf: 'stretch' },
   actionBtn: {
     borderWidth: 1,
     justifyContent: 'center',

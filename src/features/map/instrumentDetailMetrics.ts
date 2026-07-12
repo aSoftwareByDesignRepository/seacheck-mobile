@@ -6,6 +6,8 @@ export type InstrumentDetailMetric = {
   label: string;
   value: string;
   unit?: string;
+  /** Screen reader label — defaults to label + value + unit when omitted. */
+  a11yLabel?: string;
 };
 
 /** Contextual secondary readouts — passage, anchor, leeway, etc. Session distance is omitted (Tracks screen). */
@@ -38,15 +40,22 @@ export function buildInstrumentDetailMetrics(data: NavigationInstrumentData): In
     });
   }
 
-  if (data.leeway) {
+  if (data.showLeeway && data.leeway) {
+    const sideLabel =
+      data.leeway.side === 'none'
+        ? ''
+        : data.leeway.side === 'port'
+          ? t('map.leewayPort')
+          : t('map.leewayStarboard');
     metrics.push({
       key: 'leeway',
       label: t('map.leeway'),
       value: Math.abs(data.leeway.angleDeg).toFixed(0),
-      unit:
-        data.leeway.side === 'none'
-          ? '°'
-          : `° ${data.leeway.side === 'port' ? t('map.leewayPort') : t('map.leewayStarboard')}`,
+      unit: sideLabel ? `° ${sideLabel}` : '°',
+      a11yLabel: t('map.leewayA11y', {
+        deg: Math.abs(data.leeway.angleDeg).toFixed(0),
+        side: sideLabel || t('map.leewayNone'),
+      }),
     });
   }
 
@@ -56,6 +65,10 @@ export function buildInstrumentDetailMetrics(data: NavigationInstrumentData): In
       label: t('map.anchorDrift'),
       value: data.anchorDriftText,
       unit: `/ ${data.anchorLimitText}`,
+      a11yLabel: t('map.anchorDriftA11y', {
+        drift: data.anchorDriftText,
+        limit: data.anchorLimitText,
+      }),
     });
   }
 

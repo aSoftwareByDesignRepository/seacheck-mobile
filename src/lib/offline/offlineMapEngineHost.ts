@@ -27,9 +27,13 @@ const reloadListeners = new Set<() => void>();
 
 let pendingViewport: OfflineEngineViewport | null = null;
 let primedViewport: OfflineEngineViewport | null = null;
+/** Visible download map on the Downloads screen — reliable tile enumeration on Android. */
+let foregroundPrimedViewport: OfflineEngineViewport | null = null;
 let viewportGeneration = 0;
 let viewportWaiters: Array<(ready: boolean) => void> = [];
 const viewportListeners = new Set<() => void>();
+
+const FOREGROUND_MAP_WAIT_MS = 14_000;
 
 function viewportMatches(a: OfflineEngineViewport, b: OfflineEngineViewport): boolean {
   return (

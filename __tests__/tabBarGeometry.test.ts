@@ -2,9 +2,9 @@ import { tabBarOccupiedHeight, usesBottomTabBar } from '../src/lib/navigation/ta
 import { computeMapChromeLayout } from '../src/features/map/mapChromeLayout';
 
 describe('tabBarGeometry', () => {
-  it('detects bottom tab bar vs side rail', () => {
+  it('always uses bottom tab bar', () => {
     expect(usesBottomTabBar('compact', false)).toBe(true);
-    expect(usesBottomTabBar('expanded', true)).toBe(false);
+    expect(usesBottomTabBar('expanded', true)).toBe(true);
   });
 
   it('matches AdaptiveTabBar occupied height', () => {

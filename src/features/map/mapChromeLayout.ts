@@ -88,6 +88,8 @@ type ComputeArgs = {
   expandedInstrumentDock?: boolean;
   tabBarAtBottom?: boolean;
   extraBottomReserved?: number;
+  /** Side panel carries instruments — no bottom dock reserve on the map pane. */
+  suppressBottomDock?: boolean;
 };
 
 /** @deprecated Use computeMaxSafetyColumnWidth. */
@@ -140,6 +142,7 @@ export function computeMapChromeLayout({
   expandedInstrumentDock = false,
   tabBarAtBottom = true,
   extraBottomReserved = 0,
+  suppressBottomDock = false,
 }: ComputeArgs): MapChromeLayout {
   const baseBottom = chromeBottom + spacingSm;
   const actionColumnWidth = showSideActions
@@ -148,12 +151,14 @@ export function computeMapChromeLayout({
   const actionStackHeight = showSideActions
     ? computeMaxSafetyStackHeight(minTouch, spacingSm, spacingMd, formFactor)
     : 0;
-  const instrumentDockHeight = instrumentDockHeightForPreset(
-    layoutPreset,
-    expandedInstrumentDock,
-    spacingSm,
-    formFactor,
-  );
+  const instrumentDockHeight = suppressBottomDock
+    ? 0
+    : instrumentDockHeightForPreset(
+        layoutPreset,
+        expandedInstrumentDock,
+        spacingSm,
+        formFactor,
+      );
   const instrumentDockBottom = tabBarAtBottom ? 0 : baseBottom;
   const bottomReserved = instrumentDockHeight + extraBottomReserved;
   const hasBottomChrome = bottomReserved > 0;

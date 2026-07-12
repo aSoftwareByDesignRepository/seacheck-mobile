@@ -25,6 +25,7 @@ export function SettingsMapScreen() {
   const mapShowPassageRouteLines = useSettingsStore((s) => s.mapShowPassageRouteLines);
   const mapShowRecordingDistance = useSettingsStore((s) => s.mapShowRecordingDistance);
   const mapShowXte = useSettingsStore((s) => s.mapShowXte);
+  const mapShowLeeway = useSettingsStore((s) => s.mapShowLeeway);
   const downloadWifiOnly = useSettingsStore((s) => s.downloadWifiOnly);
 
   return (
@@ -136,12 +137,24 @@ export function SettingsMapScreen() {
             colors={colors}
             minTouch={minTouch}
           />
+        </SettingsGroup>
+
+        <SettingsGroup title={t('settings.instrumentReadoutsTitle')} hint={t('settings.instrumentReadoutsHint')}>
           <ToggleRow
             label={t('settings.mapShowXte')}
             hint={t('settings.mapShowXteHint')}
             value={mapShowXte}
             onChange={(v) => void patchSettings({ mapShowXte: v })}
             testID="settings.mapShowXte"
+            colors={colors}
+            minTouch={minTouch}
+          />
+          <ToggleRow
+            label={t('settings.mapShowLeeway')}
+            hint={t('settings.mapShowLeewayHint')}
+            value={mapShowLeeway}
+            onChange={(v) => void patchSettings({ mapShowLeeway: v })}
+            testID="settings.mapShowLeeway"
             colors={colors}
             minTouch={minTouch}
           />

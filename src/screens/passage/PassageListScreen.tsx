@@ -1,10 +1,11 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet } from 'react-native';
 
+import { PassageListCard } from '../../features/passage/PassageListCard';
+import { usePassageDeactivate } from '../../hooks/usePassageDeactivate';
 import { useFormFactor } from '../../hooks/useFormFactor';
-import { formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
 import { confirmReverseActivePassage } from '../../lib/passage/confirmReversePassage';
 import { t } from '../../i18n';
 import type { PassageStackParamList } from '../../navigation/PassageStack';
@@ -16,41 +17,48 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { Screen } from '../../ui/Screen';
-import { StatusBadge } from '../../ui/StatusBadge';
 
 type Nav = NativeStackNavigationProp<PassageStackParamList, 'PassageList'>;
 
 export function PassageListScreen() {
   const navigation = useNavigation<Nav>();
-  const { colors, spacing, minTouch } = useTheme();
-  const { formFactor, width } = useFormFactor();
+  const { spacing } = useTheme();
+  const { formFactor } = useFormFactor();
   const listColumns = formFactor !== 'compact' ? 2 : 1;
   const passages = usePassageStore((s) => s.passages);
   const activePassageId = usePassageStore((s) => s.activePassageId);
+  const routeRevision = usePassageStore((s) => s.routeRevision);
   const createPassage = usePassageStore((s) => s.createPassage);
   const activatePassage = usePassageStore((s) => s.activatePassage);
   const deletePassage = usePassageStore((s) => s.deletePassage);
   const reversePassageWaypoints = usePassageStore((s) => s.reversePassageWaypoints);
   const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
+  const { deactivate, deactivating } = usePassageDeactivate();
   const showInfo = useFeedbackStore((s) => s.showInfo);
   const showError = useFeedbackStore((s) => s.showError);
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reversingId, setReversingId] = useState<string | null>(null);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
   const [summaries, setSummaries] = useState<Record<string, { legs: number; nm: number; waypoints: number }>>({});
 
   useEffect(() => {
+    let cancelled = false;
     void Promise.all(
       passages.map(async (p) => {
         const d = await getPassageDetail(p.id);
         return { id: p.id, legs: d?.legs.length ?? 0, nm: d?.totalNm ?? 0, waypoints: d?.waypoints.length ?? 0 };
       }),
     ).then((rows) => {
+      if (cancelled) return;
       const map: Record<string, { legs: number; nm: number; waypoints: number }> = {};
       for (const r of rows) map[r.id] = { legs: r.legs, nm: r.nm, waypoints: r.waypoints };
       setSummaries(map);
     });
-  }, [passages, getPassageDetail]);
+    return () => {
+      cancelled = true;
+    };
+  }, [passages, getPassageDetail, routeRevision]);
 
   const openDetail = useCallback(
     (passageId: string) => {
@@ -64,12 +72,27 @@ export function PassageListScreen() {
     openDetail(p.id);
   }
 
-  async function handleActivate(passageId: string, waypoints: number) {
-    if (waypoints < 2) return;
-    await activatePassage(passageId);
+  async function handleActivate(passageId: string) {
+    if (activatingId || deactivating || deletingId || reversingId) return;
+    setActivatingId(passageId);
+    try {
+      await activatePassage(passageId);
+      showInfo(t('passage.activated'));
+    } catch {
+      showError(t('passage.activateFailed'));
+    } finally {
+      setActivatingId(null);
+    }
+  }
+
+  async function handleDeactivate(passageId: string) {
+    if (activatingId || deactivating || deletingId || reversingId) return;
+    if (passageId !== activePassageId) return;
+    await deactivate();
   }
 
   async function handleReverse(passageId: string) {
+    if (activatingId || deactivating || deletingId || reversingId) return;
     const meta = summaries[passageId];
     if ((meta?.waypoints ?? 0) < 2) {
       showError(t('passage.reverseNeedTwo'));
@@ -91,6 +114,7 @@ export function PassageListScreen() {
   }
 
   async function confirmDelete(passageId: string, name: string) {
+    if (activatingId || deactivating || deletingId || reversingId) return;
     const ok = await requestConfirm({
       title: t('passage.deleteTitle'),
       message: name,
@@ -124,126 +148,48 @@ export function PassageListScreen() {
     );
   }
 
+  const listBusy = activatingId != null || deactivating || deletingId != null || reversingId != null;
+
   return (
-    <Screen testID="screen.passage" title={t('tabs.passage')} subtitle={t('passage.listSubtitle')}>
-      <Button label={t('passage.create')} onPress={() => void handleCreate()} testID="passage.create" />
+    <Screen testID="screen.passage" title={t('tabs.passage')} subtitle={t('passage.listSubtitle')} scroll={false}>
       <FlatList
         data={passages}
-        key={listColumns}
+        key={`passage-list-${listColumns}`}
         numColumns={listColumns}
         keyExtractor={(p) => p.id}
-        style={{ marginTop: spacing.lg }}
+        style={styles.list}
         contentContainerStyle={{ paddingBottom: spacing.xl, gap: spacing.md }}
-        columnWrapperStyle={listColumns > 1 ? styles.gridRow : undefined}
+        columnWrapperStyle={listColumns > 1 ? [styles.gridRow, { gap: spacing.md }] : undefined}
+        ListHeaderComponent={
+          <Button
+            label={t('passage.create')}
+            onPress={() => void handleCreate()}
+            testID="passage.create"
+            style={{ marginBottom: spacing.lg }}
+          />
+        }
         renderItem={({ item }) => {
           const meta = summaries[item.id];
           const isActive = item.id === activePassageId;
-          const canActivate = (meta?.waypoints ?? 0) >= 2;
-          const canReverse = canActivate;
-          const busy = deletingId === item.id || reversingId === item.id;
+          const busy = listBusy;
           return (
-            <Pressable
-              onPress={() => openDetail(item.id)}
-              accessibilityRole="button"
-              accessibilityLabel={item.name}
-              accessibilityHint={t('passage.openDetailHint')}
-              style={[
-                styles.card,
-                listColumns > 1 ? [styles.gridCard, { maxWidth: (width - spacing.lg * 2 - 12) / 2 }] : null,
-                {
-                  backgroundColor: isActive ? colors.successBg : colors.surface,
-                  borderColor: isActive ? colors.success : colors.border,
-                },
-              ]}
-              testID={`passage.card.${item.id}`}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
-                  {item.name}
-                </Text>
-                {isActive ? <StatusBadge label={t('passage.active')} variant="success" /> : null}
-              </View>
-              {meta ? (
-                <Text style={[styles.meta, { color: colors.textMuted }]}>
-                  {t('passage.listMeta', {
-                    legs: meta.legs,
-                    distance: formatDistanceNm(meta.nm, distanceUnit),
-                    unit: distanceUnitLabel(distanceUnit),
-                  })}
-                </Text>
-              ) : null}
-              <View style={[styles.cardActions, { gap: spacing.sm, marginTop: spacing.sm }]}>
-                <View style={[styles.cardActionsPrimary, { gap: spacing.sm }]}>
-                  {!isActive && canActivate ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={t('passage.activate')}
-                      onPress={(e) => {
-                        e.stopPropagation?.();
-                        void handleActivate(item.id, meta?.waypoints ?? 0);
-                      }}
-                      style={[styles.inlineBtn, { borderColor: colors.primary, minHeight: minTouch }]}
-                      testID={`passage.activate.${item.id}`}
-                    >
-                      <Text style={[styles.inlineBtnText, { color: colors.primary }]}>{t('passage.activate')}</Text>
-                    </Pressable>
-                  ) : null}
-                  <Text style={[styles.openHint, { color: colors.primary }]}>{t('passage.openDetail')}</Text>
-                </View>
-                <View style={[styles.cardActionsSecondary, { gap: spacing.sm }]}>
-                  {canReverse ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={t('passage.reverse')}
-                      accessibilityHint={t('passage.reverseFromListHint')}
-                      disabled={busy}
-                      onPress={(e) => {
-                        e.stopPropagation?.();
-                        void handleReverse(item.id);
-                      }}
-                      style={[
-                        styles.inlineBtn,
-                        {
-                          borderColor: colors.border,
-                          backgroundColor: colors.surface,
-                          minHeight: minTouch,
-                          opacity: reversingId === item.id ? 0.6 : 1,
-                        },
-                      ]}
-                      testID={`passage.reverse.${item.id}`}
-                    >
-                      <Text style={[styles.inlineBtnText, { color: colors.text }]}>
-                        {reversingId === item.id ? t('common.loading') : t('passage.reverse')}
-                      </Text>
-                    </Pressable>
-                  ) : null}
-                  <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t('passage.delete')}
-                  accessibilityHint={t('passage.deleteFromListHint')}
-                  disabled={busy}
-                  onPress={(e) => {
-                    e.stopPropagation?.();
-                    void confirmDelete(item.id, item.name);
-                  }}
-                  style={[
-                    styles.inlineBtn,
-                    {
-                      borderColor: colors.dangerBorder,
-                      backgroundColor: colors.dangerBg,
-                      minHeight: minTouch,
-                      opacity: deletingId === item.id ? 0.6 : 1,
-                    },
-                  ]}
-                  testID={`passage.delete.${item.id}`}
-                >
-                  <Text style={[styles.inlineBtnText, { color: colors.danger }]}>
-                    {deletingId === item.id ? t('common.loading') : t('passage.delete')}
-                  </Text>
-                </Pressable>
-                </View>
-              </View>
-            </Pressable>
+            <PassageListCard
+              passage={item}
+              meta={meta}
+              isActive={isActive}
+              distanceUnit={distanceUnit}
+              busy={busy}
+              activating={activatingId === item.id}
+              deactivating={deactivating && isActive}
+              reversing={reversingId === item.id}
+              deleting={deletingId === item.id}
+              style={listColumns > 1 ? styles.gridCard : undefined}
+              onOpen={() => openDetail(item.id)}
+              onActivate={() => void handleActivate(item.id)}
+              onDeactivate={() => void handleDeactivate(item.id)}
+              onReverse={() => void handleReverse(item.id)}
+              onDelete={() => void confirmDelete(item.id, item.name)}
+            />
           );
         }}
       />
@@ -252,22 +198,7 @@ export function PassageListScreen() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 14, padding: 16, minHeight: 48 },
-  gridRow: { gap: 12 },
-  gridCard: { flex: 1 },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
-  name: { flex: 1, fontSize: 18, fontWeight: '700', lineHeight: 24 },
-  meta: { fontSize: 14, lineHeight: 20, marginTop: 8 },
-  cardActions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 },
-  cardActionsPrimary: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1, minWidth: 0 },
-  cardActionsSecondary: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 },
-  inlineBtn: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  inlineBtnText: { fontSize: 14, fontWeight: '800' },
-  openHint: { fontSize: 13, fontWeight: '700' },
+  list: { flex: 1, alignSelf: 'stretch', minHeight: 0 },
+  gridRow: { alignItems: 'flex-start' },
+  gridCard: { flex: 1, minWidth: 0 },
 });

@@ -28,6 +28,8 @@ export const CRUISE_PASSAGE_DEFAULTS = {
   barometerEnabled: false,
   /** Cross-track error in instrument panels — off by default; XTE alarms are unaffected. */
   mapShowXte: false,
+  /** Leeway (COG vs heading) in instrument panels — off by default. */
+  mapShowLeeway: false,
   /** Accuracy-weighted position smoothing for map display — alarms always use raw GPS. */
   gpsSmoothPosition: true,
 };

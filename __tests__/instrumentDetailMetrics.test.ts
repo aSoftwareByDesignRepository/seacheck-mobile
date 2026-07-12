@@ -32,6 +32,7 @@ function baseData(overrides: Partial<NavigationInstrumentData> = {}): Navigation
     showPassageMeta: false,
     showBarometer: false,
     barometer: { available: false, trend: { currentHpa: null, trend: 'steady', delta3h: null } } as NavigationInstrumentData['barometer'],
+    showLeeway: false,
     leeway: null,
     distanceLabel: 'NM',
     remainingDistText: null,
@@ -103,5 +104,25 @@ describe('buildInstrumentDetailMetrics', () => {
   it('never shows GPS altitude in instrument panels', () => {
     const metrics = buildInstrumentDetailMetrics(baseData());
     expect(metrics.some((m) => m.key === 'alt')).toBe(false);
+  });
+
+  it('omits leeway from detail grid when showLeeway is false', () => {
+    const metrics = buildInstrumentDetailMetrics(
+      baseData({
+        showLeeway: false,
+        leeway: { angleDeg: 8, side: 'starboard' },
+      }),
+    );
+    expect(metrics.some((m) => m.key === 'leeway')).toBe(false);
+  });
+
+  it('includes leeway when showLeeway is true', () => {
+    const metrics = buildInstrumentDetailMetrics(
+      baseData({
+        showLeeway: true,
+        leeway: { angleDeg: 8, side: 'starboard' },
+      }),
+    );
+    expect(metrics.find((m) => m.key === 'leeway')).toMatchObject({ value: '8', unit: expect.stringContaining('°') });
   });
 });

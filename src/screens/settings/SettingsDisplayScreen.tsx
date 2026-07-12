@@ -8,6 +8,7 @@ import { type ThemeMode, useTheme } from '../../theme/ThemeContext';
 import { CoordFormatPicker } from '../../ui/CoordFormatPicker';
 import { FilterChip } from '../../ui/FilterChip';
 import { LayoutPresetPicker } from '../../ui/LayoutPresetPicker';
+import { PanelSidePicker } from '../../ui/PanelSidePicker';
 import { Card, Screen, SettingsGroup } from '../../ui/Screen';
 import { ToggleRow } from '../../ui/ToggleRow';
 
@@ -17,6 +18,7 @@ export function SettingsDisplayScreen() {
   const { colors, mode, setMode, minTouch } = useTheme();
   const coordFormat = useSettingsStore((s) => s.coordFormat);
   const gloveMode = useSettingsStore((s) => s.gloveMode);
+  const panelSide = useSettingsStore((s) => s.panelSide);
   const patchSettings = useSettingsStore((s) => s.patchSettings);
   const setLayoutOverride = useSettingsStore((s) => s.setLayoutOverride);
   const layoutPreset = useEffectiveLayoutPreset();
@@ -41,6 +43,10 @@ export function SettingsDisplayScreen() {
 
         <SettingsGroup title={t('settings.layoutTitle')} hint={t('settings.layoutSummary')}>
           <LayoutPresetPicker value={layoutPreset} onChange={(preset) => void setLayoutOverride(preset, layoutContext)} />
+        </SettingsGroup>
+
+        <SettingsGroup title={t('settings.panelSide')} hint={t('settings.panelSideHint')}>
+          <PanelSidePicker value={panelSide} onChange={(side) => void patchSettings({ panelSide: side })} />
         </SettingsGroup>
 
         <SettingsGroup title={t('settings.coordFormat')} hint={t('settings.coordFormatHint')}>

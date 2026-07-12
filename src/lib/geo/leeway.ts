@@ -23,3 +23,21 @@ export function computeLeeway(
   const angle = leewayDeg(headingDeg, cogDeg);
   return { angleDeg: angle, side: leewaySide(angle) };
 }
+
+export type LeewayDisplay = {
+  showLeeway: boolean;
+  leeway: ReturnType<typeof computeLeeway>;
+};
+
+/** Applies user preference and GPS validity — single source for hook and tests. */
+export function resolveLeewayDisplay(args: {
+  mapShowLeeway: boolean;
+  stale: boolean;
+  sogKn: number | null;
+  headingDeg: number | null;
+  cogDeg: number | null;
+}): LeewayDisplay {
+  const leewayRaw = !args.stale ? computeLeeway(args.sogKn, args.headingDeg, args.cogDeg) : null;
+  const showLeeway = args.mapShowLeeway && leewayRaw != null;
+  return { showLeeway, leeway: showLeeway ? leewayRaw : null };
+}

@@ -18,6 +18,8 @@ import type { TrackPointRow } from '../lib/db/database';
 import { useSettingsStore } from '../store/settingsStore';
 import { formatDistanceNm, distanceUnitLabel } from '../lib/geo/units';
 import { useTrackStore } from '../store/trackStore';
+import { useFormFactor } from '../hooks/useFormFactor';
+import { shouldTracksScreenUseScrollRoot } from '../lib/navigation/shellLayoutPolicy';
 import { useTheme } from '../theme/ThemeContext';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
@@ -28,6 +30,8 @@ import { StatusBadge } from '../ui/StatusBadge';
 export function TracksScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const { colors, spacing, minTouch } = useTheme();
+  const { formFactor } = useFormFactor();
+  const useSplitLayout = shouldTracksScreenUseScrollRoot(formFactor);
   const tracks = useTrackStore((s) => s.tracks);
   const recordingTrackId = useTrackStore((s) => s.recordingTrackId);
   const startRecording = useTrackStore((s) => s.startRecording);
@@ -168,48 +172,54 @@ export function TracksScreen() {
     );
   }
 
-  const listPane = (
+  const renderTrackRow = (item: (typeof tracks)[number]) => (
+    <Pressable
+      key={item.id}
+      onPress={() => setSelectedId(item.id)}
+      accessibilityRole="button"
+      accessibilityLabel={item.name}
+      accessibilityState={{ selected: selectedId === item.id }}
+      style={[
+        styles.row,
+        {
+          backgroundColor: selectedId === item.id ? colors.successBg : colors.surface,
+          borderColor: selectedId === item.id ? colors.success : colors.border,
+          marginBottom: spacing.sm,
+          minHeight: minTouch,
+        },
+      ]}
+      testID={`tracks.row.${item.id}`}
+    >
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
+        <Text style={[styles.meta, { color: colors.textMuted }]}>
+          {new Date(item.started_at).toLocaleString()} · {item.ended_at ? t('tracks.completed') : t('tracks.open')}
+        </Text>
+        {distanceSummaries[item.id] != null && distanceSummaries[item.id] > 0 ? (
+          <Text style={[styles.distance, { color: colors.textMuted }]}>
+            {t('tracks.listDistance', {
+              distance: formatDistanceNm(distanceSummaries[item.id], distanceUnit),
+              unit: distanceUnitLabel(distanceUnit),
+            })}
+          </Text>
+        ) : null}
+      </View>
+      {item.id === recordingTrackId ? <StatusBadge label={t('tracks.recording')} variant="warning" /> : null}
+    </Pressable>
+  );
+
+  const listPane = useSplitLayout ? (
+    <FlatList
+      data={tracks}
+      keyExtractor={(item) => item.id}
+      style={styles.list}
+      contentContainerStyle={{ paddingBottom: spacing.md }}
+      ListHeaderComponent={controls}
+      renderItem={({ item }) => renderTrackRow(item)}
+    />
+  ) : (
     <View>
-      {controls}
-      <FlatList
-        data={tracks}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => setSelectedId(item.id)}
-            accessibilityRole="button"
-            accessibilityLabel={item.name}
-            accessibilityState={{ selected: selectedId === item.id }}
-            style={[
-              styles.row,
-              {
-                backgroundColor: selectedId === item.id ? colors.successBg : colors.surface,
-                borderColor: selectedId === item.id ? colors.success : colors.border,
-                marginBottom: spacing.sm,
-                minHeight: minTouch,
-              },
-            ]}
-            testID={`tracks.row.${item.id}`}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
-              <Text style={[styles.meta, { color: colors.textMuted }]}>
-                {new Date(item.started_at).toLocaleString()} · {item.ended_at ? t('tracks.completed') : t('tracks.open')}
-              </Text>
-              {distanceSummaries[item.id] != null && distanceSummaries[item.id] > 0 ? (
-                <Text style={[styles.distance, { color: colors.textMuted }]}>
-                  {t('tracks.listDistance', {
-                    distance: formatDistanceNm(distanceSummaries[item.id], distanceUnit),
-                    unit: distanceUnitLabel(distanceUnit),
-                  })}
-                </Text>
-              ) : null}
-            </View>
-            {item.id === recordingTrackId ? <StatusBadge label={t('tracks.recording')} variant="warning" /> : null}
-          </Pressable>
-        )}
-      />
+      {tracks.map((item) => renderTrackRow(item))}
     </View>
   );
 
@@ -228,14 +238,25 @@ export function TracksScreen() {
     <SelectHint testID="tracks.selectHint">{t('tracks.selectHint')}</SelectHint>
   );
 
+  if (!useSplitLayout) {
+    return (
+      <Screen testID="screen.tracks" title={t('tabs.tracks')} subtitle={t('tracks.subtitle')}>
+        {controls}
+        {listPane}
+        {detailPane}
+      </Screen>
+    );
+  }
+
   return (
-    <Screen testID="screen.tracks" title={t('tabs.tracks')} subtitle={t('tracks.subtitle')}>
+    <Screen testID="screen.tracks" title={t('tabs.tracks')} subtitle={t('tracks.subtitle')} scroll={false}>
       <MasterDetailLayout master={listPane} detail={detailPane} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  list: { flex: 1, alignSelf: 'stretch', minHeight: 0 },
   fixLine: { fontSize: 13 },
   modeLine: { fontSize: 13, lineHeight: 18 },
   row: { borderWidth: 1, borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },

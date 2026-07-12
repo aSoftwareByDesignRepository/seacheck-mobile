@@ -164,23 +164,31 @@ describe('offlinePackStore.hydrate', () => {
     }
   });
 
-  it('reattaches in-progress download and locks coordinator', async () => {
+  it('reattaches in-progress cache download and locks coordinator', async () => {
     await AsyncStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        [KIEL.id]: { packId: 'pack-partial', bounds: KIEL.bounds },
+        [KIEL.id]: {
+          packId: 'cache:kiel-bay',
+          cacheBacked: true,
+          bounds: KIEL.bounds,
+          minZoom: KIEL.minZoom,
+          maxZoom: KIEL.maxZoom,
+          sweepCompleted: 1,
+          sweepTotal: 5,
+        },
       }),
     );
-    getPacks.mockResolvedValue([mockNativePack('pack-partial', KIEL.id, { state: 'active', percentage: 42 })]);
+    getPacks.mockResolvedValue([]);
 
     await useOfflinePackStore.getState().hydrate();
     await new Promise((resolve) => setImmediate(resolve));
 
     const status = useOfflinePackStore.getState().regions[KIEL.id];
     expect(status?.state).toBe('downloading');
-    expect(status?.percentage).toBe(42);
+    expect(status?.cacheBacked).toBe(true);
+    expect(status?.percentage).toBeGreaterThan(0);
     expect(useOfflinePackStore.getState().activeDownloadRegionId).toBe(KIEL.id);
     expect(downloadCoordinator.getActiveRegionId()).toBe(KIEL.id);
-    expect(addListener).toHaveBeenCalledWith('pack-partial', expect.any(Function), expect.any(Function));
   });
 });

@@ -22,6 +22,8 @@ type Props = {
   onAddByCoords: () => void;
   onEditWaypoint: (waypoint: WaypointRow) => void;
   onReverse?: () => void;
+  /** Hide chart hand-off buttons when they appear in the map preview pane. */
+  showMapHandoffButtons?: boolean;
 };
 
 export function PassageWaypointSection({
@@ -34,6 +36,7 @@ export function PassageWaypointSection({
   onAddByCoords,
   onEditWaypoint,
   onReverse,
+  showMapHandoffButtons = true,
 }: Props) {
   const { colors, spacing, minTouch } = useTheme();
   const { formFactor } = useFormFactor();
@@ -58,7 +61,7 @@ export function PassageWaypointSection({
       <Text style={[styles.body, { color: colors.textMuted }]}>{t('passage.waypointsBody')}</Text>
 
       <View style={[styles.primaryActions, { gap: spacing.sm }]}>
-        {detail.waypoints.length > 0 ? (
+        {showMapHandoffButtons && detail.waypoints.length > 0 ? (
           <Button
             label={t('passage.showPassageOnMap')}
             onPress={onShowOnMap}
@@ -67,14 +70,16 @@ export function PassageWaypointSection({
             accessibilityHint={t('passage.showPassageOnMapHint')}
           />
         ) : null}
-        <Button
-          label={t('passage.planOnMap')}
-          variant={detail.waypoints.length > 0 ? 'secondary' : 'primary'}
-          onPress={onPlanOnMap}
-          testID="passage.planOnMap"
-          style={{ minHeight: minTouch }}
-          accessibilityHint={t('passage.planOnMapHint')}
-        />
+        {showMapHandoffButtons ? (
+          <Button
+            label={t('passage.planOnMap')}
+            variant={detail.waypoints.length > 0 ? 'secondary' : 'primary'}
+            onPress={onPlanOnMap}
+            testID="passage.planOnMap"
+            style={{ minHeight: minTouch }}
+            accessibilityHint={t('passage.planOnMapHint')}
+          />
+        ) : null}
         <Button
           label={t('passage.addByCoords')}
           variant="secondary"

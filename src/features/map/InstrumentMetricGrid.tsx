@@ -8,9 +8,11 @@ type Props = {
   metrics: InstrumentDetailMetric[];
   /** Horizontal chips for compact docks; grid for full-screen panels. */
   layout?: 'grid' | 'row';
+  /** Force column count — use 2 in narrow split side panels. */
+  gridColumns?: 2 | 3;
 };
 
-export function InstrumentMetricGrid({ metrics, layout = 'grid' }: Props) {
+export function InstrumentMetricGrid({ metrics, layout = 'grid', gridColumns }: Props) {
   const { colors, spacing } = useTheme();
   const { width } = useFormFactor();
 
@@ -23,12 +25,15 @@ export function InstrumentMetricGrid({ metrics, layout = 'grid' }: Props) {
           <View
             key={item.key}
             style={[styles.rowChip, { borderColor: colors.border, backgroundColor: colors.surface }]}
-            accessibilityLabel={`${item.label} ${item.value}${item.unit ? ` ${item.unit}` : ''}`}
+            accessibilityRole="text"
+            accessibilityLabel={
+              item.a11yLabel ?? `${item.label} ${item.value}${item.unit ? ` ${item.unit}` : ''}`
+            }
           >
-            <Text style={[styles.label, { color: colors.textMuted }]} numberOfLines={1}>
+            <Text style={[styles.label, { color: colors.textMuted }]} numberOfLines={1} importantForAccessibility="no">
               {item.label}
             </Text>
-            <Text style={[styles.rowValue, { color: colors.text }]} numberOfLines={1}>
+            <Text style={[styles.rowValue, { color: colors.text }]} numberOfLines={1} importantForAccessibility="no">
               {item.value}
               {item.unit ? <Text style={{ color: colors.textMuted, fontWeight: '600' }}> {item.unit}</Text> : null}
             </Text>
@@ -38,7 +43,7 @@ export function InstrumentMetricGrid({ metrics, layout = 'grid' }: Props) {
     );
   }
 
-  const columns = width >= 520 ? 3 : 2;
+  const columns = gridColumns ?? (width >= 520 ? 3 : 2);
   const cellWidth = columns === 3 ? '31.5%' : '48%';
 
   return (
@@ -55,10 +60,13 @@ export function InstrumentMetricGrid({ metrics, layout = 'grid' }: Props) {
               maxWidth: cellWidth,
             },
           ]}
-          accessibilityLabel={`${item.label} ${item.value}${item.unit ? ` ${item.unit}` : ''}`}
+          accessibilityRole="text"
+          accessibilityLabel={
+            item.a11yLabel ?? `${item.label} ${item.value}${item.unit ? ` ${item.unit}` : ''}`
+          }
         >
-          <Text style={[styles.label, { color: colors.textMuted }]}>{item.label}</Text>
-          <Text style={[styles.gridValue, { color: colors.text }]}>
+          <Text style={[styles.label, { color: colors.textMuted }]} importantForAccessibility="no">{item.label}</Text>
+          <Text style={[styles.gridValue, { color: colors.text }]} importantForAccessibility="no">
             {item.value}
             {item.unit ? <Text style={{ color: colors.textMuted, fontWeight: '600', fontSize: 14 }}> {item.unit}</Text> : null}
           </Text>

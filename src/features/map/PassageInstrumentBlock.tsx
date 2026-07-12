@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { PassageDeactivateButton } from '../passage/PassageDeactivateButton';
+
 import { useFormFactor } from '../../hooks/useFormFactor';
 import { useNavigationInstrumentData } from '../../hooks/useNavigationInstrumentData';
 import { usePassageFollow } from '../../hooks/usePassageFollow';
@@ -79,18 +81,7 @@ export function PassageInstrumentBlock({
 
   if (isMinimalFollow) {
     return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t('passage.followBannerA11y', {
-          passage: follow.passageName,
-          leg: follow.legNumber,
-          total: follow.totalLegs,
-          name: follow.nextWaypointName,
-          brg: brgText,
-          dist: distText,
-        })}
-        accessibilityHint={t('passage.openPassage')}
-        onPress={onOpenPassage}
+      <View
         style={[
           styles.wrap,
           styles.wrapMinimal,
@@ -98,25 +89,43 @@ export function PassageInstrumentBlock({
         ]}
         testID="map.passageInstrument"
       >
-        <Text style={[styles.minimalMeta, { color: colors.textMuted }]} numberOfLines={1}>
-          {follow.passageName} · {t('passage.followLeg', { current: follow.legNumber, total: follow.totalLegs })} ·{' '}
-          {follow.nextWaypointName}
-        </Text>
-        <View style={[styles.minimalRow, { gap: spacing.sm, marginTop: spacing.xs }]}>
-          <InstrumentChip
-            label={t('passage.brgToNext')}
-            value={follow.bearingToNext != null ? String(Math.round(follow.bearingToNext)) : '—'}
-            unit={follow.bearingSuffix}
-            flex={1}
-          />
-          <InstrumentChip
-            label={t('map.distTo')}
-            value={follow.distanceToNextNm != null ? formatDistanceNm(follow.distanceToNextNm, distanceUnit) : '—'}
-            unit={unitLabel}
-            flex={1}
-          />
+        <View style={[styles.minimalTop, { gap: spacing.sm }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('passage.followBannerA11y', {
+              passage: follow.passageName,
+              leg: follow.legNumber,
+              total: follow.totalLegs,
+              name: follow.nextWaypointName,
+              brg: brgText,
+              dist: distText,
+            })}
+            accessibilityHint={t('passage.openPassage')}
+            onPress={onOpenPassage}
+            style={({ pressed }) => [styles.minimalBody, { opacity: pressed ? 0.92 : 1 }]}
+          >
+            <Text style={[styles.minimalMeta, { color: colors.textMuted }]} numberOfLines={1}>
+              {follow.passageName} · {t('passage.followLeg', { current: follow.legNumber, total: follow.totalLegs })} ·{' '}
+              {follow.nextWaypointName}
+            </Text>
+            <View style={[styles.minimalRow, { gap: spacing.sm, marginTop: spacing.xs }]}>
+              <InstrumentChip
+                label={t('passage.brgToNext')}
+                value={follow.bearingToNext != null ? String(Math.round(follow.bearingToNext)) : '—'}
+                unit={follow.bearingSuffix}
+                flex={1}
+              />
+              <InstrumentChip
+                label={t('map.distTo')}
+                value={follow.distanceToNextNm != null ? formatDistanceNm(follow.distanceToNextNm, distanceUnit) : '—'}
+                unit={unitLabel}
+                flex={1}
+              />
+            </View>
+          </Pressable>
+          <PassageDeactivateButton variant="compact" testID="map.passageInstrument.deactivate" />
         </View>
-      </Pressable>
+      </View>
     );
   }
 
@@ -229,6 +238,7 @@ export function PassageInstrumentBlock({
             onPress={() => void setPassageActiveLeg(activeLegIndex + 1)}
             style={[
               styles.actionBtn,
+              styles.actionBtnFull,
               follow.legWaypointArrived
                 ? { borderColor: colors.primary, backgroundColor: colors.primary, minHeight: minTouch }
                 : { borderColor: colors.primary, minHeight: minTouch },
@@ -249,15 +259,18 @@ export function PassageInstrumentBlock({
             <Text style={[styles.finalText, { color: colors.success }]}>{t('passage.finalLeg')}</Text>
           </View>
         )}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('passage.openPassage')}
-          onPress={onOpenPassage}
-          style={[styles.actionBtn, { borderColor: colors.border, minHeight: minTouch }]}
-          testID="map.passageInstrument.openPassage"
-        >
-          <Text style={[styles.actionSecondary, { color: colors.text }]}>{t('passage.openPassage')}</Text>
-        </Pressable>
+        <View style={[styles.secondaryActions, { gap: spacing.sm }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('passage.openPassage')}
+            onPress={onOpenPassage}
+            style={[styles.actionBtn, { borderColor: colors.border, minHeight: minTouch }]}
+            testID="map.passageInstrument.openPassage"
+          >
+            <Text style={[styles.actionSecondary, { color: colors.text }]}>{t('passage.openPassage')}</Text>
+          </Pressable>
+          <PassageDeactivateButton variant="inline" testID="map.passageInstrument.deactivate" />
+        </View>
       </View>
     </View>
   );
@@ -267,6 +280,8 @@ const styles = StyleSheet.create({
   wrap: { borderWidth: 1, borderRadius: 14, minWidth: 0 },
   wrapDock: { padding: 12 },
   wrapMinimal: { paddingVertical: 8, paddingHorizontal: 10 },
+  minimalTop: { flexDirection: 'row', alignItems: 'stretch', minWidth: 0 },
+  minimalBody: { flex: 1, minWidth: 0 },
   wrapFull: { padding: 16, borderRadius: 18 },
   minimalMeta: { fontSize: 12, fontWeight: '700', lineHeight: 16 },
   minimalRow: { flexDirection: 'row', alignItems: 'stretch', minWidth: 0, minHeight: compactChipMinHeight() },
@@ -279,7 +294,8 @@ const styles = StyleSheet.create({
   stale: { fontSize: 12, lineHeight: 16, marginTop: 8, fontWeight: '600' },
   passedHint: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   passedHintText: { fontSize: 13, lineHeight: 19, fontWeight: '700' },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch' },
+  actions: { flexDirection: 'column', gap: 8 },
+  secondaryActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', minWidth: 0 },
   actionBtn: {
     borderWidth: 1,
     borderRadius: 10,
@@ -290,6 +306,7 @@ const styles = StyleSheet.create({
     flexBasis: 120,
     minWidth: 0,
   },
+  actionBtnFull: { alignSelf: 'stretch', flexBasis: 'auto' },
   actionPrimary: { fontSize: 14, fontWeight: '800', textAlign: 'center' },
   actionSecondary: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
   finalChip: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, alignSelf: 'flex-start' },

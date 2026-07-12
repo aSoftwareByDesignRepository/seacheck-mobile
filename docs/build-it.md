@@ -1,25 +1,9 @@
-# SeaCheck Mobile — build it
-
-## Prerequisites
-
-- **Node.js** `^20.19.4`, `^22.13.0`, `^24.3.0`, or `>=25` (React Native 0.85 rejects 22.12.x).
-- **Android SDK** at `~/Android/Sdk` (or set `ANDROID_HOME`).
-
-```bash
-node -v
-export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
-test -d "$ANDROID_HOME" || echo "Set ANDROID_HOME to your SDK path"
-```
-
-SeaCheck is **standalone** — no Nextcloud server or sign-in. Build on the **host**, not inside `docker compose exec`.
-
----
 
 ## Production release APK (use this every time)
 
 Copy-paste whenever you need a sideload APK. Do **not** skip steps.
 
-```bash
+``co`bash
 cd /home/alex/Development/nextcloud-dev/mobile/seacheck
 
 # 1. Dependencies pinned to Expo SDK 56 (preflight also runs expo install --check)

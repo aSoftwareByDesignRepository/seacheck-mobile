@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { ScreenLockOverlay } from '../features/map/ScreenLockOverlay';
 import { ScreenLockCoordinator } from '../features/map/ScreenLockCoordinator';
 import { AdaptiveTabBar } from '../navigation/AdaptiveTabBar';
-import { RAIL_WIDTH } from '../navigation/tabBarLayout';
+import { resolveShellTabBarLayout } from '../lib/navigation/shellLayoutPolicy';
 import { TabOverflowMenu } from '../navigation/TabOverflowMenu';
 import { useResumeBackgroundSync } from '../hooks/useResumeBackgroundSync';
 import { useDownloadFailureAlerts } from '../hooks/useDownloadFailureAlerts';
@@ -37,7 +37,7 @@ export function MainShell() {
   const { formFactor, isLandscape } = useFormFactor();
   const screenLocked = useNavigationStore((s) => s.screenLocked);
   const setScreenLocked = useNavigationStore((s) => s.setScreenLocked);
-  const useRail = formFactor !== 'compact' && isLandscape;
+  const { useRail, tabBarPosition } = resolveShellTabBarLayout(formFactor, isLandscape);
 
   return (
     <View style={styles.root}>
@@ -45,21 +45,14 @@ export function MainShell() {
       <ScreenLockCoordinator />
       <Tab.Navigator
         tabBar={(props) => <AdaptiveTabBar {...props} variant={useRail ? 'rail' : 'bottom'} />}
-        layout={({ children }) => (
-          <View style={[styles.content, useRail ? { paddingLeft: RAIL_WIDTH } : null]}>{children}</View>
-        )}
         screenOptions={{
           headerShown: false,
+          sceneStyle: styles.scene,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
+          tabBarPosition,
           tabBarStyle: useRail
             ? {
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: RAIL_WIDTH,
-                height: undefined,
                 borderTopWidth: 0,
                 borderRightWidth: StyleSheet.hairlineWidth,
                 borderRightColor: colors.border,
@@ -69,7 +62,6 @@ export function MainShell() {
             : {
                 backgroundColor: colors.surface,
                 borderTopColor: colors.border,
-                height: undefined,
               },
         }}
       >
@@ -105,5 +97,5 @@ export function MainShell() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { flex: 1 },
+  scene: { flex: 1 },
 });
