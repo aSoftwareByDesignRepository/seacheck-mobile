@@ -93,3 +93,16 @@ Live online tiles still work while downloading; once a pack is **Ready for offli
 ```bash
 npm run android   # or npm run ios
 ```
+
+## Projekt & Support
+
+**SeaCheck** wird von **Software by Design** entwickelt und gepflegt.  
+Weitere Informationen zu Projekten, Leistungen und Kontaktmöglichkeiten: [nextcloud.software-by-design.de](http://nextcloud.software-by-design.de/)  
+E-Mail: [info@software-by-design.de](mailto:info@software-by-design.de)  
+Quellcode und Issues: [github.com/aSoftwareByDesignRepository/seacheck-mobile](https://github.com/aSoftwareByDesignRepository/seacheck-mobile)
+
+> **Maintainer & Support (EN):**  
+> **SeaCheck** is developed and maintained by **Software by Design**.  
+> For more information about projects, services, and how to get in touch, visit [nextcloud.software-by-design.de](http://nextcloud.software-by-design.de/)  
+> You can also contact us via e-mail: [info@software-by-design.de](mailto:info@software-by-design.de)  
+> Source code and issues: [github.com/aSoftwareByDesignRepository/seacheck-mobile](https://github.com/aSoftwareByDesignRepository/seacheck-mobile)
