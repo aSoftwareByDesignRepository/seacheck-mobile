@@ -8,6 +8,8 @@ expo-env.d.ts
 .kotlin/
 *.orig.*
 *.jks
+keystore.properties
+release.keystore
 *.p8
 *.p12
 *.key

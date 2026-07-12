@@ -1,0 +1,47 @@
+=== GOOGLE PLAY LISTING — ENGLISH (en-US) ===
+Copy each block into Play Console → Main store listing.
+Tone: personal project shared as-is — not a product launch.
+
+--- App name (max 30 characters) ---
+SeaCheck
+
+--- Short description (max 80 characters) ---
+Personal coastal nav aid — GPS, SOG, offline map. Use with paper charts.
+
+--- Full description (max 4000 characters) ---
+SeaCheck is something I built for my own small-boat sailing — a deck-side companion to paper charts, not a replacement for them.
+
+I use it for boat speed, coordinates, a quick chart position without going below, passage sketches, and anchor alarms. I'm sharing it in case another coastal sailor finds it useful. No launch, no support promise — use at your own risk.
+
+NOT FOR PRIMARY NAVIGATION
+Aid to navigation only. Not a certified chart plotter. Maps use OpenSeaMap / OpenStreetMap volunteer data and may be outdated. Always carry official, corrected nautical charts.
+
+FEATURES
+• GPS on chart — COG, SOG, bearing
+• Passage planning, waypoints, GPX export
+• Offline region packs (Wi‑Fi download)
+• Anchor, arrival, and off-course alarms
+• Track recording
+• EN / DE UI
+
+Free. No ads. No analytics. Data stays on your device.
+
+Built by Alexander Mäule / Software by Design GbR, Schleswig, Germany (side project).
+
+--- Category ---
+Maps & Navigation
+
+--- Tags / keywords (optional) ---
+sailing, coastal, GPS, SOG, offline map, companion app
+
+--- Contact email ---
+info@software-by-design.de
+
+--- Website ---
+(optional — leave blank or use software-by-design.de)
+
+--- Privacy policy URL ---
+https://nextcloud.software-by-design.de/en/privacy-seacheck-mobile.html
+
+--- Visibility ---
+Set to UNLISTED — share link only, no store marketing

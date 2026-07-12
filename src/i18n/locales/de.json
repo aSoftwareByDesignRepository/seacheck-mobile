@@ -30,7 +30,6 @@
   "onboarding": {
     "title": "Willkommen bei SeaCheck",
     "disclaimerTitle": "Nur als Navigationshilfe",
-    "disclaimerBody": "SeaCheck ist kein zertifizierter Kartenplotter. Führen Sie immer offizielle Karten mit und prüfen Sie wichtige navigationsrelevante Informationen.",
     "acceptDisclaimer": "Verstanden — weiter",
     "locationTitle": "Standortzugriff",
     "locationBody": "SeaCheck benötigt Ihre GPS-Position für Karte, Kurs, Fahrt und Peilung.",
@@ -117,7 +116,7 @@
       "alarms": "Alarme",
       "alarmsSummary": "Benachrichtigungen, Ton, Grenzen und Ankerwache",
       "about": "Info",
-      "aboutSummary": "Haftungsausschluss, Notfalltext und App-Version"
+      "aboutSummary": "Navigation-Hinweis, Karten-Attribution, Anbieter und App-Version"
     },
     "displayTitle": "Anzeige",
     "displaySummary": "Design, Kartendaten, Koordinaten und Kartenverhalten",
@@ -243,8 +242,19 @@
     "legAdvanceAuto": "Etappen bei Ankunft automatisch weiterschalten",
     "legAdvanceAutoHint": "Wenn ein Wegpunkt erreicht oder passiert wurde, automatisch zur nächsten Etappe. Auf dem Karten-Banner können Sie jederzeit manuell überspringen.",
     "aboutTitle": "Info & Rechtliches",
-    "disclaimerBody": "SeaCheck ist nur eine Navigationshilfe. Nicht für die Hauptnavigation. Immer offizielle Karten verwenden.",
     "version": "SeaCheck v%{v}"
+  },
+  "legal": {
+    "disclaimerLead": "SeaCheck unterstützt Sie auf dem Wasser als Navigationshilfe — kein Ersatz für offizielle Seekarten und kein zertifizierter Kartenplotter.",
+    "disclaimerCharts": "SeaCheck nutzt die freiwillige Arbeit von OpenSeaMap und OpenStreetMap: Seezeichen und eine allgemeine Küstenkarte, auch offline nutzbar. Das hilft bei Orientierung und Routenplanung. Die Daten werden von Freiwilligen gepflegt und können veraltet oder lückenhaft sein — es ist keine vermessene Seekarte und enthält keine amtlichen Tiefen, Fahrwasser oder Berichtigungen.",
+    "disclaimerOfficial": "Daher ist SeaCheck allein nicht für die Navigation geeignet. Nutzen Sie die App ergänzend zu Ihren offiziellen, berichtigten und aktuellen Seekarten, prüfen Sie NtM und sicherheitsrelevante Angaben vor dem Auslaufen.",
+    "openSeaMapLicense": "OpenSeaMap — Projekt & Lizenz",
+    "openStreetMapCopyright": "OpenStreetMap — Projekt & Lizenz",
+    "cartoAttribution": "CARTO — Attribution",
+    "privacyPolicy": "Datenschutzerklärung",
+    "termsOfUse": "Nutzungsbedingungen & Navigation-Hinweis",
+    "publisher": "Software by Design",
+    "publisherHint": "Entwickelt von Software by Design in Kiel"
   },
   "map": {
     "cog": "Kurs",
@@ -577,6 +587,9 @@
     "customRelocateHint": "Neue Position für Ecke %{index} antippen",
     "customAreaSize": "Fläche %{width} × %{height}",
     "customEstimatePreview": "Geschätzte Größe ~%{size} (Vorschau) · z10–14 · Basis + Seezeichen",
+    "customAreaPreviewTitle": "Flächenvorschau",
+    "customAreaPreviewEmpty": "Ecken, die Sie auf der Karte setzen, erscheinen hier.",
+    "customAreaPreviewA11y": "Vorschau der eigenen Download-Fläche, %{count} Ecken gesetzt",
     "customCornerSheetTitle": "Ecke %{index}",
     "customCornerSheetBody": "Ecke auf der Karte verschieben oder löschen, um neu zu zeichnen.",
     "customCornerMove": "Auf Karte verschieben",

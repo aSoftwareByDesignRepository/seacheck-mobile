@@ -1,5 +1,8 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
+import withAndroidReleaseSigning from './plugins/withAndroidReleaseSigning';
+import withAndroidNodePath from './plugins/withAndroidNodePath';
+
 const isProductionBuild = process.env.SEACHECK_APP_VARIANT === 'production';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
@@ -51,6 +54,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'WAKE_LOCK',
       'REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
     ],
+    // expo-sensors bundles ACTIVITY_RECOGNITION for Pedometer; SeaCheck only uses Barometer.
+    blockedPermissions: [
+      'android.permission.ACTIVITY_RECOGNITION',
+      'com.google.android.gms.permission.ACTIVITY_RECOGNITION',
+    ],
   },
   plugins: [
     ...(isProductionBuild ? [] : (['expo-dev-client'] as const)),
@@ -65,6 +73,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         isIosBackgroundLocationEnabled: true,
         isAndroidBackgroundLocationEnabled: true,
         isAndroidForegroundServiceEnabled: true,
+        isAndroidMotionActivityEnabled: false,
       },
     ],
     'expo-sqlite',
@@ -80,6 +89,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     ['@maplibre/maplibre-react-native', { android: {}, ios: { metalEnabled: true } }],
+    withAndroidReleaseSigning,
+    withAndroidNodePath,
   ],
   extra: {
     eas: {

@@ -1,0 +1,40 @@
+=== GOOGLE PLAY LISTING — DEUTSCH (de-DE) ===
+Ton: persönliches Projekt, weitergegeben wie besehen — kein Produkt-Launch.
+
+--- App-Name (max. 30 Zeichen) ---
+SeaCheck
+
+--- Kurzbeschreibung (max. 80 Zeichen) ---
+Persönliche Küsten-Nav — GPS, Fahrt, Offline-Karte. Begleiter zu Papierkarten.
+
+--- Vollständige Beschreibung ---
+SeaCheck habe ich für mein eigenes kleines Boot gebaut — ein Begleiter zu den Papierkarten an Deck, kein Ersatz dafür.
+
+Ich nutze es für Fahrt, Koordinaten, schnelle Positionsanzeige ohne unter Deck zu gehen, Törnskizzen und Ankeralarme. Ich stelle es einfach bereit, falls es anderen Küstenseglern hilft. Kein Launch, kein Support-Versprechen — Nutzung auf eigene Verantwortung.
+
+NICHT FÜR HAUPTNAVIGATION
+Nur Navigationshilfe. Kein zertifizierter Kartenplotter. Karten aus OpenSeaMap/OpenStreetMap-Freiwilligendaten, können veraltet sein. Immer offizielle, berichtigte Seekarten mitführen.
+
+FUNKTIONEN
+• GPS auf der Karte — Kurs, Fahrt, Peilung
+• Törnplanung, Wegpunkte, GPX-Export
+• Offline-Regionenpakete (WLAN)
+• Anker-, Ankunfts- und Abweichungsalarme
+• Track-Aufzeichnung
+• DE / EN Oberfläche
+
+Kostenlos. Keine Werbung. Keine Analyse-SDKs. Daten bleiben auf dem Gerät.
+
+Von Alexander Mäule / Software by Design GbR, Schleswig (Nebenprojekt).
+
+--- Kategorie ---
+Karten & Navigation
+
+--- Kontakt-E-Mail ---
+info@software-by-design.de
+
+--- URL Datenschutzerklärung ---
+https://nextcloud.software-by-design.de/de/datenschutz-seacheck-mobile.html
+
+--- Sichtbarkeit ---
+Auf UNLISTED stellen — nur per Link teilen, kein Store-Marketing

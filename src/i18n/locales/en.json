@@ -30,7 +30,6 @@
   "onboarding": {
     "title": "Welcome to SeaCheck",
     "disclaimerTitle": "Aid to navigation only",
-    "disclaimerBody": "SeaCheck is not a certified chart plotter. Always carry official charts and verify critical navigational information. Map and seamark data may be incomplete or outdated.",
     "acceptDisclaimer": "I understand — continue",
     "locationTitle": "Location access",
     "locationBody": "SeaCheck needs your GPS position to show you on the chart and display COG, SOG, and bearing.",
@@ -117,7 +116,7 @@
       "alarms": "Alarms",
       "alarmsSummary": "Notifications, sound, limits, and anchor watch",
       "about": "About",
-      "aboutSummary": "Disclaimer, emergency copy, and app version"
+      "aboutSummary": "Navigation disclaimer, map attribution, publisher, and app version"
     },
     "displayTitle": "Display",
     "displaySummary": "Theme, chart data, coordinates, and map behaviour",
@@ -243,8 +242,19 @@
     "legAdvanceAuto": "Auto-advance passage legs at arrival",
     "legAdvanceAutoHint": "When a waypoint is reached or passed, move to the next leg automatically. You can always skip manually on the map banner.",
     "aboutTitle": "About & legal",
-    "disclaimerBody": "SeaCheck is an aid to navigation only. Not for primary navigation. Always verify with official charts.",
     "version": "SeaCheck v%{v}"
+  },
+  "legal": {
+    "disclaimerLead": "SeaCheck is a helpful companion on the water — a navigation aid, not a certified chart plotter or replacement for official nautical charts.",
+    "disclaimerCharts": "SeaCheck builds on the volunteer work of OpenSeaMap and OpenStreetMap: community seamarks and a general coastline map you can use offline. That is valuable for orientation and route planning. The data is maintained by volunteers and may be outdated or incomplete — it is not a surveyed nautical chart and includes no official depths, fairways, or corrections.",
+    "disclaimerOfficial": "Because of this, SeaCheck is not suitable for navigation on its own. Use it alongside your official, corrected, up-to-date charts, check Notices to Mariners, and verify anything safety-critical before you go.",
+    "openSeaMapLicense": "OpenSeaMap — project & license",
+    "openStreetMapCopyright": "OpenStreetMap — project & license",
+    "cartoAttribution": "CARTO — attributions",
+    "privacyPolicy": "Privacy policy",
+    "termsOfUse": "Terms & navigation notice",
+    "publisher": "Software by Design",
+    "publisherHint": "Made by Software by Design in Kiel, Germany"
   },
   "map": {
     "cog": "COG",
@@ -577,6 +587,9 @@
     "customRelocateHint": "Tap the new position for corner %{index}",
     "customAreaSize": "Area %{width} × %{height}",
     "customEstimatePreview": "Estimated size ~%{size} (preview) · z10–14 · base + seamarks",
+    "customAreaPreviewTitle": "Area preview",
+    "customAreaPreviewEmpty": "Corners you place on the chart appear here.",
+    "customAreaPreviewA11y": "Custom download area preview, %{count} corners placed",
     "customCornerSheetTitle": "Corner %{index}",
     "customCornerSheetBody": "Move this corner on the chart or delete it to redraw.",
     "customCornerMove": "Move on chart",

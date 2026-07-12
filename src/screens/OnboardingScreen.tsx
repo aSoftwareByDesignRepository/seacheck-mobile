@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -17,6 +17,7 @@ import { requestConfirm } from '../store/confirmStore';
 import { useFeedbackStore } from '../store/feedbackStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTheme } from '../theme/ThemeContext';
+import { NavigationDisclaimer } from '../features/legal/NavigationDisclaimer';
 import { Button } from '../ui/Button';
 import { OnboardingStepIndicator } from '../ui/OnboardingStepIndicator';
 import { Card } from '../ui/Screen';
@@ -191,11 +192,19 @@ export function OnboardingScreen() {
         <OnboardingStepIndicator current={step} />
 
         {step === 'disclaimer' ? (
-          <Card>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('onboarding.disclaimerTitle')}</Text>
-            <Text style={[styles.body, { color: colors.textMuted }]}>{t('onboarding.disclaimerBody')}</Text>
-            <Button label={t('onboarding.acceptDisclaimer')} onPress={() => void acceptDisclaimer()} testID="onboarding.disclaimer.continue" />
-          </Card>
+          <ScrollView
+            style={styles.disclaimerScroll}
+            contentContainerStyle={styles.disclaimerScrollContent}
+            showsVerticalScrollIndicator
+          >
+            <Card>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('onboarding.disclaimerTitle')}</Text>
+              <NavigationDisclaimer testIDPrefix="onboarding.disclaimer" />
+              <View style={{ marginTop: spacing.md }}>
+                <Button label={t('onboarding.acceptDisclaimer')} onPress={() => void acceptDisclaimer()} testID="onboarding.disclaimer.continue" />
+              </View>
+            </Card>
+          </ScrollView>
         ) : null}
 
         {step === 'location' ? (
@@ -298,4 +307,6 @@ const styles = StyleSheet.create({
   status: { fontSize: 14, marginBottom: 8, fontWeight: '600' },
   hint: { fontSize: 13, lineHeight: 18, textAlign: 'center' },
   actions: { gap: 12 },
+  disclaimerScroll: { flexGrow: 0, maxHeight: '72%' },
+  disclaimerScrollContent: { paddingBottom: 8 },
 });

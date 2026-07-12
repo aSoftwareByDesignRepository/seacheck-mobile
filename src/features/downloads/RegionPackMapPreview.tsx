@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Camera, GeoJSONSource, Layer, Map, type CameraRef } from '@maplibre/maplibre-react-native';
+import { GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
 import type { Feature, FeatureCollection } from 'geojson';
 
 import { useExclusiveChartDownloadSession } from '../../hooks/useExclusiveChartDownloadSession';
 import type { RegionPackDefinition } from '../../map/regionPacks';
 import { MAP_EMBED_PREVIEW_HEIGHT } from '../../map/previewConstants';
-import { KIEL_CENTER } from '../../map/constants';
 import { t } from '../../i18n';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useTheme } from '../../theme/ThemeContext';
+import { EmbeddedChartMap } from '../map/EmbeddedChartMap';
 
 type Props = {
   pack: RegionPackDefinition;
@@ -19,8 +19,6 @@ export function RegionPackMapPreview({ pack }: Props) {
   const { colors, minTouch } = useTheme();
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
   const exclusiveChartDownload = useExclusiveChartDownloadSession();
-  const cameraRef = useRef<CameraRef>(null);
-  const [ready, setReady] = useState(false);
   const [west, south, east, north] = pack.bounds;
 
   const geojson = useMemo(
@@ -40,51 +38,45 @@ export function RegionPackMapPreview({ pack }: Props) {
     [west, south, east, north],
   );
 
-  useEffect(() => {
-    setReady(false);
-  }, [chartStyleUri]);
-
-  useEffect(() => {
-    if (!ready) return;
-    cameraRef.current?.fitBounds(pack.bounds, { padding: { top: 24, right: 24, bottom: 24, left: 24 }, duration: 0 });
-  }, [ready, pack.id, pack.bounds]);
+  const placeholder = (
+    <View
+      style={[styles.placeholder, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      accessibilityRole="summary"
+      accessibilityLabel={exclusiveChartDownload ? t('downloads.statusSummaryActiveTitle') : t('passage.mapPreviewOffline')}
+    >
+      <Text style={[styles.placeholderTitle, { color: colors.text }]}>
+        {exclusiveChartDownload ? t('downloads.statusSummaryActiveTitle') : t('downloads.previewUnavailableTitle')}
+      </Text>
+      <Text style={[styles.placeholderBody, { color: colors.textMuted }]}>
+        {exclusiveChartDownload ? t('downloads.statusSummaryActiveHint') : t('passage.mapPreviewOffline')}
+      </Text>
+    </View>
+  );
 
   if (!chartStyleUri || exclusiveChartDownload) {
-    return (
-      <View
-        style={[styles.placeholder, { backgroundColor: colors.surface, borderColor: colors.border }]}
-        accessibilityRole="summary"
-        accessibilityLabel={exclusiveChartDownload ? t('downloads.statusSummaryActiveTitle') : t('passage.mapPreviewOffline')}
-      >
-        <Text style={[styles.placeholderTitle, { color: colors.text }]}>
-          {exclusiveChartDownload ? t('downloads.statusSummaryActiveTitle') : t('downloads.previewUnavailableTitle')}
-        </Text>
-        <Text style={[styles.placeholderBody, { color: colors.textMuted }]}>
-          {exclusiveChartDownload ? t('downloads.statusSummaryActiveHint') : t('passage.mapPreviewOffline')}
-        </Text>
-      </View>
-    );
+    return placeholder;
   }
 
   return (
-    <View
-      style={[styles.wrap, { height: MAP_EMBED_PREVIEW_HEIGHT, minHeight: Math.max(MAP_EMBED_PREVIEW_HEIGHT, minTouch) }]}
+    <EmbeddedChartMap
+      mapKey={`pack-preview-${pack.id}`}
+      height={MAP_EMBED_PREVIEW_HEIGHT}
+      minHeight={Math.max(MAP_EMBED_PREVIEW_HEIGHT, minTouch)}
+      fitBounds={pack.bounds}
+      fitPadding={{ top: 24, right: 24, bottom: 24, left: 24 }}
       testID="downloads.packPreview"
+      accessibilityLabel={t('downloads.previewTitle')}
+      placeholder={placeholder}
     >
-      <Map key={`pack-preview-${pack.id}`} style={styles.map} mapStyle={chartStyleUri} onDidFinishLoadingMap={() => setReady(true)}>
-        <Camera ref={cameraRef} initialViewState={{ center: KIEL_CENTER, zoom: 8 }} />
-        <GeoJSONSource id={`pack-preview-${pack.id}`} data={geojson}>
-          <Layer id={`pack-preview-fill-${pack.id}`} type="fill" paint={{ 'fill-color': '#0073ad', 'fill-opacity': 0.12 }} />
-          <Layer id={`pack-preview-line-${pack.id}`} type="line" paint={{ 'line-color': '#0073ad', 'line-width': 2 }} />
-        </GeoJSONSource>
-      </Map>
-    </View>
+      <GeoJSONSource id={`pack-preview-${pack.id}`} data={geojson}>
+        <Layer id={`pack-preview-fill-${pack.id}`} type="fill" paint={{ 'fill-color': '#0073ad', 'fill-opacity': 0.18 }} />
+        <Layer id={`pack-preview-line-${pack.id}`} type="line" paint={{ 'line-color': '#0073ad', 'line-width': 3 }} />
+      </GeoJSONSource>
+    </EmbeddedChartMap>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { borderRadius: 14, overflow: 'hidden', marginTop: 8 },
-  map: { ...StyleSheet.absoluteFill },
   placeholder: {
     minHeight: MAP_EMBED_PREVIEW_HEIGHT,
     borderRadius: 14,
@@ -92,6 +84,7 @@ const styles = StyleSheet.create({
     padding: 16,
     justifyContent: 'center',
     gap: 8,
+    marginTop: 8,
   },
   placeholderTitle: { fontSize: 16, fontWeight: '700' },
   placeholderBody: { fontSize: 14, lineHeight: 20 },

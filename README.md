@@ -1,8 +1,8 @@
 # SeaCheck Mobile
 
-Proprietary maritime navigation companion (offline charts, GPS instruments, passage planning). Standalone app — no Nextcloud server required.
+Open-source maritime navigation companion (offline charts, GPS instruments, passage planning). Standalone app — no Nextcloud server required.
 
-Plan: [`planning/app-ideas/seacheck/PLAN-MOBILE-APP.md`](../../planning/app-ideas/seacheck/PLAN-MOBILE-APP.md)
+**License:** [AGPL-3.0-or-later](LICENSE)
 
 ## Stack
 
@@ -45,12 +45,22 @@ After changing native dependencies or `app.config.ts` plugins, run `npm run andr
 
 Onboarding walks through:
 
-1. Navigation disclaimer (not a certified plotter)
+1. Navigation disclaimer (not a certified plotter; OpenSeaMap/OSM attribution)
 2. Location permissions (foreground + background for tracks)
 3. Android battery optimization guidance
 4. Locked defaults: **Cruise/passage** — kn, NM, true°, DDM, course-up
 
 Settings → **Vessel** stores name, call sign, MMSI, and home port for Mayday text and default passage names.
+
+## Publishing (Google Play / App Store)
+
+**Publication kit:** [docs/play-store/README.md](docs/play-store/README.md) — privacy policy, terms, store listings, data safety, release checklist.
+
+```bash
+npm run play:preflight
+```
+
+See [STORE_REVIEW.md](STORE_REVIEW.md) for reviewer smoke path.
 
 ## Quality gates
 

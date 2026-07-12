@@ -29,7 +29,7 @@ import { selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
 import { useMapCameraFollow } from '../../hooks/useMapCameraFollow';
 import { CustomDownloadMapPanel } from '../downloads/CustomDownloadMapPanel';
 import { CustomDownloadCornerSheet } from '../downloads/CustomDownloadCornerSheet';
-import { nearestDownloadCorner } from '../../lib/map/customDownloadCorners';
+import { nearestDownloadCorner, boundsFromPoints } from '../../lib/map/customDownloadCorners';
 import { PassageMapPlanningPanel } from '../passage/PassageMapPlanningPanel';
 import { PassageMapPlanningGuideBanner } from '../passage/PassageMapPlanningGuideBanner';
 import { activateAnchorAlarmAt } from '../../lib/anchor/activateAnchorAlarm';
@@ -86,8 +86,9 @@ import { SeamarkDetailSheet } from './SeamarkDetailSheet';
 import { TrackPointMapDetailSheet } from './TrackPointMapDetailSheet';
 import { WaypointMapDetailSheet } from './WaypointMapDetailSheet';
 import { MapOverlays } from './MapOverlays';
+import { CustomDownloadOverlays } from './CustomDownloadOverlays';
 import { mapChromeInsets } from './mapChromeInsets';
-import { PASSAGE_PLANNING_PANEL_CONTENT_MAX } from './mapChromeLayout';
+import { CUSTOM_DOWNLOAD_PANEL_CONTENT_MAX, PASSAGE_PLANNING_PANEL_CONTENT_MAX } from './mapChromeLayout';
 import { boundsFromLonLat, boundsFromWaypoints } from '../../lib/map/passageBounds';
 import {
   lookupChartObjectOnline,
@@ -202,6 +203,7 @@ export function NavigationMap() {
   const [planningOpenEditOnTap, setPlanningOpenEditOnTap] = useState(false);
   const suppressNextPressRef = useRef(false);
   const planningCameraFitRef = useRef<{ passageId: string; revision: number } | null>(null);
+  const customCameraFitSigRef = useRef('');
   const addingPlanningWaypointRef = useRef(false);
   const isOffline = useIsDeviceDisconnected();
   const chartCoverage = useChartCoverageAtPoint(mapCenter.latitude, mapCenter.longitude);
@@ -415,6 +417,30 @@ export function NavigationMap() {
     setFollowActive(false);
     cameraRef.current?.fitBounds(bounds, { padding: { top: 96, right: 48, bottom: 160, left: 48 }, duration: 400 });
   }, [mapPreviewTrackId, mapPreviewLine]);
+
+  useEffect(() => {
+    if (!customSelecting) {
+      customCameraFitSigRef.current = '';
+      return;
+    }
+    if (!mapStyleLoaded || customCorners.length === 0) return;
+    const sig = customCorners.map((c) => `${c.id}:${c.latitude},${c.longitude}`).join('|');
+    if (customCameraFitSigRef.current === sig) return;
+    customCameraFitSigRef.current = sig;
+    setFollowActive(false);
+    const padding = { top: 96, right: 48, bottom: CUSTOM_DOWNLOAD_PANEL_CONTENT_MAX + 72, left: 48 };
+    if (customCorners.length === 1) {
+      const corner = customCorners[0]!;
+      cameraRef.current?.jumpTo({
+        center: [corner.longitude, corner.latitude],
+        zoom: Math.max(mapZoom, 12),
+      });
+      return;
+    }
+    const bounds = boundsFromPoints(customCorners);
+    if (!bounds) return;
+    cameraRef.current?.fitBounds(bounds, { padding, duration: 300 });
+  }, [customSelecting, customCorners, mapStyleLoaded, mapZoom]);
 
   useEffect(() => {
     if (!planningPassageId) {
@@ -817,6 +843,7 @@ export function NavigationMap() {
         planningMode={passageMapPlanning && !customSelecting}
         planningSelectedWaypointId={planningSelectedWaypointId}
       />
+      <CustomDownloadOverlays />
     </Map>
       </View>
       {!customSelecting ? (

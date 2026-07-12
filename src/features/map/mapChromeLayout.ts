@@ -46,7 +46,7 @@ export const MAP_FORWARD_PASSAGE_INSTRUMENT_DOCK_HEIGHT = 312;
 export const PASSAGE_PLANNING_PANEL_CONTENT_MAX = 300;
 
 /** Max scrollable content height for custom download panel. */
-export const CUSTOM_DOWNLOAD_PANEL_CONTENT_MAX = 192;
+export const CUSTOM_DOWNLOAD_PANEL_CONTENT_MAX = 360;
 
 /** Total bottom reserve for map ornaments — panel content only (safety actions sit on the side). */
 export function mapBottomPanelReserve(contentMaxHeight: number): number {

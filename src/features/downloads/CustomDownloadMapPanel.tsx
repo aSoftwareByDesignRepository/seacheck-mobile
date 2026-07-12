@@ -22,6 +22,7 @@ import { Button } from '../../ui/Button';
 import { FilterChip } from '../../ui/FilterChip';
 import { MapBottomPanelFrame } from '../map/MapBottomPanelFrame';
 import { CUSTOM_DOWNLOAD_PANEL_CONTENT_MAX } from '../map/mapChromeLayout';
+import { CustomDownloadAreaPreview } from './CustomDownloadAreaPreview';
 
 export function CustomDownloadMapPanel() {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
@@ -139,6 +140,8 @@ export function CustomDownloadMapPanel() {
       >
         <Text style={[styles.hint, { color: colors.text }]}>{stepHint}</Text>
       </View>
+
+      <CustomDownloadAreaPreview />
 
       {activeBounds ? (
         <View style={styles.metaSection} accessibilityRole="summary">

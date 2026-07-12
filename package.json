@@ -2,7 +2,7 @@
   "name": "seacheck-mobile",
   "version": "0.1.0",
   "main": "index.ts",
-  "private": true,
+  "license": "AGPL-3.0-or-later",
   "scripts": {
     "dev": "bash scripts/dev-emulator.sh",
     "start": "expo start --port 8092",
@@ -10,6 +10,7 @@
     "android:clean": "bash scripts/android-clean.sh",
     "android:rebuild": "bash scripts/android-clean.sh && npm run android",
     "android:release": "bash scripts/ensure-android-local-properties.sh && cd android && ./gradlew assembleRelease",
+    "android:bundle": "bash scripts/ensure-android-local-properties.sh && cd android && ./gradlew bundleRelease",
     "android:dev": "CI=1 expo run:android --port 8092",
     "ios": "expo run:ios --port 8092",
     "typecheck": "tsc --noEmit",
@@ -21,8 +22,10 @@
     "reload": "bash scripts/reload-js.sh",
     "logs:downloads": "bash scripts/watch-download-logs.sh",
     "preflight": "bash scripts/preflight.sh",
+    "play:preflight": "bash scripts/play-preflight.sh",
     "sync:regions": "node scripts/sync-planning-regions.mjs",
-    "icons": "node scripts/generate-app-icons.mjs"
+    "icons": "node scripts/generate-app-icons.mjs",
+    "postinstall": "bash scripts/patch-gradle-foojay.sh && bash scripts/patch-expo-node.sh && bash scripts/patch-expo-kotlin.sh && bash scripts/patch-node-gradle.sh"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
