@@ -1,22 +1,19 @@
-# Draft for https://gitlab.com/fdroid/fdroiddata — copy to metadata/de.softwarebydesign.seacheck.yml
-# Replace 3a7ffc1d25ac86c394803decc9381d47cbf07393 with the v0.1.0 tag SHA before submitting the MR.
-
+AntiFeatures:
+  - NonFreeNet
 Categories:
   - Navigation
 License: AGPL-3.0-or-later
 AuthorName: Alexander Mäule
 AuthorEmail: info@software-by-design.de
-AuthorWebSite: http://nextcloud.software-by-design.de/
+AuthorWebSite: https://nextcloud.software-by-design.de/
 WebSite: https://github.com/aSoftwareByDesignRepository/seacheck-mobile
 SourceCode: https://github.com/aSoftwareByDesignRepository/seacheck-mobile
-IssueTracker: https://github.com/aSoftwareByDesignRepository/seacheck-mobile/issues
+IssueTracker: 
+  https://github.com/aSoftwareByDesignRepository/seacheck-mobile/issues
 Translation: https://github.com/aSoftwareByDesignRepository/seacheck-mobile
-Changelog: https://github.com/aSoftwareByDesignRepository/seacheck-mobile/releases
-Donate: http://nextcloud.software-by-design.de/
-
-AntiFeatures:
-  - NonFreeNet
-  - BackgroundLocation
+Changelog: 
+  https://github.com/aSoftwareByDesignRepository/seacheck-mobile/releases
+Donate: https://nextcloud.software-by-design.de/
 
 RepoType: git
 Repo: https://github.com/aSoftwareByDesignRepository/seacheck-mobile
@@ -29,33 +26,42 @@ Builds:
       - apt-get update
       - apt-get install -y npm
     init: npm ci
-    output: android/app/build/outputs/apk/release/app-armeabi-v7a-release-unsigned.apk
+    output: 
+      android/app/build/outputs/apk/release/app-armeabi-v7a-release-unsigned.apk
     srclibs:
       - firebase-stub@ce90a956aacda17a85c60577ee443aeb83d876ef
     prebuild:
-      - sed -i -e '1a "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},' package.json
-      - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
+      - sed -i -e '1a 
+        "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},' 
+        package.json
+      - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' 
+        node_modules/@react-native/gradle-plugin/*/build.gradle.kts 
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
-      - sed -i -e '/installReferrerVersion/,+12d' node_modules/react-native-device-info/android/build.gradle
-      - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
-      - sed -i -e '/com.android.installreferrer.api/d' -e '/StringBuilder()/,/^ })/d'
-        -e '/getInstallReferrerAsync/apromise.resolve("")'
+      - sed -i -e '/installreferrer/d' 
+        node_modules/expo-application/android/build.gradle
+      - sed -i -e '/com.android.installreferrer.api/d' -e '/StringBuilder()/,/^ 
+        })/d' -e '/getInstallReferrerAsync/apromise.resolve("")' 
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
-      - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
-      - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
+      - sed -i -e '/firebase/d' 
+        node_modules/expo-notifications/android/build.gradle
+      - cp -a $$firebase-stub$$/firebase-messaging/src 
+        node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
-      - sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture = true/'
-        android/app/build.gradle
+      - sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def 
+        enableSeparateBuildPerCPUArchitecture = true/' android/app/build.gradle
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=armeabi-v7a' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
-      - echo 'allprojects { tasks.configureEach { t -> if (t.class.name.contains("KotlinCompile")) { try { t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check" } catch (Exception e) { try { t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check") } catch (Exception ex) {} } } } }' > android/init.gradle
+      - echo 'allprojects { tasks.configureEach { t -> if 
+        (t.class.name.contains("KotlinCompile")) { try { 
+        t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check" } 
+        catch (Exception e) { try { 
+        t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check") 
+        } catch (Exception ex) {} } } } }' > android/init.gradle
     scanignore:
-      - node_modules/react-native/sdks/hermesc/linux64-bin/hermesc
+      - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
-      - node_modules/expo-modules-autolinking/scripts/android/autolinking_implementation.gradle
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
-      - node_modules/@react-native-community/datetimepicker/android/build.gradle
       - node_modules/@react-native-community/netinfo/android/build.gradle
       - node_modules/@maplibre/maplibre-react-native/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
@@ -71,33 +77,42 @@ Builds:
       - apt-get update
       - apt-get install -y npm
     init: npm ci
-    output: android/app/build/outputs/apk/release/app-arm64-v8a-release-unsigned.apk
+    output: 
+      android/app/build/outputs/apk/release/app-arm64-v8a-release-unsigned.apk
     srclibs:
       - firebase-stub@ce90a956aacda17a85c60577ee443aeb83d876ef
     prebuild:
-      - sed -i -e '1a "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},' package.json
-      - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
+      - sed -i -e '1a 
+        "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},' 
+        package.json
+      - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' 
+        node_modules/@react-native/gradle-plugin/*/build.gradle.kts 
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
-      - sed -i -e '/installReferrerVersion/,+12d' node_modules/react-native-device-info/android/build.gradle
-      - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
-      - sed -i -e '/com.android.installreferrer.api/d' -e '/StringBuilder()/,/^ })/d'
-        -e '/getInstallReferrerAsync/apromise.resolve("")'
+      - sed -i -e '/installreferrer/d' 
+        node_modules/expo-application/android/build.gradle
+      - sed -i -e '/com.android.installreferrer.api/d' -e '/StringBuilder()/,/^ 
+        })/d' -e '/getInstallReferrerAsync/apromise.resolve("")' 
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
-      - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
-      - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
+      - sed -i -e '/firebase/d' 
+        node_modules/expo-notifications/android/build.gradle
+      - cp -a $$firebase-stub$$/firebase-messaging/src 
+        node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
-      - sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture = true/'
-        -e 's/"arm64-v8a": 3/"arm64-v8a": 2/' android/app/build.gradle
+      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
+        = true/' -e 's/\"arm64-v8a\": 3/\"arm64-v8a\": 2/' android/app/build.gradle"
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=arm64-v8a' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
-      - echo 'allprojects { tasks.configureEach { t -> if (t.class.name.contains("KotlinCompile")) { try { t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check" } catch (Exception e) { try { t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check") } catch (Exception ex) {} } } } }' > android/init.gradle
+      - echo 'allprojects { tasks.configureEach { t -> if 
+        (t.class.name.contains("KotlinCompile")) { try { 
+        t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check" } 
+        catch (Exception e) { try { 
+        t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check") 
+        } catch (Exception ex) {} } } } }' > android/init.gradle
     scanignore:
-      - node_modules/react-native/sdks/hermesc/linux64-bin/hermesc
+      - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
-      - node_modules/expo-modules-autolinking/scripts/android/autolinking_implementation.gradle
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
-      - node_modules/@react-native-community/datetimepicker/android/build.gradle
       - node_modules/@react-native-community/netinfo/android/build.gradle
       - node_modules/@maplibre/maplibre-react-native/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
@@ -113,33 +128,42 @@ Builds:
       - apt-get update
       - apt-get install -y npm
     init: npm ci
-    output: android/app/build/outputs/apk/release/app-x86_64-release-unsigned.apk
+    output: 
+      android/app/build/outputs/apk/release/app-x86_64-release-unsigned.apk
     srclibs:
       - firebase-stub@ce90a956aacda17a85c60577ee443aeb83d876ef
     prebuild:
-      - sed -i -e '1a "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},' package.json
-      - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
+      - sed -i -e '1a 
+        "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},' 
+        package.json
+      - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' 
+        node_modules/@react-native/gradle-plugin/*/build.gradle.kts 
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
-      - sed -i -e '/installReferrerVersion/,+12d' node_modules/react-native-device-info/android/build.gradle
-      - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
-      - sed -i -e '/com.android.installreferrer.api/d' -e '/StringBuilder()/,/^ })/d'
-        -e '/getInstallReferrerAsync/apromise.resolve("")'
+      - sed -i -e '/installreferrer/d' 
+        node_modules/expo-application/android/build.gradle
+      - sed -i -e '/com.android.installreferrer.api/d' -e '/StringBuilder()/,/^ 
+        })/d' -e '/getInstallReferrerAsync/apromise.resolve("")' 
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
-      - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
-      - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
+      - sed -i -e '/firebase/d' 
+        node_modules/expo-notifications/android/build.gradle
+      - cp -a $$firebase-stub$$/firebase-messaging/src 
+        node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
-      - sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture = true/'
-        -e 's/"x86_64": 4/"x86_64": 3/' android/app/build.gradle
+      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
+        = true/' -e 's/\"x86_64\": 4/\"x86_64\": 3/' android/app/build.gradle"
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=x86_64' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
-      - echo 'allprojects { tasks.configureEach { t -> if (t.class.name.contains("KotlinCompile")) { try { t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check" } catch (Exception e) { try { t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check") } catch (Exception ex) {} } } } }' > android/init.gradle
+      - echo 'allprojects { tasks.configureEach { t -> if 
+        (t.class.name.contains("KotlinCompile")) { try { 
+        t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check" } 
+        catch (Exception e) { try { 
+        t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check") 
+        } catch (Exception ex) {} } } } }' > android/init.gradle
     scanignore:
-      - node_modules/react-native/sdks/hermesc/linux64-bin/hermesc
+      - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
-      - node_modules/expo-modules-autolinking/scripts/android/autolinking_implementation.gradle
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
-      - node_modules/@react-native-community/datetimepicker/android/build.gradle
       - node_modules/@react-native-community/netinfo/android/build.gradle
       - node_modules/@maplibre/maplibre-react-native/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
@@ -151,9 +175,9 @@ Builds:
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
 VercodeOperation:
-  - 10 * %c + 1
-  - 10 * %c + 2
-  - 10 * %c + 3
+  - '%c'
+  - '%c + 1'
+  - '%c + 2'
 UpdateCheckData: app.config.ts|versionCode:\s*(\d+)|.|version:\s*'([^']+)'
 CurrentVersion: 0.1.0
 CurrentVersionCode: 3
