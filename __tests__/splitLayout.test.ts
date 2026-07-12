@@ -4,6 +4,7 @@ import {
   MAP_SPLIT_PANEL_MIN_WIDTH,
   resolveInstrumentPanelOnLeft,
   resolveMapSplitPanelWidth,
+  resolvePassageListColumns,
   shouldSplitMapLayout,
   shouldUseMasterDetail,
 } from '../src/lib/responsive/splitLayout';
@@ -20,10 +21,13 @@ describe('splitLayout', () => {
     expect(shouldSplitMapLayout('expanded', true, 'instruments-only', 800)).toBe(false);
   });
 
-  it('uses master–detail on medium and expanded', () => {
-    expect(shouldUseMasterDetail('compact')).toBe(false);
-    expect(shouldUseMasterDetail('medium')).toBe(true);
-    expect(shouldUseMasterDetail('expanded')).toBe(true);
+  it('uses master–detail on medium and expanded in portrait only', () => {
+    expect(shouldUseMasterDetail('compact', false)).toBe(false);
+    expect(shouldUseMasterDetail('compact', true)).toBe(false);
+    expect(shouldUseMasterDetail('medium', false)).toBe(true);
+    expect(shouldUseMasterDetail('medium', true)).toBe(false);
+    expect(shouldUseMasterDetail('expanded', false)).toBe(true);
+    expect(shouldUseMasterDetail('expanded', true)).toBe(false);
   });
 
   it('places instrument panel on starboard by default in landscape', () => {
@@ -46,6 +50,14 @@ describe('splitLayout', () => {
     expect(resolveMapSplitPanelWidth(width, 'minimal')).toBeLessThan(
       resolveMapSplitPanelWidth(width, 'map-forward'),
     );
+  });
+
+  it('uses two passage list columns only in portrait master–detail', () => {
+    expect(resolvePassageListColumns('compact', false)).toBe(1);
+    expect(resolvePassageListColumns('medium', false)).toBe(2);
+    expect(resolvePassageListColumns('medium', true)).toBe(1);
+    expect(resolvePassageListColumns('expanded', false)).toBe(2);
+    expect(resolvePassageListColumns('expanded', true)).toBe(1);
   });
 
   it('requires minimum window height for split', () => {

@@ -2,7 +2,7 @@ import { GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Feature, FeatureCollection, LineString, Point, Polygon } from 'geojson';
 
-import { squareBoundsFromAnchor } from '../../lib/map/bounds';
+import { boundsFromPoints, CUSTOM_DOWNLOAD_CORNER_COUNT } from '../../lib/map/customDownloadCorners';
 import { useCustomDownloadStore } from '../../store/customDownloadStore';
 import { bearingTrue, destinationPoint, distanceNm, type LonLat } from '../../lib/geo/navigation';
 import { formatBearing, magneticDeclinationDeg } from '../../lib/geo/magnetic';
@@ -49,16 +49,32 @@ export function MapOverlays({ planningMode = false, planningSelectedWaypointId =
   const planningRevision = usePassageMapPlanningStore((s) => s.revision);
   const bearingReference = useSettingsStore((s) => s.bearingReference);
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
-  const customBounds = useCustomDownloadStore((s) => {
-    const a = s.cornerA;
-    const b = s.cornerB;
-    if (!a || !b) return null;
-    return squareBoundsFromAnchor(a, b);
-  });
-  const customCornerA = useCustomDownloadStore((s) => s.cornerA);
+  const customSelecting = useCustomDownloadStore((s) => s.selecting);
+  const customCorners = useCustomDownloadStore((s) => s.corners);
+  const customSelectedCornerId = useCustomDownloadStore((s) => s.selectedCornerId);
+  const customBounds = useMemo(() => {
+    if (customCorners.length < CUSTOM_DOWNLOAD_CORNER_COUNT) return null;
+    return boundsFromPoints(customCorners);
+  }, [customCorners]);
+  const customPreviewBounds = useMemo(() => {
+    if (customCorners.length < 2 || customCorners.length >= CUSTOM_DOWNLOAD_CORNER_COUNT) return null;
+    return boundsFromPoints(customCorners);
+  }, [customCorners]);
 
   const geojson = useMemo(() => {
     const features: Feature[] = [];
+
+    if (customPreviewBounds) {
+      const [west, south, east, north] = customPreviewBounds;
+      features.push({
+        type: 'Feature',
+        properties: { kind: 'custom-download-preview' },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[west, south], [east, south], [east, north], [west, north], [west, south]]],
+        },
+      });
+    }
 
     if (customBounds) {
       const [west, south, east, north] = customBounds;
@@ -71,11 +87,29 @@ export function MapOverlays({ planningMode = false, planningSelectedWaypointId =
         },
       });
     }
-    if (customCornerA && !customBounds) {
+
+    if (customSelecting && customCorners.length >= 2) {
+      const ring = customCorners.map((c) => [c.longitude, c.latitude] as [number, number]);
+      const complete = customCorners.length >= CUSTOM_DOWNLOAD_CORNER_COUNT;
+      if (complete) {
+        ring.push(ring[0]!);
+      }
       features.push({
         type: 'Feature',
-        properties: { kind: 'custom-corner' },
-        geometry: { type: 'Point', coordinates: [customCornerA.longitude, customCornerA.latitude] },
+        properties: { kind: complete ? 'custom-download-edge' : 'custom-download-edge-preview' },
+        geometry: { type: 'LineString', coordinates: ring },
+      });
+    }
+
+    for (const corner of customCorners) {
+      features.push({
+        type: 'Feature',
+        properties: {
+          kind: 'custom-corner',
+          selected: corner.id === customSelectedCornerId,
+          label: String(corner.index),
+        },
+        geometry: { type: 'Point', coordinates: [corner.longitude, corner.latitude] },
       });
     }
 
@@ -143,11 +177,10 @@ export function MapOverlays({ planningMode = false, planningSelectedWaypointId =
     }
 
     return { type: 'FeatureCollection', features } satisfies FeatureCollection;
-  }, [fix, goToTarget, mobTarget, anchorAlarm, customBounds, customCornerA, bearingReference, distanceUnit, activePassageId]);
+  }, [fix, goToTarget, mobTarget, anchorAlarm, customBounds, customPreviewBounds, customCorners, customSelectedCornerId, customSelecting, bearingReference, distanceUnit, activePassageId]);
 
-  // Planning mode: show only the passage being planned. No go-to, MOB, anchor,
-  // MOB marks or track trails — the navigator works on a clean chart.
-  if (planningMode) {
+  // Planning mode: show only the passage being planned — unless the user is picking a custom download area.
+  if (planningMode && !customSelecting) {
     return planningPassageId ? (
       <PassagePlanningOverlay
         passageId={planningPassageId}
@@ -198,22 +231,64 @@ export function MapOverlays({ planningMode = false, planningSelectedWaypointId =
           }}
         />
         <Layer
+          id="seacheck-custom-download-edge-preview"
+          type="line"
+          filter={['==', ['get', 'kind'], 'custom-download-edge-preview']}
+          paint={{ 'line-color': '#0073ad', 'line-width': 2.5, 'line-opacity': 0.7, 'line-dasharray': [3, 2] }}
+        />
+        <Layer
+          id="seacheck-custom-download-edge"
+          type="line"
+          filter={['==', ['get', 'kind'], 'custom-download-edge']}
+          paint={{ 'line-color': '#0073ad', 'line-width': 3, 'line-opacity': 0.95 }}
+        />
+        <Layer
+          id="seacheck-custom-download-preview-fill"
+          type="fill"
+          filter={['==', ['get', 'kind'], 'custom-download-preview']}
+          paint={{ 'fill-color': '#0073ad', 'fill-opacity': 0.1 }}
+        />
+        <Layer
+          id="seacheck-custom-download-preview-line"
+          type="line"
+          filter={['==', ['get', 'kind'], 'custom-download-preview']}
+          paint={{ 'line-color': '#0073ad', 'line-width': 2.5, 'line-opacity': 0.85, 'line-dasharray': [4, 3] }}
+        />
+        <Layer
           id="seacheck-custom-download-fill"
           type="fill"
           filter={['==', ['get', 'kind'], 'custom-download']}
-          paint={{ 'fill-color': '#0073ad', 'fill-opacity': 0.15 }}
+          paint={{ 'fill-color': '#0073ad', 'fill-opacity': 0.18 }}
         />
         <Layer
           id="seacheck-custom-download-line"
           type="line"
           filter={['==', ['get', 'kind'], 'custom-download']}
-          paint={{ 'line-color': '#0073ad', 'line-width': 2, 'line-opacity': 0.95 }}
+          paint={{ 'line-color': '#0073ad', 'line-width': 3, 'line-opacity': 1 }}
         />
         <Layer
           id="seacheck-custom-corner"
           type="circle"
           filter={['==', ['get', 'kind'], 'custom-corner']}
-          paint={{ 'circle-radius': 10, 'circle-color': '#0073ad', 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' }}
+          paint={{
+            'circle-radius': ['case', ['get', 'selected'], 12, 11],
+            'circle-color': '#0073ad',
+            'circle-stroke-width': ['case', ['get', 'selected'], 3, 2],
+            'circle-stroke-color': '#ffffff',
+          }}
+        />
+        <Layer
+          id="seacheck-custom-corner-label"
+          type="symbol"
+          filter={['==', ['get', 'kind'], 'custom-corner']}
+          style={{
+            textField: ['get', 'label'],
+            textSize: 13,
+            textColor: '#ffffff',
+            textHaloColor: '#0073ad',
+            textHaloWidth: 2,
+            textAllowOverlap: true,
+          }}
         />
         <Layer
           id="seacheck-goto-point"

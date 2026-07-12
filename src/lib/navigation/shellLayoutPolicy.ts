@@ -1,4 +1,5 @@
 import type { FormFactor } from '../../hooks/useFormFactor';
+import { shouldUseMasterDetail } from '../responsive/splitLayout';
 
 export type ShellTabBarPosition = 'bottom' | 'left';
 
@@ -14,6 +15,6 @@ export function resolveShellTabBarLayout(
 }
 
 /** Tracks uses a full-height master pane only when master–detail is split. */
-export function shouldTracksScreenUseScrollRoot(formFactor: FormFactor): boolean {
-  return formFactor !== 'compact';
+export function shouldTracksScreenUseScrollRoot(formFactor: FormFactor, isLandscape: boolean): boolean {
+  return shouldUseMasterDetail(formFactor, isLandscape);
 }

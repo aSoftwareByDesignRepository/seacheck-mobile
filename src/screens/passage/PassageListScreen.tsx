@@ -5,6 +5,7 @@ import { FlatList, StyleSheet } from 'react-native';
 
 import { PassageListCard } from '../../features/passage/PassageListCard';
 import { usePassageDeactivate } from '../../hooks/usePassageDeactivate';
+import { resolvePassageListColumns } from '../../lib/responsive/splitLayout';
 import { useFormFactor } from '../../hooks/useFormFactor';
 import { confirmReverseActivePassage } from '../../lib/passage/confirmReversePassage';
 import { t } from '../../i18n';
@@ -23,8 +24,8 @@ type Nav = NativeStackNavigationProp<PassageStackParamList, 'PassageList'>;
 export function PassageListScreen() {
   const navigation = useNavigation<Nav>();
   const { spacing } = useTheme();
-  const { formFactor } = useFormFactor();
-  const listColumns = formFactor !== 'compact' ? 2 : 1;
+  const { formFactor, isLandscape } = useFormFactor();
+  const listColumns = resolvePassageListColumns(formFactor, isLandscape);
   const passages = usePassageStore((s) => s.passages);
   const activePassageId = usePassageStore((s) => s.activePassageId);
   const routeRevision = usePassageStore((s) => s.routeRevision);

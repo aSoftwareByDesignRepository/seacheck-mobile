@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { onLayoutHeight } from '../../lib/ui/safeLayout';
 import { useFormFactor } from '../../hooks/useFormFactor';
 import { useNavigationInstrumentData } from '../../hooks/useNavigationInstrumentData';
 import { nextCoordFormat, coordFormatTitleKey } from '../../lib/settings/coordFormats';
@@ -78,7 +79,7 @@ export function MapInstruments({ fix, onOpenPassage }: Props) {
         scrollEnabled={scrollEnabled}
         bounces={scrollEnabled}
         alwaysBounceVertical={false}
-        onLayout={(e) => updateScrollMetrics(e.nativeEvent.layout.height, undefined)}
+        onLayout={onLayoutHeight((height) => updateScrollMetrics(height, undefined))}
         onContentSizeChange={(_, h) => updateScrollMetrics(undefined, h)}
         contentContainerStyle={[
           styles.scroll,

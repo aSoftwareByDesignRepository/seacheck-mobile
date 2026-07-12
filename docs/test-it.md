@@ -78,7 +78,7 @@ If the app shows **“SeaCheck could not start”**, tap **Retry**. If it persis
 ### Custom offline area
 
 1. **Downloads** → **Select area on map**
-2. Tap two opposite corners, confirm zoom/size, download on Wi‑Fi
+2. Tap four corners of your rectangle, confirm zoom/size, download on Wi‑Fi
 3. Pack appears under **Your custom packs**
 
 ### Anchor alarm (background)

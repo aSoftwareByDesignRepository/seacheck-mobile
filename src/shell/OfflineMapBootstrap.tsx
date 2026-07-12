@@ -1,3 +1,4 @@
+import { DownloadMapSessionHost } from '../features/downloads/DownloadMapSessionHost';
 import { OfflineMapEngineHost } from '../features/offline/OfflineMapEngineHost';
 import { useMapLibreNetworkSync } from '../hooks/useMapLibreNetworkSync';
 import { useOfflinePackStore } from '../store/offlinePackStore';
@@ -19,5 +20,10 @@ export function OfflineMapBootstrap() {
     }
   }, [hydrated, ensureHydratedForUi]);
 
-  return <OfflineMapEngineHost />;
+  return (
+    <>
+      <OfflineMapEngineHost />
+      <DownloadMapSessionHost />
+    </>
+  );
 }

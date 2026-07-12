@@ -29,10 +29,15 @@ import { resolveChartTileProbeCenter } from '../lib/network/chartTileProbeCenter
 import { ensureMapLibreNetworkForDownload } from '../lib/network/mapLibreNetworkGate';
 import { abandonDownloadSession, beginDownloadSession } from '../lib/offline/beginDownloadSession';
 import {
+  clearDownloadSessionPhase,
+  rememberDownloadSessionPhase,
+} from '../lib/offline/downloadFailureDiagnostics';
+import {
   downloadCoordinator,
   formatDownloadError,
   loadNativePacksWithRetry,
   resetDownloadCoordinatorForTests,
+  subscribeDownloadCoordinatorActivity,
   waitForDownloadMapTeardown,
 } from '../lib/offline/downloadCoordinator';
 import { cacheBackedPackId, isCacheBackedPackId, runTileCacheSweep } from '../lib/offline/tileCacheDownload';
@@ -52,8 +57,30 @@ import { resetOfflineManagerSetupForTests } from '../lib/offline/offlineManagerS
 import { warmupOfflineEngine } from '../lib/offline/warmupOfflineEngine';
 import { ensureStorageForDownload } from '../lib/offline/storageCheck';
 import { sanitizePersistedIndex, type PersistedIndex, type PersistedIndexEntry } from '../lib/offline/offlinePackIndex';
+import {
+  reportDownloadFailure,
+  reportDownloadFailureFromThrowable,
+} from '../lib/offline/reportDownloadFailure';
 
 const STORAGE_KEY = 'seacheck.offline.v1';
+
+/** Opens the copyable download failure modal. */
+function showDownloadSessionFailure(regionId: string, error: unknown, phase: string): void {
+  void reportDownloadFailureFromThrowable(regionId, error, 'async', phase);
+}
+
+function showDownloadSessionMessage(regionId: string, message: string, phase: string, cause?: unknown): void {
+  if (cause != null) {
+    showDownloadSessionFailure(regionId, cause, phase);
+    return;
+  }
+  void reportDownloadFailure({
+    regionId,
+    message,
+    source: 'async',
+    extra: { phase },
+  });
+}
 
 export type PackDownloadState = 'idle' | 'downloading' | 'ready' | 'error';
 
@@ -388,6 +415,7 @@ function createCacheDownloadSession(
   const markReady = async () => {
     if (finalizeOutcome !== 'pending') return;
     finalizeOutcome = 'ready';
+    rememberDownloadSessionPhase(ctx.regionId, 'finalize');
     try {
       await finalizeReadyDownload(
         ctx.regionId,
@@ -398,68 +426,94 @@ function createCacheDownloadSession(
       );
     } catch (error) {
       finalizeOutcome = 'pending';
-      await markFailed(formatDownloadError(error, t('downloads.statusError')));
+      await markFailed(formatDownloadError(error, t('downloads.statusError')), error);
       return;
     }
 
-    // Finish native tile/GL work before flipping UI to completing — avoids peak pressure
-    // while the banner re-renders and other surfaces would react to state: ready.
-    await yieldToUi();
+    rememberDownloadSessionPhase(ctx.regionId, 'completing');
     try {
-      const controller = await waitForDownloadMapController(3_000);
-      if (controller && !downloadCoordinator.isStale(ctx.regionId, ctx.session)) {
-        await controller.waitForFrame();
+      // Finish native tile/GL work before flipping UI to completing — avoids peak pressure
+      // while the banner re-renders and other surfaces would react to state: ready.
+      await yieldToUi();
+      try {
+        const controller = await waitForDownloadMapController(3_000);
+        if (controller && !downloadCoordinator.isStale(ctx.regionId, ctx.session)) {
+          await controller.waitForFrame();
+        }
+      } catch {
+        /* best effort */
       }
-    } catch {
-      /* best effort */
-    }
-    await new Promise((resolve) => setTimeout(resolve, tileSweepFinalSettleMs()));
-    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
+      await new Promise((resolve) => setTimeout(resolve, tileSweepFinalSettleMs()));
+      if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
 
-    set((state) => ({
-      regions: {
-        ...state.regions,
-        [ctx.regionId]: {
-          regionId: ctx.regionId,
-          state: 'ready',
-          percentage: 100,
-          packId,
-          error: null,
-          cacheBacked: true,
-          ...ctx.customMeta,
-          seamarksIndexed: false,
-          seamarksIndexing: false,
+      set((state) => ({
+        regions: {
+          ...state.regions,
+          [ctx.regionId]: {
+            regionId: ctx.regionId,
+            state: 'ready',
+            percentage: 100,
+            packId,
+            error: null,
+            cacheBacked: true,
+            ...ctx.customMeta,
+            seamarksIndexed: false,
+            seamarksIndexing: false,
+          },
         },
-      },
-      ...(ctx.finalizeExtra?.bounds
-        ? { customBoundsIndex: { ...state.customBoundsIndex, [ctx.regionId]: ctx.finalizeExtra.bounds } }
-        : {}),
-    }));
+        ...(ctx.finalizeExtra?.bounds
+          ? { customBoundsIndex: { ...state.customBoundsIndex, [ctx.regionId]: ctx.finalizeExtra.bounds } }
+          : {}),
+      }));
 
-    await yieldToUi();
-    await yieldToUi();
+      await yieldToUi();
+      await yieldToUi();
 
-    try {
-      const controller = await waitForDownloadMapController(3_000);
-      if (controller && !downloadCoordinator.isStale(ctx.regionId, ctx.session)) {
-        await controller.waitForFrame();
+      try {
+        const controller = await waitForDownloadMapController(3_000);
+        if (controller && !downloadCoordinator.isStale(ctx.regionId, ctx.session)) {
+          await controller.waitForFrame();
+        }
+      } catch {
+        /* best effort — linger below still guards native teardown */
       }
-    } catch {
-      /* best effort — linger below still guards native teardown */
-    }
 
-    await new Promise((resolve) => setTimeout(resolve, downloadMapLingerMs()));
-    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
-    finishDownloadSession(ctx.regionId, set);
-    await waitForDownloadMapTeardown(ctx.regionId);
-    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
-    void scheduleSeamarkIndexing(ctx.regionId, ctx.bounds);
+      await new Promise((resolve) => setTimeout(resolve, downloadMapLingerMs()));
+      if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
+
+      rememberDownloadSessionPhase(ctx.regionId, 'teardown');
+      finishDownloadSession(ctx.regionId, set);
+      await waitForDownloadMapTeardown(ctx.regionId);
+      if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
+      // Failsafe: the wait above times out if the teardown timer was throttled
+      // (background/Doze). Force-end the window so the map hand-off always completes;
+      // no-op when the window already closed normally. Runs only while this session
+      // still owns the region, so it can never cut short a later session's window.
+      downloadCoordinator.cancelMapTeardown(ctx.regionId);
+      clearDownloadSessionPhase(ctx.regionId);
+      void scheduleSeamarkIndexing(ctx.regionId, ctx.bounds);
+    } catch (error) {
+      const uiAlreadyReady = useOfflinePackStore.getState().regions[ctx.regionId]?.state === 'ready';
+      downloadCoordinator.cancelMapTeardown(ctx.regionId);
+      set(syncActiveDownloadId());
+      clearDownloadSessionPhase(ctx.regionId);
+      if (!uiAlreadyReady) {
+        finalizeOutcome = 'pending';
+        await markFailed(formatDownloadError(error, t('downloads.statusError')), error);
+        return;
+      }
+      // Charts were persisted — keep ready state but surface a copyable debug report
+      // instead of crashing or leaving the completing banner stuck forever.
+      showDownloadSessionFailure(ctx.regionId, error, 'completing');
+    }
   };
 
-  const markFailed = async (message: string) => {
+  const markFailed = async (message: string, cause?: unknown) => {
     if (finalizeOutcome !== 'pending') return;
     finalizeOutcome = 'failed';
+    const phase = 'sweep';
     finishDownloadSession(ctx.regionId, set);
+    clearDownloadSessionPhase(ctx.regionId);
 
     if (ctx.restoreOnFailure) {
       set((state) => ({
@@ -482,6 +536,7 @@ function createCacheDownloadSession(
       } catch {
         /* best effort — UI state is already restored */
       }
+      showDownloadSessionMessage(ctx.regionId, message, phase, cause);
       return;
     }
 
@@ -508,6 +563,7 @@ function createCacheDownloadSession(
     } catch {
       /* best effort — error state is already visible; hydrate re-checks the entry */
     }
+    showDownloadSessionMessage(ctx.regionId, message, phase, cause);
   };
 
   const persistSweepProgress = async (completed: number, total: number) => {
@@ -530,6 +586,7 @@ function createCacheDownloadSession(
   };
 
   const runSweep = async (startIndex = 0) => {
+    rememberDownloadSessionPhase(ctx.regionId, 'sweep');
     await yieldToUi();
     const sweepLeadMs = process.env.NODE_ENV === 'test' ? 0 : 400;
     await new Promise((resolve) => setTimeout(resolve, sweepLeadMs));
@@ -580,10 +637,10 @@ function createCacheDownloadSession(
       if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
       const code = error instanceof Error ? error.message : '';
       if (code === 'DOWNLOAD_MAP_NOT_READY') {
-        await markFailed(t('downloads.errorMapEngineStyle'));
+        await markFailed(t('downloads.errorMapEngineStyle'), error);
         return;
       }
-      await markFailed(formatDownloadError(error, t('downloads.errorDownloadStalled')));
+      await markFailed(formatDownloadError(error, t('downloads.errorDownloadStalled')), error);
     }
   };
 
@@ -616,7 +673,10 @@ async function reattachCacheDownload(
       },
     },
   }));
-  void runSweep(startIndex);
+  void runSweep(startIndex).catch((error) => {
+    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
+    showDownloadSessionFailure(ctx.regionId, error, 'sweep');
+  });
 }
 
 /** Some native builds need an explicit resume and polling after createPack before tiles download. */
@@ -948,7 +1008,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         chartStyleUri,
         regions,
         customBoundsIndex,
-        activeDownloadRegionId: downloadCoordinator.getActiveRegionId(),
+        ...syncActiveDownloadId(),
       });
 
       if (await fetchIsEffectivelyOnline()) {
@@ -1028,7 +1088,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
 
   startDownload: async (regionId) => {
     let session: number | null = null;
-    let markFailed: ((message: string) => Promise<void>) | null = null;
+    let markFailed: ((message: string, cause?: unknown) => Promise<void>) | null = null;
 
     try {
       const packDef = getRegionPack(regionId);
@@ -1104,7 +1164,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         throw err;
       }
       if (markFailed) {
-        await markFailed(formatDownloadError(err, t('downloads.statusError')));
+        await markFailed(formatDownloadError(err, t('downloads.statusError')), err);
       }
       throw err;
     }
@@ -1113,7 +1173,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
   startCustomDownload: async (name, bounds, minZoom = 10, maxZoom = 14, existingRegionId) => {
     const regionId = existingRegionId ?? `custom_${Date.now().toString(36)}`;
     let session: number | null = null;
-    let markFailed: ((message: string) => Promise<void>) | null = null;
+    let markFailed: ((message: string, cause?: unknown) => Promise<void>) | null = null;
 
     try {
       const boundsValidation = validateDownloadBounds(bounds, minZoom, maxZoom);
@@ -1181,7 +1241,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         throw err;
       }
       if (markFailed) {
-        await markFailed(formatDownloadError(err, t('downloads.statusError')));
+        await markFailed(formatDownloadError(err, t('downloads.statusError')), err);
       }
       throw err;
     }
@@ -1409,10 +1469,35 @@ registerSeamarkIndexExecutor(async (regionId, bounds) => {
   await runSeamarkIndexing(regionId, bounds, useOfflinePackStore.setState);
 });
 
+/**
+ * The coordinator ends the post-download GL teardown window on its own timer,
+ * outside any store action. Without this subscription the store would keep a stale
+ * `downloadMapTeardownRegionId` forever after a download finishes — leaving the app
+ * stuck on the "saving charts" banner, the map replaced by the download placeholder,
+ * every pack action locked, keep-awake held, and MapLibre forced online (which breaks
+ * offline chart serving). Every lock/teardown change must be mirrored into the store.
+ */
+function attachDownloadCoordinatorStoreSync(): () => void {
+  return subscribeDownloadCoordinatorActivity(() => {
+    const state = useOfflinePackStore.getState();
+    const next = syncActiveDownloadId();
+    if (
+      next.activeDownloadRegionId !== state.activeDownloadRegionId ||
+      next.downloadMapTeardownRegionId !== state.downloadMapTeardownRegionId
+    ) {
+      useOfflinePackStore.setState(next);
+    }
+  });
+}
+
+attachDownloadCoordinatorStoreSync();
+
 /** Test-only store reset. */
 export function resetOfflinePackStoreForTests(): void {
   indexMutationChain = Promise.resolve();
+  // Coordinator reset clears its activity listeners — the store sync must survive it.
   resetDownloadCoordinatorForTests();
+  attachDownloadCoordinatorStoreSync();
   resetOfflineManagerSetupForTests();
   resetOfflineMapEngineHostForTests();
   useOfflinePackStore.setState({

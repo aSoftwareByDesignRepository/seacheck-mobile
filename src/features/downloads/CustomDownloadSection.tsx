@@ -85,7 +85,8 @@ export function CustomDownloadSection({
       showError(t('downloads.customNoGpsBody'));
       return;
     }
-    if (useOfflinePackStore.getState().activeDownloadRegionId) {
+    if (useOfflinePackStore.getState().activeDownloadRegionId != null
+      || useOfflinePackStore.getState().downloadMapTeardownRegionId != null) {
       showError(t('downloads.errorDownloadBusy'));
       return;
     }

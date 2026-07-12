@@ -203,7 +203,9 @@ function CompactTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           if (routeIndex < 0) return null;
           const route = state.routes[routeIndex];
           const focused = state.index === routeIndex;
-          const label = descriptors[route.key].options.title ?? tabLabel(name);
+          const descriptor = descriptors[route.key];
+          if (!descriptor) return null;
+          const label = descriptor.options.title ?? tabLabel(name);
           return (
             <TabButton
               key={name}

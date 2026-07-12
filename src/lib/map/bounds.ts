@@ -75,6 +75,16 @@ export function boundsCenter(bounds: LngLatBounds): LonLatPoint {
   return { latitude: (south + north) / 2, longitude: (west + east) / 2 };
 }
 
+/** Approximate width and height of a bounds box in nautical miles. */
+export function boundsDimensionsNm(bounds: LngLatBounds): { widthNm: number; heightNm: number } {
+  const [west, south, east, north] = bounds;
+  const midLat = (south + north) / 2;
+  const heightNm = (north - south) * 60;
+  const lonSpan = west <= east ? east - west : 360 - west + east;
+  const widthNm = lonSpan * 60 * Math.max(0.2, Math.cos((midLat * Math.PI) / 180));
+  return { widthNm, heightNm };
+}
+
 /** Wrap longitude to [-180, 180]. */
 export function normalizeLon(lon: number): number {
   let x = lon;

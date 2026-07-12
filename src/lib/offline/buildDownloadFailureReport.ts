@@ -8,12 +8,14 @@ import { getRegionPack } from '../../map/regionPacks';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useSettingsStore } from '../../store/settingsStore';
 
-import { peekDownloadFailureDiagnostics } from './downloadFailureDiagnostics';
+import { peekDownloadFailureDiagnostics, peekDownloadSessionPhase } from './downloadFailureDiagnostics';
 import {
   isOfflineMapEngineStyleLoaded,
   getOfflineMapEngineStyleReloadNonce,
   isOfflineMapEngineViewportPrimed,
 } from './offlineMapEngineHost';
+import { isDownloadMapReady } from './downloadMapHost';
+import { downloadCoordinator } from './downloadCoordinator';
 import { resolveOfflineEngineCamera } from './resolveOfflineEngineCamera';
 import { peekChartTileProbeDiagnostics } from '../network/chartTileReachability';
 
@@ -43,6 +45,8 @@ export async function buildDownloadFailureReport(input: DownloadFailureInput): P
   const viewport = resolveOfflineEngineCamera(input.regionId, store.customBoundsIndex);
   const mapEngineStyleLoaded = store.chartStyleUri ? isOfflineMapEngineStyleLoaded(store.chartStyleUri) : false;
   const mapEngineViewportPrimed = store.chartStyleUri ? isOfflineMapEngineViewportPrimed(viewport) : false;
+  const minZoom = packDef?.minZoom ?? (status?.custom ? 10 : null);
+  const maxZoom = packDef?.maxZoom ?? (status?.custom ? 14 : null);
 
   const lines: string[] = [
     'SeaCheck Download Failure Report',
@@ -65,17 +69,21 @@ export async function buildDownloadFailureReport(input: DownloadFailureInput): P
     line('error', input.message),
     line('source', input.source ?? 'unknown'),
     line('activeDownloadRegionId', store.activeDownloadRegionId),
+    line('downloadMapTeardownRegionId', store.downloadMapTeardownRegionId),
+    line('exclusiveMapSession', downloadCoordinator.hasExclusiveMapSession()),
+    line('sessionPhase', input.extra?.phase ?? peekDownloadSessionPhase(input.regionId)),
     line('hydrated', store.hydrated),
     line('chartStyleUri', store.chartStyleUri ? 'present' : 'missing'),
     line('mapEngineStyleLoaded', mapEngineStyleLoaded),
     line('mapEngineViewportPrimed', mapEngineViewportPrimed),
+    line('downloadMapReady', isDownloadMapReady()),
     line('mapEngineReloadNonce', store.chartStyleUri ? getOfflineMapEngineStyleReloadNonce() : null),
     '',
     'Bounds',
     '------',
     line('bounds', bounds ? bounds.join(',') : null),
-    line('minZoom', packDef?.minZoom ?? null),
-    line('maxZoom', packDef?.maxZoom ?? null),
+    line('minZoom', minZoom),
+    line('maxZoom', maxZoom),
     line('priority', packDef?.priority ?? null),
     '',
     'Network',
@@ -118,6 +126,10 @@ export async function buildDownloadFailureReport(input: DownloadFailureInput): P
   if (input.extra && Object.keys(input.extra).length > 0) {
     lines.push('', 'Extra', '-----');
     for (const [key, value] of Object.entries(input.extra)) {
+      if (key === 'stackTrace' && typeof value === 'string' && value.length > 0) {
+        lines.push('', 'Stack trace', '-----------', value);
+        continue;
+      }
       lines.push(line(key, value));
     }
   }

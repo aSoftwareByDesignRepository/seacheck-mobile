@@ -1,4 +1,5 @@
 import {
+  boundsDimensionsNm,
   expandLngLatBounds,
   normalizeBounds,
   pointInLngLatBounds,
@@ -14,6 +15,20 @@ describe('download bounds', () => {
       { latitude: 54.3, longitude: 10.0 },
     );
     expect(bounds).toEqual([10.0, 54.3, 10.2, 54.5]);
+  });
+
+  it('builds a rectangle from two opposite corners', () => {
+    const bounds = normalizeBounds(
+      { latitude: 54.3, longitude: 10.0 },
+      { latitude: 54.36, longitude: 10.08 },
+    );
+    const [west, south, east, north] = bounds;
+    expect(west).toBeCloseTo(10.0, 5);
+    expect(south).toBeCloseTo(54.3, 5);
+    expect(east).toBeCloseTo(10.08, 5);
+    expect(north).toBeCloseTo(54.36, 5);
+    expect(north - south).toBeCloseTo(0.06, 5);
+    expect(east - west).toBeCloseTo(0.08, 5);
   });
 
   it('builds a square from anchor and pointer', () => {
@@ -51,6 +66,16 @@ describe('download bounds', () => {
     );
     const result = validateDownloadBounds(bounds, 10, 14);
     expect(result.ok).toBe(true);
+  });
+
+  it('reports bounds dimensions in nautical miles', () => {
+    const bounds = normalizeBounds(
+      { latitude: 54.0, longitude: 10.0 },
+      { latitude: 54.1, longitude: 10.1 },
+    );
+    const dims = boundsDimensionsNm(bounds);
+    expect(dims.heightNm).toBeCloseTo(6, 1);
+    expect(dims.widthNm).toBeCloseTo(3.52, 1);
   });
 
   it('detects points inside antimeridian-crossing bounds', () => {

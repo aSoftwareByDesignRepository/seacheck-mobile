@@ -16,6 +16,7 @@ import { corridorGroupNeedsAttention, countNonIdlePacks } from '../features/down
 import { downloadsStyles } from '../features/downloads/downloadsStyles';
 import { isPackDownloadActive } from '../features/downloads/packDownloadPresentation';
 import { useFormFactor } from '../hooks/useFormFactor';
+import { onLayoutY } from '../lib/ui/safeLayout';
 import { usePackDownloadActions } from '../hooks/usePackDownloadActions';
 import { t } from '../i18n';
 import { REGION_PACKS, resolveRegionPack, type RegionPackDefinition } from '../map/regionPacks';
@@ -26,6 +27,7 @@ import { useOfflinePackStore } from '../store/offlinePackStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTheme } from '../theme/ThemeContext';
 import { MasterDetailLayout } from '../features/responsive/MasterDetailLayout';
+import { shouldUseMasterDetail } from '../lib/responsive/splitLayout';
 import { Screen } from '../ui/Screen';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ToggleRow } from '../ui/ToggleRow';
@@ -119,7 +121,8 @@ function PackGroupList({
 export function DownloadsScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const { colors, spacing, minTouch } = useTheme();
-  const { formFactor } = useFormFactor();
+  const { formFactor, isLandscape } = useFormFactor();
+  const useStackedLayout = !shouldUseMasterDetail(formFactor, isLandscape);
   const route = useRoute<DownloadsRoute>();
   const focusPackIds = route.params?.focusPackIds ?? [];
   const scrollToCustom = route.params?.scrollToCustom ?? false;
@@ -218,7 +221,7 @@ export function DownloadsScreen() {
 
   function selectPack(packId: string) {
     setSelectedPackId(packId);
-    if (formFactor === 'compact') {
+    if (useStackedLayout) {
       previewScrollPending.current = true;
       if (previewSectionY.current > 0) {
         requestAnimationFrame(() => {
@@ -357,17 +360,17 @@ export function DownloadsScreen() {
         </CollapsibleDownloadsSection>
       ) : null}
 
-      {formFactor === 'compact' && selectedPack ? (
+      {useStackedLayout && selectedPack ? (
         <View
-          onLayout={(e) => {
-            previewSectionY.current = e.nativeEvent.layout.y;
+          onLayout={onLayoutY((y) => {
+            previewSectionY.current = y;
             if (previewScrollPending.current) {
               previewScrollPending.current = false;
               requestAnimationFrame(() => {
-                scrollRef.current?.scrollTo({ y: e.nativeEvent.layout.y, animated: true });
+                scrollRef.current?.scrollTo({ y, animated: true });
               });
             }
-          }}
+          })}
         >
           <DownloadsSectionCard title={t('downloads.previewTitle')} first={isFirstSection()} testID="downloads.compactPreview">
             <PackPreviewPanel pack={selectedPack} showHeader={false} />
@@ -375,11 +378,7 @@ export function DownloadsScreen() {
         </View>
       ) : null}
 
-      <View
-        onLayout={(e) => {
-          scrollToCustomSection(e.nativeEvent.layout.y);
-        }}
-      >
+      <View onLayout={onLayoutY(scrollToCustomSection)}>
         <DownloadsSectionCard
           title={t('downloads.customTitle')}
           description={t('downloads.customBody')}
@@ -471,7 +470,7 @@ export function DownloadsScreen() {
         retryBusyId={actionBusyId}
       />
       <OfflineChartsGuide />
-      <MasterDetailLayout master={listPane} detail={formFactor === 'compact' ? null : detailPane} requireDetail={formFactor !== 'compact'} />
+      <MasterDetailLayout master={listPane} detail={useStackedLayout ? null : detailPane} requireDetail={!useStackedLayout} />
     </Screen>
   );
 }

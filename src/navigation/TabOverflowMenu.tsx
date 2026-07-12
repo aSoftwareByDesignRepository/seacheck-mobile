@@ -46,7 +46,9 @@ export function TabOverflowMenu() {
           if (routeIndex < 0) return null;
           const focused = state.index === routeIndex;
           const route = state.routes[routeIndex];
-          const label = descriptors[route.key].options.title ?? tabLabel(name);
+          const descriptor = descriptors[route.key];
+          if (!descriptor) return null;
+          const label = descriptor.options.title ?? tabLabel(name);
           return (
             <SheetMenuRow
               key={name}

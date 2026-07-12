@@ -14,16 +14,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Device from 'expo-device';
 
 import {
-  getOfflineMapEngineStyleReloadNonce,
-  subscribeOfflineMapEngineStyleReload,
+  getOfflineMapEngineViewportGeneration,
+  getPendingOfflineMapEngineViewport,
+  markOfflineMapEngineStyleFailed,
+  markOfflineMapEngineStyleLoaded,
+  markOfflineMapEngineViewportPrimed,
+  subscribeOfflineMapEngineViewport,
 } from '../../lib/offline/offlineMapEngineHost';
-
+import { isMapScreenFocused } from '../../lib/map/mapScreenFocus';
 import { useIsDeviceDisconnected } from '../../lib/network/connectivity';
 import { useChartCoverageAtPoint } from '../../hooks/useChartCoverageAtPoint';
 import { useExclusiveChartDownloadSession } from '../../hooks/useExclusiveChartDownloadSession';
 import { selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
 import { useMapCameraFollow } from '../../hooks/useMapCameraFollow';
 import { CustomDownloadMapPanel } from '../downloads/CustomDownloadMapPanel';
+import { CustomDownloadCornerSheet } from '../downloads/CustomDownloadCornerSheet';
+import { nearestDownloadCorner } from '../../lib/map/customDownloadCorners';
 import { PassageMapPlanningPanel } from '../passage/PassageMapPlanningPanel';
 import { PassageMapPlanningGuideBanner } from '../passage/PassageMapPlanningGuideBanner';
 import { activateAnchorAlarmAt } from '../../lib/anchor/activateAnchorAlarm';
@@ -45,7 +51,7 @@ import { formatCoordinates } from '../../map/coords';
 import { t } from '../../i18n';
 import type { RootTabParamList } from '../../navigation/types';
 import { useLocationStore, isFixStale } from '../../services/locationService';
-import { useCustomDownloadStore } from '../../store/customDownloadStore';
+import { useCustomDownloadStore, type CornerMutationResult } from '../../store/customDownloadStore';
 import { useFeedbackStore } from '../../store/feedbackStore';
 import { useConfirmStore } from '../../store/confirmStore';
 import { useNavigationStore } from '../../store/navigationStore';
@@ -114,11 +120,6 @@ export function NavigationMap() {
   const mobTarget = useNavigationStore((s) => s.mobTarget);
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
   const exclusiveChartDownload = useExclusiveChartDownloadSession();
-  const styleEngineReloadNonce = useSyncExternalStore(
-    subscribeOfflineMapEngineStyleReload,
-    getOfflineMapEngineStyleReloadNonce,
-    getOfflineMapEngineStyleReloadNonce,
-  );
   const offlineHydrated = useOfflinePackStore((s) => s.hydrated);
   const hydrateOffline = useOfflinePackStore((s) => s.hydrate);
   const offlineRegions = useOfflinePackStore((s) => s.regions);
@@ -127,6 +128,13 @@ export function NavigationMap() {
   const showInfo = useFeedbackStore((s) => s.showInfo);
   const showError = useFeedbackStore((s) => s.showError);
   const customSelecting = useCustomDownloadStore((s) => s.selecting);
+  const customCorners = useCustomDownloadStore((s) => s.corners);
+  const customSelectedCornerId = useCustomDownloadStore((s) => s.selectedCornerId);
+  const addCustomCorner = useCustomDownloadStore((s) => s.addCorner);
+  const selectCustomCorner = useCustomDownloadStore((s) => s.selectCorner);
+  const startRelocateCustomCorner = useCustomDownloadStore((s) => s.startRelocateCorner);
+  const moveCustomCorner = useCustomDownloadStore((s) => s.moveCorner);
+  const removeCustomCorner = useCustomDownloadStore((s) => s.removeCorner);
   const planningPassageId = usePassageMapPlanningStore((s) => s.passageId);
   const planningRevision = usePassageMapPlanningStore((s) => s.revision);
   const allowRouteEdits = usePassageMapPlanningStore((s) => s.allowRouteEdits);
@@ -134,11 +142,10 @@ export function NavigationMap() {
   const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
   const activePassageId = usePassageStore((s) => s.activePassageId);
   const passages = usePassageStore((s) => s.passages);
-  const setCustomCorner = useCustomDownloadStore((s) => s.setCorner);
   const [followActive, setFollowActive] = useState(followMode);
   const layoutPreset = useEffectiveLayoutPreset();
   const effectiveSplit = useEffectiveMapSplit();
-  const { width: windowWidth, height: windowHeight } = useFormFactor();
+  const { formFactor, isLandscape } = useFormFactor();
   const isMinimalLayout = layoutPreset === 'minimal';
   const isMapForwardLayout = layoutPreset === 'map-forward';
   const isInstrumentsOnlyLayout = layoutPreset === 'instruments-only';
@@ -172,6 +179,24 @@ export function NavigationMap() {
   const [mapZoom, setMapZoom] = useState<number>(() => (followMode ? mapFollowZoom : 11));
   const [chartRetryBusy, setChartRetryBusy] = useState(false);
   const [mapStyleLoaded, setMapStyleLoaded] = useState(false);
+  const pendingOfflineViewport = useSyncExternalStore(
+    subscribeOfflineMapEngineViewport,
+    getPendingOfflineMapEngineViewport,
+    () => null,
+  );
+  const offlineViewportGeneration = useSyncExternalStore(
+    subscribeOfflineMapEngineViewport,
+    getOfflineMapEngineViewportGeneration,
+    () => 0,
+  );
+  const reportNavigationChartReady = useCallback(() => {
+    if (!chartStyleUri || !isMapScreenFocused()) return;
+    markOfflineMapEngineStyleLoaded(chartStyleUri);
+    const viewport = getPendingOfflineMapEngineViewport();
+    if (viewport) {
+      markOfflineMapEngineViewportPrimed(viewport, getOfflineMapEngineViewportGeneration());
+    }
+  }, [chartStyleUri]);
   const [longPressAction, setLongPressAction] = useState<{ lat: number; lon: number; coordLabel: string } | null>(null);
   const [planningSelectedWaypointId, setPlanningSelectedWaypointId] = useState<string | null>(null);
   const [planningOpenEditOnTap, setPlanningOpenEditOnTap] = useState(false);
@@ -240,6 +265,89 @@ export function NavigationMap() {
   useEffect(() => {
     configureMapLogging();
   }, []);
+
+  useEffect(() => {
+    if (customSelecting) {
+      setFollowActive(false);
+    }
+  }, [customSelecting]);
+
+  const reportCustomMutation = useCallback(
+    (result: CornerMutationResult) => {
+      if (result.kind === 'added') {
+        if (result.complete) {
+          showInfo(t('downloads.customRectangleComplete'));
+        } else {
+          showInfo(t('downloads.customCornerPlaced', { index: result.index }));
+        }
+      } else if (result.kind === 'moved') {
+        showInfo(t('downloads.customCornerMoved', { index: result.index }));
+      } else if (result.kind === 'removed') {
+        showInfo(t('downloads.customCornerRemoved', { index: result.index }));
+      } else if (result.kind === 'complete_invalid') {
+        showError(t(`downloads.customInvalid.${result.code}` as 'downloads.customInvalid.too_small'));
+      }
+    },
+    [showError, showInfo],
+  );
+
+  const handleCustomDownloadTap = useCallback(
+    (lat: number, lon: number) => {
+      const state = useCustomDownloadStore.getState();
+
+      if (state.relocateCornerId) {
+        const result = moveCustomCorner(state.relocateCornerId, { latitude: lat, longitude: lon });
+        reportCustomMutation(result);
+        return;
+      }
+
+      const picked = nearestDownloadCorner(lat, lon, state.corners);
+      if (picked) {
+        selectCustomCorner(picked.id);
+        return;
+      }
+
+      if (state.selectedCornerId) {
+        selectCustomCorner(null);
+        return;
+      }
+
+      if (state.corners.length < 4) {
+        const result = addCustomCorner({ latitude: lat, longitude: lon });
+        reportCustomMutation(result);
+      }
+    },
+    [addCustomCorner, moveCustomCorner, reportCustomMutation, selectCustomCorner],
+  );
+
+  const handleCustomCornerMove = useCallback(
+    (cornerId: string) => {
+      startRelocateCustomCorner(cornerId);
+    },
+    [startRelocateCustomCorner],
+  );
+
+  const handleCustomCornerDelete = useCallback(
+    async (cornerId: string) => {
+      const corner = useCustomDownloadStore.getState().corners.find((c) => c.id === cornerId);
+      if (!corner) return;
+      const confirmed = await useConfirmStore.getState().requestConfirm({
+        title: t('downloads.customCornerDeleteTitle'),
+        message: t('downloads.customCornerDeleteBody', { index: corner.index }),
+        confirmLabel: t('downloads.customCornerDelete'),
+        cancelLabel: t('common.dismiss'),
+        destructive: true,
+      });
+      if (!confirmed) return;
+      const result = removeCustomCorner(cornerId);
+      reportCustomMutation(result);
+    },
+    [removeCustomCorner, reportCustomMutation],
+  );
+
+  const selectedCustomCorner = customSelectedCornerId
+    ? customCorners.find((c) => c.id === customSelectedCornerId) ?? null
+    : null;
 
   useEffect(() => {
     if (passageMapPlanning) return;
@@ -335,7 +443,23 @@ export function NavigationMap() {
 
   useEffect(() => {
     setMapStyleLoaded(false);
-  }, [chartStyleUri, styleEngineReloadNonce]);
+  }, [chartStyleUri]);
+
+  useEffect(() => {
+    if (!mapStyleLoaded || !pendingOfflineViewport) return;
+    cameraRef.current?.jumpTo({
+      center: pendingOfflineViewport.center,
+      zoom: pendingOfflineViewport.zoom,
+    });
+  }, [mapStyleLoaded, pendingOfflineViewport, offlineViewportGeneration]);
+
+  const navigationMapKey = useMemo(
+    () =>
+      Platform.OS === 'android'
+        ? `nav-chart-${formFactor}-${isLandscape ? 'land' : 'port'}-${chartStyleUri ?? 'pending'}`
+        : `nav-chart-${chartStyleUri ?? 'pending'}`,
+    [formFactor, isLandscape, chartStyleUri],
+  );
 
   useMapCameraFollow({
     cameraRef,
@@ -593,7 +717,7 @@ export function NavigationMap() {
     <View style={styles.mapHost} pointerEvents={screenLocked ? 'none' : 'box-none'}>
       <View style={styles.mapClip}>
         <Map
-        key={Platform.OS === 'android' ? `nav-chart-${windowWidth}x${windowHeight}-${styleEngineReloadNonce}` : `nav-chart-${windowWidth}x${windowHeight}`}
+        key={navigationMapKey}
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         accessible
@@ -618,8 +742,21 @@ export function NavigationMap() {
         }}
       onDidFinishLoadingStyle={() => {
         setMapStyleLoaded(true);
+        reportNavigationChartReady();
       }}
-      onDidFailLoadingMap={() => setMapStyleLoaded(false)}
+      onDidFinishLoadingMap={() => {
+        setMapStyleLoaded(true);
+        reportNavigationChartReady();
+      }}
+      onDidFinishRenderingMapFully={() => {
+        reportNavigationChartReady();
+      }}
+      onDidFailLoadingMap={() => {
+        setMapStyleLoaded(false);
+        if (chartStyleUri && isMapScreenFocused()) {
+          markOfflineMapEngineStyleFailed(chartStyleUri);
+        }
+      }}
       onRegionWillChange={(e) => {
         if (shouldPauseFollowOnRegionChange(e.nativeEvent.userInteraction, followMode)) {
           setFollowActive(false);
@@ -657,15 +794,7 @@ export function NavigationMap() {
         }
         const [lon, lat] = e.nativeEvent.lngLat;
         if (customSelecting) {
-          const state = useCustomDownloadStore.getState();
-          setCustomCorner({ latitude: lat, longitude: lon });
-          if (!state.cornerA) {
-            showInfo(t('downloads.customCornerFirst'));
-          } else if (!state.cornerB) {
-            showInfo(t('downloads.customCornerSet'));
-          } else {
-            showInfo(t('downloads.customCornerReset'));
-          }
+          handleCustomDownloadTap(lat, lon);
           return;
         }
         if (passageMapPlanning) {
@@ -684,7 +813,10 @@ export function NavigationMap() {
       />
       {!passageMapPlanning ? <CourseVectorOverlay mapZoom={mapZoom} fallbackZoom={mapFollowZoom} /> : null}
       <ExpoLocationPuck mapZoom={mapZoom} fallbackZoom={mapFollowZoom} />
-      <MapOverlays planningMode={passageMapPlanning} planningSelectedWaypointId={planningSelectedWaypointId} />
+      <MapOverlays
+        planningMode={passageMapPlanning && !customSelecting}
+        planningSelectedWaypointId={planningSelectedWaypointId}
+      />
     </Map>
       </View>
       {!customSelecting ? (
@@ -781,13 +913,26 @@ export function NavigationMap() {
       {customSelecting && !mobTarget ? (
         <>
           <View pointerEvents="box-none" style={[styles.topOverlay, { top: chrome.top, left: chrome.left, right: chrome.right }]}>
-            <View style={[styles.hint, { backgroundColor: colors.primary, borderColor: colors.primary, marginBottom: spacing.sm }]}>
-              <Text style={[styles.hintText, { color: colors.primaryText, fontWeight: '700' }]}>{t('downloads.customMapBanner')}</Text>
+            <View
+              style={[styles.hint, { backgroundColor: colors.primary, borderColor: colors.primary, marginBottom: spacing.sm }]}
+              accessibilityRole="text"
+            >
+              <Text style={[styles.hintText, { color: colors.primaryText, fontWeight: '700' }]}>
+                {t('downloads.customMapBanner')}
+              </Text>
             </View>
           </View>
           <CustomDownloadMapPanel />
         </>
       ) : null}
+
+      <CustomDownloadCornerSheet
+        visible={customSelecting && selectedCustomCorner != null}
+        corner={selectedCustomCorner}
+        onClose={() => selectCustomCorner(null)}
+        onMoveOnMap={handleCustomCornerMove}
+        onDelete={(id) => void handleCustomCornerDelete(id)}
+      />
 
       {passageMapPlanning && !customSelecting && !mobTarget ? <PassageMapPlanningPanel /> : null}
 
@@ -885,10 +1030,10 @@ const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   mapPaneHost: { flex: 1, minHeight: 0, minWidth: 0 },
   mapOnlyHost: { flex: 1, minHeight: 0 },
-  mapHost: { flex: 1, minHeight: 0, width: '100%' },
+  mapHost: { flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' },
   mapClip: { ...StyleSheet.absoluteFill, overflow: 'hidden' },
   map: { flex: 1, minHeight: 0, overflow: 'hidden', width: '100%' },
-  mapOverlayLayer: { ...StyleSheet.absoluteFill, zIndex: 50, elevation: 50 },
+  mapOverlayLayer: { ...StyleSheet.absoluteFill, zIndex: 50, elevation: 50, overflow: 'hidden' },
   topOverlay: { position: 'absolute', left: 0, right: 0, zIndex: 20 },
   hint: { borderWidth: 1, borderRadius: 12, padding: 10 },
   hintText: { fontSize: 13, lineHeight: 18, textAlign: 'center' },

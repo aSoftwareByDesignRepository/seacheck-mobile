@@ -1,6 +1,9 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Camera, Map, type CameraRef } from '@maplibre/maplibre-react-native';
 import { Platform, StyleSheet, View } from 'react-native';
+
+import { offlineEnginePostSessionRemountMs } from '../../lib/offline/downloadMapConstants';
+import { isMapScreenFocused, subscribeMapScreenFocus } from '../../lib/map/mapScreenFocus';
 
 import {
   getOfflineMapEngineStyleReloadNonce,
@@ -29,6 +32,11 @@ export function OfflineMapEngineHost() {
   const activeDownloadRegionId = useOfflinePackStore((s) => s.activeDownloadRegionId);
   const customBoundsIndex = useOfflinePackStore((s) => s.customBoundsIndex);
   const exclusiveDownloadMap = useExclusiveChartDownloadSession();
+  const mapTabFocused = useSyncExternalStore(
+    subscribeMapScreenFocus,
+    isMapScreenFocused,
+    () => false,
+  );
   const reloadNonce = useSyncExternalStore(
     subscribeOfflineMapEngineStyleReload,
     getOfflineMapEngineStyleReloadNonce,
@@ -49,6 +57,28 @@ export function OfflineMapEngineHost() {
   const cameraRef = useRef<CameraRef>(null);
   const renderFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeViewportRef = useRef<OfflineEngineViewport | null>(null);
+  const [postSessionHoldback, setPostSessionHoldback] = useState(false);
+  const [prevExclusive, setPrevExclusive] = useState(exclusiveDownloadMap);
+
+  // When the exclusive download session ends, the download map unmounts and
+  // NavigationMap remounts in the same commit. Delay this hidden map's remount so
+  // Android never creates two new GL surfaces in the frame that also destroys one.
+  // Derived during render (not in an effect) so the map is never mounted for the
+  // single transition frame before an effect could hide it again.
+  if (prevExclusive !== exclusiveDownloadMap) {
+    setPrevExclusive(exclusiveDownloadMap);
+    if (exclusiveDownloadMap) {
+      setPostSessionHoldback(false);
+    } else if (offlineEnginePostSessionRemountMs() > 0) {
+      setPostSessionHoldback(true);
+    }
+  }
+
+  useEffect(() => {
+    if (!postSessionHoldback) return;
+    const timer = setTimeout(() => setPostSessionHoldback(false), offlineEnginePostSessionRemountMs());
+    return () => clearTimeout(timer);
+  }, [postSessionHoldback]);
 
   const fallbackCamera = resolveOfflineEngineCamera(activeDownloadRegionId, customBoundsIndex);
   const camera = pendingViewport ?? fallbackCamera;
@@ -70,7 +100,9 @@ export function OfflineMapEngineHost() {
     cameraRef.current?.jumpTo({ center: camera.center, zoom: camera.zoom });
   }, [chartStyleUri, camera.center, camera.zoom, reloadNonce, viewportGeneration]);
 
-  if (Platform.OS !== 'android' || !chartStyleUri || exclusiveDownloadMap) return null;
+  if (Platform.OS !== 'android' || !chartStyleUri || exclusiveDownloadMap || postSessionHoldback || mapTabFocused) {
+    return null;
+  }
 
   const generation = reloadNonce;
 

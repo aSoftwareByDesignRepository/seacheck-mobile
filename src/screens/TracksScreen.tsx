@@ -30,8 +30,8 @@ import { StatusBadge } from '../ui/StatusBadge';
 export function TracksScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const { colors, spacing, minTouch } = useTheme();
-  const { formFactor } = useFormFactor();
-  const useSplitLayout = shouldTracksScreenUseScrollRoot(formFactor);
+  const { formFactor, isLandscape } = useFormFactor();
+  const useSplitLayout = shouldTracksScreenUseScrollRoot(formFactor, isLandscape);
   const tracks = useTrackStore((s) => s.tracks);
   const recordingTrackId = useTrackStore((s) => s.recordingTrackId);
   const startRecording = useTrackStore((s) => s.startRecording);

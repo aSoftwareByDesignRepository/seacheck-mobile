@@ -21,6 +21,7 @@ import {
 } from '../../lib/passage/passageMapPlanning';
 import { usePassageMapPlanningStore } from '../../store/passageMapPlanningStore';
 import { useFormFactor } from '../../hooks/useFormFactor';
+import { resolvePassageEditorLayout } from '../../lib/passage/passageEditorLayoutPolicy';
 import { t } from '../../i18n';
 import type { PassageStackParamList } from '../../navigation/PassageStack';
 import type { RootTabParamList } from '../../navigation/types';
@@ -45,7 +46,7 @@ export function PassageDetailScreen() {
   const stackNav = useNavigation<StackNav>();
   const tabNav = useNavigation<TabNav>();
   const { colors, spacing, minTouch } = useTheme();
-  const { formFactor } = useFormFactor();
+  const { formFactor, isLandscape } = useFormFactor();
   const compactActions = formFactor === 'compact';
   const passageId = route.params.passageId;
 
@@ -205,7 +206,11 @@ export function PassageDetailScreen() {
     );
   }
 
-  const showMapPreview = detail.waypoints.length >= 1;
+  const editorLayout = resolvePassageEditorLayout({
+    formFactor,
+    isLandscape,
+    waypointCount: detail.waypoints.length,
+  });
 
   const editorPane = (
     <View style={{ gap: spacing.lg }}>
@@ -253,7 +258,7 @@ export function PassageDetailScreen() {
             }
           })();
         }}
-        showMapHandoffButtons={formFactor === 'compact'}
+        showMapHandoffButtons={editorLayout.showMapHandoffButtons}
       />
       <PassageCoverageCard detail={detail} onOpenDownloads={(opts) => tabNav.navigate('Downloads', opts)} />
       <View
@@ -368,7 +373,7 @@ export function PassageDetailScreen() {
     </View>
   );
 
-  const mapPreviewPane = showMapPreview ? (
+  const mapPreviewPane = editorLayout.showMapPreview ? (
     <PassageMapPreviewPanel
       waypoints={detail.waypoints}
       onPlanOnMap={handlePlanOnMap}
@@ -383,7 +388,12 @@ export function PassageDetailScreen() {
         keyboardShouldPersistTaps="handled"
         testID="passage.detail"
       >
-        <PassageEditorLayout editor={editorPane} mapPreview={mapPreviewPane} />
+        <PassageEditorLayout
+          key={passageId}
+          editor={editorPane}
+          mapPreview={mapPreviewPane}
+          defaultDetailTab={editorLayout.defaultDetailTab}
+        />
       </ScrollView>
       <PassageWaypointCoordSheet
         visible={coordSheet != null}

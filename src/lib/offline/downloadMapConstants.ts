@@ -14,6 +14,13 @@ export const DOWNLOAD_MAP_LINGER_MS = 2_800;
  */
 export const DOWNLOAD_MAP_POST_TEARDOWN_MS = 1_600;
 
+/**
+ * When the teardown window ends, the download map unmounts and NavigationMap remounts
+ * in the same commit. Hold the hidden engine host back a little longer so at most one
+ * new GL surface is created per frame (Android native crash guard on fast devices).
+ */
+export const OFFLINE_ENGINE_POST_SESSION_REMOUNT_MS = 1_200;
+
 function isTestRuntime(): boolean {
   return process.env.NODE_ENV === 'test';
 }
@@ -31,4 +38,9 @@ export function downloadMapLingerMs(): number {
 /** Post-coordinator linger; zero under Jest. */
 export function downloadMapPostTeardownMs(): number {
   return isTestRuntime() ? 0 : DOWNLOAD_MAP_POST_TEARDOWN_MS;
+}
+
+/** Hidden-engine remount holdback after an exclusive download session; zero under Jest. */
+export function offlineEnginePostSessionRemountMs(): number {
+  return isTestRuntime() ? 0 : OFFLINE_ENGINE_POST_SESSION_REMOUNT_MS;
 }

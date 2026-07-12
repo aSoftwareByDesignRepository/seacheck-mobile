@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { shouldUseMasterDetail } from '../../lib/responsive/splitLayout';
 import { useFormFactor } from '../../hooks/useFormFactor';
 import { t } from '../../i18n';
 import type { WaypointRow } from '../../lib/db/database';
@@ -16,8 +17,8 @@ type Props = {
 /** Map preview + chart hand-off — right pane in passage editor split layout. */
 export function PassageMapPreviewPanel({ waypoints, onPlanOnMap, onShowOnMap }: Props) {
   const { colors, spacing, minTouch } = useTheme();
-  const { formFactor } = useFormFactor();
-  const tall = formFactor !== 'compact';
+  const { formFactor, isLandscape } = useFormFactor();
+  const tall = shouldUseMasterDetail(formFactor, isLandscape);
 
   return (
     <View
@@ -27,7 +28,9 @@ export function PassageMapPreviewPanel({ waypoints, onPlanOnMap, onShowOnMap }: 
       <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
         {t('passage.mapPreviewTitle')}
       </Text>
-      <Text style={[styles.hint, { color: colors.textMuted }]}>{t('passage.mapPreviewHint')}</Text>
+      <Text style={[styles.hint, { color: colors.textMuted }]}>
+        {waypoints.length > 0 ? t('passage.mapPreviewHint') : t('passage.mapPreviewHintEmpty')}
+      </Text>
       <PassageMapPreview waypoints={waypoints} tall={tall} />
       <View style={[styles.actions, { gap: spacing.sm, minHeight: minTouch }]}>
         {waypoints.length > 0 ? (

@@ -1,7 +1,11 @@
 import NetInfo from '@react-native-community/netinfo';
 
 import { buildDownloadFailureReport } from '../src/lib/offline/buildDownloadFailureReport';
-import { reportDownloadFailure } from '../src/lib/offline/reportDownloadFailure';
+import {
+  formatThrowable,
+  reportDownloadFailure,
+  reportDownloadFailureFromThrowable,
+} from '../src/lib/offline/reportDownloadFailure';
 import { useDownloadFailureStore } from '../src/store/downloadFailureStore';
 import { useOfflinePackStore } from '../src/store/offlinePackStore';
 import { useSettingsStore } from '../src/store/settingsStore';
@@ -39,12 +43,25 @@ describe('buildDownloadFailureReport', () => {
       regionId: 'kiel-bay',
       message: 'No connection',
       source: 'async',
+      extra: { phase: 'completing', stackTrace: 'Error: boom\n    at markReady' },
     });
     expect(report).toMatch(/SeaCheck Download Failure Report/);
     expect(report).toMatch(/regionId=kiel-bay/);
     expect(report).toMatch(/error=No connection/);
     expect(report).toMatch(/downloadWifiOnly=true/);
+    expect(report).toMatch(/sessionPhase=completing/);
+    expect(report).toMatch(/Stack trace/);
+    expect(report).toMatch(/Error: boom/);
     expect(NetInfo.fetch).toHaveBeenCalled();
+  });
+});
+
+describe('formatThrowable', () => {
+  it('preserves Error stack traces', () => {
+    const err = new Error('GL teardown failed');
+    const formatted = formatThrowable(err);
+    expect(formatted.message).toBe('GL teardown failed');
+    expect(formatted.stack).toContain('GL teardown failed');
   });
 });
 
@@ -89,5 +106,14 @@ describe('reportDownloadFailure', () => {
     jest.advanceTimersByTime(3100);
     await reportDownloadFailure({ regionId: 'kiel-bay', message: 'Stalled', source: 'async' });
     expect(useDownloadFailureStore.getState().visible).toBe(true);
+  });
+
+  it('includes stack traces from thrown errors', async () => {
+    const err = new Error('Completing phase exploded');
+    await reportDownloadFailureFromThrowable('kiel-bay', err, 'async', 'completing');
+    const state = useDownloadFailureStore.getState();
+    expect(state.visible).toBe(true);
+    expect(state.report).toMatch(/sessionPhase=completing/);
+    expect(state.report).toMatch(/Completing phase exploded/);
   });
 });

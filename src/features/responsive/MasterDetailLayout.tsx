@@ -12,11 +12,11 @@ type Props = PropsWithChildren<{
   requireDetail?: boolean;
 }>;
 
-/** Side-by-side master–detail on medium+ width; stacked on compact (plan §6.7). */
+/** Side-by-side master–detail on medium+ portrait; stacked on compact and landscape. */
 export function MasterDetailLayout({ master, detail, requireDetail = false }: Props) {
-  const { formFactor } = useFormFactor();
+  const { formFactor, isLandscape } = useFormFactor();
   const { spacing } = useTheme();
-  const split = shouldUseMasterDetail(formFactor);
+  const split = shouldUseMasterDetail(formFactor, isLandscape);
 
   if (!split) {
     return (

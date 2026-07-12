@@ -22,9 +22,17 @@ export function shouldSplitMapLayout(
   );
 }
 
-/** Master–detail split for list screens on medium+ width. */
-export function shouldUseMasterDetail(formFactor: FormFactor): boolean {
-  return formFactor !== 'compact';
+/**
+ * Master–detail split for list screens on medium+ width in portrait only.
+ * Landscape keeps the same stacked layout as phones — map split is the sole exception.
+ */
+export function shouldUseMasterDetail(formFactor: FormFactor, isLandscape: boolean): boolean {
+  return formFactor !== 'compact' && !isLandscape;
+}
+
+/** Passage list card grid — two columns only when master–detail would also apply. */
+export function resolvePassageListColumns(formFactor: FormFactor, isLandscape: boolean): 1 | 2 {
+  return shouldUseMasterDetail(formFactor, isLandscape) ? 2 : 1;
 }
 
 /** Instrument panel on the left (port) vs right (starboard). */

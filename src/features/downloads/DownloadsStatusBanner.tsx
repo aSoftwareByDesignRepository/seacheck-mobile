@@ -6,10 +6,8 @@ import type { RegionPackStatus } from '../../store/offlinePackStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
 import { DownloadProgressBar } from './DownloadProgressBar';
-import { DownloadMapEngine } from './DownloadMapEngine';
 import {
   countReadyPacks,
-  isDownloadMapSessionActive,
   isPackDownloadActive,
   listFailedPacks,
   packStatusLabel,
@@ -107,12 +105,6 @@ function ActiveDownloadBanner({
   const downloading = active?.state === 'downloading';
   const completing = active?.state === 'ready';
   const tearingDown = completing && activeDownloadRegionId == null && downloadMapTeardownRegionId === sessionRegionId;
-  const mapVisible = isDownloadMapSessionActive(
-    sessionRegionId,
-    active,
-    activeDownloadRegionId,
-    downloadMapTeardownRegionId,
-  );
   const percent = active?.percentage ?? 0;
   const initializing = downloading && (active?.downloadInitializing || percent <= 0);
   const summaryLabel = completing
@@ -136,7 +128,6 @@ function ActiveDownloadBanner({
         {completing ? t('downloads.statusSummaryCompletingTitle') : t('downloads.statusSummaryActiveTitle')}
       </Text>
       <Text style={[styles.body, { color: colors.text }]}>{name}</Text>
-      {mapVisible ? <DownloadMapEngine /> : null}
       {downloading ? (
         <DownloadProgressBar
           percentage={percent}

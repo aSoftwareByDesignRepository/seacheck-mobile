@@ -51,8 +51,8 @@ const MATRIX: Case[] = [
     windowHeight: 600,
     tabBarPosition: 'bottom',
     splitMap: false,
-    masterDetail: true,
-    tracksScrollRoot: true,
+    masterDetail: false,
+    tracksScrollRoot: false,
   },
   {
     label: 'tablet portrait',
@@ -71,8 +71,8 @@ const MATRIX: Case[] = [
     windowHeight: 800,
     tabBarPosition: 'bottom',
     splitMap: true,
-    masterDetail: true,
-    tracksScrollRoot: true,
+    masterDetail: false,
+    tracksScrollRoot: false,
   },
 ];
 
@@ -90,8 +90,8 @@ describe('shellLayoutPolicy', () => {
     expect(shell.tabBarPosition).toBe(tabBarPosition);
     expect(shell.useRail).toBe(tabBarPosition === 'left');
     expect(shouldSplitMapLayout(formFactor, isLandscape, 'map-forward', windowHeight)).toBe(splitMap);
-    expect(shouldUseMasterDetail(formFactor)).toBe(masterDetail);
-    expect(shouldTracksScreenUseScrollRoot(formFactor)).toBe(tracksScrollRoot);
+    expect(shouldUseMasterDetail(formFactor, isLandscape)).toBe(masterDetail);
+    expect(shouldTracksScreenUseScrollRoot(formFactor, isLandscape)).toBe(tracksScrollRoot);
   });
 
   it('never uses side navigation rail', () => {
