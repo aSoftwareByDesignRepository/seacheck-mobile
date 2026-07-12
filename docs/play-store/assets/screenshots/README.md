@@ -1,5 +1,10 @@
-Phone screenshots for Play Store upload.
+Phone screenshots for store listings live in the F-Droid / Play metadata tree:
 
-Capture per docs/play-store/GRAPHICS.md — name files phone-01.png, phone-02.png, …
+```text
+fastlane/metadata/android/en-US/images/phoneScreenshots/
+fastlane/metadata/android/de-DE/images/phoneScreenshots/
+```
 
-Recommended minimum: onboarding disclaimer + map with GPS.
+Landscape tablet captures (Play Console manual upload) are kept in `tablet-landscape/`.
+
+Capture new shots per `docs/play-store/GRAPHICS.md`, then copy PNGs into the fastlane folders above.
