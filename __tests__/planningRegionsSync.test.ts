@@ -1,9 +1,17 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const REPO_ROOT = path.resolve(__dirname, '../../..');
 const SEACHECK_ROOT = path.resolve(__dirname, '..');
-const REGIONS_DIR = path.join(REPO_ROOT, 'planning/app-ideas/seacheck/regions');
+const FIXTURES_DIR = path.join(SEACHECK_ROOT, 'fixtures/region-geojson');
+const MONOREPO_REGIONS_DIR = path.resolve(SEACHECK_ROOT, '../../planning/app-ideas/seacheck/regions');
+
+function resolveRegionsDir(): string {
+  if (existsSync(FIXTURES_DIR)) return FIXTURES_DIR;
+  if (existsSync(MONOREPO_REGIONS_DIR)) return MONOREPO_REGIONS_DIR;
+  throw new Error(
+    `Missing region geojson fixtures at ${FIXTURES_DIR}. Run: npm run sync:regions`,
+  );
+}
 
 function resolveI18nKey(messages: Record<string, unknown>, key: string): string {
   const parts = key.split('.');
@@ -53,6 +61,7 @@ describe('planning region geojson sync', () => {
   });
 
   it('geojson files match regionPacks bounds, zoom, and en.json names', () => {
+    const regionsDir = resolveRegionsDir();
     const ts = readFileSync(path.join(SEACHECK_ROOT, 'src/map/regionPacks.ts'), 'utf8');
     const en = JSON.parse(readFileSync(path.join(SEACHECK_ROOT, 'src/i18n/locales/en.json'), 'utf8'));
     const packs = parseRegionPacksFromTs(ts).map((pack) => ({
@@ -61,7 +70,7 @@ describe('planning region geojson sync', () => {
     }));
 
     for (const pack of packs) {
-      const raw = readFileSync(path.join(REGIONS_DIR, `${pack.id}.geojson`), 'utf8');
+      const raw = readFileSync(path.join(regionsDir, `${pack.id}.geojson`), 'utf8');
       const feature = JSON.parse(raw);
       expect(feature.properties.id).toBe(pack.id);
       expect(feature.properties.name).toBe(pack.name);

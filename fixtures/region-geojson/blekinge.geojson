@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "blekinge",
+    "name": "Blekinge",
+    "nameKey": "downloads.packs.blekinge.name",
+    "descriptionKey": "downloads.packs.blekinge.description",
+    "priority": "P0",
+    "description": "Karlskrona archipelago and eastern Blekinge coast.",
+    "zoomDefault": {
+      "min": 9,
+      "max": 13
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          14,
+          55.8
+        ],
+        [
+          16.5,
+          55.8
+        ],
+        [
+          16.5,
+          56.8
+        ],
+        [
+          14,
+          56.8
+        ],
+        [
+          14,
+          55.8
+        ]
+      ]
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "oresund",
+    "name": "Øresund",
+    "nameKey": "downloads.packs.oresund.name",
+    "descriptionKey": "downloads.packs.oresund.description",
+    "priority": "P0",
+    "description": "Copenhagen–Malmö strait and Sound approaches — harbour-scale detail.",
+    "zoomDefault": {
+      "min": 10,
+      "max": 14
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          12.2,
+          55.35
+        ],
+        [
+          13.6,
+          55.35
+        ],
+        [
+          13.6,
+          56.15
+        ],
+        [
+          12.2,
+          56.15
+        ],
+        [
+          12.2,
+          55.35
+        ]
+      ]
+    ]
+  }
+}

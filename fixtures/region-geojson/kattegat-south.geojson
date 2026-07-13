@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "kattegat-south",
+    "name": "Kattegat south",
+    "nameKey": "downloads.packs.kattegatSouth.name",
+    "descriptionKey": "downloads.packs.kattegatSouth.description",
+    "priority": "P0",
+    "description": "East Jutland and Limfjord approaches — passage between North and Baltic seas.",
+    "zoomDefault": {
+      "min": 9,
+      "max": 12
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          9.5,
+          54.5
+        ],
+        [
+          12,
+          54.5
+        ],
+        [
+          12,
+          57
+        ],
+        [
+          9.5,
+          57
+        ],
+        [
+          9.5,
+          54.5
+        ]
+      ]
+    ]
+  }
+}

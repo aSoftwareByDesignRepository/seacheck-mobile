@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "kiel-bay",
+    "name": "Kieler Bucht (test)",
+    "nameKey": "downloads.packs.kielBay.name",
+    "descriptionKey": "downloads.packs.kielBay.description",
+    "priority": "P0",
+    "description": "Small pack for dockside and on-water UAT around Kiel.",
+    "zoomDefault": {
+      "min": 10,
+      "max": 14
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          10.05,
+          54.22
+        ],
+        [
+          10.25,
+          54.22
+        ],
+        [
+          10.25,
+          54.42
+        ],
+        [
+          10.05,
+          54.42
+        ],
+        [
+          10.05,
+          54.22
+        ]
+      ]
+    ]
+  }
+}

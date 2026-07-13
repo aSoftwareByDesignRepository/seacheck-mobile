@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "kattegat-north",
+    "name": "Kattegat north",
+    "nameKey": "downloads.packs.kattegatNorth.name",
+    "descriptionKey": "downloads.packs.kattegatNorth.description",
+    "priority": "P0",
+    "description": "Skagen to Anholt — open Kattegat crossing and north Jutland coast.",
+    "zoomDefault": {
+      "min": 8,
+      "max": 12
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          9.5,
+          56.8
+        ],
+        [
+          12,
+          56.8
+        ],
+        [
+          12,
+          58
+        ],
+        [
+          9.5,
+          58
+        ],
+        [
+          9.5,
+          56.8
+        ]
+      ]
+    ]
+  }
+}

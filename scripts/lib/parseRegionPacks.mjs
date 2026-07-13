@@ -35,8 +35,22 @@ export function parseRegionPacksFromTs(tsContent) {
 }
 
 export function loadRegionPacksFromRepo(repoRoot) {
-  const tsPath = path.join(repoRoot, 'mobile/seacheck/src/map/regionPacks.ts');
-  const enPath = path.join(repoRoot, 'mobile/seacheck/src/i18n/locales/en.json');
+  const candidates = [
+    path.join(repoRoot, 'mobile/seacheck/src/map/regionPacks.ts'),
+    path.join(repoRoot, 'src/map/regionPacks.ts'),
+  ];
+  const tsPath = candidates.find((candidate) => {
+    try {
+      readFileSync(candidate, 'utf8');
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  if (!tsPath) {
+    throw new Error(`regionPacks.ts not found under ${repoRoot}`);
+  }
+  const enPath = tsPath.replace('src/map/regionPacks.ts', 'src/i18n/locales/en.json');
   const tsContent = readFileSync(tsPath, 'utf8');
   const en = JSON.parse(readFileSync(enPath, 'utf8'));
   return parseRegionPacksFromTs(tsContent).map((pack) => ({

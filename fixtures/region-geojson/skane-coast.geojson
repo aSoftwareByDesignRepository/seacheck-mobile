@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "skane-coast",
+    "name": "Skåne coast",
+    "nameKey": "downloads.packs.skaneCoast.name",
+    "descriptionKey": "downloads.packs.skaneCoast.description",
+    "priority": "P0",
+    "description": "Malmö to Ystad and southern Skåne sailing grounds.",
+    "zoomDefault": {
+      "min": 9,
+      "max": 13
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          12.5,
+          55.2
+        ],
+        [
+          14.5,
+          55.2
+        ],
+        [
+          14.5,
+          56
+        ],
+        [
+          12.5,
+          56
+        ],
+        [
+          12.5,
+          55.2
+        ]
+      ]
+    ]
+  }
+}

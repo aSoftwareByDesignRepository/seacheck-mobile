@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "aland-bothnia-south",
+    "name": "Åland & Bothnian Sea south",
+    "nameKey": "downloads.packs.alandBothniaSouth.name",
+    "descriptionKey": "downloads.packs.alandBothniaSouth.description",
+    "priority": "P2",
+    "description": "Åland islands, Turku archipelago, and southern Bothnian Sea.",
+    "zoomDefault": {
+      "min": 8,
+      "max": 12
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          19,
+          59
+        ],
+        [
+          22.5,
+          59
+        ],
+        [
+          22.5,
+          61.5
+        ],
+        [
+          19,
+          61.5
+        ],
+        [
+          19,
+          59
+        ]
+      ]
+    ]
+  }
+}

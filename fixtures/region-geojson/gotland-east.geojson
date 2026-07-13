@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "gotland-east",
+    "name": "Gotland east",
+    "nameKey": "downloads.packs.gotlandEast.name",
+    "descriptionKey": "downloads.packs.gotlandEast.description",
+    "priority": "P1",
+    "description": "Gotland east coast and Hoburg approaches.",
+    "zoomDefault": {
+      "min": 9,
+      "max": 12
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          19.5,
+          56.5
+        ],
+        [
+          20.5,
+          56.5
+        ],
+        [
+          20.5,
+          58.5
+        ],
+        [
+          19.5,
+          58.5
+        ],
+        [
+          19.5,
+          56.5
+        ]
+      ]
+    ]
+  }
+}

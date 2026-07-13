@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "german-baltic-west",
+    "name": "German Baltic west",
+    "nameKey": "downloads.packs.germanBalticWest.name",
+    "descriptionKey": "downloads.packs.germanBalticWest.description",
+    "priority": "P0",
+    "description": "Flensburg to Fehmarn and Lübeck Bay.",
+    "zoomDefault": {
+      "min": 9,
+      "max": 13
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          9.8,
+          53.5
+        ],
+        [
+          11.8,
+          53.5
+        ],
+        [
+          11.8,
+          54.8
+        ],
+        [
+          9.8,
+          54.8
+        ],
+        [
+          9.8,
+          53.5
+        ]
+      ]
+    ]
+  }
+}

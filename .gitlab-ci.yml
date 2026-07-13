@@ -1,0 +1,24 @@
+# Mirrors GitHub Actions preflight for GitLab runners / mirrors.
+# F-Droid packaging CI lives in fdroiddata (see docs/fdroid/BUILD-FDROID.md).
+
+stages:
+  - test
+
+variables:
+  CI: "true"
+  NODE_ENV: test
+
+preflight:
+  stage: test
+  image: node:24-bookworm
+  cache:
+    key: npm-$CI_COMMIT_REF_SLUG
+    paths:
+      - node_modules/
+  before_script:
+    - npm ci
+  script:
+    - npm run preflight
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

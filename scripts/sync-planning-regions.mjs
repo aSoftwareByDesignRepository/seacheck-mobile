@@ -12,8 +12,10 @@ import { fileURLToPath } from 'node:url';
 import { loadRegionPacksFromRepo } from './lib/parseRegionPacks.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SEACHECK_ROOT = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(__dirname, '../../..');
-const OUT_DIR = path.join(REPO_ROOT, 'planning/app-ideas/seacheck/regions');
+const FIXTURES_DIR = path.join(SEACHECK_ROOT, 'fixtures/region-geojson');
+const PLANNING_DIR = path.join(REPO_ROOT, 'planning/app-ideas/seacheck/regions');
 
 function boundsToPolygon([west, south, east, north]) {
   return [
@@ -45,30 +47,45 @@ function packToGeojson(pack) {
   };
 }
 
-async function main() {
-  const packs = loadRegionPacksFromRepo(REPO_ROOT);
-  if (packs.length === 0) {
-    console.error('No packs parsed from regionPacks.ts — check parseRegionPacks.mjs');
-    process.exit(1);
-  }
-
-  await mkdir(OUT_DIR, { recursive: true });
+async function writePackGeojson(outDir, packs) {
+  await mkdir(outDir, { recursive: true });
 
   const keep = new Set(packs.map((p) => `${p.id}.geojson`));
-  for (const file of await readdir(OUT_DIR)) {
+  for (const file of await readdir(outDir)) {
     if (file.endsWith('.geojson') && !keep.has(file)) {
-      await unlink(path.join(OUT_DIR, file));
+      await unlink(path.join(outDir, file));
       console.log(`removed stale ${file}`);
     }
   }
 
   for (const pack of packs) {
-    const file = path.join(OUT_DIR, `${pack.id}.geojson`);
+    const file = path.join(outDir, `${pack.id}.geojson`);
     await writeFile(file, `${JSON.stringify(packToGeojson(pack), null, 2)}\n`, 'utf8');
-    console.log(`wrote ${pack.id}.geojson`);
+    console.log(`wrote ${path.relative(SEACHECK_ROOT, file)}`);
+  }
+}
+
+async function main() {
+  const repoRoots = [REPO_ROOT, SEACHECK_ROOT];
+  let packs = [];
+  for (const root of repoRoots) {
+    try {
+      packs = loadRegionPacksFromRepo(root);
+      if (packs.length > 0) break;
+    } catch {
+      /* try next layout */
+    }
+  }
+  if (packs.length === 0) {
+    console.error('No packs parsed from regionPacks.ts — check parseRegionPacks.mjs');
+    process.exit(1);
   }
 
-  const readme = `# Offline corridor pack boundaries
+  await writePackGeojson(FIXTURES_DIR, packs);
+
+  try {
+    await writePackGeojson(PLANNING_DIR, packs);
+    const readme = `# Offline corridor pack boundaries
 
 **Source of truth:** \`mobile/seacheck/src/map/regionPacks.ts\`
 
@@ -77,12 +94,16 @@ These GeoJSON files mirror the corridor packs in the app for planning and map to
 Regenerate after changing packs in code:
 
 \`\`\`bash
-node mobile/seacheck/scripts/sync-planning-regions.mjs
+npm run sync:regions
 \`\`\`
 
 Legacy macro-region files (\`baltic-*.geojson\`) were removed when corridor packs replaced them.
 `;
-  await writeFile(path.join(OUT_DIR, 'README.md'), readme, 'utf8');
+    await writeFile(path.join(PLANNING_DIR, 'README.md'), readme, 'utf8');
+  } catch (err) {
+    console.warn(`skipped planning export (${PLANNING_DIR}): ${err instanceof Error ? err.message : err}`);
+  }
+
   console.log(`done (${packs.length} packs)`);
 }
 

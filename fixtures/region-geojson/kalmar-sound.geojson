@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "kalmar-sound",
+    "name": "Kalmar & Öland west",
+    "nameKey": "downloads.packs.kalmarSound.name",
+    "descriptionKey": "downloads.packs.kalmarSound.description",
+    "priority": "P0",
+    "description": "Kalmar Sound, Öland west coast, and Västervik approaches.",
+    "zoomDefault": {
+      "min": 9,
+      "max": 13
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          15.5,
+          56.5
+        ],
+        [
+          17.5,
+          56.5
+        ],
+        [
+          17.5,
+          57.5
+        ],
+        [
+          15.5,
+          57.5
+        ],
+        [
+          15.5,
+          56.5
+        ]
+      ]
+    ]
+  }
+}

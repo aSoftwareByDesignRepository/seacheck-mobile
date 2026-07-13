@@ -25,6 +25,7 @@ required=(
   README.md
   docs/build-it.md
   docs/test-it.md
+  fixtures/region-geojson/kiel-bay.geojson
 )
 for f in "${required[@]}"; do
   [[ -f "$f" ]] || { echo "Missing: $f"; exit 1; }

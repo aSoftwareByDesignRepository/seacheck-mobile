@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "gulf-finland-west",
+    "name": "Gulf of Finland west",
+    "nameKey": "downloads.packs.gulfFinlandWest.name",
+    "descriptionKey": "downloads.packs.gulfFinlandWest.description",
+    "priority": "P2",
+    "description": "Helsinki archipelago south and Gulf of Finland western waters.",
+    "zoomDefault": {
+      "min": 8,
+      "max": 12
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          22,
+          59
+        ],
+        [
+          27,
+          59
+        ],
+        [
+          27,
+          60.8
+        ],
+        [
+          22,
+          60.8
+        ],
+        [
+          22,
+          59
+        ]
+      ]
+    ]
+  }
+}

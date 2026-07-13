@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "danish-belts",
+    "name": "Danish belts",
+    "nameKey": "downloads.packs.danishBelts.name",
+    "descriptionKey": "downloads.packs.danishBelts.description",
+    "priority": "P0",
+    "description": "Great Belt, Little Belt, and Fehmarn Belt — strait detail for belt passages.",
+    "zoomDefault": {
+      "min": 10,
+      "max": 13
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          10,
+          54.8
+        ],
+        [
+          11.8,
+          54.8
+        ],
+        [
+          11.8,
+          55.8
+        ],
+        [
+          10,
+          55.8
+        ],
+        [
+          10,
+          54.8
+        ]
+      ]
+    ]
+  }
+}

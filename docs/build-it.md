@@ -126,11 +126,13 @@ npm run play:preflight
 
 ## Region data sync (optional)
 
-Refresh bundled planning regions from the workspace `planning/` tree:
+Refresh bundled corridor GeoJSON fixtures and, in the monorepo, `planning/app-ideas/seacheck/regions/`:
 
 ```bash
 npm run sync:regions
 ```
+
+Fixtures live in `fixtures/region-geojson/` and are required for CI on the standalone GitHub repo.
 
 Re-run the production block if you ship a release with updated regions.
 

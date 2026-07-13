@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "gotland-west",
+    "name": "Gotland west",
+    "nameKey": "downloads.packs.gotlandWest.name",
+    "descriptionKey": "downloads.packs.gotlandWest.description",
+    "priority": "P1",
+    "description": "Visby west coast and Gotland passage waters.",
+    "zoomDefault": {
+      "min": 8,
+      "max": 12
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          17,
+          56.5
+        ],
+        [
+          19.5,
+          56.5
+        ],
+        [
+          19.5,
+          58
+        ],
+        [
+          17,
+          58
+        ],
+        [
+          17,
+          56.5
+        ]
+      ]
+    ]
+  }
+}

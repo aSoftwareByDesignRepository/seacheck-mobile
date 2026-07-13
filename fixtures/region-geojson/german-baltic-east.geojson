@@ -1,0 +1,46 @@
+{
+  "type": "Feature",
+  "properties": {
+    "id": "german-baltic-east",
+    "name": "German Baltic east",
+    "nameKey": "downloads.packs.germanBalticEast.name",
+    "descriptionKey": "downloads.packs.germanBalticEast.description",
+    "priority": "P0",
+    "description": "Wismar to Rügen and Szczecin lagoon approach.",
+    "zoomDefault": {
+      "min": 9,
+      "max": 13
+    },
+    "layers": [
+      "base",
+      "seamarks"
+    ]
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          11,
+          53.8
+        ],
+        [
+          14.8,
+          53.8
+        ],
+        [
+          14.8,
+          55.2
+        ],
+        [
+          11,
+          55.2
+        ],
+        [
+          11,
+          53.8
+        ]
+      ]
+    ]
+  }
+}
