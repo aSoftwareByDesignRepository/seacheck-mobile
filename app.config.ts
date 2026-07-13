@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'SeaCheck',
   slug: 'seacheck',
-  version: '0.1.0',
+  version: '0.1.1',
   orientation: 'default',
   scheme: 'seacheck',
   userInterfaceStyle: 'automatic',
@@ -61,6 +61,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'com.google.android.gms.permission.ACTIVITY_RECOGNITION',
     ],
   },
+  ...(isProductionBuild
+    ? {
+        autolinking: {
+          exclude: ['expo-dev-client', 'expo-dev-menu', 'expo-dev-launcher'],
+        },
+      }
+    : {}),
   plugins: [
     ...(isProductionBuild ? [] : (['expo-dev-client'] as const)),
     'expo-localization',

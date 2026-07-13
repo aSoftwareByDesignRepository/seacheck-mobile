@@ -6,7 +6,7 @@ SeaCheck is an **Expo SDK 56 / React Native** app. F-Droid builds from source on
 
 ```bash
 cd mobile/seacheck
-npm ci
+npm ci --omit=dev
 SEACHECK_APP_VARIANT=production npx expo prebuild --platform android --clean
 cd android && ./gradlew assembleRelease
 ```

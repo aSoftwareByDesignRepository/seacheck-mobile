@@ -1,6 +1,6 @@
 {
   "name": "seacheck-mobile",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.ts",
   "license": "AGPL-3.0-or-later",
   "scripts": {
@@ -47,7 +47,6 @@
     "expo-audio": "~56.0.12",
     "expo-battery": "~56.0.4",
     "expo-clipboard": "~56.0.4",
-    "expo-dev-client": "~56.0.22",
     "expo-device": "~56.0.4",
     "expo-file-system": "~56.0.8",
     "expo-haptics": "~56.0.3",
@@ -70,6 +69,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "expo-dev-client": "~56.0.22",
     "@react-native/jest-preset": "0.85.3",
     "@resvg/resvg-js": "^2.6.2",
     "@testing-library/react-native": "^13.3.3",
