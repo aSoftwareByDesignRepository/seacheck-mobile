@@ -588,11 +588,14 @@ function createCacheDownloadSession(
   const runSweep = async (startIndex = 0) => {
     rememberDownloadSessionPhase(ctx.regionId, 'sweep');
     await yieldToUi();
+    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
     const sweepLeadMs = process.env.NODE_ENV === 'test' ? 0 : 400;
     await new Promise((resolve) => setTimeout(resolve, sweepLeadMs));
+    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
 
     const totalLevels = ctx.maxZoom - ctx.minZoom + 1;
     await persistSweepProgress(startIndex, totalLevels);
+    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
 
     try {
       const result = await runTileCacheSweep({

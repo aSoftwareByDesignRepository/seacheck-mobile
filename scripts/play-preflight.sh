@@ -11,7 +11,7 @@ echo "==> i18n parity"
 npm run i18n:parity
 
 echo "==> Unit tests"
-npm test -- --passWithNoTests 2>/dev/null || npm test
+npm test -- --passWithNoTests
 
 echo "==> Play kit files"
 required=(

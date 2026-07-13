@@ -1,6 +1,7 @@
 import 'whatwg-fetch';
 
 jest.spyOn(global.console, 'warn').mockImplementation(() => {});
+jest.spyOn(global.console, 'info').mockImplementation(() => {});
 
 jest.mock('@react-native-async-storage/async-storage', () => {
   const store = new Map<string, string>();

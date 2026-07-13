@@ -3,6 +3,7 @@ import { OfflineManager } from '@maplibre/maplibre-react-native';
 
 import { REGION_PACKS } from '../src/map/regionPacks';
 import { downloadCoordinator } from '../src/lib/offline/downloadCoordinator';
+import { resetDownloadMapHostForTests } from '../src/lib/offline/downloadMapHost';
 import { resetSeamarkIndexQueueForTests } from '../src/lib/seamarks/seamarkIndexQueue';
 import { resetOfflinePackStoreForTests, useOfflinePackStore } from '../src/store/offlinePackStore';
 
@@ -56,11 +57,18 @@ describe('offlinePackStore.hydrate', () => {
 
   beforeEach(async () => {
     resetSeamarkIndexQueueForTests();
+    resetDownloadMapHostForTests();
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
     getPacks.mockReset();
     addListener.mockReset();
     addListener.mockResolvedValue(undefined);
+  });
+
+  afterEach(async () => {
+    downloadCoordinator.invalidate(KIEL.id);
+    resetDownloadMapHostForTests();
+    await new Promise((resolve) => setImmediate(resolve));
   });
 
   it('hydrates empty index with idle region packs', async () => {

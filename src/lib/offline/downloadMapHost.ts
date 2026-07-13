@@ -17,9 +17,10 @@ let controllerWaiters: Array<(ready: boolean) => void> = [];
 /** Bumped when the visible download map unmounts — stale native callbacks are ignored. */
 let downloadMapGeneration = 0;
 
-const STYLE_WAIT_MS = 25_000;
-const CONTROLLER_WAIT_MS = 20_000;
-const FRAME_WAIT_MS = 4_000;
+const isTestEnv = process.env.NODE_ENV === 'test';
+const STYLE_WAIT_MS = isTestEnv ? 250 : 25_000;
+const CONTROLLER_WAIT_MS = isTestEnv ? 250 : 20_000;
+const FRAME_WAIT_MS = isTestEnv ? 0 : 4_000;
 
 function notifyStyleWaiters(ready: boolean): void {
   const waiters = styleWaiters;
@@ -37,9 +38,10 @@ export function resetDownloadMapHostForTests(): void {
   styleReady = false;
   styleUri = null;
   controller = null;
-  styleWaiters = [];
-  controllerWaiters = [];
   downloadMapGeneration = 0;
+  // Resolve pending waits immediately so Jest does not leak 20–25s timers.
+  notifyStyleWaiters(false);
+  notifyControllerWaiters(false);
 }
 
 export function getDownloadMapGeneration(): number {
@@ -94,7 +96,13 @@ export async function waitForDownloadMapReady(
     }, timeoutMs);
 
     const onReady = (ready: boolean) => {
-      if (!ready) return;
+      if (!ready) {
+        clearTimeout(timer);
+        styleWaiters = styleWaiters.filter((w) => w !== onReady);
+        controllerWaiters = controllerWaiters.filter((w) => w !== onReady);
+        resolve(false);
+        return;
+      }
       if (styleReady && styleUri === expectedStyleUri && controller != null) {
         clearTimeout(timer);
         styleWaiters = styleWaiters.filter((w) => w !== onReady);
