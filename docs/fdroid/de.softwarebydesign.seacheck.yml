@@ -22,7 +22,7 @@ Builds:
     commit: 4898b3c4afab39f61110f5ca5721704196194c10
     sudo:
       - apt-get update
-      - apt-get install -y npm
+      - apt-get install -y nodejs npm
     init: npm ci --omit=dev
     output: android/app/build/outputs/apk/release/app-armeabi-v7a-release-unsigned.apk
     srclibs:
@@ -33,11 +33,15 @@ Builds:
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
-      - sed -i -e '/com.android.installreferrer.api/d' -e '/StringBuilder()/,/^ })/d'
-        -e '/getInstallReferrerAsync/apromise.resolve("")' node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
+      - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
+        -e '/getInstallReferrerAsync/,/^    }$/d' 
+        node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
+      - echo 'expo.inlineModules.watchedDirectories=[]' >> android/gradle.properties
+      - export ANDROID_HOME=$$SDK$$
+      - bash scripts/ensure-android-local-properties.sh
       - sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
         = true/' android/app/build.gradle
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
@@ -50,11 +54,13 @@ Builds:
     scanignore:
       - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+      - node_modules/expo-modules-autolinking/scripts/android/autolinking_implementation.gradle
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/@react-native-community/netinfo/android/build.gradle
       - node_modules/@maplibre/maplibre-react-native/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
+      - node_modules/expo-location/android/build.gradle
     scandelete:
       - node_modules
     build: gradle -p android assembleRelease --init-script init.gradle
@@ -64,7 +70,7 @@ Builds:
     commit: 4898b3c4afab39f61110f5ca5721704196194c10
     sudo:
       - apt-get update
-      - apt-get install -y npm
+      - apt-get install -y nodejs npm
     init: npm ci --omit=dev
     output: android/app/build/outputs/apk/release/app-arm64-v8a-release-unsigned.apk
     srclibs:
@@ -75,13 +81,17 @@ Builds:
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
-      - sed -i -e '/com.android.installreferrer.api/d' -e '/StringBuilder()/,/^ })/d'
-        -e '/getInstallReferrerAsync/apromise.resolve("")' node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
+      - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
+        -e '/getInstallReferrerAsync/,/^    }$/d' 
+        node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
-      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture\
-        \ = true/' -e 's/\"arm64-v8a\": 3/\"arm64-v8a\": 2/' android/app/build.gradle"
+      - echo 'expo.inlineModules.watchedDirectories=[]' >> android/gradle.properties
+      - export ANDROID_HOME=$$SDK$$
+      - bash scripts/ensure-android-local-properties.sh
+      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
+        = true/' -e 's/\"arm64-v8a\": 3/\"arm64-v8a\": 2/' android/app/build.gradle"
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=arm64-v8a' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
@@ -92,11 +102,13 @@ Builds:
     scanignore:
       - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+      - node_modules/expo-modules-autolinking/scripts/android/autolinking_implementation.gradle
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/@react-native-community/netinfo/android/build.gradle
       - node_modules/@maplibre/maplibre-react-native/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
+      - node_modules/expo-location/android/build.gradle
     scandelete:
       - node_modules
     build: gradle -p android assembleRelease --init-script init.gradle
@@ -106,7 +118,7 @@ Builds:
     commit: 4898b3c4afab39f61110f5ca5721704196194c10
     sudo:
       - apt-get update
-      - apt-get install -y npm
+      - apt-get install -y nodejs npm
     init: npm ci --omit=dev
     output: android/app/build/outputs/apk/release/app-x86_64-release-unsigned.apk
     srclibs:
@@ -117,13 +129,17 @@ Builds:
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
-      - sed -i -e '/com.android.installreferrer.api/d' -e '/StringBuilder()/,/^ })/d'
-        -e '/getInstallReferrerAsync/apromise.resolve("")' node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
+      - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
+        -e '/getInstallReferrerAsync/,/^    }$/d' 
+        node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
-      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture\
-        \ = true/' -e 's/\"x86_64\": 4/\"x86_64\": 3/' android/app/build.gradle"
+      - echo 'expo.inlineModules.watchedDirectories=[]' >> android/gradle.properties
+      - export ANDROID_HOME=$$SDK$$
+      - bash scripts/ensure-android-local-properties.sh
+      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
+        = true/' -e 's/\"x86_64\": 4/\"x86_64\": 3/' android/app/build.gradle"
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=x86_64' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
@@ -134,11 +150,13 @@ Builds:
     scanignore:
       - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+      - node_modules/expo-modules-autolinking/scripts/android/autolinking_implementation.gradle
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/@react-native-community/netinfo/android/build.gradle
       - node_modules/@maplibre/maplibre-react-native/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
+      - node_modules/expo-location/android/build.gradle
     scandelete:
       - node_modules
     build: gradle -p android assembleRelease --init-script init.gradle

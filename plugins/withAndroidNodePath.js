@@ -118,6 +118,13 @@ function patchAppBuildGradle(contents) {
     `nodeExecutableAndArgs = [${MARKER}]`,
   );
 
+  if (!contents.includes('REACT_NATIVE_NODE_MODULES_DIR')) {
+    contents = contents.replace(
+      /(def projectRoot = rootDir\.getAbsoluteFile\(\)\.getParentFile\(\)\.getAbsolutePath\(\)\n)/,
+      `$1ext.REACT_NATIVE_NODE_MODULES_DIR = new File(rootDir, "../node_modules/react-native").absolutePath\n`,
+    );
+  }
+
   return contents;
 }
 

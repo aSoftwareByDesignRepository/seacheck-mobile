@@ -8,9 +8,9 @@ metadata/de.softwarebydesign.seacheck.yml
 
 Before opening the merge request:
 
-1. Replace `COMMIT_PLACEHOLDER` with the git SHA of the release tag (e.g. `v0.1.0`)
+1. Pin `commit:` in `de.softwarebydesign.seacheck.yml` to the release tag SHA (e.g. `4898b3c` for `v0.1.1`)
 2. Confirm `versionName` / `versionCode` match `app.config.ts` after `expo prebuild`
-3. Run `fdroid lint de.softwarebydesign.seacheck` in fdroiddata CI
+3. Ensure fdroiddata CI passes `fdroid rewritemeta` and `fdroid build` on the MR
 4. Replace draft screenshots in `fastlane/metadata/android/*/images/phoneScreenshots/`
 
 See [BUILD-FDROID.md](BUILD-FDROID.md) for the full workflow.
