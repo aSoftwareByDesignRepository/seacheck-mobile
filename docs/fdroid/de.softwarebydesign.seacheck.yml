@@ -17,9 +17,9 @@ RepoType: git
 Repo: https://github.com/aSoftwareByDesignRepository/seacheck-mobile
 
 Builds:
-  - versionName: 0.1.0
+  - versionName: 0.1.1
     versionCode: 1
-    commit: 3a7ffc1d25ac86c394803decc9381d47cbf07393
+    commit: 4898b3c4afab39f61110f5ca5721704196194c10
     sudo:
       - apt-get update
       - apt-get install -y npm
@@ -59,9 +59,9 @@ Builds:
       - node_modules
     build: gradle -p android assembleRelease --init-script init.gradle
 
-  - versionName: 0.1.0
+  - versionName: 0.1.1
     versionCode: 2
-    commit: 3a7ffc1d25ac86c394803decc9381d47cbf07393
+    commit: 4898b3c4afab39f61110f5ca5721704196194c10
     sudo:
       - apt-get update
       - apt-get install -y npm
@@ -101,9 +101,9 @@ Builds:
       - node_modules
     build: gradle -p android assembleRelease --init-script init.gradle
 
-  - versionName: 0.1.0
+  - versionName: 0.1.1
     versionCode: 3
-    commit: 3a7ffc1d25ac86c394803decc9381d47cbf07393
+    commit: 4898b3c4afab39f61110f5ca5721704196194c10
     sudo:
       - apt-get update
       - apt-get install -y npm
@@ -150,5 +150,5 @@ VercodeOperation:
   - '%c + 1'
   - '%c + 2'
 UpdateCheckData: app.config.ts|versionCode:\s*(\d+)|.|version:\s*'([^']+)'
-CurrentVersion: 0.1.0
+CurrentVersion: 0.1.1
 CurrentVersionCode: 3
