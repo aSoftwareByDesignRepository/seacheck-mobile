@@ -68,6 +68,7 @@ required_patch=(
   scripts/patch-fdroid-nonfree.sh
   scripts/fdroid/expo-notifications-patches/tokens/PushTokenModule.kt
   scripts/fdroid/expo-location-patches/LocationModule.kt
+  scripts/fdroid/maplibre-react-native-patches/build.gradle
 )
 for f in "${required_patch[@]}"; do
   [[ -f "$f" ]] || { echo "Missing: $f"; exit 1; }
@@ -82,6 +83,10 @@ if ! grep -q 'patch-fdroid-nonfree.sh' docs/fdroid/de.softwarebydesign.seacheck.
 fi
 if grep -q 'node_modules/expo-location/android/build.gradle' docs/fdroid/de.softwarebydesign.seacheck.yml; then
   echo "ERROR: remove obsolete scanignore for expo-location (patch-fdroid-nonfree.sh strips play-services; unused scanignore fails fdroid build)" >&2
+  exit 1
+fi
+if grep -q 'node_modules/@maplibre/maplibre-react-native/android/build.gradle' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: remove maplibre scanignore (patch-fdroid-nonfree.sh removes play-services-location; unused scanignore fails fdroid build)" >&2
   exit 1
 fi
 if [[ -f scripts/fdroid/expo-notifications-patches/notifications/interfaces/NotificationListener.java ]]; then

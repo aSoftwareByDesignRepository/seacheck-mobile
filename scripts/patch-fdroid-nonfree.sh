@@ -23,7 +23,7 @@ rm -rf "$NOTIF_ANDROID/firebase-messaging" 2>/dev/null || true
 
 echo "==> patch-fdroid-nonfree: expo-location (Android LocationManager)"
 LOC_ANDROID="node_modules/expo-location/android"
-sed -i -e '/play-services-location/d' "$LOC_ANDROID/build.gradle"
+sed -i -e '/play-services/d' -e '/com\.google\.android\.gms/d' "$LOC_ANDROID/build.gradle"
 cp "$LOC_PATCHES/LocationHelpers.kt" \
   "$LOC_ANDROID/src/main/java/expo/modules/location/LocationHelpers.kt"
 cp "$LOC_PATCHES/LocationModule.kt" \
@@ -32,5 +32,13 @@ cp "$LOC_PATCHES/taskConsumers/LocationTaskConsumer.kt" \
   "$LOC_ANDROID/src/main/java/expo/modules/location/taskConsumers/LocationTaskConsumer.kt"
 cp "$LOC_PATCHES/taskConsumers/GeofencingTaskConsumer.kt" \
   "$LOC_ANDROID/src/main/java/expo/modules/location/taskConsumers/GeofencingTaskConsumer.kt"
+
+echo "==> patch-fdroid-nonfree: maplibre-react-native (default location engine, no GMS)"
+MAPLIBRE_ANDROID="node_modules/@maplibre/maplibre-react-native/android"
+MAPLIBRE_PATCHES="$ROOT/scripts/fdroid/maplibre-react-native-patches"
+cp "$MAPLIBRE_PATCHES/build.gradle" "$MAPLIBRE_ANDROID/build.gradle"
+sed -i 's/^org\.maplibre\.reactnative\.locationEngine=.*/org.maplibre.reactnative.locationEngine=default/' \
+  "$MAPLIBRE_ANDROID/gradle.properties"
+rm -rf "$MAPLIBRE_ANDROID/src/main/location-engine-google"
 
 echo "patch-fdroid-nonfree: done"
