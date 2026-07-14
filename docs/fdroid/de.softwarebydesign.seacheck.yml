@@ -1,7 +1,9 @@
 AntiFeatures:
   NonFreeNet:
-    en-US: Optional online map tiles from OpenStreetMap and CARTO while downloading offline region packs.
-    de-DE: Optionale Online-Kartenkacheln von OpenStreetMap und CARTO beim Herunterladen von Offline-Regionen.
+    en-US: Optional online map tiles from OpenStreetMap and CARTO while downloading
+      offline region packs.
+    de-DE: Optionale Online-Kartenkacheln von OpenStreetMap und CARTO beim Herunterladen
+      von Offline-Regionen.
 Categories:
   - Navigation
 License: AGPL-3.0-or-later

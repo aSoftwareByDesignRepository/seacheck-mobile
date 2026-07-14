@@ -53,6 +53,16 @@ if grep -q "getInstallReferrerAsync.*ApplicationModule.kt" docs/fdroid/de.softwa
   exit 1
 fi
 
+echo "==> F-Droid metadata AntiFeatures reason line wrapping"
+if grep -q 'while downloading offline region packs\.' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: NonFreeNet en-US reason must be line-wrapped (fdroid rewritemeta)" >&2
+  exit 1
+fi
+if grep -q 'beim Herunterladen von Offline-Regionen\.' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: NonFreeNet de-DE reason must be line-wrapped (fdroid rewritemeta)" >&2
+  exit 1
+fi
+
 echo "==> F-Droid non-free APK patches"
 required_patch=(
   scripts/patch-fdroid-nonfree.sh
