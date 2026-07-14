@@ -34,6 +34,10 @@ open class FirebaseMessagingDelegate(protected val context: Context) {
       }
     }
 
+    fun removeBackgroundTaskConsumer(taskConsumer: BackgroundRemoteNotificationTaskConsumer) {
+      sBackgroundTaskConsumerReferences.remove(taskConsumer)
+    }
+
     fun getBackgroundTasks() = sBackgroundTaskConsumerReferences.values.mapNotNull { it.get() }
 
     /** No-op for F-Droid builds (no FCM, local notifications only). */

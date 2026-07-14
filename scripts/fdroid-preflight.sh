@@ -74,5 +74,13 @@ if grep -q 'node_modules/expo-location/android/build.gradle' docs/fdroid/de.soft
   echo "ERROR: remove obsolete scanignore for expo-location (patch-fdroid-nonfree.sh strips play-services; unused scanignore fails fdroid build)" >&2
   exit 1
 fi
+if [[ -f scripts/fdroid/expo-notifications-patches/notifications/interfaces/NotificationListener.java ]]; then
+  echo "ERROR: remove NotificationListener.java patch (expo-notifications uses .kt; duplicate fails compileReleaseKotlin)" >&2
+  exit 1
+fi
+if ! grep -q 'removeBackgroundTaskConsumer' scripts/fdroid/expo-notifications-patches/service/delegates/FirebaseMessagingDelegate.kt; then
+  echo "ERROR: FirebaseMessagingDelegate stub must define removeBackgroundTaskConsumer" >&2
+  exit 1
+fi
 
 echo "F-Droid preflight passed."

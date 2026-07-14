@@ -13,6 +13,8 @@ echo "==> patch-fdroid-nonfree: expo-notifications (local notifications only)"
 NOTIF_ANDROID="node_modules/expo-notifications/android"
 sed -i -e '/firebase/d' "$NOTIF_ANDROID/build.gradle"
 cp -a "$NOTIF_PATCHES/." "$NOTIF_ANDROID/src/main/java/expo/modules/notifications/"
+# expo-notifications ships NotificationListener.kt; an old .java patch caused redeclaration.
+rm -f "$NOTIF_ANDROID/src/main/java/expo/modules/notifications/notifications/interfaces/NotificationListener.java"
 rm -f \
   "$NOTIF_ANDROID/src/main/java/expo/modules/notifications/notifications/RemoteMessageSerializer.java" \
   "$NOTIF_ANDROID/src/main/java/expo/modules/notifications/notifications/model/triggers/FirebaseNotificationTrigger.kt" \
