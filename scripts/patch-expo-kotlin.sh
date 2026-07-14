@@ -100,6 +100,11 @@ patch_kotlin_file \
   "import expo.modules.plugin.resolveNodeExecutableForProject" \
   "resolveNodeExecutableForProject(project)"
 
+AUTO_PLUGIN_KT="$AUTO_PLUGIN/ExpoAutolinkingPlugin.kt"
+if [[ -f "$AUTO_PLUGIN_KT" ]]; then
+  python3 "$ROOT/scripts/patch-expo-kotlin-inline-mirror.py" "$AUTO_PLUGIN_KT"
+fi
+
 # React Native PathUtils fallback
 PATH_UTILS="$NODE_MODULES/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/PathUtils.kt"
 if [[ -f "$PATH_UTILS" ]] && ! grep -q "$MARKER" "$PATH_UTILS"; then

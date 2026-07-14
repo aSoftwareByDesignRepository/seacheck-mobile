@@ -116,6 +116,13 @@ fi
   exit 1
 }
 
+# expo prebuild writes gradle.properties without a trailing newline; appends would
+# corrupt the last property (e.g. watchedDirectories=[]reactNativeArchitectures=…).
+GRADLE_PROPS="$ANDROID_DIR/gradle.properties"
+if [[ -f "$GRADLE_PROPS" ]] && [[ -n "$(tail -c1 "$GRADLE_PROPS" 2>/dev/null || true)" ]]; then
+  printf '\n' >>"$GRADLE_PROPS"
+fi
+
 {
   printf 'sdk.dir=%s\n' "$SDK"
   NODE_DIR="$(resolve_node_dir || true)"

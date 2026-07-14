@@ -39,7 +39,6 @@ Builds:
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
-      - echo 'expo.inlineModules.watchedDirectories=[]' >> android/gradle.properties
       - export ANDROID_HOME=$$SDK$$
       - bash scripts/ensure-android-local-properties.sh
       - sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
@@ -86,7 +85,6 @@ Builds:
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
-      - echo 'expo.inlineModules.watchedDirectories=[]' >> android/gradle.properties
       - export ANDROID_HOME=$$SDK$$
       - bash scripts/ensure-android-local-properties.sh
       - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
@@ -133,7 +131,6 @@ Builds:
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
-      - echo 'expo.inlineModules.watchedDirectories=[]' >> android/gradle.properties
       - export ANDROID_HOME=$$SDK$$
       - bash scripts/ensure-android-local-properties.sh
       - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
