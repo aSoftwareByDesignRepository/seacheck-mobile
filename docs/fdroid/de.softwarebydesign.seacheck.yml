@@ -25,8 +25,6 @@ Builds:
       - apt-get install -y nodejs npm
     init: npm ci --omit=dev
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
-    srclibs:
-      - firebase-stub@ce90a956aacda17a85c60577ee443aeb83d876ef
     prebuild:
       - sed -i -e '1a "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},'
         package.json
@@ -36,8 +34,7 @@ Builds:
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
         -e '/getInstallReferrerAsync/,/^    }$/d' 
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
-      - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
-      - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
+      - bash scripts/patch-fdroid-nonfree.sh
       - "sed -i 's/versionCode: [0-9][0-9]*/versionCode: $$VERCODE$$/' app.config.ts"
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
@@ -69,8 +66,6 @@ Builds:
       - apt-get install -y nodejs npm
     init: npm ci --omit=dev
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
-    srclibs:
-      - firebase-stub@ce90a956aacda17a85c60577ee443aeb83d876ef
     prebuild:
       - sed -i -e '1a "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},'
         package.json
@@ -80,8 +75,7 @@ Builds:
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
         -e '/getInstallReferrerAsync/,/^    }$/d' 
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
-      - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
-      - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
+      - bash scripts/patch-fdroid-nonfree.sh
       - "sed -i 's/versionCode: [0-9][0-9]*/versionCode: $$VERCODE$$/' app.config.ts"
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
@@ -113,8 +107,6 @@ Builds:
       - apt-get install -y nodejs npm
     init: npm ci --omit=dev
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
-    srclibs:
-      - firebase-stub@ce90a956aacda17a85c60577ee443aeb83d876ef
     prebuild:
       - sed -i -e '1a "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},'
         package.json
@@ -124,8 +116,7 @@ Builds:
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
         -e '/getInstallReferrerAsync/,/^    }$/d' 
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
-      - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
-      - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
+      - bash scripts/patch-fdroid-nonfree.sh
       - "sed -i 's/versionCode: [0-9][0-9]*/versionCode: $$VERCODE$$/' app.config.ts"
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$

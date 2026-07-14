@@ -53,4 +53,22 @@ if grep -q "getInstallReferrerAsync.*ApplicationModule.kt" docs/fdroid/de.softwa
   exit 1
 fi
 
+echo "==> F-Droid non-free APK patches"
+required_patch=(
+  scripts/patch-fdroid-nonfree.sh
+  scripts/fdroid/expo-notifications-patches/tokens/PushTokenModule.kt
+  scripts/fdroid/expo-location-patches/LocationModule.kt
+)
+for f in "${required_patch[@]}"; do
+  [[ -f "$f" ]] || { echo "Missing: $f"; exit 1; }
+done
+if grep -q 'firebase-stub@' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: metadata must use scripts/patch-fdroid-nonfree.sh, not firebase-stub (check apk rejects com/google/firebase and com/google/android/gms)" >&2
+  exit 1
+fi
+if ! grep -q 'patch-fdroid-nonfree.sh' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: metadata must run scripts/patch-fdroid-nonfree.sh before expo prebuild" >&2
+  exit 1
+fi
+
 echo "F-Droid preflight passed."

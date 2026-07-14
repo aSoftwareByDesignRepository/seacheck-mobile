@@ -94,7 +94,12 @@ CI runs `npm run fdroid:preflight` (with `npm ci --omit=dev`) to catch this befo
 
 React Native 0.85 / Expo SDK 56 removed `enableSeparateBuildPerCPUArchitecture` from `android/app/build.gradle`. Gradle succeeds but F-Droid cannot find per-ABI APK names. Use `output: android/app/build/outputs/apk/release/app-release-unsigned.apk` and filter native libs via `reactNativeArchitectures=` in `gradle.properties` (one F-Droid build block per architecture).
 
-### Gradle fails with `Process 'command '/usr/bin/node'' finished with non-zero exit value 1`
+### `check apk` fails with `Found com/google/android/gms/...` or `com/google/firebase/...`
+
+F-Droid scans built APKs for proprietary Google classes. `expo-location` depends on Play Services location APIs and `expo-notifications` normally pulls in Firebase Messaging. SeaCheck uses **local notifications only** and GPS via the Android `LocationManager`.
+
+Metadata runs `bash scripts/patch-fdroid-nonfree.sh` after `npm ci` to apply Firebase-free notification stubs and LocationManager-based `expo-location` sources. Do **not** use the `firebase-stub` srclib — those stubs still embed `com.google.firebase` classes and fail `check apk`.
+
 
 Do **not** use `scandelete: node_modules`. F-Droid runs `scandelete` after `prebuild` and before `build`, but Expo/React Native Gradle plugins still invoke Node during configuration (`expo-constants`, `react-native-screens`, autolinking). With `node_modules` gone, those scripts exit 1.
 
