@@ -19,7 +19,7 @@ Repo: https://github.com/aSoftwareByDesignRepository/seacheck-mobile
 Builds:
   - versionName: 0.1.1
     versionCode: 1
-    commit: b60725ac269b23656a8eb4bcd727659b4bb33a4f
+    commit: 7e296a3345aeb13df09686df4ae1907c8c66cdab
     sudo:
       - apt-get update
       - apt-get install -y nodejs npm
@@ -34,8 +34,7 @@ Builds:
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
-        -e '/getInstallReferrerAsync/,/^    }$/d' 
-        node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
+        -e '/getInstallReferrerAsync/,/^    }$/d' node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
@@ -47,10 +46,7 @@ Builds:
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=armeabi-v7a' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
-      - echo 'allprojects { tasks.configureEach { t -> if (t.class.name.contains("KotlinCompile"))
-        { try { t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check"
-        } catch (Exception e) { try { t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check")
-        } catch (Exception ex) {} } } } }' > android/init.gradle
+      - cp scripts/fdroid-init.gradle android/init.gradle
       - bash scripts/fdroid-strip-node-prebuilts.sh
     scanignore:
       - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
@@ -62,11 +58,12 @@ Builds:
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
       - node_modules/expo-location/android/build.gradle
-    build: SEACHECK_APP_VARIANT=production NODE_ENV=production gradle -p android assembleRelease --init-script init.gradle
+    build: SEACHECK_APP_VARIANT=production NODE_ENV=production gradle -p android assembleRelease
+      --init-script init.gradle
 
   - versionName: 0.1.1
     versionCode: 2
-    commit: b60725ac269b23656a8eb4bcd727659b4bb33a4f
+    commit: 7e296a3345aeb13df09686df4ae1907c8c66cdab
     sudo:
       - apt-get update
       - apt-get install -y nodejs npm
@@ -81,23 +78,19 @@ Builds:
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
-        -e '/getInstallReferrerAsync/,/^    }$/d' 
-        node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
+        -e '/getInstallReferrerAsync/,/^    }$/d' node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh
-      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
-        = true/' -e 's/\"arm64-v8a\": 3/\"arm64-v8a\": 2/' android/app/build.gradle"
+      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture\
+        \ = true/' -e 's/\"arm64-v8a\": 3/\"arm64-v8a\": 2/' android/app/build.gradle"
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=arm64-v8a' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
-      - echo 'allprojects { tasks.configureEach { t -> if (t.class.name.contains("KotlinCompile"))
-        { try { t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check"
-        } catch (Exception e) { try { t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check")
-        } catch (Exception ex) {} } } } }' > android/init.gradle
+      - cp scripts/fdroid-init.gradle android/init.gradle
       - bash scripts/fdroid-strip-node-prebuilts.sh
     scanignore:
       - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
@@ -109,11 +102,12 @@ Builds:
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
       - node_modules/expo-location/android/build.gradle
-    build: SEACHECK_APP_VARIANT=production NODE_ENV=production gradle -p android assembleRelease --init-script init.gradle
+    build: SEACHECK_APP_VARIANT=production NODE_ENV=production gradle -p android assembleRelease
+      --init-script init.gradle
 
   - versionName: 0.1.1
     versionCode: 3
-    commit: b60725ac269b23656a8eb4bcd727659b4bb33a4f
+    commit: 7e296a3345aeb13df09686df4ae1907c8c66cdab
     sudo:
       - apt-get update
       - apt-get install -y nodejs npm
@@ -128,23 +122,19 @@ Builds:
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
-        -e '/getInstallReferrerAsync/,/^    }$/d' 
-        node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
+        -e '/getInstallReferrerAsync/,/^    }$/d' node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh
-      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
-        = true/' -e 's/\"x86_64\": 4/\"x86_64\": 3/' android/app/build.gradle"
+      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture\
+        \ = true/' -e 's/\"x86_64\": 4/\"x86_64\": 3/' android/app/build.gradle"
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=x86_64' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
-      - echo 'allprojects { tasks.configureEach { t -> if (t.class.name.contains("KotlinCompile"))
-        { try { t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check"
-        } catch (Exception e) { try { t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check")
-        } catch (Exception ex) {} } } } }' > android/init.gradle
+      - cp scripts/fdroid-init.gradle android/init.gradle
       - bash scripts/fdroid-strip-node-prebuilts.sh
     scanignore:
       - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
@@ -156,7 +146,8 @@ Builds:
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
       - node_modules/expo-location/android/build.gradle
-    build: SEACHECK_APP_VARIANT=production NODE_ENV=production gradle -p android assembleRelease --init-script init.gradle
+    build: SEACHECK_APP_VARIANT=production NODE_ENV=production gradle -p android assembleRelease
+      --init-script init.gradle
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
