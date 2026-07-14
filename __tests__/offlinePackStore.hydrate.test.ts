@@ -24,6 +24,27 @@ jest.mock('../src/lib/offline/downloadStallWatchdog', () => ({
   startDownloadStallWatchdog: jest.fn(() => () => {}),
 }));
 
+jest.mock('../src/lib/network/downloadNetwork', () => ({
+  assertNetworkForDownload: jest.fn(async () => {}),
+  assertChartDownloadNetworkReady: jest.fn(async () => {}),
+  ensureMapLibreNetworkForDownload: jest.fn(),
+}));
+
+jest.mock('../src/lib/offline/warmupOfflineEngine', () => ({
+  warmupOfflineEngine: jest.fn(async () => {}),
+}));
+
+jest.mock('../src/lib/offline/tileCacheDownload', () => {
+  const actual = jest.requireActual('../src/lib/offline/tileCacheDownload') as typeof import('../src/lib/offline/tileCacheDownload');
+  return {
+    ...actual,
+    runTileCacheSweep: jest.fn(async ({ onProgress }: { onProgress?: (p: { completed: number; total: number; percentage: number }) => void }) => {
+      onProgress?.({ completed: 5, total: 5, percentage: 100 });
+      return { completed: 5, total: 5, percentage: 100 };
+    }),
+  };
+});
+
 const STORAGE_KEY = 'seacheck.offline.v1';
 const KIEL = REGION_PACKS[0]!;
 
@@ -68,6 +89,7 @@ describe('offlinePackStore.hydrate', () => {
   afterEach(async () => {
     downloadCoordinator.invalidate(KIEL.id);
     resetDownloadMapHostForTests();
+    resetOfflinePackStoreForTests();
     await new Promise((resolve) => setImmediate(resolve));
   });
 
