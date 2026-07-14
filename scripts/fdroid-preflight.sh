@@ -41,4 +41,16 @@ if grep -q 'enableSeparateBuildPerCPUArchitecture' docs/fdroid/de.softwarebydesi
   exit 1
 fi
 
+echo "==> F-Droid metadata versionCode (multi-arch VercodeOperation)"
+if ! grep -q 'versionCode: \$\$VERCODE\$\$' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: metadata must patch app.config.ts with versionCode: \$\$VERCODE\$\$ before expo prebuild" >&2
+  exit 1
+fi
+
+echo "==> F-Droid metadata rewritemeta line wrapping (ApplicationModule.kt path)"
+if grep -q "getInstallReferrerAsync.*ApplicationModule.kt" docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: ApplicationModule.kt path must be on its own prebuild line (fdroid rewritemeta)" >&2
+  exit 1
+fi
+
 echo "F-Droid preflight passed."

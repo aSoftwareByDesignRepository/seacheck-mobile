@@ -24,6 +24,8 @@ F-Droid metadata uses the unsigned artifact name. React Native 0.85+ no longer e
 android/app/build/outputs/apk/release/app-release-unsigned.apk
 ```
 
+Multi-arch builds use `VercodeOperation` (`versionCode` 1 / 2 / 3). Metadata patches `app.config.ts` with `versionCode: $$VERCODE$$` before `expo prebuild` so each APK matches its build block.
+
 `postinstall` runs Gradle/Expo patches automatically (`scripts/patch-*.sh`).
 
 ## Store metadata (Triple-T)

@@ -34,10 +34,11 @@ Builds:
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
-        -e '/getInstallReferrerAsync/,/^    }$/d'
+        -e '/getInstallReferrerAsync/,/^    }$/d' 
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
+      - "sed -i 's/versionCode: [0-9][0-9]*/versionCode: $$VERCODE$$/' app.config.ts"
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
@@ -77,10 +78,11 @@ Builds:
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
-        -e '/getInstallReferrerAsync/,/^    }$/d'
+        -e '/getInstallReferrerAsync/,/^    }$/d' 
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
+      - "sed -i 's/versionCode: [0-9][0-9]*/versionCode: $$VERCODE$$/' app.config.ts"
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
@@ -120,10 +122,11 @@ Builds:
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
-        -e '/getInstallReferrerAsync/,/^    }$/d'
+        -e '/getInstallReferrerAsync/,/^    }$/d' 
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
+      - "sed -i 's/versionCode: [0-9][0-9]*/versionCode: $$VERCODE$$/' app.config.ts"
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
