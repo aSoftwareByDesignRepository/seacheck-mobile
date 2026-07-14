@@ -62,6 +62,8 @@ Release checklist:
 2. Open [Request for Packaging](https://gitlab.com/fdroid/fdroid/rfp/-/issues/new) (optional first step)
 3. Fork [fdroiddata](https://gitlab.com/fdroid/fdroiddata), copy `docs/fdroid/de.softwarebydesign.seacheck.yml` → `metadata/de.softwarebydesign.seacheck.yml`
 4. Set `commit:` to the release tag SHA
+
+When editing fdroiddata metadata (e.g. AntiFeatures text), **copy the full file from `docs/fdroid/de.softwarebydesign.seacheck.yml` and re-apply fdroiddata-only tweaks** (e.g. drop surplus `WebSite` / `Translation` if reviewers asked). Do not paste an older metadata template — that can silently reintroduce `firebase-stub` and fail `check apk`.
 5. Run CI on your fork (`fdroid lint`, build pipeline)
 6. Open merge request
 
