@@ -12,10 +12,16 @@ SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-
 cd android && SEACHECK_APP_VARIANT=production NODE_ENV=production ./gradlew assembleRelease
 ```
 
-APK output:
+APK output (local release build, signed if keystore present):
 
 ```text
 android/app/build/outputs/apk/release/app-release.apk
+```
+
+F-Droid metadata uses the unsigned artifact name. React Native 0.85+ no longer emits per-ABI split APK filenames; each fdroiddata build sets `reactNativeArchitectures` and Gradle writes:
+
+```text
+android/app/build/outputs/apk/release/app-release-unsigned.apk
 ```
 
 `postinstall` runs Gradle/Expo patches automatically (`scripts/patch-*.sh`).
@@ -81,6 +87,10 @@ Not targeted for the first submission. Expo/React Native reproducibility is diff
 F-Droid clones **only** `seacheck-mobile`, not the parent `mobile/` monorepo. `metro.config.js` must use the standard Expo config (`expo/metro-config`) and must **not** `require('../shared/...')`. SeaCheck does not depend on `mobile/shared/*` packages.
 
 CI runs `npm run fdroid:preflight` (with `npm ci --omit=dev`) to catch this before fdroiddata builds.
+
+### `No apks match .../app-armeabi-v7a-release-unsigned.apk`
+
+React Native 0.85 / Expo SDK 56 removed `enableSeparateBuildPerCPUArchitecture` from `android/app/build.gradle`. Gradle succeeds but F-Droid cannot find per-ABI APK names. Use `output: android/app/build/outputs/apk/release/app-release-unsigned.apk` and filter native libs via `reactNativeArchitectures=` in `gradle.properties` (one F-Droid build block per architecture).
 
 ### Gradle fails with `Process 'command '/usr/bin/node'' finished with non-zero exit value 1`
 

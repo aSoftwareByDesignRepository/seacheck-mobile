@@ -27,4 +27,18 @@ done
 echo "==> Production app.config (SEACHECK_APP_VARIANT=production)"
 SEACHECK_APP_VARIANT=production NODE_ENV=production npx expo config --type public >/dev/null
 
+echo "==> F-Droid metadata APK output (RN 0.85+ single APK per reactNativeArchitectures)"
+if grep -qE 'app-(armeabi-v7a|arm64-v8a|x86_64)-release-unsigned\.apk' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: metadata output must be app-release-unsigned.apk (RN 0.85 removed per-ABI split APK names)" >&2
+  exit 1
+fi
+if ! grep -q 'app-release-unsigned.apk' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: metadata must declare app-release-unsigned.apk output" >&2
+  exit 1
+fi
+if grep -q 'enableSeparateBuildPerCPUArchitecture' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: metadata must not reference enableSeparateBuildPerCPUArchitecture (removed in RN 0.85)" >&2
+  exit 1
+fi
+
 echo "F-Droid preflight passed."

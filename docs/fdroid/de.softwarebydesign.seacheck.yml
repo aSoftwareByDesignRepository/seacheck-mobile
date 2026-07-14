@@ -24,7 +24,7 @@ Builds:
       - apt-get update
       - apt-get install -y nodejs npm
     init: npm ci --omit=dev
-    output: android/app/build/outputs/apk/release/app-armeabi-v7a-release-unsigned.apk
+    output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     srclibs:
       - firebase-stub@ce90a956aacda17a85c60577ee443aeb83d876ef
     prebuild:
@@ -34,15 +34,14 @@ Builds:
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
-        -e '/getInstallReferrerAsync/,/^    }$/d' node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
+        -e '/getInstallReferrerAsync/,/^    }$/d'
+        node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh
-      - sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
-        = true/' android/app/build.gradle
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=armeabi-v7a' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
@@ -68,7 +67,7 @@ Builds:
       - apt-get update
       - apt-get install -y nodejs npm
     init: npm ci --omit=dev
-    output: android/app/build/outputs/apk/release/app-arm64-v8a-release-unsigned.apk
+    output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     srclibs:
       - firebase-stub@ce90a956aacda17a85c60577ee443aeb83d876ef
     prebuild:
@@ -78,15 +77,14 @@ Builds:
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
-        -e '/getInstallReferrerAsync/,/^    }$/d' node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
+        -e '/getInstallReferrerAsync/,/^    }$/d'
+        node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh
-      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture\
-        \ = true/' -e 's/\"arm64-v8a\": 3/\"arm64-v8a\": 2/' android/app/build.gradle"
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=arm64-v8a' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
@@ -112,7 +110,7 @@ Builds:
       - apt-get update
       - apt-get install -y nodejs npm
     init: npm ci --omit=dev
-    output: android/app/build/outputs/apk/release/app-x86_64-release-unsigned.apk
+    output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     srclibs:
       - firebase-stub@ce90a956aacda17a85c60577ee443aeb83d876ef
     prebuild:
@@ -122,15 +120,14 @@ Builds:
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i -e '/installreferrer/d' node_modules/expo-application/android/build.gradle
       - sed -i -e '/import com.android.installreferrer/d' -e '/import android.os.RemoteException/d'
-        -e '/getInstallReferrerAsync/,/^    }$/d' node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
+        -e '/getInstallReferrerAsync/,/^    }$/d'
+        node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - sed -i -e '/firebase/d' node_modules/expo-notifications/android/build.gradle
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh
-      - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture\
-        \ = true/' -e 's/\"x86_64\": 4/\"x86_64\": 3/' android/app/build.gradle"
       - sed -i '/reactNativeArchitectures=/d' android/gradle.properties
       - echo 'reactNativeArchitectures=x86_64' >> android/gradle.properties
       - sed -i -e '/signingConfig /d' android/app/build.gradle
