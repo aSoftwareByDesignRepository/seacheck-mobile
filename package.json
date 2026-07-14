@@ -22,6 +22,7 @@
     "reload": "bash scripts/reload-js.sh",
     "logs:downloads": "bash scripts/watch-download-logs.sh",
     "preflight": "bash scripts/preflight.sh",
+    "fdroid:preflight": "bash scripts/fdroid-preflight.sh",
     "play:preflight": "bash scripts/play-preflight.sh",
     "sync:regions": "node scripts/sync-planning-regions.mjs",
     "icons": "node scripts/generate-app-icons.mjs",

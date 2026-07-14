@@ -8,17 +8,28 @@ variables:
   CI: "true"
   NODE_ENV: test
 
-preflight:
-  stage: test
+.preflight-base:
   image: node:24-bookworm
   cache:
     key: npm-$CI_COMMIT_REF_SLUG
     paths:
       - node_modules/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+preflight:
+  extends: .preflight-base
+  stage: test
   before_script:
     - npm ci
   script:
     - npm run preflight
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+fdroid-preflight:
+  extends: .preflight-base
+  stage: test
+  before_script:
+    - npm ci --omit=dev
+  script:
+    - npm run fdroid:preflight

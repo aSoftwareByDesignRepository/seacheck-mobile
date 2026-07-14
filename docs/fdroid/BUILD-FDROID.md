@@ -76,6 +76,12 @@ Not targeted for the first submission. Expo/React Native reproducibility is diff
 
 ## Troubleshooting
 
+### `Cannot find module '../shared/metro-shared-packages'`
+
+F-Droid clones **only** `seacheck-mobile`, not the parent `mobile/` monorepo. `metro.config.js` must use the standard Expo config (`expo/metro-config`) and must **not** `require('../shared/...')`. SeaCheck does not depend on `mobile/shared/*` packages.
+
+CI runs `npm run fdroid:preflight` (with `npm ci --omit=dev`) to catch this before fdroiddata builds.
+
 ### Gradle fails with `Process 'command '/usr/bin/node'' finished with non-zero exit value 1`
 
 Do **not** use `scandelete: node_modules`. F-Droid runs `scandelete` after `prebuild` and before `build`, but Expo/React Native Gradle plugins still invoke Node during configuration (`expo-constants`, `react-native-screens`, autolinking). With `node_modules` gone, those scripts exit 1.

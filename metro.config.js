@@ -1,3 +1,3 @@
-const { withSharedPackages } = require('../shared/metro-shared-packages');
+const { getDefaultConfig } = require('expo/metro-config');
 
-module.exports = withSharedPackages(__dirname);
+module.exports = getDefaultConfig(__dirname);

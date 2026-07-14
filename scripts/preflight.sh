@@ -21,6 +21,9 @@ npm run a11y:touch
 echo "==> i18n EN/DE parity"
 node scripts/i18n-parity.mjs
 
+echo "==> F-Droid standalone checks"
+bash scripts/fdroid-preflight.sh
+
 required=(
   README.md
   docs/build-it.md
