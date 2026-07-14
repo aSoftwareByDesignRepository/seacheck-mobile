@@ -19,7 +19,7 @@ Repo: https://github.com/aSoftwareByDesignRepository/seacheck-mobile
 Builds:
   - versionName: 0.1.1
     versionCode: 1
-    commit: 03f89846d2ac05607b059cf330a1e293959e0577
+    commit: 542f7e5e8c6c269ce5be1cbe888a404f8a88ac10
     sudo:
       - apt-get update
       - apt-get install -y nodejs npm
@@ -59,7 +59,7 @@ Builds:
 
   - versionName: 0.1.1
     versionCode: 2
-    commit: 03f89846d2ac05607b059cf330a1e293959e0577
+    commit: 542f7e5e8c6c269ce5be1cbe888a404f8a88ac10
     sudo:
       - apt-get update
       - apt-get install -y nodejs npm
@@ -99,7 +99,7 @@ Builds:
 
   - versionName: 0.1.1
     versionCode: 3
-    commit: 03f89846d2ac05607b059cf330a1e293959e0577
+    commit: 542f7e5e8c6c269ce5be1cbe888a404f8a88ac10
     sudo:
       - apt-get update
       - apt-get install -y nodejs npm
