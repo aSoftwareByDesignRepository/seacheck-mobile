@@ -3,7 +3,20 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 import withAndroidReleaseSigning from './plugins/withAndroidReleaseSigning';
 import withAndroidNodePath from './plugins/withAndroidNodePath';
 
-const isProductionBuild = process.env.SEACHECK_APP_VARIANT === 'production';
+/** True when building store/F-Droid release (no expo-dev-client plugin). */
+function isExpoDevClientInstalled(): boolean {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require.resolve('expo-dev-client/package.json');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const isProductionBuild =
+  process.env.SEACHECK_APP_VARIANT === 'production' ||
+  (process.env.SEACHECK_APP_VARIANT !== 'development' && !isExpoDevClientInstalled());
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,

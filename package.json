@@ -9,8 +9,8 @@
     "android": "bash scripts/run-android.sh",
     "android:clean": "bash scripts/android-clean.sh",
     "android:rebuild": "bash scripts/android-clean.sh && npm run android",
-    "android:release": "bash scripts/ensure-android-local-properties.sh && cd android && ./gradlew assembleRelease",
-    "android:bundle": "bash scripts/ensure-android-local-properties.sh && cd android && ./gradlew bundleRelease",
+    "android:release": "SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh && cd android && SEACHECK_APP_VARIANT=production NODE_ENV=production ./gradlew assembleRelease",
+    "android:bundle": "SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh && cd android && SEACHECK_APP_VARIANT=production NODE_ENV=production ./gradlew bundleRelease",
     "android:dev": "CI=1 expo run:android --port 8092",
     "ios": "expo run:ios --port 8092",
     "typecheck": "tsc --noEmit",
@@ -25,7 +25,7 @@
     "play:preflight": "bash scripts/play-preflight.sh",
     "sync:regions": "node scripts/sync-planning-regions.mjs",
     "icons": "node scripts/generate-app-icons.mjs",
-    "postinstall": "bash scripts/patch-gradle-foojay.sh && bash scripts/patch-expo-node.sh && bash scripts/patch-expo-kotlin.sh && bash scripts/patch-node-gradle.sh"
+    "postinstall": "bash scripts/patch-gradle-foojay.sh && bash scripts/patch-expo-node.sh && bash scripts/patch-expo-kotlin.sh && bash scripts/patch-node-gradle.sh && bash scripts/patch-expo-constants-env.sh"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

@@ -7,8 +7,9 @@ SeaCheck is an **Expo SDK 56 / React Native** app. F-Droid builds from source on
 ```bash
 cd mobile/seacheck
 npm ci --omit=dev
-SEACHECK_APP_VARIANT=production npx expo prebuild --platform android --clean
-cd android && ./gradlew assembleRelease
+SEACHECK_APP_VARIANT=production NODE_ENV=production npx expo prebuild --platform android --clean
+SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh
+cd android && SEACHECK_APP_VARIANT=production NODE_ENV=production ./gradlew assembleRelease
 ```
 
 APK output:
@@ -82,3 +83,13 @@ Do **not** use `scandelete: node_modules`. F-Droid runs `scandelete` after `preb
 ### Scanner fails with many errors while scanning
 
 Run `scripts/fdroid-strip-node-prebuilts.sh` in `prebuild` (after `expo prebuild`). It removes iOS/macOS/Windows prebuilts, Expo `local-maven-repo` AARs, and other artifacts that are rebuilt via `buildFromSource` during Gradle. Use `scanignore` only for false-positive Maven-repo warnings in `build.gradle` files.
+
+### `:expo-constants:createExpoConfig` fails with `expo-dev-client` / `NODE_ENV`
+
+F-Droid uses `npm ci --omit=dev`, so `expo-dev-client` is not installed. Gradle re-evaluates `app.config.ts` during `assembleRelease` without the env vars used at prebuild time unless they are persisted.
+
+Fix (already in metadata):
+
+1. `export SEACHECK_APP_VARIANT=production NODE_ENV=production` before `ensure-android-local-properties.sh`
+2. `build:` line prefixes the same env vars for Gradle
+3. App repo: `app.config.ts` treats missing `expo-dev-client` as production; `scripts/write-android-build-env.sh` writes `.env`; `scripts/patch-expo-constants-env.sh` passes env into the Gradle Exec task

@@ -9,6 +9,7 @@ bash "$ROOT/scripts/patch-gradle-foojay.sh"
 bash "$ROOT/scripts/patch-expo-node.sh"
 bash "$ROOT/scripts/patch-expo-kotlin.sh"
 bash "$ROOT/scripts/patch-node-gradle.sh"
+bash "$ROOT/scripts/patch-expo-constants-env.sh"
 
 # Expose node path to all Gradle projects before evaluation (Kotlin plugins read this)
 SETTINGS="$ANDROID_DIR/settings.gradle"
@@ -139,3 +140,7 @@ fi
 } >"$PROPS"
 
 echo "Wrote $PROPS (sdk.dir=$SDK${NODE_DIR:+, node.dir=$NODE_DIR})"
+
+if [[ "${SEACHECK_APP_VARIANT:-}" == "production" ]]; then
+  bash "$ROOT/scripts/write-android-build-env.sh" --production
+fi

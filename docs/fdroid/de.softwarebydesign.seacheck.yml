@@ -40,6 +40,7 @@ Builds:
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
+      - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh
       - sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
         = true/' android/app/build.gradle
@@ -61,7 +62,7 @@ Builds:
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
       - node_modules/expo-location/android/build.gradle
-    build: gradle -p android assembleRelease --init-script init.gradle
+    build: SEACHECK_APP_VARIANT=production NODE_ENV=production gradle -p android assembleRelease --init-script init.gradle
 
   - versionName: 0.1.1
     versionCode: 2
@@ -86,6 +87,7 @@ Builds:
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
+      - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh
       - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
         = true/' -e 's/\"arm64-v8a\": 3/\"arm64-v8a\": 2/' android/app/build.gradle"
@@ -107,7 +109,7 @@ Builds:
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
       - node_modules/expo-location/android/build.gradle
-    build: gradle -p android assembleRelease --init-script init.gradle
+    build: SEACHECK_APP_VARIANT=production NODE_ENV=production gradle -p android assembleRelease --init-script init.gradle
 
   - versionName: 0.1.1
     versionCode: 3
@@ -132,6 +134,7 @@ Builds:
       - cp -a $$firebase-stub$$/firebase-messaging/src node_modules/expo-notifications/android
       - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
       - export ANDROID_HOME=$$SDK$$
+      - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh
       - "sed -i -e 's/def enableSeparateBuildPerCPUArchitecture = false/def enableSeparateBuildPerCPUArchitecture
         = true/' -e 's/\"x86_64\": 4/\"x86_64\": 3/' android/app/build.gradle"
@@ -153,7 +156,7 @@ Builds:
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
       - node_modules/expo-location/android/build.gradle
-    build: gradle -p android assembleRelease --init-script init.gradle
+    build: SEACHECK_APP_VARIANT=production NODE_ENV=production gradle -p android assembleRelease --init-script init.gradle
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
