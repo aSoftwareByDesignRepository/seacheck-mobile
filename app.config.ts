@@ -6,8 +6,8 @@ import withAndroidNodePath from './plugins/withAndroidNodePath';
 /** True when building store/F-Droid release (no expo-dev-client plugin). */
 function isExpoDevClientInstalled(): boolean {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require.resolve('expo-dev-client/package.json');
+    // Node resolves optional devDependency at config-eval time (F-Droid omits dev deps).
+    (require as unknown as { resolve(id: string): string }).resolve('expo-dev-client/package.json');
     return true;
   } catch {
     return false;
