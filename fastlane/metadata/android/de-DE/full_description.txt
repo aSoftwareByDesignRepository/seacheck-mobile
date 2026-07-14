@@ -10,6 +10,10 @@ Funktionen:
 • Track-Aufzeichnung
 • Deutsch- und Englisch-Oberfläche
 
+Hintergrund-Standort (optional, Nutzerberechtigung): nur für Ankerwache und Track-Aufzeichnung bei ausgeschaltetem Bildschirm. Standort bleibt auf dem Gerät — keine Übertragung.
+
+Akku-Optimierung: Android kann anbieten, SeaCheck von Energiesparmaßnahmen auszunehmen, damit GPS und Alarme unterwegs zuverlässig bleiben. Optional und nur auf Nutzerwunsch.
+
 Kostenlos. Keine Werbung. Keine Analyse-SDKs. Daten bleiben auf dem Gerät.
 
 Entwickelt von Software by Design.

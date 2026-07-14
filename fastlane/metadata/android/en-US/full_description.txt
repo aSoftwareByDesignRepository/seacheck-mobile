@@ -10,6 +10,10 @@ Features:
 • Track recording
 • English and German UI
 
+Background location (optional, user permission): used only for anchor watch and track recording while the screen is off. Location stays on your device — not uploaded.
+
+Battery optimization: Android may prompt you to exempt SeaCheck from battery savers so GPS and alarms stay reliable at sea. This is optional and user-initiated.
+
 Free. No ads. No analytics. Data stays on your device.
 
 Developed by Software by Design.

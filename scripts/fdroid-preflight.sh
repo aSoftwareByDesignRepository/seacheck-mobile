@@ -63,6 +63,26 @@ if grep -q 'beim Herunterladen von Offline-Regionen\.' docs/fdroid/de.softwareby
   exit 1
 fi
 
+echo "==> F-Droid store listing disclosures (fastlane full_description)"
+for locale_file in \
+  fastlane/metadata/android/en-US/full_description.txt \
+  fastlane/metadata/android/de-DE/full_description.txt
+do
+  [[ -f "$locale_file" ]] || { echo "Missing: $locale_file"; exit 1; }
+done
+if ! grep -qi 'background location\|background.*permission\|screen is off\|screen off' fastlane/metadata/android/en-US/full_description.txt; then
+  echo "ERROR: en-US full_description must disclose optional background location use" >&2
+  exit 1
+fi
+if ! grep -qi 'Hintergrund-Standort\|Hintergrund.*Standort\|Bildschirm' fastlane/metadata/android/de-DE/full_description.txt; then
+  echo "ERROR: de-DE full_description must disclose optional background location use" >&2
+  exit 1
+fi
+if grep -qi 'BackgroundLocation:' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: BackgroundLocation is not a valid F-Droid AntiFeature; disclose in fastlane full_description instead" >&2
+  exit 1
+fi
+
 echo "==> F-Droid non-free APK patches"
 required_patch=(
   scripts/patch-fdroid-nonfree.sh
