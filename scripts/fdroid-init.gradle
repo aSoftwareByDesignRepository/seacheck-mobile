@@ -1,0 +1,23 @@
+// F-Droid Gradle init script: align Kotlin JVM target with Java 21 (RN 0.85 / Expo SDK 56).
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+allprojects {
+    tasks.withType(KotlinCompile).configureEach {
+        try {
+            compilerOptions {
+                jvmTarget.set(JvmTarget.JVM_21)
+                freeCompilerArgs.add("-Xskip-metadata-version-check")
+            }
+        } catch (Exception ignored) {
+            try {
+                kotlinOptions {
+                    jvmTarget = "21"
+                    freeCompilerArgs += "-Xskip-metadata-version-check"
+                }
+            } catch (Exception ignored2) {
+                // leave module defaults if neither API is available
+            }
+        }
+    }
+}

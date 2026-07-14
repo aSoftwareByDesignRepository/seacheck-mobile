@@ -93,3 +93,9 @@ Fix (already in metadata):
 1. `export SEACHECK_APP_VARIANT=production NODE_ENV=production` before `ensure-android-local-properties.sh`
 2. `build:` line prefixes the same env vars for Gradle
 3. App repo: `app.config.ts` treats missing `expo-dev-client` as production; `scripts/write-android-build-env.sh` writes `.env`; `scripts/patch-expo-constants-env.sh` passes env into the Gradle Exec task
+
+### `Inconsistent JVM Target Compatibility` (Java 21 vs Kotlin 17)
+
+React Native 0.85 sets Java compile to 21, but some community modules (e.g. `@react-native-community/datetimepicker`) still declare Kotlin `jvmTarget` 17. Gradle 9 fails the build when those disagree.
+
+Fix: copy `scripts/fdroid-init.gradle` to `android/init.gradle` in prebuild and pass `--init-script init.gradle` to Gradle. That init script forces `JvmTarget.JVM_21` on all `KotlinCompile` tasks and keeps `-Xskip-metadata-version-check` for Kotlin 2.x metadata mismatches.
