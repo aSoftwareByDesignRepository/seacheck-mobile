@@ -70,5 +70,9 @@ if ! grep -q 'patch-fdroid-nonfree.sh' docs/fdroid/de.softwarebydesign.seacheck.
   echo "ERROR: metadata must run scripts/patch-fdroid-nonfree.sh before expo prebuild" >&2
   exit 1
 fi
+if grep -q 'node_modules/expo-location/android/build.gradle' docs/fdroid/de.softwarebydesign.seacheck.yml; then
+  echo "ERROR: remove obsolete scanignore for expo-location (patch-fdroid-nonfree.sh strips play-services; unused scanignore fails fdroid build)" >&2
+  exit 1
+fi
 
 echo "F-Droid preflight passed."

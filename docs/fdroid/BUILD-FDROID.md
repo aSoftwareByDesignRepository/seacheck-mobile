@@ -98,7 +98,7 @@ React Native 0.85 / Expo SDK 56 removed `enableSeparateBuildPerCPUArchitecture` 
 
 F-Droid scans built APKs for proprietary Google classes. `expo-location` depends on Play Services location APIs and `expo-notifications` normally pulls in Firebase Messaging. SeaCheck uses **local notifications only** and GPS via the Android `LocationManager`.
 
-Metadata runs `bash scripts/patch-fdroid-nonfree.sh` after `npm ci` to apply Firebase-free notification stubs and LocationManager-based `expo-location` sources. Do **not** use the `firebase-stub` srclib — those stubs still embed `com.google.firebase` classes and fail `check apk`.
+Metadata runs `bash scripts/patch-fdroid-nonfree.sh` after `npm ci` to apply Firebase-free notification stubs and LocationManager-based `expo-location` sources. Do **not** use the `firebase-stub` srclib — those stubs still embed `com.google.firebase` classes and fail `check apk`. Do **not** list `node_modules/expo-location/android/build.gradle` in `scanignore`; after the patch removes `play-services-location`, F-Droid treats that entry as unused and fails the build.
 
 
 Do **not** use `scandelete: node_modules`. F-Droid runs `scandelete` after `prebuild` and before `build`, but Expo/React Native Gradle plugins still invoke Node during configuration (`expo-constants`, `react-native-screens`, autolinking). With `node_modules` gone, those scripts exit 1.
