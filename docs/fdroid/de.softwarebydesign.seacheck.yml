@@ -51,17 +51,18 @@ Builds:
         { try { t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check"
         } catch (Exception e) { try { t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check")
         } catch (Exception ex) {} } } } }' > android/init.gradle
+      - bash scripts/fdroid-strip-node-prebuilts.sh
     scanignore:
       - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+      - node_modules/expo-sqlite/android/build.gradle
+      - node_modules/react-native/ReactAndroid/publish.gradle
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/@react-native-community/netinfo/android/build.gradle
       - node_modules/@maplibre/maplibre-react-native/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
       - node_modules/expo-location/android/build.gradle
-    scandelete:
-      - node_modules
     build: gradle -p android assembleRelease --init-script init.gradle
 
   - versionName: 0.1.1
@@ -98,17 +99,18 @@ Builds:
         { try { t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check"
         } catch (Exception e) { try { t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check")
         } catch (Exception ex) {} } } } }' > android/init.gradle
+      - bash scripts/fdroid-strip-node-prebuilts.sh
     scanignore:
       - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+      - node_modules/expo-sqlite/android/build.gradle
+      - node_modules/react-native/ReactAndroid/publish.gradle
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/@react-native-community/netinfo/android/build.gradle
       - node_modules/@maplibre/maplibre-react-native/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
       - node_modules/expo-location/android/build.gradle
-    scandelete:
-      - node_modules
     build: gradle -p android assembleRelease --init-script init.gradle
 
   - versionName: 0.1.1
@@ -145,17 +147,18 @@ Builds:
         { try { t.kotlinOptions.freeCompilerArgs += "-Xskip-metadata-version-check"
         } catch (Exception e) { try { t.compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check")
         } catch (Exception ex) {} } } } }' > android/init.gradle
+      - bash scripts/fdroid-strip-node-prebuilts.sh
     scanignore:
       - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+      - node_modules/expo-sqlite/android/build.gradle
+      - node_modules/react-native/ReactAndroid/publish.gradle
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/@react-native-community/netinfo/android/build.gradle
       - node_modules/@maplibre/maplibre-react-native/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
       - node_modules/expo-location/android/build.gradle
-    scandelete:
-      - node_modules
     build: gradle -p android assembleRelease --init-script init.gradle
 
 AutoUpdateMode: Version

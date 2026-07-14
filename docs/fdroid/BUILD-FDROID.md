@@ -72,3 +72,13 @@ F-Droid signs the APK with the **F-Droid key**. Play Store builds use a separate
 ## Reproducible builds
 
 Not targeted for the first submission. Expo/React Native reproducibility is difficult; revisit after the app is accepted.
+
+## Troubleshooting
+
+### Gradle fails with `Process 'command '/usr/bin/node'' finished with non-zero exit value 1`
+
+Do **not** use `scandelete: node_modules`. F-Droid runs `scandelete` after `prebuild` and before `build`, but Expo/React Native Gradle plugins still invoke Node during configuration (`expo-constants`, `react-native-screens`, autolinking). With `node_modules` gone, those scripts exit 1.
+
+### Scanner fails with many errors while scanning
+
+Run `scripts/fdroid-strip-node-prebuilts.sh` in `prebuild` (after `expo prebuild`). It removes iOS/macOS/Windows prebuilts, Expo `local-maven-repo` AARs, and other artifacts that are rebuilt via `buildFromSource` during Gradle. Use `scanignore` only for false-positive Maven-repo warnings in `build.gradle` files.
