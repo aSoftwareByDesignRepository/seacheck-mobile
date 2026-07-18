@@ -5,7 +5,7 @@ SeaCheck is an **Expo SDK 56 / React Native** app. F-Droid builds from source on
 ## Upstream release build (verify locally)
 
 ```bash
-cd mobile/seacheck
+cd /home/alex/Development/nextcloud-dev/mobile/seacheck
 npm ci --omit=dev
 SEACHECK_APP_VARIANT=production NODE_ENV=production npx expo prebuild --platform android --clean
 SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh
@@ -27,6 +27,12 @@ android/app/build/outputs/apk/release/app-release-unsigned.apk
 Multi-arch builds use `VercodeOperation` (`versionCode` 1 / 2 / 3). Metadata patches `app.config.ts` with `versionCode: $$VERCODE$$` before `expo prebuild` so each APK matches its build block.
 
 `postinstall` runs Gradle/Expo patches automatically (`scripts/patch-*.sh`).
+
+### Node on F-Droid buildservers
+
+React Native 0.85 requires Node `^20.19.4 || ^22.13.0 || ^24.3.0 || >=25`. Debian `apt install nodejs` is **too old**. Metadata `sudo:` downloads the official Node **22.14.0** linux-x64 tarball, verifies `sha256sum`, and installs into `/usr/local` (same pattern as [F-Droid’s React Native guide](https://f-droid.org/2020/10/14/adding-react-native-app-to-f-droid.html)).
+
+Do **not** revert to `apt-get install -y nodejs npm`. `npm run fdroid:preflight` rejects that regression.
 
 ## Store metadata (Triple-T)
 
@@ -53,8 +59,10 @@ Release checklist:
 1. Bump `version` and `android.versionCode`
 2. Add changelog files for each locale
 3. Commit, tag `vX.Y.Z`, push branch + tag
-4. Update `docs/fdroid/de.softwarebydesign.seacheck.yml` commit + build blocks
+4. Update `docs/fdroid/de.softwarebydesign.seacheck.yml` **commit:** to that release SHA (and keep the Node 22.14.0 tarball `sudo:` block + `NODE_ENV=production` prebuild/build env)
 5. Open/update merge request on [fdroiddata](https://gitlab.com/fdroid/fdroiddata)
+
+Do not ship fdroiddata with an old `commit:` while the YAML already expects newer app-repo scripts (e.g. `write-android-build-env.sh` gradle.properties persistence). Metadata `sudo:`/`prebuild:` and app `commit:` must be consistent.
 
 ## Submit to F-Droid
 
@@ -118,7 +126,7 @@ Fix (already in metadata):
 
 1. `export SEACHECK_APP_VARIANT=production NODE_ENV=production` before `ensure-android-local-properties.sh`
 2. `build:` line prefixes the same env vars for Gradle
-3. App repo: `app.config.ts` treats missing `expo-dev-client` as production; `scripts/write-android-build-env.sh` writes `.env`; `scripts/patch-expo-constants-env.sh` passes env into the Gradle Exec task
+3. App repo: `app.config.ts` treats missing `expo-dev-client` as production; `scripts/write-android-build-env.sh` writes `SEACHECK_APP_VARIANT` + `NODE_ENV` into **`android/gradle.properties` only** (never project-root `.env` — Expo CLI auto-loads `.env` and would poison local preflight/dev); `scripts/patch-expo-constants-env.sh` passes those properties into the Gradle Exec task
 
 ### `Inconsistent JVM Target Compatibility` (Java 21 vs Kotlin 17)
 

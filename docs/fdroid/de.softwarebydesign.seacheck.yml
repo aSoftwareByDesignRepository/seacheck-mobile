@@ -26,7 +26,13 @@ Builds:
     commit: 1e82a91281a5c02904986d19da982762b6ff8e55
     sudo:
       - apt-get update
-      - apt-get install -y nodejs npm
+      - apt-get install -y curl ca-certificates
+      - curl -Lo node.tar.xz https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.xz
+      - echo "69b09dba5c8dcb05c4e4273a4340db1005abeafe3927efda2bc5b249e80437ec node.tar.xz"
+        | sha256sum -c -
+      - tar xJf node.tar.xz --strip-components=1 -C /usr/local/
+      - node -v
+      - npm -v
     init: npm ci --omit=dev
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     prebuild:
@@ -40,7 +46,8 @@ Builds:
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - bash scripts/patch-fdroid-nonfree.sh
       - "sed -i 's/versionCode: [0-9][0-9]*/versionCode: $$VERCODE$$/' app.config.ts"
-      - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
+      - SEACHECK_APP_VARIANT=production NODE_ENV=production npx expo prebuild -p android
+        --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh
@@ -65,7 +72,13 @@ Builds:
     commit: 1e82a91281a5c02904986d19da982762b6ff8e55
     sudo:
       - apt-get update
-      - apt-get install -y nodejs npm
+      - apt-get install -y curl ca-certificates
+      - curl -Lo node.tar.xz https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.xz
+      - echo "69b09dba5c8dcb05c4e4273a4340db1005abeafe3927efda2bc5b249e80437ec node.tar.xz"
+        | sha256sum -c -
+      - tar xJf node.tar.xz --strip-components=1 -C /usr/local/
+      - node -v
+      - npm -v
     init: npm ci --omit=dev
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     prebuild:
@@ -79,7 +92,8 @@ Builds:
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - bash scripts/patch-fdroid-nonfree.sh
       - "sed -i 's/versionCode: [0-9][0-9]*/versionCode: $$VERCODE$$/' app.config.ts"
-      - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
+      - SEACHECK_APP_VARIANT=production NODE_ENV=production npx expo prebuild -p android
+        --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh
@@ -104,7 +118,13 @@ Builds:
     commit: 1e82a91281a5c02904986d19da982762b6ff8e55
     sudo:
       - apt-get update
-      - apt-get install -y nodejs npm
+      - apt-get install -y curl ca-certificates
+      - curl -Lo node.tar.xz https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.xz
+      - echo "69b09dba5c8dcb05c4e4273a4340db1005abeafe3927efda2bc5b249e80437ec node.tar.xz"
+        | sha256sum -c -
+      - tar xJf node.tar.xz --strip-components=1 -C /usr/local/
+      - node -v
+      - npm -v
     init: npm ci --omit=dev
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     prebuild:
@@ -118,7 +138,8 @@ Builds:
         node_modules/expo-application/android/src/main/java/expo/modules/application/ApplicationModule.kt
       - bash scripts/patch-fdroid-nonfree.sh
       - "sed -i 's/versionCode: [0-9][0-9]*/versionCode: $$VERCODE$$/' app.config.ts"
-      - SEACHECK_APP_VARIANT=production npx expo prebuild -p android --clean
+      - SEACHECK_APP_VARIANT=production NODE_ENV=production npx expo prebuild -p android
+        --clean
       - export ANDROID_HOME=$$SDK$$
       - export SEACHECK_APP_VARIANT=production NODE_ENV=production
       - bash scripts/ensure-android-local-properties.sh

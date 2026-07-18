@@ -47,7 +47,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          # Match F-Droid metadata Node major (22.x) while staying on a CI-supported line.
+          # Full preflight uses 24; this job must still pass with omit=dev like fdroiddata.
+          node-version: '22.14.0'
           cache: npm
           cache-dependency-path: package-lock.json
 

@@ -66,40 +66,62 @@ resolve_sdk() {
   return 1
 }
 
+# RN 0.85 / package.json engines: ^20.19.4 || ^22.13.0 || ^24.3.0 || >=25
+node_meets_engines() {
+  local bin="$1"
+  [[ -n "$bin" && -x "$bin" ]] || return 1
+  # Ephemeral AppImage helpers (e.g. Cursor) vanish outside that session — never pin them.
+  case "$bin" in
+    /tmp/.mount_*) return 1 ;;
+  esac
+  "$bin" -e '
+    const [maj, min, patch] = process.versions.node.split(".").map(Number);
+    const ok =
+      (maj === 20 && (min > 19 || (min === 19 && patch >= 4))) ||
+      (maj === 22 && min >= 13) ||
+      (maj === 24 && (min > 3 || (min === 3 && patch >= 0))) ||
+      maj >= 25;
+    process.exit(ok ? 0 : 1);
+  ' 2>/dev/null
+}
+
 resolve_node_dir() {
-  if [[ -n "${NODE_BINARY:-}" && -x "$NODE_BINARY" ]]; then
-    dirname "$NODE_BINARY"
-    return 0
-  fi
+  local candidate dir
 
-  local nvm_default="$HOME/.nvm/alias/default"
-  if [[ -f "$nvm_default" ]]; then
-    local ver
-    ver="$(tr -d ' \t\r\n' <"$nvm_default")"
-    [[ "$ver" != v* ]] && ver="v${ver}"
-    local nvm_node="$HOME/.nvm/versions/node/${ver}/bin/node"
-    if [[ -x "$nvm_node" ]]; then
-      dirname "$nvm_node"
+  if [[ -n "${NODE_BINARY:-}" ]]; then
+    if node_meets_engines "$NODE_BINARY"; then
+      dirname "$NODE_BINARY"
       return 0
     fi
+    echo "WARN: NODE_BINARY=$NODE_BINARY does not meet engines (^20.19.4 || ^22.13.0 || ^24.3.0 || >=25) — ignoring" >&2
   fi
 
+  # Walk PATH in order; skip AppImage mounts and unsupported engines (e.g. nvm default 22.12).
+  local old_ifs="$IFS"
+  IFS=':'
+  # shellcheck disable=SC2086
+  for dir in $PATH; do
+    IFS="$old_ifs"
+    [[ -n "$dir" ]] || continue
+    candidate="$dir/node"
+    if node_meets_engines "$candidate"; then
+      printf '%s' "$dir"
+      return 0
+    fi
+  done
+  IFS="$old_ifs"
+
+  # Newest nvm install that meets engines (do not trust lagging "default" alias alone).
   if [[ -d "$HOME/.nvm/versions/node" ]]; then
-    local latest
-    latest="$(ls -1 "$HOME/.nvm/versions/node" 2>/dev/null | sort -V | tail -1 || true)"
-    if [[ -n "$latest" && -x "$HOME/.nvm/versions/node/${latest}/bin/node" ]]; then
-      printf '%s' "$HOME/.nvm/versions/node/${latest}/bin"
-      return 0
-    fi
-  fi
-
-  if command -v node >/dev/null 2>&1; then
-    local node_path
-    node_path="$(command -v node)"
-    if [[ "$node_path" != /tmp/.mount_* ]]; then
-      dirname "$node_path"
-      return 0
-    fi
+    local ver
+    while IFS= read -r ver; do
+      [[ -z "$ver" ]] && continue
+      candidate="$HOME/.nvm/versions/node/${ver}/bin/node"
+      if node_meets_engines "$candidate"; then
+        printf '%s' "$HOME/.nvm/versions/node/${ver}/bin"
+        return 0
+      fi
+    done < <(ls -1 "$HOME/.nvm/versions/node" 2>/dev/null | sort -Vr)
   fi
 
   return 1
@@ -124,22 +146,24 @@ if [[ -f "$GRADLE_PROPS" ]] && [[ -n "$(tail -c1 "$GRADLE_PROPS" 2>/dev/null || 
   printf '\n' >>"$GRADLE_PROPS"
 fi
 
+NODE_DIR="$(resolve_node_dir || true)"
+if [[ -z "$NODE_DIR" ]]; then
+  echo "ERROR: no Node binary meets engines (^20.19.4 || ^22.13.0 || ^24.3.0 || >=25)." >&2
+  echo "       nvm install 22.22.0 && nvm alias default 22.22.0 && nvm use 22.22.0" >&2
+  echo "       Or: export NODE_BINARY=\$HOME/.nvm/versions/node/v22.22.0/bin/node" >&2
+  exit 1
+fi
+
 {
   printf 'sdk.dir=%s\n' "$SDK"
-  NODE_DIR="$(resolve_node_dir || true)"
-  if [[ -n "$NODE_DIR" ]]; then
-    printf 'node.dir=%s\n' "$NODE_DIR"
-    printf 'node.binary=%s/node\n' "$NODE_DIR"
-    NODE_SCRIPT="$ANDROID_DIR/node"
-    printf '#!/bin/sh\nexec "%s/node" "$@"\n' "$NODE_DIR" >"$NODE_SCRIPT"
-    chmod +x "$NODE_SCRIPT"
-  else
-    echo "WARN: node not found — Android Studio Gradle sync may fail." >&2
-    echo "      Install Node (nvm) or set NODE_BINARY before running this script." >&2
-  fi
+  printf 'node.dir=%s\n' "$NODE_DIR"
+  printf 'node.binary=%s/node\n' "$NODE_DIR"
+  NODE_SCRIPT="$ANDROID_DIR/node"
+  printf '#!/bin/sh\nexec "%s/node" "$@"\n' "$NODE_DIR" >"$NODE_SCRIPT"
+  chmod +x "$NODE_SCRIPT"
 } >"$PROPS"
 
-echo "Wrote $PROPS (sdk.dir=$SDK${NODE_DIR:+, node.dir=$NODE_DIR})"
+echo "Wrote $PROPS (sdk.dir=$SDK, node.dir=$NODE_DIR, node=$("$NODE_DIR/node" -v 2>/dev/null || echo '?'))"
 
 if [[ "${SEACHECK_APP_VARIANT:-}" == "production" ]]; then
   bash "$ROOT/scripts/write-android-build-env.sh" --production

@@ -3,6 +3,19 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# Leftover production keys in project-root .env poison Expo CLI (auto-load) for
+# every subsequent command. Production persistence belongs in gradle.properties.
+if [[ -f .env ]] && grep -qE '^SEACHECK_APP_VARIANT=production' .env; then
+  echo "WARN: .env sets SEACHECK_APP_VARIANT=production — stripping (Expo auto-load)." >&2
+  tmp="$(mktemp)"
+  grep -vE '^SEACHECK_APP_VARIANT=|^NODE_ENV=' .env >"$tmp" || true
+  if [[ -s "$tmp" ]]; then
+    mv "$tmp" .env
+  else
+    rm -f .env "$tmp"
+  fi
+fi
+
 echo "==> Expo native dependency alignment"
 npx expo install --check
 

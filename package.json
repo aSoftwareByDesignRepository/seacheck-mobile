@@ -3,6 +3,9 @@
   "version": "0.1.1",
   "main": "index.ts",
   "license": "AGPL-3.0-or-later",
+  "engines": {
+    "node": "^20.19.4 || ^22.13.0 || ^24.3.0 || >=25.0.0"
+  },
   "scripts": {
     "dev": "bash scripts/dev-emulator.sh",
     "start": "expo start --port 8092",
@@ -12,6 +15,7 @@
     "android:release": "SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh && cd android && SEACHECK_APP_VARIANT=production NODE_ENV=production ./gradlew assembleRelease",
     "android:bundle": "SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh && cd android && SEACHECK_APP_VARIANT=production NODE_ENV=production ./gradlew bundleRelease",
     "android:dev": "CI=1 expo run:android --port 8092",
+    "release:apk": "bash scripts/release-apk.sh",
     "ios": "expo run:ios --port 8092",
     "typecheck": "tsc --noEmit",
     "a11y:contrast": "node scripts/contrast-check.mjs",
@@ -43,7 +47,7 @@
     "@turf/rhumb-distance": "^7.3.5",
     "@turf/turf": "^7.3.5",
     "babel-preset-expo": "~56.0.0",
-    "expo": "~56.0.15",
+    "expo": "~56.0.16",
     "expo-application": "~56.0.3",
     "expo-audio": "~56.0.12",
     "expo-battery": "~56.0.4",
@@ -54,13 +58,13 @@
     "expo-intent-launcher": "~56.0.4",
     "expo-keep-awake": "~56.0.3",
     "expo-localization": "~56.0.6",
-    "expo-location": "~56.0.20",
-    "expo-notifications": "~56.0.20",
+    "expo-location": "~56.0.21",
+    "expo-notifications": "~56.0.21",
     "expo-sensors": "~56.0.6",
-    "expo-sharing": "~56.0.21",
+    "expo-sharing": "~56.0.22",
     "expo-sqlite": "~56.0.5",
     "expo-status-bar": "~56.0.4",
-    "expo-task-manager": "~56.0.21",
+    "expo-task-manager": "~56.0.22",
     "geomag": "^1.0.0",
     "i18n-js": "^4.5.3",
     "react": "19.2.3",
@@ -70,7 +74,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "expo-dev-client": "~56.0.22",
+    "expo-dev-client": "~56.0.23",
     "@react-native/jest-preset": "0.85.3",
     "@resvg/resvg-js": "^2.6.2",
     "@testing-library/react-native": "^13.3.3",

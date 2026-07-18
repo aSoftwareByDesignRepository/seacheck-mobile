@@ -10,10 +10,6 @@ variables:
 
 .preflight-base:
   image: node:24-bookworm
-  cache:
-    key: npm-$CI_COMMIT_REF_SLUG
-    paths:
-      - node_modules/
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -21,6 +17,10 @@ variables:
 preflight:
   extends: .preflight-base
   stage: test
+  cache:
+    key: npm-full-$CI_COMMIT_REF_SLUG
+    paths:
+      - node_modules/
   before_script:
     - npm ci
   script:
@@ -28,7 +28,15 @@ preflight:
 
 fdroid-preflight:
   extends: .preflight-base
+  # Match F-Droid metadata + GitHub fdroid-preflight (Node 22.14.x), not the full-preflight 24 image.
+  image: node:22.14-bookworm
   stage: test
+  # Separate cache from full install — sharing node_modules with npm ci --omit=dev
+  # races the sibling job and can leave omit=dev trees for the next full preflight.
+  cache:
+    key: npm-omitdev-$CI_COMMIT_REF_SLUG
+    paths:
+      - node_modules/
   before_script:
     - npm ci --omit=dev
   script:
