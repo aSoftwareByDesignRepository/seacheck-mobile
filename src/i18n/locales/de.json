@@ -156,8 +156,6 @@
     "followMode": "Position auf Karte verfolgen",
     "gpsSmoothPosition": "GPS auf Karte glätten",
     "gpsSmoothPositionHint": "Reduziert Positions-Zittern auf der Karte durch genauigkeitsgewichtete Filterung. Ankeralarm und MOB nutzen immer den rohen GPS-Fix.",
-    "barometerEnabled": "Barometer (Luftdruck)",
-    "barometerEnabledHint": "Zeigt Luftdruck und Trend im Instrumentenpanel. Benötigt Drucksensor im Gerät — standardmäßig aus.",
     "gloveMode": "Handschuhmodus (größere Touch-Ziele)",
     "gloveModeHint": "Vergrößert Schaltflächen auf 56 px für nasse Hände oder Handschuhe",
     "mapShowPassageRouteLines": "Passage-Routenlinien anzeigen",
@@ -431,18 +429,6 @@
     "instrumentsOnlyA11y": "Vollbild-Navigationsinstrumente ohne Karte",
     "instrumentPanelA11y": "Navigationsinstrumente",
     "splitMapPaneA11y": "Seekarte"
-  },
-  "barometer": {
-    "label": "Barometer",
-    "fallingFast": "Druck fällt schnell — Wetter beobachten",
-    "a11y": "Barometer %{value}, %{trend}",
-    "trend": {
-      "rising": "steigend",
-      "falling": "fallend",
-      "falling_fast": "schnell fallend",
-      "steady": "stabil",
-      "unknown": "Trend ausstehend"
-    }
   },
   "profiles": {
     "cruisePassage": "Fahrt / Passage"

@@ -57,7 +57,6 @@ type PersistPayload = {
   anchorRadiusNm: AnchorRadiusNm;
   followMode: boolean;
   keepAwakeUnderway: boolean;
-  barometerEnabled: boolean;
   gpsSmoothPosition: boolean;
   backgroundTrackRecording: boolean;
   alarmSoundEnabled: boolean;
@@ -107,7 +106,6 @@ async function persist(state: SettingsState) {
     anchorRadiusNm: state.anchorRadiusNm,
     followMode: state.followMode,
     keepAwakeUnderway: state.keepAwakeUnderway,
-    barometerEnabled: state.barometerEnabled,
     gpsSmoothPosition: state.gpsSmoothPosition,
     backgroundTrackRecording: state.backgroundTrackRecording,
     alarmSoundEnabled: state.alarmSoundEnabled,
@@ -184,7 +182,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           anchorRadiusNm: normalizeAnchorRadiusNm(parsed.anchorRadiusNm),
           followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode,
           keepAwakeUnderway: parsed.keepAwakeUnderway ?? CRUISE_PASSAGE_DEFAULTS.keepAwakeUnderway,
-          barometerEnabled: parsed.barometerEnabled ?? CRUISE_PASSAGE_DEFAULTS.barometerEnabled,
           gpsSmoothPosition: parsed.gpsSmoothPosition ?? CRUISE_PASSAGE_DEFAULTS.gpsSmoothPosition,
           backgroundTrackRecording: Boolean(parsed.backgroundTrackRecording),
           alarmSoundEnabled: parsed.alarmSoundEnabled ?? true,

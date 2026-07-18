@@ -24,8 +24,6 @@ export const CRUISE_PASSAGE_DEFAULTS = {
   anchorRadiusNm: DEFAULT_ANCHOR_RADIUS_NM as AnchorRadiusNm,
   followMode: true,
   keepAwakeUnderway: true,
-  /** Off by default — pressure sensor is optional and not on all devices. */
-  barometerEnabled: false,
   /** Cross-track error in instrument panels — off by default; XTE alarms are unaffected. */
   mapShowXte: false,
   /** Leeway (COG vs heading) in instrument panels — off by default. */

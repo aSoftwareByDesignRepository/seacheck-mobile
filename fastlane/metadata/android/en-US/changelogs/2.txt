@@ -1,0 +1,1 @@
+Removed optional barometer / air-pressure instrument to avoid Play health-feature declarations. Navigation instruments unchanged (SOG, COG, XTE, leeway, anchor).

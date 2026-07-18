@@ -15,7 +15,6 @@ describe('CRUISE_PASSAGE_DEFAULTS', () => {
       mapFollowZoom: 13,
       followMode: true,
       keepAwakeUnderway: true,
-      barometerEnabled: false,
       mapShowXte: false,
       mapShowLeeway: false,
       gpsSmoothPosition: true,

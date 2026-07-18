@@ -53,9 +53,6 @@ export function MapInstrumentDock({ fix, onOpenPassage, embedded = false }: Prop
         }
       : null,
     data.stale && fix ? { key: 'stale', label: t('map.staleGps'), variant: 'danger' } : null,
-    data.showBarometer && data.barometer.trend.trend === 'falling_fast'
-      ? { key: 'baro', label: t('barometer.fallingFast'), variant: 'warning' }
-      : null,
   ]);
 
   return (

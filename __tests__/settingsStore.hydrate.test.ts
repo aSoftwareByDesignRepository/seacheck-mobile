@@ -37,4 +37,23 @@ describe('settingsStore hydrate — instrument readouts', () => {
     await useSettingsStore.getState().hydrate();
     expect(useSettingsStore.getState().mapShowLeeway).toBe(false);
   });
+
+  it('ignores legacy barometerEnabled and drops it on next persist', async () => {
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+      JSON.stringify({ barometerEnabled: true, mapShowXte: false, sogUnit: 'kn' }),
+    );
+    await useSettingsStore.getState().hydrate();
+
+    const state = useSettingsStore.getState();
+    expect(state.hydrated).toBe(true);
+    expect(state.mapShowXte).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(state, 'barometerEnabled')).toBe(false);
+
+    await state.patchSettings({ gloveMode: false });
+    expect(AsyncStorage.setItem).toHaveBeenCalled();
+    const lastWrite = (AsyncStorage.setItem as jest.Mock).mock.calls.at(-1)?.[1] as string;
+    const payload = JSON.parse(lastWrite) as Record<string, unknown>;
+    expect(payload.barometerEnabled).toBeUndefined();
+    expect(payload.mapShowXte).toBe(false);
+  });
 });

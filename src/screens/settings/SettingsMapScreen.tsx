@@ -21,7 +21,6 @@ export function SettingsMapScreen() {
   const mapFollowZoom = useSettingsStore((s) => s.mapFollowZoom);
   const followMode = useSettingsStore((s) => s.followMode);
   const gpsSmoothPosition = useSettingsStore((s) => s.gpsSmoothPosition);
-  const barometerEnabled = useSettingsStore((s) => s.barometerEnabled);
   const mapShowPassageRouteLines = useSettingsStore((s) => s.mapShowPassageRouteLines);
   const mapShowRecordingDistance = useSettingsStore((s) => s.mapShowRecordingDistance);
   const mapShowXte = useSettingsStore((s) => s.mapShowXte);
@@ -107,15 +106,6 @@ export function SettingsMapScreen() {
             value={gpsSmoothPosition}
             onChange={(v) => void patchSettings({ gpsSmoothPosition: v })}
             testID="settings.gpsSmoothPosition"
-            colors={colors}
-            minTouch={minTouch}
-          />
-          <ToggleRow
-            label={t('settings.barometerEnabled')}
-            hint={t('settings.barometerEnabledHint')}
-            value={barometerEnabled}
-            onChange={(v) => void patchSettings({ barometerEnabled: v })}
-            testID="settings.barometerEnabled"
             colors={colors}
             minTouch={minTouch}
           />

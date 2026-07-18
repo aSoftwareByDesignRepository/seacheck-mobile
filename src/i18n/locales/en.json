@@ -156,8 +156,6 @@
     "followMode": "Follow position on map",
     "gpsSmoothPosition": "Smooth GPS on chart",
     "gpsSmoothPositionHint": "Reduces position jitter on the map using accuracy-weighted filtering. Anchor alarm and MOB always use the raw GPS fix.",
-    "barometerEnabled": "Barometer (air pressure)",
-    "barometerEnabledHint": "Shows pressure and trend in the instrument panel. Needs a pressure sensor in your device — off by default.",
     "gloveMode": "Glove mode (larger touch targets)",
     "gloveModeHint": "Increases buttons to 56 px for wet hands or gloves",
     "mapShowPassageRouteLines": "Show passage route lines",
@@ -431,18 +429,6 @@
     "instrumentsOnlyA11y": "Full-screen navigation instruments without chart",
     "instrumentPanelA11y": "Navigation instruments panel",
     "splitMapPaneA11y": "Chart map"
-  },
-  "barometer": {
-    "label": "Barometer",
-    "fallingFast": "Pressure falling fast — watch weather",
-    "a11y": "Barometer %{value}, %{trend}",
-    "trend": {
-      "rising": "rising",
-      "falling": "falling",
-      "falling_fast": "falling fast",
-      "steady": "steady",
-      "unknown": "trend pending"
-    }
   },
   "profiles": {
     "cruisePassage": "Cruise / passage"

@@ -37,6 +37,7 @@ See [GRAPHICS.md](./GRAPHICS.md).
 - [ ] News app: **No**
 - [ ] Government app: **No**
 - [ ] Financial features: **No**
+- [ ] Health features / body sensors: **No** (barometer removed in 0.1.2 — do not declare Health or upload a health demo video)
 
 ---
 

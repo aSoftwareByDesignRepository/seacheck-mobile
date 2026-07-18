@@ -127,8 +127,7 @@ Covers TypeScript, Jest, WCAG contrast, touch targets (≥48 px), EN/DE i18n par
 | App keeps stopping (Android) | Uninstall SeaCheck, then `npm run android:rebuild`. Enable USB debugging and run `adb logcat -d \| grep -iE "seacheck\|AndroidRuntime\|FATAL"` if it persists. A startup crash was fixed by breaking a circular import in the background GPS task — rebuild is required. **`NoClassDefFoundError: AnyTypeProvider`** means `expo-location` is the wrong SDK version — run `npx expo install expo-location` and rebuild. |
 | Offline map blank | Download a pack on Wi‑Fi first; wait for **Ready for offline use** |
 | Native change not applied | `npm run android:rebuild` (Metro reload alone is not enough) |
-| Barometer / pressure trend missing | Many emulators lack a pressure sensor — test on hardware |
-| Red LogBox `[BootGate] barometer` / battery on emulator | Optional hardware — dismiss with **Dismiss**; app continues. Fixed in current builds (lazy native load). Reload Metro with **`r`**. |
+| Red LogBox battery / optional hardware on emulator | Optional hardware — dismiss with **Dismiss**; app continues. Reload Metro with **`r`**. |
 | Battery % missing in GPS strip | Emulator may not expose battery APIs — normal; works on device |
 | OpenSeaMap tile timeout in Metro log | OpenSeaMap CDN can be slow; online seamarks may be missing briefly. Offline: download a pack first. Harmless after map logging filter. |
 | Anchor watch limited chip | Grant background location + notifications in system settings |

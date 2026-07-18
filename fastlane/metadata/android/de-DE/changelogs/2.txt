@@ -1,0 +1,1 @@
+Optionales Barometer / Luftdruck-Instrument entfernt, damit Play keine Gesundheitsfunktionen verlangt. Navigationsinstrumente unverändert (SOG, COG, XTE, Kursabweichung, Anker).

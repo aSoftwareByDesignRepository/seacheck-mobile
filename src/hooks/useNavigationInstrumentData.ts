@@ -1,4 +1,3 @@
-import { useBarometer } from './useBarometer';
 import { formatCogDisplay, useNavigationInstruments } from './useNavigationInstruments';
 import { computeAnchorDriftNm } from '../lib/anchor/anchorDrift';
 import { resolveLeewayDisplay } from '../lib/geo/leeway';
@@ -33,8 +32,6 @@ export type NavigationInstrumentData = {
   showNavHero: boolean;
   showXte: boolean;
   showPassageMeta: boolean;
-  showBarometer: boolean;
-  barometer: ReturnType<typeof useBarometer>;
   showLeeway: boolean;
   leeway: ReturnType<typeof resolveLeewayDisplay>['leeway'];
   distanceLabel: string;
@@ -49,7 +46,6 @@ export function useNavigationInstrumentData(fix: LocationFix | null): Navigation
   const bearingReference = useSettingsStore((s) => s.bearingReference);
   const sogUnit = useSettingsStore((s) => s.sogUnit);
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
-  const barometerEnabled = useSettingsStore((s) => s.barometerEnabled);
   const mapShowXte = useSettingsStore((s) => s.mapShowXte);
   const mapShowLeeway = useSettingsStore((s) => s.mapShowLeeway);
 
@@ -59,7 +55,6 @@ export function useNavigationInstrumentData(fix: LocationFix | null): Navigation
   const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
   const mapDisplayFix = useMapDisplayFix();
   const nav = useNavigationInstruments();
-  const barometer = useBarometer(barometerEnabled);
 
   const stale = isFixStale(fix);
   const coordFix = mapDisplayFix ?? (fix && !stale ? fix : lastGoodFix);
@@ -74,7 +69,6 @@ export function useNavigationInstrumentData(fix: LocationFix | null): Navigation
   const showXte =
     mapShowXte && nav.xteNm != null && !stale && goToTarget?.kind !== 'mob' && Boolean(activePassageId);
   const showPassageMeta = Boolean(activePassageId && nav.remainingNm != null && !stale);
-  const showBarometer = barometerEnabled && barometer.available && barometer.trend.currentHpa != null;
   const sogKn = fix?.speedKn ?? msToKnots(fix?.speedMs ?? null);
   const { showLeeway, leeway } = resolveLeewayDisplay({
     mapShowLeeway,
@@ -105,8 +99,6 @@ export function useNavigationInstrumentData(fix: LocationFix | null): Navigation
     showNavHero,
     showXte,
     showPassageMeta,
-    showBarometer,
-    barometer,
     showLeeway,
     leeway,
     distanceLabel,

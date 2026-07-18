@@ -72,14 +72,5 @@ export function buildInstrumentDetailMetrics(data: NavigationInstrumentData): In
     });
   }
 
-  if (data.showBarometer && data.barometer.trend.currentHpa != null) {
-    metrics.push({
-      key: 'baro',
-      label: t('barometer.label'),
-      value: data.barometer.trend.currentHpa.toFixed(0),
-      unit: 'hPa',
-    });
-  }
-
   return metrics;
 }

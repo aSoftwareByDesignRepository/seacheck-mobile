@@ -1,20 +1,4 @@
-import { computeBarometerTrend, pruneBarometerReadings } from '../src/lib/barometer/trend';
 import { magneticDeclinationDeg, trueToMagneticBearing } from '../src/lib/geo/magnetic';
-
-describe('barometer trend', () => {
-  const now = Date.parse('2026-06-22T12:00:00.000Z');
-
-  it('detects falling fast pressure over 3h', () => {
-    const readings = pruneBarometerReadings(
-      [
-        { ts: now - 3 * 60 * 60 * 1000, hPa: 1016 },
-        { ts: now, hPa: 1012 },
-      ],
-      now,
-    );
-    expect(computeBarometerTrend(readings, now).trend).toBe('falling_fast');
-  });
-});
 
 describe('magnetic global WMM', () => {
   it('declination near Kiel is east and plausible', () => {

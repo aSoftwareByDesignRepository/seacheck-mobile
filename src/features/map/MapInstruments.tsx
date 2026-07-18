@@ -13,7 +13,6 @@ import { t } from '../../i18n';
 import { useTheme } from '../../theme/ThemeContext';
 import { InstrumentChip } from '../../ui/InstrumentChip';
 import { StatusBadgeRow, compactBadgeItems } from '../../ui/StatusBadgeRow';
-import { BarometerInstrument } from './BarometerInstrument';
 import { InstrumentCoordsLine } from './InstrumentCoordsLine';
 import { InstrumentMetricGrid } from './InstrumentMetricGrid';
 import { buildInstrumentDetailMetrics } from './instrumentDetailMetrics';
@@ -48,7 +47,6 @@ export function MapInstruments({ fix, onOpenPassage }: Props) {
   const data = useNavigationInstrumentData(fix);
   const cogParts = data.cogText.split(' ');
   const detailMetrics = buildInstrumentDetailMetrics(data);
-  const showBarometerBlock = data.showBarometer && !detailMetrics.some((m) => m.key === 'baro');
   const compactHero = Math.min(instrumentFullScreenHeroSize, Math.round(width * 0.14));
 
   const badgeItems = compactBadgeItems([
@@ -61,9 +59,6 @@ export function MapInstruments({ fix, onOpenPassage }: Props) {
       : null,
     isLowSog(fix) && !data.stale ? { key: 'lowSog', label: t('map.lowSog'), variant: 'warning' } : null,
     data.stale && fix ? { key: 'stale', label: t('map.staleGps'), variant: 'danger' } : null,
-    data.showBarometer && data.barometer.trend.trend === 'falling_fast'
-      ? { key: 'baro', label: t('barometer.fallingFast'), variant: 'warning' }
-      : null,
   ]);
 
   async function cycleCoordFormat() {
@@ -138,8 +133,6 @@ export function MapInstruments({ fix, onOpenPassage }: Props) {
               <Text style={{ color: colors.textMuted, fontWeight: '600', fontSize: 15 }}>{t('map.awaitingGps')}</Text>
             </View>
           )}
-
-          {showBarometerBlock ? <BarometerInstrument trend={data.barometer.trend} /> : null}
 
           {detailMetrics.length > 0 ? <InstrumentMetricGrid metrics={detailMetrics} layout="grid" /> : null}
         </View>

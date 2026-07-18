@@ -2,15 +2,22 @@ import { i18n } from '../../i18n';
 
 const LEGAL_BASE = 'https://nextcloud.software-by-design.de';
 
+function isGermanLocale(locale: string = i18n.locale): boolean {
+  const code = String(locale || '')
+    .toLowerCase()
+    .split(/[-_]/)[0];
+  return code === 'de';
+}
+
 /** Locale-aware privacy and terms URLs — must match docs/play-store/PUBLISH-LEGAL.md */
 export function privacyPolicyUrl(): string {
-  return i18n.locale === 'de'
+  return isGermanLocale()
     ? `${LEGAL_BASE}/de/datenschutz-seacheck-mobile.html`
     : `${LEGAL_BASE}/en/privacy-seacheck-mobile.html`;
 }
 
 export function termsOfUseUrl(): string {
-  return i18n.locale === 'de'
+  return isGermanLocale()
     ? `${LEGAL_BASE}/de/nutzungsbedingungen-seacheck-mobile.html`
     : `${LEGAL_BASE}/en/terms-seacheck-mobile.html`;
 }

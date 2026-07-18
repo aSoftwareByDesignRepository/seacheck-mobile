@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'SeaCheck',
   slug: 'seacheck',
-  version: '0.1.1',
+  version: '0.1.2',
   orientation: 'default',
   scheme: 'seacheck',
   userInterfaceStyle: 'automatic',
@@ -50,7 +50,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: 'de.softwarebydesign.seacheck',
-    versionCode: 1,
+    versionCode: 2,
     adaptiveIcon: {
       backgroundColor: '#0b1622',
       foregroundImage: './assets/android-icon-foreground.png',
@@ -68,7 +68,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'WAKE_LOCK',
       'REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
     ],
-    // expo-sensors bundles ACTIVITY_RECOGNITION for Pedometer; SeaCheck only uses Barometer.
+    // Belt-and-suspenders: Pedometer / motion deps must never pull health-adjacent permissions.
     blockedPermissions: [
       'android.permission.ACTIVITY_RECOGNITION',
       'com.google.android.gms.permission.ACTIVITY_RECOGNITION',

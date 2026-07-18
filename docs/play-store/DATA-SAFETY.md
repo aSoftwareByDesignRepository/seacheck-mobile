@@ -48,6 +48,8 @@ Suggested short summary:
 |---|--------|
 | All standard categories not listed above | **No** |
 
+SeaCheck does **not** use body / health sensors (no heart rate, steps, or barometer/pressure for health). Do **not** declare Health features or Health permissions in Play Console.
+
 ### App activity
 
 | Data type | Collected? | Shared? | Purpose |
