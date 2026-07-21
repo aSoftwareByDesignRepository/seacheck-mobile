@@ -90,20 +90,8 @@ SEACHECK_APP_VARIANT=production EAS_BUILD_PROFILE=production EAS_PROJECT_ID=<uui
 - [ ] Package name: `de.softwarebydesign.seacheck`
 - [ ] **Internal testing** → upload AAB → install via Play
 - [ ] Fix pre-launch report issues
-- [ ] **Production** → release notes from [release-notes/](./release-notes/)
+- [ ] **Production** → paste [release-notes/0.1.0.txt](./release-notes/0.1.0.txt) (`<en-US>` / `<de-DE>`)
 - [ ] Submit for review
-
-Example release notes (EN):
-
-```
-Initial Play Store release.
-
-• Offline coastal charts (OpenSeaMap seamarks + base map)
-• GPS instruments, passage planning, anchor & arrival alarms
-• Track recording and GPX export
-• Navigation disclaimer — not a replacement for official charts
-• No ads, no analytics
-```
 
 ---
 

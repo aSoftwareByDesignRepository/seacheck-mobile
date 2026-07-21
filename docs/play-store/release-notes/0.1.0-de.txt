@@ -1,7 +1,0 @@
-Erstveröffentlichung im Play Store.
-
-• Offline-Küstenkarten (OpenSeaMap-Seezeichen + Basiskarte)
-• GPS-Instrumente, Törnplanung, Anker- und Ankunftsalarme
-• Track-Aufzeichnung und GPX-Export
-• Navigation-Hinweis — kein Ersatz für offizielle Seekarten
-• Keine Werbung, keine Analyse-SDKs

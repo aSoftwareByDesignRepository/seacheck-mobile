@@ -4,7 +4,8 @@
 **App:** SeaCheck Mobile  
 **Publisher:** Software by Design GbR, Husumer Baum 2, 24837 Schleswig, Germany  
 **Contact:** info@software-by-design.de · datenschutz@software-by-design.de  
-**General privacy (website):** https://software-by-design.de/datenschutz/
+**General privacy (website):** https://software-by-design.de/datenschutz/  
+**Package:** `de.softwarebydesign.seacheck`
 
 ---
 

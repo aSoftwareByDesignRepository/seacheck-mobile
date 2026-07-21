@@ -1,4 +1,10 @@
 === GOOGLE PLAY LISTING — DEUTSCH (de-DE) ===
+Paketname: de.softwarebydesign.seacheck
+Kategorie (Store-Einstellungen): Karten & Navigation
+Tags (optional): Segeln · Küste · GPS · SOG · Offline-Karte
+Sichtbarkeit: UNLISTED (nur per Link teilen)
+Versionshinweise v0.1.0: release-notes/0.1.0.txt in die Play Console einfügen
+  (Format: <en-US>…</en-US><de-DE>…</de-DE>, max. 500 Zeichen pro Sprache)
 Ton: persönliches Projekt, weitergegeben wie besehen — kein Produkt-Launch.
 
 --- App-Name (max. 30 Zeichen) ---
@@ -27,14 +33,8 @@ Kostenlos. Keine Werbung. Keine Analyse-SDKs. Daten bleiben auf dem Gerät.
 
 Von Alexander Mäule / Software by Design GbR, Schleswig (Nebenprojekt).
 
---- Kategorie ---
-Karten & Navigation
-
 --- Kontakt-E-Mail ---
 info@software-by-design.de
 
 --- URL Datenschutzerklärung ---
 https://nextcloud.software-by-design.de/de/datenschutz-seacheck-mobile.html
-
---- Sichtbarkeit ---
-Auf UNLISTED stellen — nur per Link teilen, kein Store-Marketing

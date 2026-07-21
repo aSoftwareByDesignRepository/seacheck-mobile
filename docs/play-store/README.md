@@ -20,7 +20,7 @@ For full technical steps (build, data safety, legal pages): table below and [REL
 | [terms-mobile-de.md](./terms-mobile-de.md) | Nutzungsbedingungen (DE) |
 | [PUBLISH-LEGAL.md](./PUBLISH-LEGAL.md) | Deploy via **`website/`** (see below) |
 | [publish/README.md](./publish/README.md) | Pointer to `website/` HTML |
-| [release-notes/](./release-notes/) | Play release notes per version |
+| [release-notes/](./release-notes/) | Play release notes per version (`<en-US>` / `<de-DE>` — paste whole file) |
 
 **Local check:** `npm run play:preflight` from `mobile/seacheck`.
 
@@ -69,6 +69,14 @@ In-app + web disclaimers reduce risk but do **not** replace legal review for a n
 | Privacy / DPO | datenschutz@software-by-design.de |
 | Address | Husumer Baum 2, 24837 Schleswig, Germany |
 | Website | https://software-by-design.de |
+
+## Package
+
+| | |
+|-|-|
+| App name | SeaCheck |
+| Package | `de.softwarebydesign.seacheck` |
+| Version (source) | see `app.config.ts` |
 
 ---
 
