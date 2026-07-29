@@ -13,4 +13,4 @@ Before opening the merge request:
 3. Ensure fdroiddata CI passes `fdroid rewritemeta` and `fdroid build` on the MR
 4. Replace draft screenshots in `fastlane/metadata/android/*/images/phoneScreenshots/`
 
-See [BUILD-FDROID.md](BUILD-FDROID.md) for the full workflow.
+See [BUILD-FDROID.md](./BUILD-FDROID.md) for the full workflow.

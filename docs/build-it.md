@@ -63,7 +63,7 @@ ls -lh ~/Downloads/apk-releases/seacheck-${VERSION}-release.apk
 
 1. **Uninstall** any existing SeaCheck build first (dev client and release share the same package id).
 2. Copy the APK to the device and install.
-3. Complete onboarding and run the smoke path in [`test-it.md`](test-it.md).
+3. Complete onboarding and run the smoke path in [`test-it.md`](./test-it.md).
 
 ### What each step guarantees
 
@@ -96,7 +96,7 @@ ls -lh ~/Downloads/apk-releases/seacheck-${VERSION}-release.apk
 
 ## Play Store AAB
 
-Store signing and upload steps: [`play-store/README.md`](play-store/README.md) and [`play-store/RELEASE-CHECKLIST.md`](play-store/RELEASE-CHECKLIST.md).
+Store signing and upload steps: [`play-store/README.md`](./play-store/README.md) and [`play-store/RELEASE-CHECKLIST.md`](./play-store/RELEASE-CHECKLIST.md).
 
 After the production prebuild block above:
 
@@ -172,7 +172,7 @@ Re-run the production block if you ship a release with updated regions.
 
 ## F-Droid
 
-Build recipe and submission notes: [`fdroid/BUILD-FDROID.md`](fdroid/BUILD-FDROID.md).
+Build recipe and submission notes: [`fdroid/BUILD-FDROID.md`](./fdroid/BUILD-FDROID.md).
 
 GitLab mirrors GitHub preflight + `fdroid:preflight` (`.gitlab-ci.yml`). Packaging builds run in [fdroiddata](https://gitlab.com/fdroid/fdroiddata).
 
@@ -180,4 +180,4 @@ GitLab mirrors GitHub preflight + `fdroid:preflight` (`.gitlab-ci.yml`). Packagi
 
 ## Physical / emulator testing
 
-See [`test-it.md`](test-it.md). SeaCheck needs **location** permission for chart, anchor watch, and tracks; a physical device is recommended for GPS validation.
+See [`test-it.md`](./test-it.md). SeaCheck needs **location** permission for chart, anchor watch, and tracks; a physical device is recommended for GPS validation.

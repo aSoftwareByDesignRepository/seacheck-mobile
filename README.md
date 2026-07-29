@@ -2,7 +2,7 @@
 
 Open-source maritime navigation companion (offline charts, GPS instruments, passage planning). Standalone app — no Nextcloud server required.
 
-**License:** [AGPL-3.0-or-later](LICENSE)
+**License:** [AGPL-3.0-or-later](./LICENSE)
 
 ## Stack
 
@@ -54,17 +54,17 @@ Settings → **Vessel** stores name, call sign, MMSI, and home port for Mayday t
 
 ## Publishing (Google Play / App Store)
 
-**Publication kit:** [docs/play-store/README.md](docs/play-store/README.md) — privacy policy, terms, store listings, data safety, release checklist.
+**Publication kit:** [docs/play-store/README.md](./docs/play-store/README.md) — privacy policy, terms, store listings, data safety, release checklist.
 
 ```bash
 npm run play:preflight
 ```
 
-See [STORE_REVIEW.md](STORE_REVIEW.md) for reviewer smoke path.
+See [STORE_REVIEW.md](./STORE_REVIEW.md) for reviewer smoke path.
 
 ## F-Droid
 
-Store metadata lives in `fastlane/metadata/android/`. Build and submission notes: [docs/fdroid/BUILD-FDROID.md](docs/fdroid/BUILD-FDROID.md).
+Store metadata lives in `fastlane/metadata/android/`. Build and submission notes: [docs/fdroid/BUILD-FDROID.md](./docs/fdroid/BUILD-FDROID.md).
 
 ## Quality gates
 
