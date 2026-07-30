@@ -1,3 +1,6 @@
+<!-- build-split-links -->
+**Split runbooks:** [`dev-build-instructions.md`](./dev-build-instructions.md) (low-RAM / Cursor-parallel sideload) · [`signed-prod-build-instructions.md`](./signed-prod-build-instructions.md) (full multi-ABI / Play AAB).
+
 # Build SeaCheck
 
 Metro uses **port 8092** so it does not collide with other local services.
