@@ -1,6 +1,7 @@
-# SeaCheck — low-RAM / Cursor-parallel sideload APK
-
+# SeaCheck — optional low-RAM / serialized Gradle sideload
 Package: `de.softwarebydesign.seacheck`. Metro port **8092**.
+
+**Optional / slower.** Prefer the default phone recipe in [`build-it.md`](./build-it.md) (arm64, normal Gradle parallelism).
 
 Use this when Cursor (or other IDE work) must stay open during the native build. Builds **arm64-v8a only**, serializes Gradle workers, and optionally stops local Nextcloud Docker during Gradle (SeaCheck itself does not need it).
 

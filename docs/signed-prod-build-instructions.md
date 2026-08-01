@@ -4,11 +4,13 @@ Package: `de.softwarebydesign.seacheck`. Metro port **8092**.
 
 Full multi-ABI release APK and Play AAB. Prefer this for store uploads, F-Droid prep, and sideloads that must run on emulators / older ABIs.
 
-Low-RAM phone sideload while Cursor is open: [`dev-build-instructions.md`](./dev-build-instructions.md). Canonical long runbook: [`build-it.md`](./build-it.md). F-Droid: [`fdroid/BUILD-FDROID.md`](./fdroid/BUILD-FDROID.md).
+Default phone sideload (**arm64**, fast): [`build-it.md`](./build-it.md). Optional serialized Gradle when Cursor must stay up: [`dev-build-instructions.md`](./dev-build-instructions.md). Canonical long runbook: [`build-it.md`](./build-it.md). F-Droid: [`fdroid/BUILD-FDROID.md`](./fdroid/BUILD-FDROID.md).
 
 Node must match `package.json` engines (`^20.19.4 || ^22.13.0 || ^24.3.0 || >=25`). Prefer Node 22.22.0. `android:rebuild` installs a **dev** client, not a release APK.
 
-## Release APK (all default architectures)
+## Release APK (all default architectures — slow)
+
+This is the **slow** path (4 ABIs). Phone sideloads should use [`build-it.md`](./build-it.md) instead.
 
 ```bash
 cd /home/alex/Development/nextcloud-dev/mobile/seacheck

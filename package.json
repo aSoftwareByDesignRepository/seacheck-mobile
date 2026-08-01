@@ -30,9 +30,10 @@
     "play:preflight": "bash scripts/play-preflight.sh",
     "sync:regions": "node scripts/sync-planning-regions.mjs",
     "icons": "node scripts/generate-app-icons.mjs",
-    "postinstall": "bash scripts/patch-gradle-foojay.sh && bash scripts/patch-expo-node.sh && bash scripts/patch-expo-kotlin.sh && bash scripts/patch-node-gradle.sh && bash scripts/patch-expo-constants-env.sh"
+    "postinstall": "bash scripts/patch-gradle-foojay.sh && bash scripts/patch-expo-node.sh && bash scripts/patch-expo-kotlin.sh && bash scripts/patch-node-gradle.sh && bash scripts/patch-expo-constants-env.sh && patch-package"
   },
   "dependencies": {
+    "@check/android15-play-compliance": "file:../shared/android15-play-compliance",
     "@expo/vector-icons": "^15.0.2",
     "@maplibre/maplibre-react-native": "11.3.6",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -81,6 +82,7 @@
     "expo-dev-client": "~56.0.24",
     "jest": "^29.7.0",
     "jest-expo": "~56.0.4",
+    "patch-package": "^8.0.1",
     "react-test-renderer": "19.2.3",
     "typescript": "~6.0.3"
   },

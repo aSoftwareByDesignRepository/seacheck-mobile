@@ -1,5 +1,5 @@
 <!-- build-split-links -->
-**Split runbooks:** [`dev-build-instructions.md`](./dev-build-instructions.md) (low-RAM / Cursor-parallel sideload) · [`signed-prod-build-instructions.md`](./signed-prod-build-instructions.md) (full multi-ABI / Play AAB).
+**Split runbooks:** this file = default phone sideload (**arm64**, fast) · [`signed-prod-build-instructions.md`](./signed-prod-build-instructions.md) (full multi-ABI / Play AAB / F-Droid — slow) · [`dev-build-instructions.md`](./dev-build-instructions.md) (optional: serialize Gradle / free RAM when Cursor must stay up — slower).
 
 # Build SeaCheck
 
@@ -13,27 +13,22 @@ nvm alias default 22.22.0
 nvm use 22.22.0
 ```
 
-`npm run release:apk` refuses the wrong app directory and refuses unsupported Node.
+`npm run release:apk` refuses the wrong app directory and refuses unsupported Node. That one-liner still builds **all ABIs** (slow) — use the arm64 recipe below for phone sideloads.
 
 ---
 
-## Production release APK (sideload / device testing)
+## Phone sideload APK (default — arm64 only)
 
-One command (recommended) — use this absolute path (do **not** paste while already inside `arbeitszeitcheck-kiosk`):
-
-```bash
-cd /home/alex/Development/nextcloud-dev/mobile/seacheck
-node -v   # must be v22.13+ (prefer v22.22.0)
-npm run release:apk
-```
+Copy-paste whenever you need a **phone** sideload APK. Builds **arm64-v8a** only (~4× less native work than multi-ABI). Do **not** skip steps.
 
 Confirm you are in SeaCheck before continuing: `npm pkg get name` must print `"seacheck-mobile"`. If it prints `"arbeitszeitcheck-kiosk"`, you are in the wrong directory.
 
-Or step-by-step (same as `scripts/release-apk.sh`). Do **not** skip steps.
+For Play / F-Droid / universal multi-ABI, use [`signed-prod-build-instructions.md`](./signed-prod-build-instructions.md) or `npm run release:apk` — expect a long clean build.
 
 ```bash
 cd /home/alex/Development/nextcloud-dev/mobile/seacheck
 npm pkg get name   # must be "seacheck-mobile"
+node -v             # must be v22.13+ (prefer v22.22.0)
 
 # 1. Dependencies pinned to Expo SDK 56
 npm install
@@ -50,9 +45,12 @@ SEACHECK_APP_VARIANT=production NODE_ENV=production npx expo prebuild --platform
 # 5. Node path + Gradle patches (required after every prebuild --clean)
 SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh
 
-# 6. Clean native build → release APK
-npm run android:clean
-npm run android:release
+# 6. Release APK — arm64 only (phones). Skip android:clean unless the tree is poisoned.
+#    (android:release does not forward Gradle flags — call gradlew directly.)
+cd android
+SEACHECK_APP_VARIANT=production NODE_ENV=production ./gradlew assembleRelease --no-daemon \
+  -PreactNativeArchitectures=arm64-v8a
+cd ..
 
 # 7. Copy to a stable sideload path
 VERSION=$(grep -E "^\s*version:" app.config.ts | head -1 | sed "s/.*'\([^']*\)'.*/\1/")
@@ -76,7 +74,7 @@ ls -lh ~/Downloads/apk-releases/seacheck-${VERSION}-release.apk
 | `npm run icons` | Correct SeaCheck launcher assets |
 | `SEACHECK_APP_VARIANT=production` + `prebuild --clean` | Release APK without dev client; MapLibre/native plugins regenerated |
 | `ensure-android-local-properties.sh` | Writes `android/local.properties` (`sdk.dir`, `node.dir`), patches Gradle node invocations, persists production env in `gradle.properties` (not project `.env`) |
-| `android:clean` + `android:release` | No stale Gradle/CMake artifacts |
+| `assembleRelease -PreactNativeArchitectures=arm64-v8a` | Phone APK without x86/armeabi native rebuilds |
 
 ### If the build fails
 

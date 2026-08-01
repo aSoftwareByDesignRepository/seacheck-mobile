@@ -85,7 +85,8 @@ export function Screen({
             styles.staticBody,
             {
               paddingHorizontal: spacing.xl,
-              paddingVertical: spacing.xl,
+              paddingTop: spacing.sm,
+              paddingBottom: spacing.xl,
               alignItems: contentMaxWidth ? 'center' : undefined,
             },
           ]}
@@ -108,7 +109,8 @@ export function Screen({
           styles.content,
           {
             paddingHorizontal: spacing.xl,
-            paddingVertical: spacing.xl,
+            paddingTop: spacing.sm,
+            paddingBottom: spacing.xl,
             alignItems: contentMaxWidth ? 'center' : undefined,
           },
         ]}

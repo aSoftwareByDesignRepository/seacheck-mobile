@@ -1,4 +1,5 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
+import withAndroid15PlayCompliance from '@check/android15-play-compliance';
 
 import withAndroidReleaseSigning from './plugins/withAndroidReleaseSigning';
 import withAndroidNodePath from './plugins/withAndroidNodePath';
@@ -110,7 +111,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     ['@maplibre/maplibre-react-native', { android: {}, ios: { metalEnabled: true } }],
-    withAndroidReleaseSigning,
+    [withAndroid15PlayCompliance as unknown as string, { profile: 'keepBoot' }],
+    withAndroidReleaseSigning as unknown as string,
     withAndroidNodePath,
   ],
   extra: {

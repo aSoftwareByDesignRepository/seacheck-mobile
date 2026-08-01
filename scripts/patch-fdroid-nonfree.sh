@@ -32,6 +32,8 @@ cp "$LOC_PATCHES/taskConsumers/LocationTaskConsumer.kt" \
   "$LOC_ANDROID/src/main/java/expo/modules/location/taskConsumers/LocationTaskConsumer.kt"
 cp "$LOC_PATCHES/taskConsumers/GeofencingTaskConsumer.kt" \
   "$LOC_ANDROID/src/main/java/expo/modules/location/taskConsumers/GeofencingTaskConsumer.kt"
+cp "$LOC_PATCHES/services/LocationTaskService.kt" \
+  "$LOC_ANDROID/src/main/java/expo/modules/location/services/LocationTaskService.kt"
 
 echo "==> patch-fdroid-nonfree: maplibre-react-native (default location engine, no GMS)"
 MAPLIBRE_ANDROID="node_modules/@maplibre/maplibre-react-native/android"
