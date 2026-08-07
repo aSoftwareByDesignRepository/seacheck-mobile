@@ -46,6 +46,11 @@ describe('sanitizePersistedIndex', () => {
     expect(index.evil?.bounds).toBeUndefined();
   });
 
+  it('rejects array roots (corrupt AsyncStorage JSON)', () => {
+    expect(sanitizePersistedIndex([])).toEqual({});
+    expect(sanitizePersistedIndex([{ packId: 'pack-1' }])).toEqual({});
+  });
+
   it('sanitizes display names and clamps zoom levels', () => {
     const index = sanitizePersistedIndex({
       custom_ok: {

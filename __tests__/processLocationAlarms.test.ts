@@ -41,10 +41,12 @@ describe('processLocationAlarms', () => {
       passageDetail: null,
       legAdvanceAuto: false,
       allowLegAdvancePrompt: true,
-      runtime: freshAlarmRuntime(),
+      // Pre-seeded streak would fire on the next outside-radius fix unless defer resets it.
+      runtime: { ...freshAlarmRuntime(), anchorRadiusStreak: ANCHOR_RADIUS_STREAK - 1 },
       deferAnchorDragEvaluation: true,
     });
 
+    expect(result.runtime.anchorRadiusStreak).toBe(0);
     expect(result.actions.some((a) => a.type === 'trigger')).toBe(false);
     expect(result.anchorAlarm?.triggered).toBe(false);
   });

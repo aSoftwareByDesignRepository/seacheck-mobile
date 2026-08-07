@@ -25,6 +25,9 @@ npm run typecheck
 echo "==> Unit tests"
 npm test -- --passWithNoTests
 
+echo "==> Safety/offline mutations"
+npm run mutate:core
+
 echo "==> Contrast checks"
 npm run a11y:contrast
 

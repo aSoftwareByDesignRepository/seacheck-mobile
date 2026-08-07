@@ -23,6 +23,7 @@
     "i18n:parity": "node scripts/i18n-parity.mjs",
     "test": "jest",
     "test:downloads": "jest --testPathPattern='downloadTiming|downloadStallWatchdog|nativePackProgress|nativePackStatus|offlinePackStore.startDownload|offlinePackStore.hydrate|resolveOfflineEngineCamera|offlineMapEngineHost|downloadNetwork|downloadCoordinator|reportDownloadFailure'",
+    "mutate:core": "node scripts/run-safety-core-mutations.cjs",
     "reload": "bash scripts/reload-js.sh",
     "logs:downloads": "bash scripts/watch-download-logs.sh",
     "preflight": "bash scripts/preflight.sh",

@@ -9,6 +9,9 @@ describe('parsePersistedBoolean', () => {
   it('falls back for non-boolean persisted values', () => {
     expect(parsePersistedBoolean(undefined, true)).toBe(true);
     expect(parsePersistedBoolean('false', true)).toBe(true);
+    // String "false" must not become true via Boolean(value) — use fallback.
+    expect(parsePersistedBoolean('false', false)).toBe(false);
     expect(parsePersistedBoolean(0, false)).toBe(false);
+    expect(parsePersistedBoolean(1, false)).toBe(false);
   });
 });

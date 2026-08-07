@@ -1,4 +1,4 @@
-import { PropsWithChildren, ReactElement, RefObject } from 'react';
+import { PropsWithChildren, ReactElement, RefObject, useCallback } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,6 +13,7 @@ import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { useFormFactor } from '../hooks/useFormFactor';
 import { t } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
+import { useKeyboardAwareScroll } from './keyboardAware';
 
 const TAB_SCREEN_EDGES: Edge[] = ['top', 'left', 'right'];
 
@@ -42,6 +43,17 @@ export function Screen({
   const { colors, spacing } = useTheme();
   const { formFactor } = useFormFactor();
   const contentMaxWidth = formFactor === 'expanded' ? 1200 : formFactor === 'medium' ? 960 : undefined;
+  const basePad = spacing.xl;
+  const { keyboardPad, scrollProps } = useKeyboardAwareScroll(basePad);
+  const assignScrollRef = useCallback(
+    (node: ScrollView | null) => {
+      scrollProps.ref.current = node;
+      if (scrollRef) {
+        scrollRef.current = node;
+      }
+    },
+    [scrollProps.ref, scrollRef],
+  );
 
   const header = (
     <>
@@ -103,14 +115,16 @@ export function Screen({
   return (
     <SafeAreaView edges={TAB_SCREEN_EDGES} testID={testID} style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
-        ref={scrollRef}
-        keyboardShouldPersistTaps="handled"
+        ref={assignScrollRef}
+        keyboardShouldPersistTaps={scrollProps.keyboardShouldPersistTaps}
+        keyboardDismissMode={scrollProps.keyboardDismissMode}
+        automaticallyAdjustKeyboardInsets={scrollProps.automaticallyAdjustKeyboardInsets}
         contentContainerStyle={[
           styles.content,
           {
             paddingHorizontal: spacing.xl,
             paddingTop: spacing.sm,
-            paddingBottom: spacing.xl,
+            paddingBottom: basePad + keyboardPad,
             alignItems: contentMaxWidth ? 'center' : undefined,
           },
         ]}
