@@ -44,7 +44,7 @@ export function Screen({
   const { formFactor } = useFormFactor();
   const contentMaxWidth = formFactor === 'expanded' ? 1200 : formFactor === 'medium' ? 960 : undefined;
   const basePad = spacing.xl;
-  const { keyboardPad, scrollProps } = useKeyboardAwareScroll(basePad);
+  const { keyboardPad, scrollProps, onScrollViewLayout } = useKeyboardAwareScroll(basePad);
   const assignScrollRef = useCallback(
     (node: ScrollView | null) => {
       scrollProps.ref.current = node;
@@ -119,6 +119,8 @@ export function Screen({
         keyboardShouldPersistTaps={scrollProps.keyboardShouldPersistTaps}
         keyboardDismissMode={scrollProps.keyboardDismissMode}
         automaticallyAdjustKeyboardInsets={scrollProps.automaticallyAdjustKeyboardInsets}
+        onContentSizeChange={scrollProps.onContentSizeChange}
+        onLayout={onScrollViewLayout}
         contentContainerStyle={[
           styles.content,
           {

@@ -14,7 +14,7 @@ export const KEYBOARD_FOCUS_MARGIN = 24;
 /**
  * Content bottom padding while the soft keyboard is visible.
  * iOS + automaticallyAdjustKeyboardInsets: keep base only (no double pad).
- * Android: add a cushion so multiline notes clear the IME.
+ * Android: large cushion so multiline notes can scroll clear of the IME.
  */
 export function keyboardContentPadding(
   basePadding: number,
@@ -28,6 +28,10 @@ export function keyboardContentPadding(
   }
   if (opts.platform === 'ios' && opts.automaticallyAdjustsInsets) {
     return base;
+  }
+  if (opts.platform === 'android') {
+    const cushion = Math.min(height, Math.max(160, Math.round(height * 0.85)));
+    return base + cushion;
   }
   const cushion = Math.min(height, Math.max(120, Math.round(height * 0.25)));
   return base + cushion;
@@ -91,7 +95,6 @@ export function scrollFocusedInputIntoView(
   focused.measureLayout(
     scrollHandle,
     (_x, y) => {
-      // Bail if unmounted / ref cleared between measure and callback.
       if (scrollRef.current !== scroll) {
         return;
       }
@@ -104,11 +107,13 @@ export function scrollFocusedInputIntoView(
 export type KeyboardAwareScrollApi = {
   scrollRef: RefObject<ScrollView | null>;
   keyboardPad: number;
+  onScrollViewLayout: () => void;
   scrollProps: {
     ref: RefObject<ScrollView | null>;
     keyboardShouldPersistTaps: 'handled';
     keyboardDismissMode: 'interactive' | 'on-drag';
     automaticallyAdjustKeyboardInsets: true;
+    onContentSizeChange: () => void;
   };
 };
 
@@ -116,10 +121,15 @@ export type KeyboardAwareScrollApi = {
  * Soft-keyboard avoidance for Screen ScrollViews (time-entry notes, forms).
  * Do not wrap with KeyboardAvoidingView(padding) when using automaticallyAdjustKeyboardInsets —
  * that double-pads on iOS.
+ *
+ * Reveal runs after keyboard-height state commits (and retries) so paddingBottom
+ * exists before scroll-into-view — otherwise Android leaves the note under the IME
+ * with no remaining scroll range.
  */
 export function useKeyboardAwareScroll(_baseBottomPadding: number): KeyboardAwareScrollApi {
   const scrollRef = useRef<ScrollView | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const keyboardHeightRef = useRef(0);
   const alive = useRef(true);
 
   useEffect(() => {
@@ -148,41 +158,67 @@ export function useKeyboardAwareScroll(_baseBottomPadding: number): KeyboardAwar
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    let cancelReveal: (() => void) | undefined;
 
     const onShow = (e: KeyboardEvent) => {
       const next = e.endCoordinates?.height ?? 0;
-      setKeyboardHeight(Number.isFinite(next) ? Math.max(0, next) : 0);
-      cancelReveal?.();
-      cancelReveal = revealFocused();
+      const safe = Number.isFinite(next) ? Math.max(0, next) : 0;
+      keyboardHeightRef.current = safe;
+      setKeyboardHeight(safe);
     };
     const onHide = () => {
-      cancelReveal?.();
+      keyboardHeightRef.current = 0;
       setKeyboardHeight(0);
     };
 
     const showSub = Keyboard.addListener(showEvent, onShow);
     const hideSub = Keyboard.addListener(hideEvent, onHide);
     return () => {
-      cancelReveal?.();
       showSub.remove();
       hideSub.remove();
     };
-  }, [revealFocused]);
+  }, []);
+
+  useEffect(() => {
+    if (keyboardHeight <= 0) {
+      return undefined;
+    }
+    let cancel = revealFocused();
+    const t1 = setTimeout(() => {
+      cancel?.();
+      cancel = revealFocused();
+    }, 48);
+    const t2 = setTimeout(() => {
+      cancel?.();
+      cancel = revealFocused();
+    }, 160);
+    return () => {
+      cancel?.();
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [keyboardHeight, revealFocused]);
 
   const keyboardPad = keyboardContentPadding(0, keyboardHeight, {
     platform: Platform.OS,
     automaticallyAdjustsInsets: true,
   });
 
+  const onContentSizeChange = useCallback(() => {
+    if (keyboardHeightRef.current > 0) {
+      revealFocused();
+    }
+  }, [revealFocused]);
+
   return {
     scrollRef,
     keyboardPad,
+    onScrollViewLayout: revealFocused,
     scrollProps: {
       ref: scrollRef,
       keyboardShouldPersistTaps: 'handled',
       keyboardDismissMode: Platform.OS === 'ios' ? 'interactive' : 'on-drag',
       automaticallyAdjustKeyboardInsets: true,
+      onContentSizeChange,
     },
   };
 }

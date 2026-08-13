@@ -50,6 +50,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
+    // Resize window when IME opens so Screen ScrollViews can keep notes visible.
+    softwareKeyboardLayoutMode: 'resize',
     package: 'de.softwarebydesign.seacheck',
     versionCode: 2,
     adaptiveIcon: {
