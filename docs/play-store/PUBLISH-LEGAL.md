@@ -15,6 +15,17 @@ Deploy with your normal **nextcloud.software-by-design.de** website publish.
 | `https://nextcloud.software-by-design.de/de/datenschutz-seacheck-mobile.html` | [`website/de/datenschutz-seacheck-mobile.html`](../../../../website/de/datenschutz-seacheck-mobile.html) |
 | `https://nextcloud.software-by-design.de/de/nutzungsbedingungen-seacheck-mobile.html` | [`website/de/nutzungsbedingungen-seacheck-mobile.html`](../../../../website/de/nutzungsbedingungen-seacheck-mobile.html) |
 
+
+## Other locales — privacy only (optional localized listing URLs)
+
+Keep **EN** and **DE** as the primary Play Console privacy policy URLs. Additional website locales exist for optional localized store listings:
+
+`https://nextcloud.software-by-design.de/{L}/privacy-seacheck-mobile.html`
+
+where `{L}` is one of: `fr`, `es`, `da`, `nl`, `it`, `pl`, `sv`, `nb`, `pt`.
+
+Terms pages currently exist for **EN** and **DE** only (do not invent other-locale terms URLs).
+
 Long-form source (for edits, then sync to HTML in **`website/`**): [privacy-mobile-en.md](./privacy-mobile-en.md), [privacy-mobile-de.md](./privacy-mobile-de.md), [terms-mobile-en.md](./terms-mobile-en.md), [terms-mobile-de.md](./terms-mobile-de.md).
 
 Styled pages use the site `main.css` template (header, footer, prose) like [privacy.html](../../../website/en/privacy.html) — not bare inline styles.

@@ -9,4 +9,13 @@ Deploy these pages from the monorepo **`website/`** tree (not linked in site nav
 | `https://nextcloud.software-by-design.de/de/datenschutz-seacheck-mobile.html` | [`website/de/datenschutz-seacheck-mobile.html`](../../../../website/de/datenschutz-seacheck-mobile.html) |
 | `https://nextcloud.software-by-design.de/de/nutzungsbedingungen-seacheck-mobile.html` | [`website/de/nutzungsbedingungen-seacheck-mobile.html`](../../../../website/de/nutzungsbedingungen-seacheck-mobile.html) |
 
+
+## Other locales — privacy only (optional)
+
+Primary listing URLs remain EN/DE above. Optional localized privacy URLs:
+
+`https://nextcloud.software-by-design.de/{L}/privacy-seacheck-mobile.html`
+
+where `{L}` is one of: `fr`, `es`, `da`, `nl`, `it`, `pl`, `sv`, `nb`, `pt`.
+
 See [PUBLISH-LEGAL.md](../PUBLISH-LEGAL.md).

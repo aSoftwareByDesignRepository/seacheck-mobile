@@ -1,0 +1,18 @@
+<en-US>
+Initial Play Store release.
+
+• Offline coastal charts (OpenSeaMap seamarks + base map)
+• GPS instruments, passage planning, anchor & arrival alarms
+• Track recording and GPX export
+• Navigation disclaimer — not a replacement for official charts
+• No ads, no analytics
+</en-US>
+<de-DE>
+Erstveröffentlichung im Play Store.
+
+• Offline-Küstenkarten (OpenSeaMap-Seezeichen + Basiskarte)
+• GPS-Instrumente, Törnplanung, Anker- und Ankunftsalarme
+• Track-Aufzeichnung und GPX-Export
+• Navigation-Hinweis — kein Ersatz für offizielle Seekarten
+• Keine Werbung, keine Analyse-SDKs
+</de-DE>

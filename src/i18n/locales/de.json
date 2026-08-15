@@ -415,7 +415,7 @@
     "anchorTriggered": "Ankerdrift — außerhalb Radius",
     "anchorDrift": "Ankerabdrift",
     "anchorDriftA11y": "Abdrift %{drift} vom Ankerpunkt, Grenze %{limit}",
-    "layoutCurrentLabel": "Layout",
+    "layoutCurrentLabel": "Anordning",
     "layoutChangeInSettings": "In Einstellungen ändern",
     "layoutSettingsA11y": "Aktuelles Layout %{layout}. Öffnet Einstellungen zum Ändern.",
     "layoutSettingsHint": "Öffnet Einstellungen zur Layout-Auswahl",
@@ -670,11 +670,11 @@
         "description": "Karlskrona-Archipel und östliche Blekinge-Küste."
       },
       "kalmarSound": {
-        "name": "Kalmar & Öland west",
+        "name": "Kalmar & Öland Westen",
         "description": "Kalmarsund, Öland westlich und Västervik."
       },
       "gotlandWest": {
-        "name": "Gotland west",
+        "name": "Gotland Westen",
         "description": "Visby westlich und Gotland-Passage."
       },
       "gotlandEast": {

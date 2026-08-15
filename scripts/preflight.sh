@@ -19,6 +19,9 @@ fi
 echo "==> Expo native dependency alignment"
 npx expo install --check
 
+echo "==> Android 15 / Play: patch RN edge-to-edge deprecated Window APIs"
+npm run patch:rn-edge
+
 echo "==> Typecheck"
 npm run typecheck
 
