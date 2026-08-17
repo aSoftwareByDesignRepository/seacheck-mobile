@@ -1,60 +1,26 @@
+# Full preflight needs the parent workspace (mobile/shared). This repo is the
+# standalone GitHub mirror, so CI is a cheap smoke only.
 name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+
+permissions:
+  contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  CI: true
-  NODE_ENV: test
-
 jobs:
-  preflight:
-    name: Preflight
+  ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run preflight
-        run: npm run preflight
-
-  fdroid-preflight:
-    name: F-Droid preflight
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          # Match F-Droid metadata Node major (22.x) while staying on a CI-supported line.
-          # Full preflight uses 24; this job must still pass with omit=dev like fdroiddata.
-          node-version: '22.14.0'
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install production dependencies (F-Droid init)
-        run: npm ci --omit=dev
-
-      - name: Run F-Droid preflight
-        run: npm run fdroid:preflight
+      - uses: actions/checkout@v4
+      - name: Smoke
+        run: |
+          test -f package.json
+          test -f app.json
+          test -f index.ts
