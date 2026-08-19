@@ -60,7 +60,7 @@ Settings → **Vessel** stores name, call sign, MMSI, and home port for Mayday t
 npm run play:preflight
 ```
 
-See [STORE_REVIEW.md](./STORE_REVIEW.md) for reviewer smoke path.
+See [docs/play-store/STORE_REVIEW.md](./docs/play-store/STORE_REVIEW.md) for reviewer smoke path.
 
 ## F-Droid
 

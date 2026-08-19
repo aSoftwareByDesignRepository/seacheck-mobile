@@ -1,6 +1,6 @@
 # Store review — SeaCheck Mobile
 
-**Google Play publication kit:** [docs/play-store/README.md](./docs/play-store/README.md)
+**Google Play publication kit:** [README.md](README.md)
 
 ---
 
@@ -30,7 +30,7 @@
 
 ## Developer UAT
 
-See [docs/test-it.md](./docs/test-it.md) for full smoke test.
+See [test-it.md](../test-it.md) for full smoke test.
 
 ---
 
@@ -41,4 +41,4 @@ cd mobile/seacheck
 npm run play:preflight
 ```
 
-Then follow [docs/play-store/RELEASE-CHECKLIST.md](./docs/play-store/RELEASE-CHECKLIST.md).
+Then follow [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md).

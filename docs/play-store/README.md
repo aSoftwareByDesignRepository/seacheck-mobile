@@ -82,6 +82,6 @@ In-app + web disclaimers reduce risk but do **not** replace legal review for a n
 
 ## Related docs
 
-- [../STORE_REVIEW.md](../STORE_REVIEW.md) — reviewer smoke path  
+- [STORE_REVIEW.md](./STORE_REVIEW.md) — reviewer smoke path  
 - [../test-it.md](../test-it.md) — developer UAT  
 - [../build-it.md](../build-it.md) — dev environment
