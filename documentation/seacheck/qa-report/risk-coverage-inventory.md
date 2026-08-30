@@ -46,7 +46,7 @@ OWASP API BOLA/IDOR: **N/A**. Residual: local integrity, download honesty, alarm
 
 | Workflow | Critical risks | Coverage status |
 |----------|----------------|-----------------|
-| Downloads / offline packs | Lock, Wi‑Fi policy, probe, migration, durable seal, cancel/seal race, sweep→seal resume, style-only Ready, freeze-stall, hydrate vs live | Strong unit + mutation + process-death sims + **Maestro cancel/kill-mid PASS on emulator** |
+| Downloads / offline packs | Lock, Wi‑Fi policy, probe, migration, durable seal, cancel/seal race, sweep→seal resume, style-only Ready, freeze-stall, hydrate vs live | Strong unit + mutation + process-death sims + **Maestro cancel/kill local + CI green** (single API-33 emulator) |
 | Depth overlay | Confirm, allowlist, online gate, pack exclusion | Unit + live HTTP probe; **gap:** native WMS render E2E |
 | Basemap migration | Wipe without notice | Unit covered |
 | Anchor / alarms | Accuracy fail-open (display), limited mode | Strong unit + mutation; **limited chrome persisted** (`armedLimited` + non-dismissible banner) |

@@ -4,27 +4,29 @@
 **Audit date:** 2026-08-30 (UTC)  
 **Auditor:** Momos (hostile QA / red-team)  
 **Environment:** Native Jest on developer host — **no** Docker Compose for this app  
-**Code tip:** `main` @ post-depth-harden + this engagement’s honesty fixes  
+**Code tip:** `main` @ `ab93a72` (download honesty + Maestro CI green + Jest without forceExit)  
 
 ---
 
 ## Executive Summary
 
-**Not fully production-clean for a hostile external auditor who demands zero High residual risk** — but **fit for a careful store/functional review** after this engagement’s fixes. Previously closed Critical Wi‑Fi fail-open and ambient-Ready lies remain closed. This pass found and fixed new honesty bugs in settings hydrate, cancel-vs-seal, sweep→seal resume, download-all counting, and depth NetInfo fail-open.
+**Audit / store-functional ready: YES** for the safety-critical invariants this engagement locked down (download Ready honesty, Wi‑Fi/depth fail-closed, limited-anchor chrome, a11y/i18n gates).  
+**“Absolutely flawless UX every path online↔offline forever”: NO** — that claim would fail a mean auditor. Residuals below are honest and non-Critical.
 
 | Severity | Open after this engagement | Fixed this engagement |
 |----------|----------------------------|------------------------|
 | Critical | **0** | 0 new Critical (prior Wi‑Fi Critical stays fixed) |
 | High | **0** | 4 High honesty bugs fixed |
 | Medium | **0** | Limited-anchor chrome + Overpass privacy copy |
-| Low | — | README HTTPS; storageCheck fail-closed; Maestro cancel/kill device E2E + CI; Jest exits without forceExit |
+| Low | Native WMS pixels not on-device E2E; CDN flakes retried once | README HTTPS; storageCheck; Maestro local+CI; Jest no forceExit |
 
-**Fit for client/auditor today?**  
-**Yes** for functional + download integrity (including cancel/seal/hydrate honesty) + depth opt-in + limited-anchor honesty. Residual: native WMS pixels not visually audited on device; OpenSeaMap CDN flakes retried once in Maestro CI.
+**Emulator proof (not a note):**  
+- Local: cancel-mid + kill-mid Maestro PASS  
+- CI (single API-33 emulator): [33330890339](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33330890339) + [33332377458](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33332377458) — cancel **and** kill PASS attempt 1; unit CI green on same tip  
 
 Safety/offline mutation: **16 killed / 0 survived / 16**.  
-Full Jest after download honesty pass: **130+ suites** green (no `--forceExit`).
-
+Full Jest: **131 suites / 634 tests**, exits **without** `--forceExit`.  
+**Not** a certified ECDIS / SOLAS chart plotter — product truth, not a bug.
 ---
 
 ## Critical
