@@ -20,7 +20,7 @@
 | Low | — | README HTTPS; storageCheck fail-closed; Maestro cancel/kill device E2E + CI; Jest exits without forceExit |
 
 **Fit for client/auditor today?**  
-**Yes** for functional + download integrity (including cancel/seal/hydrate honesty) + depth opt-in + limited-anchor honesty. Residual: Maestro CI depends on OpenSeaMap CDN from the GHA emulator (retried once); native WMS pixels not visually audited on device.
+**Yes** for functional + download integrity (including cancel/seal/hydrate honesty) + depth opt-in + limited-anchor honesty. Residual: Maestro CI needs a healthy GHA emulator host (`libpulse0` + lighter AVD; OpenSeaMap CDN retried once); native WMS pixels not visually audited on device.
 
 Safety/offline mutation: **16 killed / 0 survived / 16**.  
 Full Jest after download honesty pass: **130 suites / 632 tests** green (no `--forceExit`).
