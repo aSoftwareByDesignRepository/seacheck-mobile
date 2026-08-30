@@ -125,6 +125,7 @@ describe('offline pack durable ready + kill-mid-download', () => {
   const getPacks = OfflineManager.getPacks as jest.Mock;
   const createPack = OfflineManager.createPack as jest.Mock;
   const clearAmbientCache = OfflineManager.clearAmbientCache as jest.Mock;
+  const deletePack = OfflineManager.deletePack as jest.Mock;
 
   beforeEach(async () => {
     resetSeamarkIndexQueueForTests();
@@ -136,6 +137,8 @@ describe('offline pack durable ready + kill-mid-download', () => {
     getPacks.mockResolvedValue([]);
     createPack.mockClear();
     clearAmbientCache.mockClear();
+    deletePack.mockClear();
+    deletePack.mockResolvedValue(undefined);
     const { markDownloadMapStyleLoaded } = require('../src/lib/offline/downloadMapHost') as {
       markDownloadMapStyleLoaded: (uri: string) => void;
     };
@@ -249,6 +252,34 @@ describe('offline pack durable ready + kill-mid-download', () => {
     expect(createPack).toHaveBeenCalled();
   });
 
+  it('resumes seal after process death between sweep-complete and createPack', async () => {
+    await AsyncStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        [KIEL.id]: {
+          packId: `cache:${KIEL.id}`,
+          cacheBacked: true,
+          bounds: KIEL.bounds,
+          minZoom: KIEL.minZoom,
+          maxZoom: KIEL.maxZoom,
+          sweepCompleted: 5,
+          sweepTotal: 5,
+        },
+      }),
+    );
+    getPacks.mockResolvedValue([]);
+
+    await useOfflinePackStore.getState().hydrate();
+    expect(useOfflinePackStore.getState().regions[KIEL.id]?.state).toBe('downloading');
+    expect(downloadCoordinator.getActiveRegionId()).toBe(KIEL.id);
+
+    await waitFor(() => useOfflinePackStore.getState().regions[KIEL.id]?.state === 'ready');
+
+    expect(createPack).toHaveBeenCalled();
+    expect(useOfflinePackStore.getState().regions[KIEL.id]?.cacheBacked).toBeFalsy();
+    expect(useOfflinePackStore.getState().regions[KIEL.id]?.packId).toBe('mock-pack');
+  });
+
   it('resumes after process death mid durable seal', async () => {
     const pack = mockNativePack('pack-sealing', KIEL.id, incompleteNativeStatus('pack-sealing', 35));
     await AsyncStorage.setItem(
@@ -273,5 +304,44 @@ describe('offline pack durable ready + kill-mid-download', () => {
     expect(pack.resume).toHaveBeenCalled();
     expect(useOfflinePackStore.getState().regions[KIEL.id]?.packId).toBe('pack-sealing');
     expect(useOfflinePackStore.getState().regions[KIEL.id]?.cacheBacked).toBeFalsy();
+  });
+
+  it('cancel during seal (index native, UI still cache:*) must not leave Ready', async () => {
+    const sealing = mockNativePack('pack-sealing', KIEL.id, completeNativeStatus('pack-sealing'));
+    await AsyncStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        [KIEL.id]: {
+          packId: 'pack-sealing',
+          bounds: KIEL.bounds,
+          minZoom: KIEL.minZoom,
+          maxZoom: KIEL.maxZoom,
+        },
+      }),
+    );
+    getPacks.mockResolvedValue([sealing]);
+
+    useOfflinePackStore.setState({
+      hydrated: true,
+      activeDownloadRegionId: KIEL.id,
+      regions: {
+        ...useOfflinePackStore.getState().regions,
+        [KIEL.id]: {
+          regionId: KIEL.id,
+          state: 'downloading',
+          percentage: 90,
+          packId: `cache:${KIEL.id}`,
+          error: null,
+          cacheBacked: true,
+        },
+      },
+    });
+    downloadCoordinator.restoreActive(KIEL.id);
+
+    await useOfflinePackStore.getState().cancelDownload(KIEL.id);
+
+    const status = useOfflinePackStore.getState().regions[KIEL.id];
+    expect(status?.state).not.toBe('ready');
+    expect(OfflineManager.deletePack).toHaveBeenCalledWith('pack-sealing');
   });
 });

@@ -63,6 +63,24 @@ export function useIsEffectivelyOffline(): boolean {
   return offline;
 }
 
+/**
+ * True only after the first NetInfo sample and while the device reports a connection.
+ * Fail-closed for online-only overlays (depth WMS) — avoids a brief mount on airplane-mode boot.
+ */
+export function useOnlineLayersAllowed(): boolean {
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    const apply = (state: NetInfoState) => {
+      setAllowed(state.isConnected === true);
+    };
+    void NetInfo.fetch().then(apply).catch(() => setAllowed(false));
+    return NetInfo.addEventListener(apply);
+  }, []);
+
+  return allowed;
+}
+
 /** Reactive flag for MapLibre native network — only false when the device has no connection. */
 export function useIsDeviceDisconnected(): boolean {
   const [disconnected, setDisconnected] = useState(false);

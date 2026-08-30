@@ -123,8 +123,10 @@ export function usePackDownloadActions() {
       for (const regionId of pending) {
         const ok = await handleDownload(regionId);
         const state = useOfflinePackStore.getState().regions[regionId]?.state;
-        if (ok || state === 'ready' || state === 'downloading') ready += 1;
-        else if (state === 'error') failed += 1;
+        // Only count packs that actually finished Ready — never treat in-flight
+        // "downloading" as success for the passage toast.
+        if (state === 'ready') ready += 1;
+        else if (state === 'error' || !ok) failed += 1;
         else break;
       }
       return { started: pending.length, ready, failed };

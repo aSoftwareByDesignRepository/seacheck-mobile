@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { EXTERNAL_LINKS } from '../../lib/constants/externalLinks';
 import { t } from '../../i18n';
-import { useIsDeviceDisconnected } from '../../lib/network/connectivity';
+import { useOnlineLayersAllowed } from '../../lib/network/connectivity';
 import { confirmEnableDepthOverlay } from '../../lib/settings/depthOverlayEnableConfirm';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme } from '../../theme/ThemeContext';
@@ -21,7 +21,8 @@ export function ChartDataSettingsGroup({ first }: Props) {
   const { colors, minTouch, spacing } = useTheme();
   const mapShowDepthOverlay = useSettingsStore((s) => s.mapShowDepthOverlay);
   const patchSettings = useSettingsStore((s) => s.patchSettings);
-  const isOffline = useIsDeviceDisconnected();
+  const onlineLayersAllowed = useOnlineLayersAllowed();
+  const isOffline = !onlineLayersAllowed;
 
   const onToggleDepth = async (next: boolean) => {
     if (!next) {

@@ -22,7 +22,7 @@ import {
   subscribeOfflineMapEngineViewport,
 } from '../../lib/offline/offlineMapEngineHost';
 import { isMapScreenFocused } from '../../lib/map/mapScreenFocus';
-import { useIsDeviceDisconnected } from '../../lib/network/connectivity';
+import { useIsDeviceDisconnected, useOnlineLayersAllowed } from '../../lib/network/connectivity';
 import { useChartCoverageAtPoint } from '../../hooks/useChartCoverageAtPoint';
 import { useExclusiveChartDownloadSession } from '../../hooks/useExclusiveChartDownloadSession';
 import { selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
@@ -209,12 +209,13 @@ export function NavigationMap() {
   const customCameraFitSigRef = useRef('');
   const addingPlanningWaypointRef = useRef(false);
   const isOffline = useIsDeviceDisconnected();
+  const onlineLayersAllowed = useOnlineLayersAllowed();
   const chartCoverage = useChartCoverageAtPoint(mapCenter.latitude, mapCenter.longitude);
   const showScaleBar = Platform.OS === 'ios' || Device.isDevice;
   const boatFix = fix ?? lastGoodFix;
   const showDepthOverlay = shouldShowDepthOverlay({
     settingEnabled: mapShowDepthOverlay,
-    isOffline,
+    isOffline: !onlineLayersAllowed,
     downloadSessionActive: exclusiveChartDownload,
     mapStyleLoaded,
   });

@@ -196,7 +196,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           alarmHapticEnabled: parsed.alarmHapticEnabled ?? true,
           legAdvanceAuto: Boolean(parsed.legAdvanceAuto),
           vessel: { ...emptyVessel, ...(parsed.vessel ?? {}) },
-          downloadWifiOnly: parsed.downloadWifiOnly ?? true,
+          downloadWifiOnly: parsePersistedBoolean(parsed.downloadWifiOnly, true),
           gloveMode: Boolean(parsed.gloveMode),
           panelSide: parsed.panelSide === 'port' || parsed.panelSide === 'starboard' ? parsed.panelSide : 'auto',
         });

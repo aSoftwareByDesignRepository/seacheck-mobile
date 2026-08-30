@@ -313,17 +313,25 @@ function buildRecoveredRegionsFromIndex(
       entry.sweepTotal != null &&
       entry.sweepCompleted != null &&
       entry.sweepCompleted < entry.sweepTotal;
-    if (cacheBacked && sweepInProgress) {
+    const sweepDonePendingSeal =
+      cacheBacked &&
+      entry.sweepTotal != null &&
+      entry.sweepCompleted != null &&
+      entry.sweepCompleted >= entry.sweepTotal &&
+      entry.bounds != null;
+    if (cacheBacked && (sweepInProgress || sweepDonePendingSeal)) {
       regions[regionId] = {
         ...emptyStatus(regionId),
         custom: entry.custom,
         displayName: entry.name,
         packId: entry.packId,
         state: 'downloading',
-        percentage: Math.min(
-          85,
-          Math.round(((entry.sweepCompleted ?? 0) / (entry.sweepTotal ?? 1)) * 85),
-        ),
+        percentage: sweepInProgress
+          ? Math.min(
+            85,
+            Math.round(((entry.sweepCompleted ?? 0) / (entry.sweepTotal ?? 1)) * 85),
+          )
+          : 85,
         cacheBacked: true,
         legacy: isLegacyRegionPackId(regionId),
         seamarksIndexed: entry.seamarksIndexed ?? false,
@@ -1126,8 +1134,17 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
             entry.sweepTotal != null &&
             entry.sweepCompleted != null &&
             entry.sweepCompleted < entry.sweepTotal;
-          if (sweepInProgress) {
-            const percentage = sweepUiPercentage(entry.sweepCompleted ?? 0, entry.sweepTotal ?? 1);
+          // Sweep finished but createPack never ran (process death between phases) —
+          // resume seal, do not demote as ambient-retired.
+          const sweepDonePendingSeal =
+            entry.sweepTotal != null &&
+            entry.sweepCompleted != null &&
+            entry.sweepCompleted >= entry.sweepTotal &&
+            entry.bounds != null;
+          if (sweepInProgress || sweepDonePendingSeal) {
+            const percentage = sweepInProgress
+              ? sweepUiPercentage(entry.sweepCompleted ?? 0, entry.sweepTotal ?? 1)
+              : 85;
             regions[regionId] = {
               regionId,
               state: 'downloading',
@@ -1632,44 +1649,53 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
     const nextCustom = { ...get().customBoundsIndex };
 
     if (indexedPackId && indexedPackId !== packId) {
-      try {
-        const nativePacks = await OfflineManager.getPacks();
-        const native = nativePacks.find((p) => p.id === indexedPackId);
-        if (native) {
-          const nativeStatus = await readHydrateNativePackStatus(native);
-          if (!nativeStatus) {
-            set({
-              ...syncActiveDownloadId(),
-              customBoundsIndex: nextCustom,
-              regions: {
-                ...get().regions,
-                [regionId]: {
-                  ...emptyStatus(regionId),
-                  custom: current.custom,
-                  displayName: current.displayName,
-                  state: 'error',
-                  error: t('downloads.errorStatusFailed'),
+      // Index ahead of UI with a native pack while the in-flight id is still cache:* —
+      // that native pack belongs to THIS cancelled seal session. Never restore it as Ready.
+      if (isCacheBackedPackId(packId) || !isNativeOfflinePackId(packId)) {
+        await removeNativePack(indexedPackId);
+      } else {
+        try {
+          const nativePacks = await OfflineManager.getPacks();
+          const native = nativePacks.find((p) => p.id === indexedPackId);
+          if (native) {
+            const nativeStatus = await readHydrateNativePackStatus(native);
+            if (!nativeStatus) {
+              set({
+                ...syncActiveDownloadId(),
+                customBoundsIndex: nextCustom,
+                regions: {
+                  ...get().regions,
+                  [regionId]: {
+                    ...emptyStatus(regionId),
+                    custom: current.custom,
+                    displayName: current.displayName,
+                    state: 'error',
+                    error: t('downloads.errorStatusFailed'),
+                  },
                 },
-              },
-            });
-            return;
+              });
+              return;
+            }
+            if (isNativeDownloadComplete(nativeStatus)) {
+              set({
+                ...syncActiveDownloadId(),
+                customBoundsIndex: nextCustom,
+                regions: {
+                  ...get().regions,
+                  [regionId]: {
+                    ...statusFromNative(regionId, native.id, nativeStatus),
+                    custom: current.custom,
+                    displayName: current.displayName,
+                  },
+                },
+              });
+              return;
+            }
+            await removeNativePack(indexedPackId);
           }
-          set({
-            ...syncActiveDownloadId(),
-            customBoundsIndex: nextCustom,
-            regions: {
-              ...get().regions,
-              [regionId]: {
-                ...statusFromNative(regionId, native.id, nativeStatus),
-                custom: current.custom,
-                displayName: current.displayName,
-              },
-            },
-          });
-          return;
+        } catch {
+          /* fall through to idle */
         }
-      } catch {
-        /* fall through to idle */
       }
     }
 

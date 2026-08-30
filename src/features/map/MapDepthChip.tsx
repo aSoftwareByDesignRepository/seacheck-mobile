@@ -1,7 +1,7 @@
 import { Pressable, Text } from 'react-native';
 
 import { t } from '../../i18n';
-import { useIsDeviceDisconnected } from '../../lib/network/connectivity';
+import { useOnlineLayersAllowed } from '../../lib/network/connectivity';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { touchChipStyle, touchChipText } from '../../ui/chipTokens';
@@ -17,11 +17,11 @@ type Props = {
 export function MapDepthChip({ onOpenDepthSettings }: Props) {
   const { colors, minTouch } = useTheme();
   const enabled = useSettingsStore((s) => s.mapShowDepthOverlay);
-  const isOffline = useIsDeviceDisconnected();
+  const onlineLayersAllowed = useOnlineLayersAllowed();
 
   if (!enabled) return null;
 
-  const offline = isOffline;
+  const offline = !onlineLayersAllowed;
   const label = offline ? t('map.depthChipOffline') : t('map.depthChip');
   const a11y = offline ? t('map.depthChipOfflineA11y') : t('map.depthChipA11y');
 
