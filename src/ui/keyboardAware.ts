@@ -46,34 +46,34 @@ export function scrollOffsetForFocusedField(
   return Math.max(0, y - m);
 }
 
-function currentlyFocusedInput(): {
+type MeasurableFocusedInput = {
   measureLayout: (
     relativeTo: number,
     onSuccess: (x: number, y: number, width: number, height: number) => void,
     onFail: () => void,
   ) => void;
-} | null {
-  const state = TextInput.State as
-    | {
-        currentlyFocusedInput?: () => unknown;
-        currentlyFocusedField?: () => unknown;
-      }
-    | undefined;
-  const node =
-    (typeof state?.currentlyFocusedInput === 'function'
-      ? state.currentlyFocusedInput()
-      : null) ??
-    (typeof state?.currentlyFocusedField === 'function' ? state.currentlyFocusedField() : null);
+};
+
+/**
+ * Resolve the focused TextInput host instance.
+ * Never call TextInput.State.currentlyFocusedField — on RN 0.63+ it only
+ * returns a numeric node handle (no measureLayout) and logs a deprecation.
+ */
+export function resolveFocusedTextInput(
+  state: { currentlyFocusedInput?: () => unknown } | null | undefined = TextInput.State,
+): MeasurableFocusedInput | null {
+  if (typeof state?.currentlyFocusedInput !== 'function') {
+    return null;
+  }
+  const node = state.currentlyFocusedInput();
   if (!node || typeof (node as { measureLayout?: unknown }).measureLayout !== 'function') {
     return null;
   }
-  return node as {
-    measureLayout: (
-      relativeTo: number,
-      onSuccess: (x: number, y: number, width: number, height: number) => void,
-      onFail: () => void,
-    ) => void;
-  };
+  return node as MeasurableFocusedInput;
+}
+
+function currentlyFocusedInput(): MeasurableFocusedInput | null {
+  return resolveFocusedTextInput();
 }
 
 export function scrollFocusedInputIntoView(
