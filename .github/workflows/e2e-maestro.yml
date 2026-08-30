@@ -123,8 +123,10 @@ jobs:
           disk-size: 4096M
           emulator-boot-timeout: 600
           emulator-options: -no-snapshot -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
-          script: |
-            export SEACHECK_MAESTRO_DEVICE="$(adb devices | awk '/\temulator-/{print $1; exit}')"
-            export SEACHECK_DEBUG_APK="$GITHUB_WORKSPACE/android/app/build/outputs/apk/debug/app-debug.apk"
-            export SEACHECK_MAESTRO_ATTEMPTS=2
-            npm run ci:maestro
+          # IMPORTANT: android-emulator-runner executes each script line as its own
+          # `sh -c` — exports do not carry. Chain with && in one logical command.
+          script: >
+            export SEACHECK_MAESTRO_DEVICE="${ANDROID_SERIAL:-emulator-5554}"
+            && export SEACHECK_DEBUG_APK="$GITHUB_WORKSPACE/android/app/build/outputs/apk/debug/app-debug.apk"
+            && export SEACHECK_MAESTRO_ATTEMPTS=2
+            && npm run ci:maestro

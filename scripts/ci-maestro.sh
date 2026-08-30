@@ -20,12 +20,17 @@ die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 command -v adb >/dev/null 2>&1 || die "adb missing"
 command -v maestro >/dev/null 2>&1 || die "maestro missing (curl -Ls 'https://get.maestro.mobile.dev' | bash)"
 
-DEVICE="${SEACHECK_MAESTRO_DEVICE:-}"
+DEVICE="${SEACHECK_MAESTRO_DEVICE:-${ANDROID_SERIAL:-}}"
 if [[ -z "$DEVICE" ]]; then
-  DEVICE="$(adb devices | awk '/\temulator-/{print $1; exit}')"
+  # Prefer a ready emulator (device state), not offline/unauthorized.
+  DEVICE="$(adb devices | awk '/^emulator-/{ if ($2 == "device") { print $1; exit } }')"
 fi
-[[ -n "$DEVICE" ]] || die "No emulator serial (set SEACHECK_MAESTRO_DEVICE)"
+if [[ -z "$DEVICE" ]]; then
+  log "adb devices:"; adb devices -l || true
+  die "No emulator serial (set SEACHECK_MAESTRO_DEVICE or ANDROID_SERIAL)"
+fi
 export SEACHECK_MAESTRO_DEVICE="$DEVICE"
+log "emulator serial=$DEVICE"
 export SEACHECK_METRO_PORT="$METRO_PORT"
 # Single-emulator CI: still safe if other Check apps are installed.
 export SEACHECK_MAESTRO_DISABLE_RIVALS="${SEACHECK_MAESTRO_DISABLE_RIVALS:-1}"
