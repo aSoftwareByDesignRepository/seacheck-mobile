@@ -92,7 +92,7 @@ SeaCheck does **not** use body / health sensors (no heart rate, steps, or barome
 |----------|--------|
 | Is all user data encrypted in transit? | **Yes** |
 
-HTTPS for OpenSeaMap and Overpass tile/API requests.
+HTTPS for OpenSeaMap, optional depth WMS, and Overpass tile/API requests.
 
 ---
 
