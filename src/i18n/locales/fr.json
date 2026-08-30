@@ -244,8 +244,13 @@
     "depthOverlaySection": "Profondeurs d’eau (optionnel)",
     "depthOverlayIntro": "Affiche la bathymétrie GEBCO non officielle et les profondeurs de traces OpenSeaMap sur la carte lorsque vous êtes en ligne.",
     "mapShowDepthOverlay": "Afficher le calque de profondeur",
-    "mapShowDepthOverlayHint": "Nécessite Internet. Se désactive sans signal. Non inclus dans les packs hors ligne.",
-    "depthOverlayWarning": "Pas pour la navigation. Ces profondeurs sont des données bénévoles / modèles — pas des sondages officiels. Utilisez toujours des cartes officielles et votre sondeur."
+    "mapShowDepthOverlayHint": "Nécessite Internet. Se met en pause sans signal. Non inclus dans les packs hors ligne.",
+    "depthOverlayWarning": "Pas pour la navigation. Ces profondeurs sont des données bénévoles / modèles — pas des sondages officiels. Utilisez toujours des cartes officielles et votre sondeur.",
+    "mapShowDepthOverlayHintOffline": "Vous êtes hors ligne — la couche reste activée mais n’apparaîtra qu’avec une connexion.",
+    "depthOverlayPausedOffline": "Couche de profondeur en pause — pas d’Internet. Elle réapparaîtra à la reconnexion.",
+    "depthOverlayConfirmTitle": "Afficher des profondeurs non officielles ?",
+    "depthOverlayConfirmBody": "Ces couches ne sont pas des sondages officiels. Utilisez-les seulement comme aide visuelle approximative avec des cartes officielles et votre sondeur. Elles nécessitent Internet et ne sont jamais enregistrées dans les packs hors ligne.",
+    "depthOverlayConfirmEnable": "Afficher les profondeurs"
   },
   "legal": {
     "disclaimerLead": "SeaCheck est un compagnon utile sur l'eau : une aide à la navigation, pas un traceur de cartes certifié ou un remplacement des cartes marines officielles.",

@@ -244,8 +244,13 @@
     "depthOverlaySection": "Water depths (optional)",
     "depthOverlayIntro": "Shows unofficial GEBCO bathymetry colouring and OpenSeaMap crowd-sourced track depths on the map when you are online.",
     "mapShowDepthOverlay": "Show depth overlay",
-    "mapShowDepthOverlayHint": "Needs internet. Turns off automatically without signal. Not included in offline chart packs.",
-    "depthOverlayWarning": "Not for navigation. These depths are volunteer / model data — not official soundings. Always use official charts and your sounder."
+    "mapShowDepthOverlayHint": "Needs internet. Pauses automatically without signal. Not included in offline chart packs.",
+    "mapShowDepthOverlayHintOffline": "You are offline — the overlay stays on but will only appear when you have a connection.",
+    "depthOverlayPausedOffline": "Depth overlay paused — no internet. It will show again when you reconnect.",
+    "depthOverlayWarning": "Not for navigation. These depths are volunteer / model data — not official soundings. Always use official charts and your sounder.",
+    "depthOverlayConfirmTitle": "Show unofficial depths?",
+    "depthOverlayConfirmBody": "These layers are not official soundings. Use them only as a rough visual aid with your official charts and depth sounder. They need internet and are never saved in offline packs.",
+    "depthOverlayConfirmEnable": "Show depths"
   },
   "legal": {
     "disclaimerLead": "SeaCheck is a helpful companion on the water — a navigation aid, not a certified chart plotter or replacement for official nautical charts.",

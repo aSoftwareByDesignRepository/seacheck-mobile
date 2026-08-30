@@ -244,8 +244,13 @@
     "depthOverlaySection": "Waterdiepten (optioneel)",
     "depthOverlayIntro": "Toont niet-officiële GEBCO-bathymetrie en OpenSeaMap-trackdieptes op de kaart wanneer u online bent.",
     "mapShowDepthOverlay": "Diepte-overlay tonen",
-    "mapShowDepthOverlayHint": "Internet vereist. Schakelt automatisch uit zonder bereik. Niet in offline kaartpakketten.",
-    "depthOverlayWarning": "Niet voor navigatie. Deze dieptes zijn vrijwilligers-/modelgegevens — geen officiële peilingen. Gebruik altijd officiële zeekaarten en uw echolood."
+    "mapShowDepthOverlayHint": "Heeft internet nodig. Pauzeert automatisch zonder bereik. Niet in offlinekaartpakketten.",
+    "depthOverlayWarning": "Niet voor navigatie. Deze dieptes zijn vrijwilligers-/modelgegevens — geen officiële peilingen. Gebruik altijd officiële zeekaarten en uw echolood.",
+    "mapShowDepthOverlayHintOffline": "U bent offline — de overlay blijft aan, maar verschijnt pas weer met verbinding.",
+    "depthOverlayPausedOffline": "Diepte-overlay gepauzeerd — geen internet. Verschijnt weer bij verbinding.",
+    "depthOverlayConfirmTitle": "Onofficiële dieptes tonen?",
+    "depthOverlayConfirmBody": "Deze lagen zijn geen officiële peilingen. Gebruik ze alleen als grove visuele hulp bij officiële zeekaarten en uw echolood. Ze hebben internet nodig en worden nooit in offlinepakketten opgeslagen.",
+    "depthOverlayConfirmEnable": "Dieptes tonen"
   },
   "legal": {
     "disclaimerLead": "SeaCheck is een behulpzame metgezel op het water: een navigatiehulpmiddel, geen gecertificeerde kaartplotter of vervanging voor officiële zeekaarten.",

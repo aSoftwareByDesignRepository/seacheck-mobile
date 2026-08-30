@@ -1,6 +1,8 @@
 import {
   DEPTH_GEBCO_LAYER_NAME,
+  DEPTH_GEBCO_WMS_ENDPOINT,
   DEPTH_TRACKS_LAYER_NAME,
+  DEPTH_TRACKS_WMS_ENDPOINT,
   buildDepthWmsTileUrl,
   depthGebcoTileUrl,
   depthTracksTileUrl,
@@ -9,26 +11,30 @@ import {
 import { buildChartStyleSpec } from '../src/map/chartStyle';
 
 describe('chartDepthOverlay', () => {
-  it('builds allowlisted WMS tile templates with bbox token', () => {
+  it('builds allowlisted WMS tile templates with bbox token (GEBCO via GWC)', () => {
     const gebco = depthGebcoTileUrl();
     const tracks = depthTracksTileUrl();
-    expect(gebco).toContain('https://geoserver.openseamap.org/geoserver/wms?');
+    expect(gebco.startsWith(`${DEPTH_GEBCO_WMS_ENDPOINT}?`)).toBe(true);
     expect(gebco).toContain(`LAYERS=${encodeURIComponent(DEPTH_GEBCO_LAYER_NAME)}`);
     expect(gebco).toContain('BBOX={bbox-epsg-3857}');
     expect(gebco).toContain('TRANSPARENT=true');
     expect(gebco).toContain('WIDTH=256');
-    expect(tracks).toContain('https://depth.openseamap.org/geoserver/wms?');
+    expect(gebco).toContain('/gwc/service/wms?');
+    expect(tracks.startsWith(`${DEPTH_TRACKS_WMS_ENDPOINT}?`)).toBe(true);
     expect(tracks).toContain(`LAYERS=${encodeURIComponent(DEPTH_TRACKS_LAYER_NAME)}`);
     expect(tracks).toContain('BBOX={bbox-epsg-3857}');
   });
 
   it('rejects non-allowlisted hosts and unsafe layer names', () => {
-    expect(() => buildDepthWmsTileUrl('https://evil.example', DEPTH_GEBCO_LAYER_NAME)).toThrow(
-      /DEPTH_WMS_HOST_NOT_ALLOWED/,
-    );
     expect(() =>
-      buildDepthWmsTileUrl('https://geoserver.openseamap.org', 'gebco2021:gebco_2021&x=1'),
+      buildDepthWmsTileUrl('https://evil.example/geoserver/wms', DEPTH_GEBCO_LAYER_NAME),
+    ).toThrow(/DEPTH_WMS_HOST_NOT_ALLOWED/);
+    expect(() =>
+      buildDepthWmsTileUrl(DEPTH_GEBCO_WMS_ENDPOINT, 'gebco2021:gebco_2021&x=1'),
     ).toThrow(/DEPTH_WMS_LAYER_INVALID/);
+    expect(() =>
+      buildDepthWmsTileUrl('https://geoserver.openseamap.org.evil.com/geoserver/wms', DEPTH_GEBCO_LAYER_NAME),
+    ).toThrow(/DEPTH_WMS_HOST_NOT_ALLOWED/);
   });
 
   it('gates overlay to online, loaded map, no download session, setting on', () => {

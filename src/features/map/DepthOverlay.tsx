@@ -1,5 +1,5 @@
 import { Layer, RasterSource } from '@maplibre/maplibre-react-native';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 
 import {
   DEPTH_GEBCO_ATTRIBUTION,
@@ -26,12 +26,14 @@ type Props = {
 /**
  * Online-only depth overlay: GEBCO bathymetric shade + OpenSeaMap track depths.
  * Mounted as Map children — never written into the offline pack style file.
+ *
+ * Layer order (bottom → top): base → GEBCO → track depths → seamarks.
  */
 function DepthOverlayComponent({ visible }: Props) {
-  if (!visible) return null;
+  const gebcoUrl = useMemo(() => depthGebcoTileUrl(), []);
+  const tracksUrl = useMemo(() => depthTracksTileUrl(), []);
 
-  const gebcoUrl = depthGebcoTileUrl();
-  const tracksUrl = depthTracksTileUrl();
+  if (!visible) return null;
 
   return (
     <>
@@ -40,6 +42,7 @@ function DepthOverlayComponent({ visible }: Props) {
         tileSize={256}
         minzoom={DEPTH_MIN_ZOOM}
         maxzoom={DEPTH_GEBCO_MAX_ZOOM}
+        scheme="xyz"
         tiles={[gebcoUrl]}
         attribution={DEPTH_GEBCO_ATTRIBUTION}
       >
@@ -57,6 +60,7 @@ function DepthOverlayComponent({ visible }: Props) {
         tileSize={256}
         minzoom={DEPTH_MIN_ZOOM}
         maxzoom={DEPTH_TRACKS_MAX_ZOOM}
+        scheme="xyz"
         tiles={[tracksUrl]}
         attribution={DEPTH_TRACKS_ATTRIBUTION}
       >

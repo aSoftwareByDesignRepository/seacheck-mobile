@@ -244,8 +244,13 @@
     "depthOverlaySection": "Wassertiefen (optional)",
     "depthOverlayIntro": "Zeigt inoffizielle GEBCO-Bathymetrie und OpenSeaMap-Tracktiefen auf der Karte, wenn Sie online sind.",
     "mapShowDepthOverlay": "Tiefen-Overlay anzeigen",
-    "mapShowDepthOverlayHint": "Benötigt Internet. Schaltet sich ohne Empfang automatisch aus. Nicht in Offline-Kartenpaketen enthalten.",
-    "depthOverlayWarning": "Nicht zur Navigation. Diese Tiefen sind Freiwilligen-/Modelldaten — keine amtlichen Lotungen. Nutzen Sie immer amtliche Seekarten und Ihr Echolot."
+    "mapShowDepthOverlayHint": "Benötigt Internet. Pausiert automatisch ohne Empfang. Nicht in Offline-Kartenpaketen enthalten.",
+    "depthOverlayWarning": "Nicht zur Navigation. Diese Tiefen sind Freiwilligen-/Modelldaten — keine amtlichen Lotungen. Nutzen Sie immer amtliche Seekarten und Ihr Echolot.",
+    "mapShowDepthOverlayHintOffline": "Sie sind offline — die Überlagerung bleibt eingeschaltet, erscheint aber erst wieder mit Verbindung.",
+    "depthOverlayPausedOffline": "Tiefenüberlagerung pausiert — kein Internet. Sie erscheint wieder, wenn Sie online sind.",
+    "depthOverlayConfirmTitle": "Inoffizielle Tiefen anzeigen?",
+    "depthOverlayConfirmBody": "Diese Ebenen sind keine amtlichen Lotungen. Nutzen Sie sie nur als grobe visuelle Hilfe zusammen mit amtlichen Seekarten und Ihrem Echolot. Sie brauchen Internet und werden nie in Offline-Paketen gespeichert.",
+    "depthOverlayConfirmEnable": "Tiefen anzeigen"
   },
   "legal": {
     "disclaimerLead": "SeaCheck unterstützt Sie auf dem Wasser als Navigationshilfe — kein Ersatz für offizielle Seekarten und kein zertifizierter Kartenplotter.",

@@ -244,8 +244,13 @@
     "depthOverlaySection": "Profondità dell’acqua (opzionale)",
     "depthOverlayIntro": "Mostra batimetria GEBCO non ufficiale e profondità da tracce OpenSeaMap sulla mappa quando sei online.",
     "mapShowDepthOverlay": "Mostra overlay profondità",
-    "mapShowDepthOverlayHint": "Richiede Internet. Si spegne senza segnale. Non incluso nei pacchetti offline.",
-    "depthOverlayWarning": "Non per la navigazione. Queste profondità sono dati di volontari/modelli — non scandagli ufficiali. Usa sempre carte ufficiali e il tuo ecografo."
+    "mapShowDepthOverlayHint": "Serve Internet. Si mette in pausa senza segnale. Non incluso nei pacchetti offline.",
+    "depthOverlayWarning": "Non per la navigazione. Queste profondità sono dati di volontari/modelli — non scandagli ufficiali. Usa sempre carte ufficiali e il tuo ecografo.",
+    "mapShowDepthOverlayHintOffline": "Sei offline: la sovrapposizione resta attiva ma compare solo con connessione.",
+    "depthOverlayPausedOffline": "Sovrapposizione profondità in pausa — senza Internet. Riappare alla riconnessione.",
+    "depthOverlayConfirmTitle": "Mostrare profondità non ufficiali?",
+    "depthOverlayConfirmBody": "Questi livelli non sono scandagli ufficiali. Usali solo come aiuto visivo approssimativo con carte ufficiali e il tuo ecografo. Servono Internet e non vengono mai salvati nei pacchetti offline.",
+    "depthOverlayConfirmEnable": "Mostra profondità"
   },
   "legal": {
     "disclaimerLead": "SeaCheck è un utile compagno sull'acqua: un aiuto alla navigazione, non un plotter cartografico certificato o un sostituto delle carte nautiche ufficiali.",

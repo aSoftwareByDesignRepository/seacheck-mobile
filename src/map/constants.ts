@@ -15,7 +15,3 @@ export const TILE_URLS = {
 
 export const MAP_ATTRIBUTION =
   '© OpenStreetMap contributors · © OpenSeaMap · Not for navigation';
-
-/** Extra attribution when the optional online depth overlay is visible. */
-export const MAP_DEPTH_ATTRIBUTION_EXTRA =
-  '· GEBCO / OpenSeaMap depths (unofficial, online only)';

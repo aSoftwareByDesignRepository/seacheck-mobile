@@ -244,8 +244,13 @@
     "depthOverlaySection": "Vanddybder (valgfrit)",
     "depthOverlayIntro": "Viser uofficielle GEBCO-bathymetri-farver og OpenSeaMap-sporingsdybder på kortet, når du er online.",
     "mapShowDepthOverlay": "Vis dybde-overlay",
-    "mapShowDepthOverlayHint": "Kræver internet. Slås automatisk fra uden signal. Ikke i offline-kortpakker.",
-    "depthOverlayWarning": "Ikke til navigation. Disse dybder er frivillige/modeldata — ikke officielle lodninger. Brug altid officielle søkort og dit ekkolod."
+    "mapShowDepthOverlayHint": "Kræver internet. Sættes automatisk på pause uden signal. Ikke inkluderet i offline-kortpakker.",
+    "depthOverlayWarning": "Ikke til navigation. Disse dybder er frivillige/modeldata — ikke officielle lodninger. Brug altid officielle søkort og dit ekkolod.",
+    "mapShowDepthOverlayHintOffline": "Du er offline — overlejringen forbliver slået til, men vises først, når du har forbindelse.",
+    "depthOverlayPausedOffline": "Dybdeoverlejring sat på pause — intet internet. Den vises igen, når du opretter forbindelse.",
+    "depthOverlayConfirmTitle": "Vis uofficielle dybder?",
+    "depthOverlayConfirmBody": "Disse lag er ikke officielle lodninger. Brug dem kun som groft visuelt hjælpemiddel sammen med officielle søkort og ekkolod. De kræver internet og gemmes aldrig i offline-pakker.",
+    "depthOverlayConfirmEnable": "Vis dybder"
   },
   "legal": {
     "disclaimerLead": "SeaCheck er en hjælpsom følgesvend på vandet - et navigationshjælpemiddel, ikke en certificeret kortplotter eller erstatning for officielle søkort.",
