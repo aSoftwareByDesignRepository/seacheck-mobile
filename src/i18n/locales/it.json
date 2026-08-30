@@ -444,7 +444,13 @@
     "depthChipOffline": "Profondità in pausa · offline",
     "depthChipOfflineA11y": "Overlay profondità in pausa perché il dispositivo è offline",
     "depthChipHint": "Apre le impostazioni mappa per l’overlay profondità",
-    "chartA11yDepthOn": "Overlay profondità non ufficiale visibile"
+    "chartA11yDepthOn": "Overlay profondità non ufficiale visibile",
+    "anchorLimitedActive": "Limited watch — open-app only",
+    "anchorLimitedShort": "Limited",
+    "anchorLimitedBannerTitle": "Limited anchor watch",
+    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
+    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
+    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
   },
   "profiles": {
     "cruisePassage": "Crociera/passaggio"
@@ -532,6 +538,7 @@
     "errorMapEngineStyle": "Il motore grafico non si è avviato. Chiudi e riapri l'app, quindi riprova su Wi‑Fi.",
     "errorDownloadInterrupted": "Il download è stato interrotto: tocca Riprova per riprendere.",
     "errorStorageInsufficient": "Spazio di archiviazione gratuito insufficiente per questo download. Libera spazio e riprova.",
+    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
     "errorPackTooLarge": "Questo pacchetto cartografico supera il limite di download sicuro: scegli un pacchetto corridoio più piccolo o utilizza un'area personalizzata.",
     "errorPackRetired": "Questo pacchetto regionale è stato sostituito da download di corridoi più piccoli e non può essere scaricato nuovamente.",
     "downloadSuccess": "Pacchetto grafico pronto per l'uso offline",

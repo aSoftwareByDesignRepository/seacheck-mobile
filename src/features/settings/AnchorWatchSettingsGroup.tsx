@@ -58,12 +58,30 @@ export function AnchorWatchSettingsGroup({ first }: Props) {
         ))}
       </View>
       {anchorAlarm?.active ? (
-        <Text style={[styles.active, { color: colors.success }]} accessibilityRole="text">
-          {t('map.anchorRadiusActive', {
-            value: formatDistanceNm(anchorAlarm.radiusNm, distanceUnit, 2),
-            unit: unitLabel,
-          })}
-        </Text>
+        <>
+          {anchorAlarm.armedLimited ? (
+            <Text
+              style={[styles.active, { color: colors.warningText }]}
+              accessibilityRole="alert"
+              testID="settings.anchorWatch.limited"
+            >
+              {t('map.anchorLimitedSettingsHealth')}
+            </Text>
+          ) : null}
+          <Text
+            style={[
+              styles.active,
+              { color: anchorAlarm.armedLimited ? colors.warningText : colors.success },
+            ]}
+            accessibilityRole="text"
+            testID="settings.anchorWatch.active"
+          >
+            {t('map.anchorRadiusActive', {
+              value: formatDistanceNm(anchorAlarm.radiusNm, distanceUnit, 2),
+              unit: unitLabel,
+            })}
+          </Text>
+        </>
       ) : null}
     </SettingsGroup>
   );

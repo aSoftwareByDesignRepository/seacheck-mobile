@@ -4,6 +4,7 @@ import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useBatteryLevel } from '../../hooks/useBatteryLevel';
 import { useFixAge } from '../../hooks/useFixAge';
 import { getAnchorWatchStatus } from '../../lib/anchor/activateAnchorAlarm';
+import { isAnchorWatchLimitedChrome } from '../../lib/anchor/anchorLimitedChrome';
 import { subscribeBackgroundLocationRunning } from '../../lib/geo/backgroundLocationHealth';
 import { MAX_ALARM_ACCURACY_M } from '../../lib/geo/fixQuality';
 import { openSystemSettings, requestForegroundLocationAccess } from '../../lib/permissions/locationPermissions';
@@ -49,6 +50,7 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
         if (!cancelled) {
           setAnchorWatchLimited(status.limited);
           setBatteryRestricted(status.batteryOptimizationRestricted);
+          void useNavigationStore.getState().patchAnchorArmedLimited(status.limited);
         }
       });
     };
@@ -69,7 +71,7 @@ export function GpsStatusStrip({ onOpenSettings, showRecenter = false, onRecente
   const anchorGpsSuspended = Boolean(anchorAlarm?.active && (permissionDenied || isStale));
   const showGps = permissionDenied || isAging || isStale;
   const showBattery = keepAwake && followMode && batteryPct != null;
-  const showAnchorLimited = anchorAlarm?.active && anchorWatchLimited;
+  const showAnchorLimited = isAnchorWatchLimitedChrome(anchorAlarm, anchorWatchLimited);
   const showBatteryRestricted = anchorAlarm?.active && batteryRestricted;
 
   const accuracyM = fix?.accuracyM != null && Number.isFinite(fix.accuracyM) ? Math.round(fix.accuracyM) : null;

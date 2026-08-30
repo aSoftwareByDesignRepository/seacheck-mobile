@@ -54,9 +54,9 @@ When you are **online**, the app may contact **third-party services** (not Softw
 | **OpenSeaMap** (t1/t2.openseamap.org) | Map tile requests (area/zoom; no account) | Base map tiles |
 | **OpenSeaMap** (tiles.openseamap.org) | Map tile requests | Seamark overlay tiles |
 | **OpenSeaMap GeoServer** (geoserver.openseamap.org, depth.openseamap.org) | Optional WMS requests when you enable the depth overlay | Unofficial GEBCO / track-depth images (online only; not stored in offline packs) |
-| **OpenStreetMap Overpass API** (e.g. overpass-api.de) | Bounding-box queries for seamarks | Online seamark lookup when local index has no match |
+| **OpenStreetMap Overpass API** (e.g. overpass-api.de, overpass.kumi.systems) | **Near-exact tapped coordinates** (lat/lon) and a small search radius when you look up a chart object online | Online seamark / chart-object lookup when the local index has no match |
 
-These requests reveal **which map areas** you view or query, not your identity. No account is required.
+These requests can reveal **which map areas** you view (tile requests) and, for Overpass lookups, **the approximate position you tapped**. No account is required.
 
 **Offline:** After you download a region pack on Wi‑Fi, chart tiles and seamark data for that area are stored on your device. The app can work without sending your GPS to any server.
 

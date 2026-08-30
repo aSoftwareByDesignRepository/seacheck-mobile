@@ -72,6 +72,29 @@ export function MapActions({ onMobDropped, showAnchor = true, variant = 'side' }
     ...(variant === 'inline' ? { flex: 1 } : null),
   };
 
+  const anchorLimited = Boolean(anchorAlarm?.active && anchorAlarm.armedLimited);
+  const anchorArmed = Boolean(anchorAlarm?.active);
+  const anchorBorder = !anchorArmed
+    ? colors.border
+    : anchorLimited
+      ? colors.warningBorder
+      : colors.success;
+  const anchorBg = !anchorArmed
+    ? colors.surface
+    : anchorLimited
+      ? colors.warningBg
+      : colors.successBg;
+  const anchorFg = !anchorArmed
+    ? colors.text
+    : anchorLimited
+      ? colors.warningText
+      : colors.success;
+  const anchorCaption = !anchorArmed
+    ? colors.textMuted
+    : anchorLimited
+      ? colors.warningText
+      : colors.success;
+
   return (
     <>
       <View
@@ -98,29 +121,30 @@ export function MapActions({ onMobDropped, showAnchor = true, variant = 'side' }
         </SafetyAction>
         {showAnchor ? (
           <SafetyAction
-            accessibilityLabel={t('map.anchorAlarm')}
-            accessibilityHint={t('map.anchorWatchMonitoringHint')}
+            accessibilityLabel={
+              anchorLimited ? t('map.anchorLimitedBannerTitle') : t('map.anchorAlarm')
+            }
+            accessibilityHint={
+              anchorLimited ? t('map.anchorLimitedBannerHint') : t('map.anchorWatchMonitoringHint')
+            }
             accessibilityState={{ selected: Boolean(anchorAlarm?.active) }}
             onPress={() => void toggleAnchor()}
             testID="map.anchor"
-            borderColor={anchorAlarm?.active ? colors.success : colors.border}
-            backgroundColor={anchorAlarm?.active ? colors.successBg : colors.surface}
+            borderColor={anchorBorder}
+            backgroundColor={anchorBg}
             btnStyle={btnStyle}
           >
             <MaterialIcons
               name="anchor"
               size={metrics.iconSize}
-              color={anchorAlarm?.active ? colors.success : colors.text}
+              color={anchorFg}
               importantForAccessibility="no"
             />
             <Text
-              style={[
-                styles.caption,
-                { color: anchorAlarm?.active ? colors.success : colors.textMuted, fontSize: metrics.captionSize },
-              ]}
+              style={[styles.caption, { color: anchorCaption, fontSize: metrics.captionSize }]}
               importantForAccessibility="no"
             >
-              {t('map.anchorShort')}
+              {anchorLimited ? t('map.anchorLimitedShort') : t('map.anchorShort')}
             </Text>
           </SafetyAction>
         ) : null}

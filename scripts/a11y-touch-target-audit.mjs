@@ -30,6 +30,7 @@ const TARGETS = [
   'src/features/map/ScreenLockOverlay.tsx',
   'src/features/map/GpsStatusStrip.tsx',
   'src/features/map/MapTopAlertBanner.tsx',
+  'src/features/map/AnchorLimitedBanner.tsx',
   'src/features/map/MapTopChrome.tsx',
   'src/features/map/MobNavigateBackOverlay.tsx',
   'src/features/map/MapPreviewTrackBanner.tsx',

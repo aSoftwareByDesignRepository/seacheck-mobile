@@ -49,7 +49,7 @@ OWASP API BOLA/IDOR: **N/A**. Residual: local integrity, download honesty, alarm
 | Downloads / offline packs | Lock, Wi‑Fi policy, probe, migration, durable seal, cancel/seal race, sweep→seal resume | Strong unit + mutation + process-death sims; **gap:** device Maestro |
 | Depth overlay | Confirm, allowlist, online gate, pack exclusion | Unit + live HTTP probe; **gap:** native WMS render E2E |
 | Basemap migration | Wipe without notice | Unit covered |
-| Anchor / alarms | Accuracy fail-open (display), limited mode | Strong unit + mutation; **gap:** limited chrome persist (**open Medium**) |
+| Anchor / alarms | Accuracy fail-open (display), limited mode | Strong unit + mutation; **limited chrome persisted** (`armedLimited` + non-dismissible banner) |
 | Map / MOB | Lock vs MOB | Sparse UI tests |
 | Passage | Active flag, download-all toast honesty | Partial; download-all counting fixed |
 | Tracks | Single open recording | Partial |
@@ -59,11 +59,11 @@ OWASP API BOLA/IDOR: **N/A**. Residual: local integrity, download honesty, alarm
 ## Shared-state / concurrency candidates
 
 - `downloadCoordinator` + GL teardown window  
-- `offlinePackStore` `withIndexMutation` vs hydrate (boot timeout double-hydrate residual)  
+- `offlinePackStore` `withIndexMutation` vs hydrate (single in-flight hydrate mutex)  
 - `seamarkIndexQueue` serial drain  
 - FG alarm pipeline vs `trackBackgroundTask`  
 - Dual writers on `seacheck.navigation.v1`  
-- `confirmStore` queue if host unmounts mid-dialog  
+- `confirmStore` queue if host unmounts mid-dialog — ConfirmSheet unmount fail-closes waiting promises  
 
 ## External dependency failure modes
 
@@ -78,8 +78,8 @@ OWASP API BOLA/IDOR: **N/A**. Residual: local integrity, download honesty, alarm
 
 ## Existing suite (this audit)
 
-- **Full Jest:** 128 suites / 613 tests green  
+- **Full Jest:** 129 suites / 618 tests green  
 - Skipped tests: **none**  
 - Mutation (`npm run mutate:core`): 16/16 killed  
 - a11y contrast + touch: PASS  
-- i18n parity: 891 × 11 PASS  
+- i18n parity: 898 × 11 PASS  

@@ -444,7 +444,13 @@
     "depthChipOffline": "Głębokości wstrzymane · offline",
     "depthChipOfflineA11y": "Warstwa głębokości wstrzymana, bo urządzenie jest offline",
     "depthChipHint": "Otwiera ustawienia mapy dla warstwy głębokości",
-    "chartA11yDepthOn": "Nieoficjalna warstwa głębokości widoczna"
+    "chartA11yDepthOn": "Nieoficjalna warstwa głębokości widoczna",
+    "anchorLimitedActive": "Limited watch — open-app only",
+    "anchorLimitedShort": "Limited",
+    "anchorLimitedBannerTitle": "Limited anchor watch",
+    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
+    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
+    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
   },
   "profiles": {
     "cruisePassage": "Rejs / przejazd"
@@ -532,6 +538,7 @@
     "errorMapEngineStyle": "Silnik wykresów nie został uruchomiony. Zamknij i otwórz aplikację ponownie, a następnie spróbuj ponownie przez Wi-Fi.",
     "errorDownloadInterrupted": "Pobieranie zostało przerwane — dotknij Spróbuj ponownie, aby wznowić.",
     "errorStorageInsufficient": "Za mało wolnego miejsca na pobranie tego pliku. Zwolnij miejsce i spróbuj ponownie.",
+    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
     "errorPackTooLarge": "Ten pakiet map przekracza limit bezpiecznego pobierania — wybierz mniejszy pakiet korytarzowy lub użyj niestandardowego obszaru.",
     "errorPackRetired": "Ten pakiet regionalny został zastąpiony mniejszymi plikami do pobrania w korytarzu i nie można go pobrać ponownie.",
     "downloadSuccess": "Pakiet wykresów gotowy do użycia w trybie offline",

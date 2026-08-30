@@ -78,6 +78,8 @@ jest.mock('expo-file-system/legacy', () => ({
   getInfoAsync: jest.fn(async () => ({ exists: false })),
   makeDirectoryAsync: jest.fn(async () => {}),
   writeAsStringAsync: jest.fn(async () => {}),
+  /** Default: plenty of free space so download tests are not blocked by fail-closed storageCheck. */
+  getFreeDiskStorageAsync: jest.fn(async () => 8 * 1024 * 1024 * 1024),
 }));
 
 jest.mock('@maplibre/maplibre-react-native', () => {

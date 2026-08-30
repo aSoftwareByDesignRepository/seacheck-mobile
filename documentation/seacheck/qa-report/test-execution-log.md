@@ -108,3 +108,30 @@ depth.openseamap.org tracks_100m → HTTP/2 200 image/png
 - Native MapLibre WMS visual render on device  
 - Playwright/Axe on RN — N/A; contrast + touch scripts used  
 - Live load test against OpenSeaMap CDN — intentionally avoided  
+
+---
+
+## 2026-08-30T14:05:xxZ — Limited-anchor + residual gaps
+
+Fixes landed:
+- Persist `anchorAlarm.armedLimited`; non-dismissible banner / warning FAB / instrument / settings
+- Overpass tap lat/lon in privacy EN/DE + Data Safety
+- README publisher HTTPS
+- `storageCheck` fail-closed; downloads blocked with unavailable error
+- ConfirmSheet unmount fail-closes hung `requestConfirm`
+- Offline pack hydrate single-flight mutex
+
+```
+Command: npm test -- --forceExit
+Result: Test Suites: 129 passed, 129 total
+        Tests:       618 passed, 618 total
+
+Command: npm run i18n:parity
+Result: PASS i18n parity (898 keys × 11 locales)
+
+Command: npm run a11y:contrast && npm run a11y:touch
+Result: PASS
+
+Command: npm run mutate:core
+Result: 16 killed, 0 survived of 16
+```  

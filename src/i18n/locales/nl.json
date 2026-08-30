@@ -444,7 +444,13 @@
     "depthChipOffline": "Dieptes gepauzeerd · offline",
     "depthChipOfflineA11y": "Diepte-overlay gepauzeerd omdat het apparaat offline is",
     "depthChipHint": "Opent kaartinstellingen voor de diepte-overlay",
-    "chartA11yDepthOn": "Niet-officiële diepte-overlay zichtbaar"
+    "chartA11yDepthOn": "Niet-officiële diepte-overlay zichtbaar",
+    "anchorLimitedActive": "Limited watch — open-app only",
+    "anchorLimitedShort": "Limited",
+    "anchorLimitedBannerTitle": "Limited anchor watch",
+    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
+    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
+    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
   },
   "profiles": {
     "cruisePassage": "Vaart / passage"
@@ -532,6 +538,7 @@
     "errorMapEngineStyle": "De kaartengine is niet gestart. Sluit de app, open deze opnieuw en probeer het opnieuw via wifi.",
     "errorDownloadInterrupted": "Het downloaden is onderbroken. Tik op Opnieuw proberen om te hervatten.",
     "errorStorageInsufficient": "Niet genoeg gratis opslagruimte voor deze download. Maak ruimte vrij en probeer het opnieuw.",
+    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
     "errorPackTooLarge": "Dit kaartenpakket overschrijdt de veilige downloadlimiet. Kies een kleiner gangpakket of gebruik een aangepast gebied.",
     "errorPackRetired": "Dit regiopakket is vervangen door kleinere corridordownloads en kan niet opnieuw worden gedownload.",
     "downloadSuccess": "Kaartpakket klaar voor offline gebruik",

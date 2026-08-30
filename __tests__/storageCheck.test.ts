@@ -23,8 +23,20 @@ describe('ensureStorageForDownload', () => {
     await expect(ensureStorageForDownload(50_000)).resolves.toEqual({ ok: false, reason: 'insufficient' });
   });
 
-  it('fails open when free space cannot be read', async () => {
+  it('fails closed when free space cannot be read', async () => {
     getFree.mockRejectedValue(new Error('unavailable'));
-    await expect(ensureStorageForDownload(50_000)).resolves.toEqual({ ok: true });
+    await expect(ensureStorageForDownload(50_000)).resolves.toEqual({ ok: false, reason: 'unavailable' });
+  });
+
+  it('fails closed when free-space API is missing', async () => {
+    const original = FileSystem.getFreeDiskStorageAsync;
+    // @ts-expect-error test override
+    FileSystem.getFreeDiskStorageAsync = undefined;
+    try {
+      await expect(ensureStorageForDownload(50_000)).resolves.toEqual({ ok: false, reason: 'unavailable' });
+    } finally {
+      // @ts-expect-error restore
+      FileSystem.getFreeDiskStorageAsync = original;
+    }
   });
 });

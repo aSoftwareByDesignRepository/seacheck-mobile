@@ -28,6 +28,11 @@ export type AnchorAlarmState = {
   longitude: number;
   radiusNm: number;
   triggered: boolean;
+  /**
+   * Persisted: arm completed without full background watch (permissions / BG task / battery).
+   * Drives durable LIMITED chrome across restarts until refresh clears it.
+   */
+  armedLimited: boolean;
 };
 
 export type AlarmLimits = {
@@ -61,8 +66,14 @@ type NavigationState = PersistPayload & {
   setGoTo: (target: NavigationTarget | null) => Promise<void>;
   dropMob: (lat: number, lon: number) => Promise<NavigationTarget>;
   clearMob: () => Promise<void>;
-  setAnchorAlarm: (lat: number, lon: number, radiusNm: number) => Promise<void>;
+  setAnchorAlarm: (
+    lat: number,
+    lon: number,
+    radiusNm: number,
+    options?: { armedLimited?: boolean },
+  ) => Promise<void>;
   patchAnchorRadiusNm: (radiusNm: number) => Promise<void>;
+  patchAnchorArmedLimited: (armedLimited: boolean) => Promise<void>;
   clearAnchorAlarm: () => Promise<void>;
   setAnchorTriggered: (triggered: boolean) => Promise<void>;
   setActiveLegIndex: (index: number) => Promise<void>;
@@ -74,14 +85,6 @@ type NavigationState = PersistPayload & {
 };
 
 const DEFAULT_LIMITS: AlarmLimits = { xteNm: 0.05, arrivalNm: 0.25 };
-
-const defaultAnchor: AnchorAlarmState = {
-  active: false,
-  latitude: 0,
-  longitude: 0,
-  radiusNm: 0.05,
-  triggered: false,
-};
 
 async function persist(state: NavigationState) {
   const payload: PersistPayload = {
@@ -108,6 +111,7 @@ function sanitizeAnchorAlarm(raw: unknown): AnchorAlarmState | null {
     longitude: a.longitude!,
     radiusNm: Math.max(0.01, Number(a.radiusNm) || 0.05),
     triggered: Boolean(a.triggered),
+    armedLimited: Boolean(a.armedLimited),
   };
 }
 
@@ -156,11 +160,12 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
         const goToTarget = sanitizeNavigationTarget(parsed.goToTarget);
         const mobFromStorage = sanitizeNavigationTarget(parsed.mobTarget);
         const mobTarget = mobFromStorage ?? (goToTarget?.kind === 'mob' ? goToTarget : null);
+        const anchorAlarm = sanitizeAnchorAlarm(parsed.anchorAlarm);
         set({
           goToTarget,
           mobTarget,
           mobDroppedAtMs: typeof parsed.mobDroppedAtMs === 'number' ? parsed.mobDroppedAtMs : null,
-          anchorAlarm: sanitizeAnchorAlarm(parsed.anchorAlarm),
+          anchorAlarm,
           activeLegIndex: Math.max(0, Number(parsed.activeLegIndex) || 0),
           sessionDistanceNm: Math.max(0, Number(parsed.sessionDistanceNm) || 0),
           sessionStartedAtMs: typeof parsed.sessionStartedAtMs === 'number' ? parsed.sessionStartedAtMs : null,
@@ -169,6 +174,9 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
             xteNm: Math.max(0.001, Number(parsed.alarmLimits?.xteNm) || DEFAULT_LIMITS.xteNm),
             arrivalNm: Math.max(0.001, Number(parsed.alarmLimits?.arrivalNm) || DEFAULT_LIMITS.arrivalNm),
           },
+          // Limited sheet may re-open once after cold start; durable banner uses armedLimited.
+          anchorWatchPromptDismissed: false,
+          anchorWatchPrompt: null,
         });
       } catch (error) {
         console.warn('[navigationStore] hydrate failed', error);
@@ -240,7 +248,7 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     }
   },
 
-  setAnchorAlarm: async (lat, lon, radiusNm) => {
+  setAnchorAlarm: async (lat, lon, radiusNm, options) => {
     set({
       anchorAlarm: {
         active: true,
@@ -248,7 +256,10 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
         longitude: lon,
         radiusNm: Math.max(0.01, radiusNm),
         triggered: false,
+        armedLimited: Boolean(options?.armedLimited),
       },
+      // Cold / re-arm: allow limited sheet to show again until user dismisses.
+      anchorWatchPromptDismissed: false,
     });
     await persist(get());
     resetAlarmFixHistory();
@@ -275,10 +286,22 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     await resetAlarmRuntime();
   },
 
+  patchAnchorArmedLimited: async (armedLimited) => {
+    const current = get().anchorAlarm;
+    if (!current?.active) return;
+    if (current.armedLimited === armedLimited) return;
+    set({ anchorAlarm: { ...current, armedLimited } });
+    await persist(get());
+  },
+
   clearAnchorAlarm: async () => {
     resetAlarmFixHistory();
     await resetAlarmRuntime();
-    set({ anchorAlarm: null, anchorWatchPrompt: null });
+    set({
+      anchorAlarm: null,
+      anchorWatchPrompt: null,
+      anchorWatchPromptDismissed: false,
+    });
     await persist(get());
     const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
     await syncBackgroundLocationMonitoring();

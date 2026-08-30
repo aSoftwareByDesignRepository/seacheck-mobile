@@ -444,7 +444,13 @@
     "depthChipOffline": "Profundidades en pausa · sin conexión",
     "depthChipOfflineA11y": "Capa de profundidad en pausa porque el dispositivo está sin conexión",
     "depthChipHint": "Abre ajustes del mapa para la capa de profundidad",
-    "chartA11yDepthOn": "Capa de profundidad no oficial visible"
+    "chartA11yDepthOn": "Capa de profundidad no oficial visible",
+    "anchorLimitedActive": "Limited watch — open-app only",
+    "anchorLimitedShort": "Limited",
+    "anchorLimitedBannerTitle": "Limited anchor watch",
+    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
+    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
+    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
   },
   "profiles": {
     "cruisePassage": "Crucero/Pasaje"
@@ -532,6 +538,7 @@
     "errorMapEngineStyle": "El motor de gráficos no arrancó. Cierra y vuelve a abrir la aplicación, luego inténtalo nuevamente en Wi-Fi.",
     "errorDownloadInterrupted": "La descarga fue interrumpida: toca Intentar nuevamente para reanudarla.",
     "errorStorageInsufficient": "No hay suficiente almacenamiento gratuito para esta descarga. Libera espacio y vuelve a intentarlo.",
+    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
     "errorPackTooLarge": "Este paquete de cartas supera el límite de descarga segura: elija un paquete de corredor más pequeño o utilice un área personalizada.",
     "errorPackRetired": "Este paquete de región fue reemplazado por descargas de corredores más pequeños y no se puede volver a descargar.",
     "downloadSuccess": "Paquete de gráficos listo para usar sin conexión",

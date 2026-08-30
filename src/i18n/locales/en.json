@@ -402,7 +402,7 @@
     "anchorSetLimitedBody": "Anchor set at %{value} %{unit} radius — screen-off monitoring is limited until background location and notifications are enabled.",
     "anchorSetFailed": "Could not set anchor alarm. Try again.",
     "anchorWatchLimitedTitle": "Anchor watch limited",
-    "anchorWatchLimitedBody": "Without background location and alarm notifications, anchor alerts only work while SeaCheck is open on screen.",
+    "anchorWatchLimitedBody": "Without background location and alarm notifications, anchor alerts only work while SeaCheck is open on screen. The map will keep showing LIMITED until full watch is enabled.",
     "anchorActivateLimitedConfirm": "Set anchor anyway",
     "anchorWatchLimitedChip": "Anchor watch limited",
     "batteryOptimizationChip": "Battery saver may stop GPS",
@@ -444,7 +444,13 @@
     "depthChipOffline": "Depths paused · offline",
     "depthChipOfflineA11y": "Depth overlay paused because the device is offline",
     "depthChipHint": "Opens Map settings to change the depth overlay",
-    "chartA11yDepthOn": "Unofficial depth overlay visible"
+    "chartA11yDepthOn": "Unofficial depth overlay visible",
+    "anchorLimitedActive": "Limited watch — open-app only",
+    "anchorLimitedShort": "Limited",
+    "anchorLimitedBannerTitle": "Limited anchor watch",
+    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
+    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
+    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
   },
   "profiles": {
     "cruisePassage": "Cruise / passage"
@@ -532,6 +538,7 @@
     "errorMapEngineStyle": "Chart engine did not start. Close and reopen the app, then try again on Wi‑Fi.",
     "errorDownloadInterrupted": "Download was interrupted — tap Try again to resume.",
     "errorStorageInsufficient": "Not enough free storage for this download. Free space and try again.",
+    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
     "errorPackTooLarge": "This chart pack exceeds the safe download limit — choose a smaller corridor pack or use a custom area.",
     "errorPackRetired": "This region pack was replaced by smaller corridor downloads and cannot be downloaded again.",
     "downloadSuccess": "Chart pack ready for offline use",

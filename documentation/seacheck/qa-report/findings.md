@@ -16,16 +16,16 @@
 |----------|----------------------------|------------------------|
 | Critical | **0** | 0 new Critical (prior Wi‑Fi Critical stays fixed) |
 | High | **0** (device Maestro E2E still absent — tracked as process/Low) | 4 High honesty bugs fixed |
-| Medium | **2** (limited anchor watch; Overpass privacy framing) | 1 Medium UI lie fixed |
-| Low | several docs/process | README http link, inventory lag |
+| Medium | **0** | Limited-anchor chrome + Overpass privacy copy |
+| Low | Maestro E2E; Jest timer leaks | README HTTPS; storageCheck fail-closed |
 
 **Fit for client/auditor today?**  
-**Conditional yes** for functional + download integrity + depth opt-in. **No** if they require on-device Maestro kill-mid-download or a persisted “LIMITED WATCH” chrome invariant for anchor.
+**Yes** for functional + download integrity + depth opt-in + limited-anchor honesty. **No** only if they require on-device Maestro kill-mid-download.
 
 **Auth / BOLA:** N/A — no multi-user server. Residual risk is local integrity + third-party HTTPS.
 
 Safety/offline mutation: **16 killed / 0 survived / 16**.  
-Full Jest after fixes: **128 suites / 613 tests** green.
+Full Jest after fixes: **129 suites / 618 tests** green.
 
 ---
 
@@ -174,56 +174,49 @@ Count `ready` only when `state === 'ready'`.
 
 ---
 
-### [MEDIUM] Anchor “limited mode” can look like a full watch
+### [MEDIUM] [FIXED] Anchor “limited mode” can look like a full watch
 
 **What is wrong (in plain words):**  
-Anchor alarm can activate without background location / notifications / battery exemption after confirmation. There is no durable, impossible-to-miss “LIMITED WATCH” chrome after restart.
+Anchor alarm can activate without background location / notifications / battery exemption after confirmation. There was no durable, impossible-to-miss “LIMITED WATCH” chrome after restart.
 
 **Where exactly:**  
 - `src/lib/anchor/activateAnchorAlarm.ts`  
-- Limited sheets in map features  
-
-**How to reproduce it:**  
-Deny background location → set anchor → confirm limited → background app → no alarms while UI may still look “armed.”
+- `src/store/navigationStore.ts` (`armedLimited`)  
+- `src/features/map/AnchorLimitedBanner.tsx`  
 
 **What should happen instead:**  
-Persist limited flag + permanent map chrome until permissions are complete, or refuse to arm.
-
-**Why this matters:**  
-False sense of safety for drag alarms — maritime safety.
-
-**Exact fix instructions:**  
-1. Persist `anchorLimited` with the alarm record.  
-2. Show non-dismissible map banner while limited.  
-3. Add unit test: hydrate limited → banner visible.
+Persist limited flag + permanent map chrome until permissions are complete.
 
 **Proof this is fixed:**  
-- **Open** — not fixed in this engagement.
+- Persist `anchorAlarm.armedLimited`; hydrate restores it.  
+- Non-dismissible `map.anchorLimitedBanner`; warning FAB/instrument/settings chrome.  
+- `__tests__/anchorLimitedWatch.durable.test.ts` — activate → persist → hydrate still limited; refresh clears when full.
 
 ---
 
-### [MEDIUM] Privacy copy understates Overpass precision
+### [MEDIUM] [FIXED] Privacy copy understates Overpass precision
 
 **What is wrong (in plain words):**  
-Privacy text emphasizes “map areas”; seamark long-press lookup posts near-exact lat/lon to Overpass.
+Privacy text emphasized “map areas”; seamark long-press lookup posts near-exact lat/lon to Overpass.
 
 **Where exactly:**  
 - `docs/play-store/privacy-mobile-en.md` / DE  
+- `docs/play-store/DATA-SAFETY.md`  
 - `src/lib/seamarks/querySeamark.ts`  
 
 **What should happen instead:**  
 State that chart-object lookup may send the tapped coordinates to Overpass mirrors when online.
 
 **Proof this is fixed:**  
-- **Open** — docs only.
+- Privacy EN/DE + Data Safety now name Overpass tap lat/lon and kumi.systems failover.
 
 ---
 
 ## Low
 
-### [LOW] README publisher link still uses `http://` for nextcloud.software-by-design.de
+### [LOW] [FIXED] README publisher link used `http://` for nextcloud.software-by-design.de
 
-Legal/privacy URLs are HTTPS. Mixed-content / clarity issue for store review.
+Now `https://nextcloud.software-by-design.de/`.
 
 ### [LOW] No Maestro/Detox device E2E for kill-mid-download
 
@@ -233,9 +226,9 @@ Jest process-death sims cover sweep / seal / cancel. Physical emulator farm stil
 
 Suites pass; RN Jest preset still warns about timeouts after teardown. Does not fail CI with `--forceExit`. Worth cleaning; not a product Ready-lie.
 
-### [LOW] `storageCheck` fail-opens when free-space API missing
+### [LOW] [FIXED] `storageCheck` fail-opens when free-space API missing
 
-Download may proceed without a size check if the native free-space call throws. Conservative UX would confirm / block.
+`ensureStorageForDownload` now returns `{ ok: false, reason: 'unavailable' }` on throw / missing API / NaN free bytes. `assertStorageForBounds` blocks the download with `downloads.errorStorageUnavailable`.
 
 ### [LOW] qa-report inventory lagged WMS hosts (fixed in this write-up)
 
@@ -247,8 +240,8 @@ Download may proceed without a size check if the native free-space call throws. 
 |-------|--------------|----------|
 | Terms proprietary | AGPL in LICENSE + terms | Fixed prior |
 | Ready = ambient cache | Sweep + OfflineManager seal | Fixed prior |
-| Privacy “map areas” only | Overpass gets tap lat/lon | Medium — open |
-| README http publisher | HTTPS elsewhere | Low — open |
+| Privacy “map areas” only | Overpass gets tap lat/lon | Fixed — privacy + Data Safety |
+| README http publisher | HTTPS elsewhere | Fixed |
 | Prior qa-report “0 High” | New Highs found & fixed this pass | Updated herein |
 
 ---
@@ -257,16 +250,18 @@ Download may proceed without a size check if the native free-space call throws. 
 
 | Metric | Result |
 |--------|--------|
-| Full Jest | **128 passed / 613 tests** (2026-08-30) |
+| Full Jest | **129 passed / 618 tests** (2026-08-30) |
 | Skipped tests | **0** |
 | a11y contrast | PASS |
 | a11y touch targets | PASS |
-| i18n parity | PASS (891 keys × 11) |
+| i18n parity | PASS (898 keys × 11) |
 | Mutation core | **16/16 killed** |
 
 New / extended adversarial tests this engagement:  
 - `__tests__/settingsStore.downloadWifiOnly.test.ts`  
 - durableDownload: seal-pending resume + cancel-not-Ready  
+- `__tests__/anchorLimitedWatch.durable.test.ts`  
+- `storageCheck` fail-closed (throw + missing API)  
 
 ---
 
@@ -277,7 +272,7 @@ New / extended adversarial tests this engagement:
 | BOLA/IDOR | N/A — no multi-user API |
 | Broken auth | N/A — no accounts |
 | Mass assignment | Local settings Zod-ish parsers; Wi‑Fi boolean now strict |
-| Resource consumption | Pack size validation + storage check (fail-open residual Low) |
+| Resource consumption | Pack size validation + storage check (fail-closed on API miss) |
 | SSRF | Depth WMS allowlisted endpoints only; Overpass fixed hosts |
 | Injection | SQLite parameterized; WMS layer regex allowlist |
 | Sensitive flows | Download exclusivity + confirm on cellular / depth enable |
@@ -286,6 +281,6 @@ New / extended adversarial tests this engagement:
 
 ## Open Questions
 
-1. Should limited anchor watch refuse to arm without Always Allow + notifications, or is confirm + banner enough for product?  
+1. Product choice: limited watch still arms after explicit confirm; chrome stays LIMITED until background + notifications + battery exemption + BG task are healthy.  
 2. Can CI host a Maestro kill-mid-download on emulator?  
 3. Should Overpass be disabled when depth/privacy “minimal network” mode is desired?

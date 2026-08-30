@@ -402,7 +402,7 @@
     "anchorSetLimitedBody": "Anker gesetzt mit %{value} %{unit} Radius — Hintergrund-Überwachung eingeschränkt, bis Hintergrund-Standort und Benachrichtigungen aktiv sind.",
     "anchorSetFailed": "Ankeralarm konnte nicht gesetzt werden. Bitte erneut versuchen.",
     "anchorWatchLimitedTitle": "Ankerwache eingeschränkt",
-    "anchorWatchLimitedBody": "Ohne Hintergrund-Standort und Alarm-Benachrichtigungen funktionieren Ankeralarme nur, solange SeaCheck im Vordergrund ist.",
+    "anchorWatchLimitedBody": "Ohne Hintergrund-Standort und Alarm-Benachrichtigungen funktionieren Ankeralarme nur, solange SeaCheck im Vordergrund ist. Die Karte zeigt EINGESCHRÄNKT, bis die volle Wache aktiviert ist.",
     "anchorActivateLimitedConfirm": "Trotzdem setzen",
     "anchorWatchLimitedChip": "Ankerwache eingeschränkt",
     "batteryOptimizationChip": "Stromsparen kann GPS stoppen",
@@ -444,7 +444,13 @@
     "depthChipOffline": "Tiefen pausiert · offline",
     "depthChipOfflineA11y": "Tiefen-Overlay pausiert, weil das Gerät offline ist",
     "depthChipHint": "Öffnet die Karteneinstellungen für das Tiefen-Overlay",
-    "chartA11yDepthOn": "Inoffizielles Tiefen-Overlay sichtbar"
+    "chartA11yDepthOn": "Inoffizielles Tiefen-Overlay sichtbar",
+    "anchorLimitedActive": "Eingeschränkte Wache — nur bei offener App",
+    "anchorLimitedShort": "Eingeschr.",
+    "anchorLimitedBannerTitle": "Ankerwache eingeschränkt",
+    "anchorLimitedBannerBody": "Alarme wirken nur, solange SeaCheck offen ist. Tippen Sie hier, um die volle Hintergrundwache zu aktivieren.",
+    "anchorLimitedBannerHint": "Öffnet Schritte für Hintergrund-Standort und Alarm-Benachrichtigungen",
+    "anchorLimitedSettingsHealth": "Eingeschränkte Wache aktiv — Alarme nur bei offener App. Aktivieren Sie Hintergrund-Standort und Benachrichtigungen für vollen Schutz."
   },
   "profiles": {
     "cruisePassage": "Fahrt / Passage"
@@ -532,6 +538,7 @@
     "errorMapEngineStyle": "Karten-Engine startet nicht. App schließen und erneut öffnen, dann über WLAN versuchen.",
     "errorDownloadInterrupted": "Download wurde unterbrochen — auf Erneut versuchen tippen.",
     "errorStorageInsufficient": "Nicht genug freier Speicher für diesen Download. Speicher freigeben und erneut versuchen.",
+    "errorStorageUnavailable": "Freier Speicher konnte nicht geprüft werden. Speicherplatz freigeben, App neu starten und erneut versuchen.",
     "errorPackTooLarge": "Dieses Kartenpaket überschreitet das sichere Download-Limit — kleineres Korridor-Paket oder eigene Fläche wählen.",
     "errorPackRetired": "Dieses Regionspaket wurde durch kleinere Korridor-Downloads ersetzt und kann nicht erneut geladen werden.",
     "downloadSuccess": "Kartenpaket offline bereit",

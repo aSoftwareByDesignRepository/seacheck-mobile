@@ -33,7 +33,7 @@ Suggested short summary:
 
 **Ephemeral:** Live GPS fixes are processed in the app; not uploaded to Software by Design servers.
 
-**Shared with third parties:** **No** for location coordinates. (Map tile requests reveal map area, not GPS — declare under “other” only if Play forces tile CDN as “sharing”; typically **not** shared for location type.)
+**Shared with third parties:** Map **tile** requests reveal viewed areas, not your GPS trail. **Optional chart-object lookup** (when online and the local seamark index misses) may send the **tapped lat/lon** to Overpass mirrors (e.g. overpass-api.de, overpass.kumi.systems). That is user-initiated lookup, not continuous tracking. Software by Design does **not** receive location.
 
 ### Personal info
 

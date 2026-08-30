@@ -16,6 +16,7 @@ import { MapDepthChip } from './MapDepthChip';
 import { MAP_CHROME_GAP } from './mapChromeLayout';
 import { MapModeHintStrip } from './MapModeHintStrip';
 import { MapTopAlertBanner } from './MapTopAlertBanner';
+import { AnchorLimitedBanner } from './AnchorLimitedBanner';
 
 type Props = {
   actionColumnWidth: number;
@@ -98,6 +99,7 @@ export function MapTopChrome({
     >
       <View style={[styles.content, { paddingRight: actionColumnWidth, gap: MAP_CHROME_GAP }]}>
         {modeHint ? <MapModeHintStrip message={modeHint} testID="map.modeHint" /> : null}
+        <AnchorLimitedBanner />
         {alertKind ? (
           <MapTopAlertBanner
             kind={alertKind}

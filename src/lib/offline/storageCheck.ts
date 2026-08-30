@@ -13,14 +13,19 @@ export async function ensureStorageForDownload(estimatedKb: number): Promise<Sto
   if (!Number.isFinite(estimatedKb) || estimatedKb <= 0) return { ok: true };
 
   try {
-    if (!FileSystem.getFreeDiskStorageAsync) return { ok: true };
+    if (!FileSystem.getFreeDiskStorageAsync) {
+      return { ok: false, reason: 'unavailable' };
+    }
     const freeBytes = await FileSystem.getFreeDiskStorageAsync();
+    if (!Number.isFinite(freeBytes) || freeBytes < 0) {
+      return { ok: false, reason: 'unavailable' };
+    }
     const neededBytes = estimatedKb * 1024 * SIZE_MARGIN;
     if (freeBytes < neededBytes + MIN_FREE_BUFFER_BYTES) {
       return { ok: false, reason: 'insufficient' };
     }
     return { ok: true };
   } catch {
-    return { ok: true };
+    return { ok: false, reason: 'unavailable' };
   }
 }

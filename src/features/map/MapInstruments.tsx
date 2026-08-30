@@ -51,11 +51,23 @@ export function MapInstruments({ fix, onOpenPassage }: Props) {
 
   const badgeItems = compactBadgeItems([
     data.anchorAlarm?.active
-      ? {
-          key: 'anchor',
-          label: data.anchorAlarm.triggered ? t('map.anchorTriggered') : t('map.anchorActive'),
-          variant: data.anchorAlarm.triggered ? 'danger' : 'success',
-        }
+      ? data.anchorAlarm.triggered
+        ? {
+            key: 'anchor',
+            label: t('map.anchorTriggered'),
+            variant: 'danger' as const,
+          }
+        : data.anchorAlarm.armedLimited
+          ? {
+              key: 'anchor',
+              label: t('map.anchorLimitedActive'),
+              variant: 'warning' as const,
+            }
+          : {
+              key: 'anchor',
+              label: t('map.anchorActive'),
+              variant: 'success' as const,
+            }
       : null,
     isLowSog(fix) && !data.stale ? { key: 'lowSog', label: t('map.lowSog'), variant: 'warning' } : null,
     data.stale && fix ? { key: 'stale', label: t('map.staleGps'), variant: 'danger' } : null,

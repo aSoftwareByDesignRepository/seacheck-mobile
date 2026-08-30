@@ -4,10 +4,10 @@ import type { AnchorWatchStatus } from './types';
 import { t } from '../../i18n';
 import { requestConfirm } from '../../store/confirmStore';
 import {
-  ensureMaritimeAlarmNotifications,
   getMaritimeNotificationPermission,
   refreshMaritimeNotificationPermission,
 } from '../../services/maritimeAlarmNotifications';
+import { isBackgroundLocationRunning } from '../../services/backgroundLocationService';
 import { DEFAULT_ANCHOR_RADIUS_NM, normalizeAnchorRadiusNm } from '../settings/mapSettings';
 import { distanceUnitLabel, formatDistanceNm } from '../geo/units';
 import { useLocationStore } from '../../services/locationService';
@@ -26,7 +26,6 @@ export async function getAnchorWatchStatus(): Promise<AnchorWatchStatus> {
   const foregroundGranted = permission === 'foreground' || permission === 'background';
   const backgroundGranted = permission === 'background';
   const notificationsGranted = getMaritimeNotificationPermission() === 'granted';
-  const { isBackgroundLocationRunning } = await import('../../services/backgroundLocationService');
   const backgroundTaskRunning = await isBackgroundLocationRunning();
   const batteryStatus = await getBatteryOptimizationStatus();
   const batteryOptimizationRestricted = batteryStatus !== 'exempt';
@@ -55,12 +54,17 @@ export async function refreshAnchorWatchPromptIfNeeded(): Promise<AnchorWatchSta
   if (!nav.anchorAlarm?.active) return null;
 
   const status = await getAnchorWatchStatus();
+  await useNavigationStore.getState().patchAnchorArmedLimited(status.limited);
+
   if (status.limited) {
     if (nav.anchorWatchPrompt || !nav.anchorWatchPromptDismissed) {
       useNavigationStore.getState().setAnchorWatchPrompt(status);
     }
   } else {
-    useNavigationStore.getState().setAnchorWatchPrompt(null);
+    useNavigationStore.setState({
+      anchorWatchPrompt: null,
+      anchorWatchPromptDismissed: false,
+    });
   }
   return status;
 }
@@ -105,8 +109,10 @@ export async function activateAnchorAlarmAt(
     if (!confirmed) return null;
   }
 
-  await nav.setAnchorAlarm(lat, lon, effectiveRadius);
+  await nav.setAnchorAlarm(lat, lon, effectiveRadius, { armedLimited: statusBefore.limited });
   const status = await getAnchorWatchStatus();
+  await useNavigationStore.getState().patchAnchorArmedLimited(status.limited);
+
   const distanceUnit = useSettingsStore.getState().distanceUnit;
   const radiusLabel = formatDistanceNm(effectiveRadius, distanceUnit, 2);
   const unitLabel = distanceUnitLabel(distanceUnit);

@@ -185,6 +185,7 @@ async function saveIndex(index: PersistedIndex) {
  * would clobber each other. All mutations are serialized through this chain.
  */
 let indexMutationChain: Promise<unknown> = Promise.resolve();
+let hydrateInFlight: Promise<void> | null = null;
 
 function withIndexMutation<T>(fn: () => Promise<T>): Promise<T> {
   const run = indexMutationChain.then(fn, fn);
@@ -446,8 +447,11 @@ function finishDownloadSession(regionId: string, set: (partial: Partial<OfflineP
 async function assertStorageForBounds(bounds: LngLatBounds, minZoom: number, maxZoom: number) {
   const estimatedKb = estimateDownloadKb(estimateTileCount(bounds, minZoom, maxZoom));
   const storage = await ensureStorageForDownload(estimatedKb);
-  if (!storage.ok && storage.reason === 'insufficient') {
-    throw new Error(t('downloads.errorStorageInsufficient'));
+  if (!storage.ok) {
+    if (storage.reason === 'insufficient') {
+      throw new Error(t('downloads.errorStorageInsufficient'));
+    }
+    throw new Error(t('downloads.errorStorageUnavailable'));
   }
 }
 
@@ -1083,6 +1087,14 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
   regions: Object.fromEntries(REGION_PACKS.map((p) => [p.id, emptyStatus(p.id)])),
 
   hydrate: async () => {
+    if (hydrateInFlight) {
+      await hydrateInFlight;
+      return;
+    }
+    let settle!: () => void;
+    hydrateInFlight = new Promise<void>((resolve) => {
+      settle = resolve;
+    });
     const emptyRegions = Object.fromEntries(REGION_PACKS.map((p) => [p.id, emptyStatus(p.id)]));
 
     let chartStyleUri: string | null = null;
@@ -1402,10 +1414,16 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
           basemapMigrationNotice: false,
         });
       }
+      settle();
+      hydrateInFlight = null;
     }
   },
 
   ensureHydratedForUi: async () => {
+    if (hydrateInFlight) {
+      await hydrateInFlight;
+      if (get().hydrated) return;
+    }
     if (get().hydrated) return;
     const emptyRegions = Object.fromEntries(REGION_PACKS.map((p) => [p.id, emptyStatus(p.id)]));
     let chartStyleUri: string | null = get().chartStyleUri;
@@ -1860,6 +1878,7 @@ attachDownloadCoordinatorStoreSync();
 /** Test-only store reset. */
 export function resetOfflinePackStoreForTests(): void {
   indexMutationChain = Promise.resolve();
+  hydrateInFlight = null;
   // Coordinator reset clears its activity listeners — the store sync must survive it.
   resetDownloadCoordinatorForTests();
   attachDownloadCoordinatorStoreSync();

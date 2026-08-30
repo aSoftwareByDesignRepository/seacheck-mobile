@@ -54,9 +54,9 @@ Die App erstellt **kein** Konto und lädt Törns, Tracks oder dauerhafte Standor
 | **OpenSeaMap** (t1/t2.openseamap.org) | Kartenkachel-Anfragen (Gebiet/Zoom; kein Konto) | Basiskarte |
 | **OpenSeaMap** (tiles.openseamap.org) | Kachel-Anfragen | Seezeichen-Overlay |
 | **OpenSeaMap GeoServer** (geoserver.openseamap.org, depth.openseamap.org) | Optionale WMS-Anfragen, wenn Sie das Tiefen-Overlay einschalten | Inoffizielle GEBCO-/Track-Tiefenbilder (nur online; nicht in Offline-Paketen) |
-| **OpenStreetMap Overpass API** (z. B. overpass-api.de) | Bereichsabfragen für Seezeichen | Online-Seezeichen-Suche, wenn der lokale Index nicht reicht |
+| **OpenStreetMap Overpass API** (z. B. overpass-api.de, overpass.kumi.systems) | **Nahezu exakte getippte Koordinaten** (Breite/Länge) und ein kleiner Suchradius, wenn Sie ein Kartenobjekt online nachschlagen | Online-Seezeichen-/Kartenobjekt-Suche, wenn der lokale Index nicht reicht |
 
-Diese Anfragen zeigen, **welche Kartenbereiche** Sie ansehen oder abfragen — nicht Ihre Identität. Kein Konto erforderlich.
+Diese Anfragen können **Kartenbereiche** verraten, die Sie ansehen (Kachelanfragen), und bei Overpass-Abfragen die **ungefähre getippte Position**. Kein Konto erforderlich.
 
 **Offline:** Nach dem Download eines Regionenpakets im WLAN liegen Kacheln und Seezeichendaten für dieses Gebiet auf dem Gerät. Die App kann funktionieren, ohne Ihre GPS-Position an einen Server zu senden.
 

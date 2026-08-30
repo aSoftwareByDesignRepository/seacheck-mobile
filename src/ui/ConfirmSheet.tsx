@@ -22,6 +22,15 @@ export function ConfirmSheet() {
   const resolveConfirm = useConfirmStore((s) => s.resolveConfirm);
 
   useEffect(() => {
+    return () => {
+      // Component unmount only — never leave requestConfirm() hung.
+      if (useConfirmStore.getState().visible) {
+        useConfirmStore.getState().resolveConfirm(false);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!visible) {
       unregister(CONFIRM_HOST_ID);
       return;

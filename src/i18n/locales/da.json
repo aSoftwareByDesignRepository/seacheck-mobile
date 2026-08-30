@@ -444,7 +444,13 @@
     "depthChipOffline": "Dybder pause · offline",
     "depthChipOfflineA11y": "Dybde-overlay pauset, fordi enheden er offline",
     "depthChipHint": "Åbner kortindstillinger for dybde-overlay",
-    "chartA11yDepthOn": "Uofficielt dybde-overlay synligt"
+    "chartA11yDepthOn": "Uofficielt dybde-overlay synligt",
+    "anchorLimitedActive": "Limited watch — open-app only",
+    "anchorLimitedShort": "Limited",
+    "anchorLimitedBannerTitle": "Limited anchor watch",
+    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
+    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
+    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
   },
   "profiles": {
     "cruisePassage": "Krydstogt / passage"
@@ -532,6 +538,7 @@
     "errorMapEngineStyle": "Kortmotoren startede ikke. Luk og åbn appen igen, og prøv derefter igen på Wi-Fi.",
     "errorDownloadInterrupted": "Download blev afbrudt — tryk på Prøv igen for at genoptage.",
     "errorStorageInsufficient": "Ikke nok gratis lagerplads til denne download. Frigør plads, og prøv igen.",
+    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
     "errorPackTooLarge": "Denne kortpakke overskrider grænsen for sikker download - vælg en mindre korridorpakke, eller brug et brugerdefineret område.",
     "errorPackRetired": "Denne regionspakke blev erstattet af mindre korridordownloads og kan ikke downloades igen.",
     "downloadSuccess": "Kortpakke klar til offlinebrug",

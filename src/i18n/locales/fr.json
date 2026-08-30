@@ -444,7 +444,13 @@
     "depthChipOffline": "Profondeurs en pause · hors ligne",
     "depthChipOfflineA11y": "Calque de profondeur en pause car l’appareil est hors ligne",
     "depthChipHint": "Ouvre les réglages carte pour le calque de profondeur",
-    "chartA11yDepthOn": "Calque de profondeur non officiel visible"
+    "chartA11yDepthOn": "Calque de profondeur non officiel visible",
+    "anchorLimitedActive": "Limited watch — open-app only",
+    "anchorLimitedShort": "Limited",
+    "anchorLimitedBannerTitle": "Limited anchor watch",
+    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
+    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
+    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
   },
   "profiles": {
     "cruisePassage": "Croisière / passage"
@@ -532,6 +538,7 @@
     "errorMapEngineStyle": "Le moteur de graphiques n'a pas démarré. Fermez et rouvrez l'application, puis réessayez en Wi-Fi.",
     "errorDownloadInterrupted": "Le téléchargement a été interrompu — appuyez sur Réessayer pour reprendre.",
     "errorStorageInsufficient": "Espace de stockage gratuit insuffisant pour ce téléchargement. Libérez de l'espace et réessayez.",
+    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
     "errorPackTooLarge": "Ce pack de cartes dépasse la limite de téléchargement sécurisé : choisissez un pack de couloirs plus petit ou utilisez une zone personnalisée.",
     "errorPackRetired": "Ce pack régional a été remplacé par des téléchargements de corridors plus petits et ne peut plus être téléchargé.",
     "downloadSuccess": "Pack de graphiques prêt pour une utilisation hors ligne",
