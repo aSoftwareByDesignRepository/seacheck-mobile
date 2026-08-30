@@ -83,9 +83,20 @@ Device E2E (download honesty — needs Android emulator + Metro on `:8092` + [Ma
 npx expo start --port 8092 --dev-client   # separate terminal
 npm run e2e:maestro:cancel                # cancel mid-download → no Ready
 npm run e2e:maestro:kill                  # killApp mid-download → no Ready after relaunch
+# or both via CI helper (builds APK if needed):
+npm run ci:maestro
 ```
 
-Prefer a single emulator. The runner disables other `softwarebydesign.*` apps for the run so they cannot steal foreground.
+Prefer a **single** emulator. The runner disables other `softwarebydesign.*` apps for the run so they cannot steal foreground.
+
+GitHub Actions: **CI** (unit gates, no `--forceExit`) + **E2E Maestro** (one API-33 emulator on main / download-path PRs / weekly / manual).
+
+Automated unit CI without emulator:
+
+```bash
+npm run ci:unit
+```
+
 ## UAT corridors (Baltic)
 
 On-water testing targets: **Kieler Bucht**, **Småland**, **Dänische Südsee** — see plan §6.9.

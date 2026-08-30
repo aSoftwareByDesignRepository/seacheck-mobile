@@ -26,6 +26,8 @@
     "e2e:maestro": "bash scripts/maestro-e2e.sh all",
     "e2e:maestro:cancel": "bash scripts/maestro-e2e.sh cancel",
     "e2e:maestro:kill": "bash scripts/maestro-e2e.sh kill",
+    "ci:unit": "bash scripts/ci-unit.sh",
+    "ci:maestro": "bash scripts/ci-maestro.sh",
     "mutate:core": "node scripts/run-safety-core-mutations.cjs",
     "reload": "bash scripts/reload-js.sh",
     "logs:downloads": "bash scripts/watch-download-logs.sh",
@@ -34,11 +36,11 @@
     "play:preflight": "bash scripts/play-preflight.sh",
     "sync:regions": "node scripts/sync-planning-regions.mjs",
     "icons": "node scripts/generate-app-icons.mjs",
-    "postinstall": "node ../shared/android15-play-compliance/scripts/patch-rn-edge-to-edge.cjs",
-    "patch:rn-edge": "node ../shared/android15-play-compliance/scripts/patch-rn-edge-to-edge.cjs"
+    "postinstall": "node node_modules/@check/android15-play-compliance/scripts/patch-rn-edge-to-edge.cjs",
+    "patch:rn-edge": "node node_modules/@check/android15-play-compliance/scripts/patch-rn-edge-to-edge.cjs"
   },
   "dependencies": {
-    "@check/android15-play-compliance": "file:../shared/android15-play-compliance",
+    "@check/android15-play-compliance": "file:vendor/android15-play-compliance",
     "@expo/vector-icons": "^15.0.2",
     "@maplibre/maplibre-react-native": "11.3.6",
     "@react-native-async-storage/async-storage": "2.2.0",

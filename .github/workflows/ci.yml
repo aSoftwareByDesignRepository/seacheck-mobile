@@ -1,4 +1,5 @@
-# Full preflight needs the parent workspace (mobile/shared).
+# Unit / static gates. Maestro download honesty lives in e2e-maestro.yml
+# (single dedicated emulator — too heavy for every unit smoke).
 name: CI
 
 on:
@@ -14,12 +15,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
+  unit:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Smoke
-        run: |
-          test -f package.json
-          test -f app.config.ts
-          test -f index.ts
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Unit gates
+        run: npm run ci:unit

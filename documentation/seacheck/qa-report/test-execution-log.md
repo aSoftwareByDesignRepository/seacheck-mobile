@@ -121,7 +121,23 @@ depth.openseamap.org tracks_100m → HTTP/2 200 image/png
 - Native MapLibre WMS visual render on device  
 - Playwright/Axe on RN — N/A; contrast + touch scripts used  
 - Live load test against OpenSeaMap CDN — intentionally avoided  
-- Maestro in CI (local emulator proof done; see 2026-08-30T16:12Z below)  
+
+---
+
+## 2026-08-30T16:55Z — Jest exits without forceExit + CI wiring
+
+```
+Command: CI=false npm test -- --no-coverage
+Result: Test Suites: 130 passed, 130 total; Tests: 632 passed; EXIT 0 (no forceExit)
+
+Command: npm run ci:unit
+Result: typecheck + jest + mutate:core + a11y + i18n (see below)
+
+jest.config.js: forceExit: false (download map linger/teardown already 0 under NODE_ENV=test)
+GitHub: .github/workflows/ci.yml → npm run ci:unit
+GitHub: .github/workflows/e2e-maestro.yml → single API-33 emulator + npm run ci:maestro
+Vendor: vendor/android15-play-compliance (standalone npm ci without ../shared)
+```
 
 ---
 

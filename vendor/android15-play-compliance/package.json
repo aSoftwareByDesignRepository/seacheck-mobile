@@ -1,0 +1,30 @@
+{
+  "name": "@check/android15-play-compliance",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Expo config plugin + verifier for Android 15 / Play Console compliance across Check apps",
+  "main": "src/withAndroid15PlayCompliance.js",
+  "exports": {
+    ".": "./src/withAndroid15PlayCompliance.js",
+    "./policy": "./src/policy.js",
+    "./patch": "./src/patchAndroidTree.js",
+    "./styles": "./src/stylesXml.js",
+    "./gradle": "./src/gradleProps.js",
+    "./app-build-gradle": "./src/appBuildGradle.js",
+    "./manifest-xml": "./src/manifestXml.js",
+    "./rn-edge": "./src/patchReactNativeNodeModules.js",
+    "./agp-r8": "./src/agpR8Policy.js",
+    "./patch-cli": "./scripts/patch-rn-edge-to-edge.cjs"
+  },
+  "scripts": {
+    "test": "node --test __tests__/policy.test.js",
+    "mutate": "node scripts/mutate-android15-play-compliance.cjs",
+    "apply-fleet": "node scripts/apply-fleet.cjs",
+    "apply-fleet-rn-edge": "node scripts/apply-fleet-rn-edge.cjs",
+    "verify-fleet": "node scripts/verify-fleet.cjs",
+    "gauntlet": "npm test && npm run mutate && npm run verify-fleet"
+  },
+  "peerDependencies": {
+    "expo": "*"
+  }
+}
