@@ -81,6 +81,7 @@ describe('offlinePackStore.hydrate', () => {
     resetDownloadMapHostForTests();
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
+    await AsyncStorage.setItem('seacheck.chart.basemapId', 'openseamap-osm-v1');
     getPacks.mockReset();
     addListener.mockReset();
     addListener.mockResolvedValue(undefined);
@@ -194,7 +195,7 @@ describe('offlinePackStore.hydrate', () => {
     }
   });
 
-  it('reattaches in-progress cache download and locks coordinator', async () => {
+  it('reattaches in-progress cache download, seals durable pack, and locks coordinator', async () => {
     await AsyncStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
@@ -212,13 +213,21 @@ describe('offlinePackStore.hydrate', () => {
     getPacks.mockResolvedValue([]);
 
     await useOfflinePackStore.getState().hydrate();
-    await new Promise((resolve) => setImmediate(resolve));
-
-    const status = useOfflinePackStore.getState().regions[KIEL.id];
-    expect(status?.state).toBe('downloading');
-    expect(status?.cacheBacked).toBe(true);
-    expect(status?.percentage).toBeGreaterThan(0);
+    expect(useOfflinePackStore.getState().regions[KIEL.id]?.state).toBe('downloading');
     expect(useOfflinePackStore.getState().activeDownloadRegionId).toBe(KIEL.id);
     expect(downloadCoordinator.getActiveRegionId()).toBe(KIEL.id);
+
+    const started = Date.now();
+    while (useOfflinePackStore.getState().regions[KIEL.id]?.state !== 'ready') {
+      if (Date.now() - started > 8_000) {
+        throw new Error('expected reattached download to reach ready');
+      }
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+
+    const status = useOfflinePackStore.getState().regions[KIEL.id];
+    expect(status?.cacheBacked).toBeFalsy();
+    expect(status?.packId).toBe('mock-pack');
+    expect(OfflineManager.createPack).toHaveBeenCalled();
   });
 });

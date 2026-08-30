@@ -116,11 +116,17 @@ jest.mock('@maplibre/maplibre-react-native', () => {
       addListener: jest.fn(async () => {}),
       setTileCountLimit: jest.fn(),
       setProgressEventThrottle: jest.fn(),
-      createPack: jest.fn(async (_opts: unknown, onProgress: (p: { id: string }, s: { state: string; percentage: number }) => void) => {
+      setMaximumAmbientCacheSize: jest.fn(async () => {}),
+      clearAmbientCache: jest.fn(async () => {}),
+      invalidateAmbientCache: jest.fn(async () => {}),
+      deletePack: jest.fn(async () => {}),
+      createPack: jest.fn(async (opts: { metadata?: Record<string, unknown>; bounds?: number[] }, onProgress: (p: { id: string; resume: () => Promise<void>; pause: () => Promise<void>; status: () => Promise<unknown> }, s: Record<string, unknown>) => void) => {
         const pack = {
           id: 'mock-pack',
-          metadata: {},
-          bounds: [0, 0, 0, 0],
+          metadata: { ...(opts?.metadata ?? {}) },
+          bounds: opts?.bounds ?? [0, 0, 0, 0],
+          resume: jest.fn(async () => {}),
+          pause: jest.fn(async () => {}),
           status: async () => ({
             id: 'mock-pack',
             state: 'complete',
@@ -137,10 +143,12 @@ jest.mock('@maplibre/maplibre-react-native', () => {
           percentage: 100,
           requiredResourceCount: 10,
           completedResourceCount: 10,
+          completedResourceSize: 1000,
+          completedTileCount: 8,
+          completedTileSize: 800,
         });
         return pack;
       }),
-      deletePack: jest.fn(async () => {}),
     },
     useCurrentPosition: jest.fn(() => undefined),
   };

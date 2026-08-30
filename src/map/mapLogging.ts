@@ -2,7 +2,7 @@ import { LogManager } from '@maplibre/maplibre-react-native';
 
 let configured = false;
 
-/** Suppress noisy Mbgl tile timeout logs when OpenSeaMap/CARTO tiles are slow or unavailable. */
+/** Suppress noisy Mbgl tile timeout logs when OpenSeaMap tiles are slow or unavailable. */
 export function configureMapLogging(): void {
   if (configured) return;
   configured = true;

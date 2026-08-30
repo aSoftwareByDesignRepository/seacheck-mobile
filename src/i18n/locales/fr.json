@@ -176,7 +176,7 @@
     "mapBehaviourTitle": "Comportement de la carte",
     "chartDataTitle": "Graphique et données",
     "chartDataSummary": "Carte de base et repères OpenSeaMap : ce que SeaCheck télécharge et affiche hors ligne.",
-    "chartDataLayersBody": "SeaCheck utilise les tuiles de base Carto Voyager ainsi que les tuiles Seamark OpenSeaMap. Les deux sont inclus dans les packs régionaux hors ligne.",
+    "chartDataLayersBody": "SeaCheck utilise les tuiles de base OpenStreetMap d’OpenSeaMap ainsi que les tuiles Seamark OpenSeaMap. Les deux sont inclus dans les packs régionaux hors ligne.",
     "underwayGpsTitle": "En cours",
     "alarmFeedbackTitle": "Retour d'alarme",
     "alarmLimitsTitle": "Distances d'alarme",
@@ -248,7 +248,6 @@
     "disclaimerOfficial": "Pour cette raison, SeaCheck ne convient pas à la navigation à lui seul. Utilisez-le avec vos cartes officielles, corrigées et à jour, consultez les avis aux navigateurs et vérifiez tout ce qui est critique pour la sécurité avant de partir.",
     "openSeaMapLicense": "OpenSeaMap — projet et licence",
     "openStreetMapCopyright": "OpenStreetMap — projet et licence",
-    "cartoAttribution": "CARTO — attributions",
     "privacyPolicy": "Politique de confidentialité",
     "termsOfUse": "Conditions et avis de navigation",
     "publisher": "Logiciel par conception",
@@ -505,6 +504,7 @@
     "errorStatusFailed": "Impossible de lire l'état du pack",
     "errorPackMissing": "Pack hors ligne manquant – télécharger à nouveau",
     "errorPackUnavailable": "Impossible de vérifier le pack hors ligne : réessayez",
+    "errorAmbientPackRetired": "Ce pack hors ligne utilisait un cache temporaire et doit être téléchargé à nouveau pour des cartes fiables sans signal.",
     "errorDownloadBusy": "Un autre téléchargement de cartes est déjà en cours. Attendez qu'il se termine ou annulez-le d'abord.",
     "errorOffline": "Pas de connexion Internet : connectez-vous au Wi-Fi ou aux données mobiles pour télécharger des cartes.",
     "errorTileServerTimeout": "Le serveur de tuiles graphiques n’a pas répondu à temps. Vérifiez votre connexion et réessayez.",
@@ -713,7 +713,10 @@
         "name": "Sud du golfe de Botnie et Åland (héritage)",
         "description": "Ancien pack tout-en-un — remplacé par le pack corridor sud d'Åland et de la mer de Botnie."
       }
-    }
+    },
+    "basemapUpdatedTitle": "Fond de carte mis à jour",
+    "basemapUpdatedBody": "SeaCheck utilise désormais les cartes côtières gratuites OpenSeaMap (sans clé API). Les packs déjà téléchargés utilisaient l’ancien fond et ont été effacés. Téléchargez à nouveau vos packs de corridor en Wi‑Fi avant de partir en mer.",
+    "basemapUpdatedDismiss": "Compris"
   },
   "waypoints": {
     "subtitle": "Marques et ports enregistrés",

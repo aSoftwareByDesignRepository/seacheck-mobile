@@ -8,7 +8,7 @@ type Props = {
   first?: boolean;
 };
 
-/** Chart-data info — Voyager base tiles + OpenSeaMap seamarks (no user-facing style toggles). */
+/** Chart-data info — OpenSeaMap OSM base tiles + seamarks (no user-facing style toggles). */
 export function ChartDataSettingsGroup({ first }: Props) {
   const { colors } = useTheme();
 

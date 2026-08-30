@@ -58,6 +58,7 @@ describe('offlinePackStore coordinator teardown sync (production timing)', () =>
     resetDownloadMapHostForTests();
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
+    await AsyncStorage.setItem('seacheck.chart.basemapId', 'openseamap-osm-v1');
     await useOfflinePackStore.getState().hydrate();
   });
 

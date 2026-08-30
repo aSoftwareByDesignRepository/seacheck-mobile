@@ -51,7 +51,7 @@ Die App erstellt **kein** Konto und lädt Törns, Tracks oder dauerhafte Standor
 
 | Dienst | Übermittelte Daten | Zweck |
 |--------|-------------------|-------|
-| **CARTO** (basemaps.cartocdn.com) | Kartenkachel-Anfragen (Gebiet/Zoom; kein Konto) | Basiskarte |
+| **OpenSeaMap** (t1/t2.openseamap.org) | Kartenkachel-Anfragen (Gebiet/Zoom; kein Konto) | Basiskarte |
 | **OpenSeaMap** (tiles.openseamap.org) | Kachel-Anfragen | Seezeichen-Overlay |
 | **OpenStreetMap Overpass API** (z. B. overpass-api.de) | Bereichsabfragen für Seezeichen | Online-Seezeichen-Suche, wenn der lokale Index nicht reicht |
 
@@ -113,7 +113,7 @@ SeaCheck richtet sich an **Skipper und Crew** mit verantwortungsvollem Bootseins
 
 ## 10. Karten-Attribution
 
-SeaCheck nutzt Gemeinschaftskartendaten von **OpenStreetMap**, **OpenSeaMap** und **CARTO** Voyager. Siehe in der App **Einstellungen → Info** und unsere [Nutzungsbedingungen & Navigation-Hinweis](https://nextcloud.software-by-design.de/de/nutzungsbedingungen-seacheck-mobile.html).
+SeaCheck nutzt Gemeinschaftskartendaten von **OpenStreetMap** und **OpenSeaMap** (OSM-Basis + Seezeichen-Overlay). Siehe in der App **Einstellungen → Info** und unsere [Nutzungsbedingungen & Navigation-Hinweis](https://nextcloud.software-by-design.de/de/nutzungsbedingungen-seacheck-mobile.html).
 
 ---
 

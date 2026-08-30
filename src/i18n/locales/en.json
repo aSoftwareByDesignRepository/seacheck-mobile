@@ -176,7 +176,7 @@
     "mapBehaviourTitle": "Map behaviour",
     "chartDataTitle": "Chart & data",
     "chartDataSummary": "Base map and OpenSeaMap seamarks — what SeaCheck downloads and shows offline.",
-    "chartDataLayersBody": "SeaCheck uses Carto Voyager base tiles plus OpenSeaMap seamark tiles. Both are included in offline region packs.",
+    "chartDataLayersBody": "SeaCheck uses OpenStreetMap base tiles from OpenSeaMap plus OpenSeaMap seamark tiles. Both are included in offline region packs.",
     "underwayGpsTitle": "While underway",
     "alarmFeedbackTitle": "Alarm feedback",
     "alarmLimitsTitle": "Alarm distances",
@@ -248,7 +248,6 @@
     "disclaimerOfficial": "Because of this, SeaCheck is not suitable for navigation on its own. Use it alongside your official, corrected, up-to-date charts, check Notices to Mariners, and verify anything safety-critical before you go.",
     "openSeaMapLicense": "OpenSeaMap — project & license",
     "openStreetMapCopyright": "OpenStreetMap — project & license",
-    "cartoAttribution": "CARTO — attributions",
     "privacyPolicy": "Privacy policy",
     "termsOfUse": "Terms & navigation notice",
     "publisher": "Software by Design",
@@ -505,6 +504,7 @@
     "errorStatusFailed": "Could not read pack status",
     "errorPackMissing": "Offline pack missing — download again",
     "errorPackUnavailable": "Could not verify offline pack — try again",
+    "errorAmbientPackRetired": "This offline pack used a temporary cache and must be downloaded again for reliable charts without signal.",
     "errorDownloadBusy": "Another chart download is already running. Wait for it to finish or cancel it first.",
     "errorOffline": "No internet connection — connect to Wi‑Fi or mobile data to download charts.",
     "errorTileServerTimeout": "Chart tile server did not respond in time. Check your connection and try again.",
@@ -713,7 +713,10 @@
         "name": "Gulf of Bothnia south & Åland (legacy)",
         "description": "Former all-in-one pack — replaced by Åland & Bothnian Sea south corridor pack."
       }
-    }
+    },
+    "basemapUpdatedTitle": "Chart base map updated",
+    "basemapUpdatedBody": "SeaCheck now uses free OpenSeaMap coastline charts (no API key). Previously downloaded packs used the old base map and were cleared. Download your corridor packs again on Wi‑Fi before you go offshore.",
+    "basemapUpdatedDismiss": "Got it"
   },
   "waypoints": {
     "subtitle": "Saved marks and harbours",

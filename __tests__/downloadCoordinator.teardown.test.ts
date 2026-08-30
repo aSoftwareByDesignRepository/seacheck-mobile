@@ -45,4 +45,17 @@ describe('downloadCoordinator map teardown', () => {
     downloadCoordinator.invalidate('kiel-bay');
     expect(downloadCoordinator.getTeardownRegionId()).toBeNull();
   });
+
+  it('resolves waitForDownloadMapTeardown when teardown clears before the listener attaches', async () => {
+    jest.spyOn(downloadMapConstants, 'downloadMapPostTeardownMs').mockReturnValue(5_000);
+
+    downloadCoordinator.tryBegin('kiel-bay');
+    downloadCoordinator.beginMapTeardown('kiel-bay');
+    expect(downloadCoordinator.getTeardownRegionId()).toBe('kiel-bay');
+
+    // Clear teardown synchronously after wait starts — the re-check after subscribe must catch it.
+    const wait = waitForDownloadMapTeardown('kiel-bay', 200);
+    downloadCoordinator.cancelMapTeardown('kiel-bay');
+    await expect(wait).resolves.toBeUndefined();
+  });
 });

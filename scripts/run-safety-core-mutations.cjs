@@ -17,7 +17,7 @@ const testCmd = [
   'npx',
   'jest',
   '--runInBand',
-  '--testPathPattern=gpsFilter|fixQuality|processLocationAlarms|connectivity|downloadNetwork|downloadCoordinator|beginDownloadSession|offlinePackIndex|regionPacks|maydayMessage|copyMaydayClipboard|parsePersistedBoolean',
+  '--testPathPattern=gpsFilter|fixQuality|processLocationAlarms|connectivity|downloadNetwork|downloadPolicy|downloadCoordinator|beginDownloadSession|offlinePackIndex|regionPacks|maydayMessage|copyMaydayClipboard|parsePersistedBoolean',
 ];
 
 const mutations = [
@@ -66,6 +66,22 @@ const mutations = [
       '  if (state.isConnected === false) {\n    throw new Error(t(\'downloads.errorOffline\'));\n  }',
     replace:
       '  if (false && state.isConnected === false) {\n    throw new Error(t(\'downloads.errorOffline\')); /* mutated */\n  }',
+  },
+  {
+    name: 'download-wifi-netinfo-fail-open',
+    file: 'src/lib/network/downloadPolicy.ts',
+    search:
+      "  } catch {\n    const proceeded = await cellularConfirm();\n    return proceeded ? { ok: true } : { ok: false, reason: 'cancelled' };\n  }",
+    replace:
+      "  } catch {\n    return { ok: true }; /* mutated: silent allow when NetInfo fails */\n  }",
+  },
+  {
+    name: 'download-wifi-offline-as-cellular',
+    file: 'src/lib/network/downloadPolicy.ts',
+    search:
+      "  if (state.isConnected === false) {\n    return { ok: false, reason: 'offline' };\n  }",
+    replace:
+      "  if (false && state.isConnected === false) {\n    return { ok: false, reason: 'offline' }; /* mutated */\n  }",
   },
   {
     name: 'download-parallel-allowed',

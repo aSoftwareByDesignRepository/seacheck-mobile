@@ -2,7 +2,11 @@ import { t } from '../../i18n';
 import { boundsCenter, type LonLatPoint } from '../map/bounds';
 import { getRegionPack } from '../../map/regionPacks';
 import { formatRasterTileUrl, tileCoordsAt } from '../../map/tileMath';
-import { CHART_BASE_TILE_URL, SEAMARK_TILE_URL } from '../settings/chartBaseStyle';
+import {
+  CHART_BASE_TILE_URL,
+  CHART_BASE_TILE_URLS,
+  SEAMARK_TILE_URL,
+} from '../settings/chartBaseStyle';
 
 const PROBE_TIMEOUT_MS = 8_000;
 const PROBE_ZOOM = 10;
@@ -145,8 +149,45 @@ async function probeSingleUrl(
 }
 
 /**
- * Verify Carto base + OpenSeaMap seamark tiles respond before starting a native offline pack download.
+ * Try a one-shot fetch against fallback base hosts after the primary exhausted retries.
+ * Avoids multi-host × multi-retry delays while still green-lighting downloads when only
+ * one OpenSeaMap mirror is healthy.
+ */
+async function probeBaseTileWithFallback(
+  primaryUrl: string,
+  fallbackUrls: string[],
+  fetchFn: typeof fetch,
+  diagnostics: ChartTileProbeDiagnostics,
+): Promise<void> {
+  try {
+    await probeSingleUrl(primaryUrl, fetchFn, false, diagnostics);
+    return;
+  } catch (primaryError) {
+    for (const url of fallbackUrls) {
+      try {
+        const response = await fetchTileProbe(url, fetchFn);
+        diagnostics.attempts += 1;
+        diagnostics.baseUrl = url;
+        diagnostics.lastHttpStatus = response.status;
+        if (isProbeResponseOk(response.status)) {
+          diagnostics.lastError = null;
+          return;
+        }
+      } catch {
+        diagnostics.attempts += 1;
+        diagnostics.lastHttpStatus = null;
+      }
+    }
+    throw primaryError;
+  }
+}
+
+/**
+ * Verify OSM base + OpenSeaMap seamark tiles respond before starting a native offline pack download.
  * Caches success briefly so preflight + startDownload do not double-hit the CDN.
+ *
+ * MapLibre load-balances across CHART_BASE_TILE_URLS; the probe prefers the primary host and
+ * falls back to mirrors with a single attempt each when the primary is down.
  */
 export async function assertChartTileReachability(
   fetchFn: typeof fetch = fetch,
@@ -157,6 +198,10 @@ export async function assertChartTileReachability(
   if (Date.now() - lastProbeOkAt < PROBE_CACHE_MS && lastProbeOkKey === cacheKey) return;
 
   const { baseUrl, seamarkUrl } = probeTileUrls(center);
+  const { x, y } = tileCoordsAt(center.longitude, center.latitude, PROBE_ZOOM);
+  const fallbackBaseUrls = CHART_BASE_TILE_URLS.slice(1).map((template) =>
+    formatRasterTileUrl(template, PROBE_ZOOM, x, y),
+  );
   const diagnostics: ChartTileProbeDiagnostics = {
     probeCenter: `${center.longitude},${center.latitude}`,
     baseUrl,
@@ -168,7 +213,7 @@ export async function assertChartTileReachability(
   lastProbeDiagnostics = diagnostics;
 
   try {
-    await probeSingleUrl(baseUrl, fetchFn, false, diagnostics);
+    await probeBaseTileWithFallback(baseUrl, fallbackBaseUrls, fetchFn, diagnostics);
     await probeSingleUrl(seamarkUrl, fetchFn, true, diagnostics);
     lastProbeOkAt = Date.now();
     lastProbeOkKey = cacheKey;

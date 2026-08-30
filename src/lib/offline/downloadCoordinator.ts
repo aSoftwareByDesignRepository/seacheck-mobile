@@ -183,17 +183,20 @@ export function subscribeDownloadCoordinatorActivity(listener: () => void): () =
 export function waitForDownloadMapTeardown(regionId: string, timeoutMs = downloadMapPostTeardownMs() + 1_000): Promise<void> {
   if (downloadCoordinator.getTeardownRegionId() !== regionId) return Promise.resolve();
   return new Promise((resolve) => {
-    const timer = setTimeout(() => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       unsubscribe();
       resolve();
-    }, timeoutMs);
+    };
+    const timer = setTimeout(finish, timeoutMs);
     const unsubscribe = subscribeDownloadCoordinatorActivity(() => {
-      if (downloadCoordinator.getTeardownRegionId() !== regionId) {
-        clearTimeout(timer);
-        unsubscribe();
-        resolve();
-      }
+      if (downloadCoordinator.getTeardownRegionId() !== regionId) finish();
     });
+    // Re-check after subscribe — teardown may have cleared between the early return and listener attach.
+    if (downloadCoordinator.getTeardownRegionId() !== regionId) finish();
   });
 }
 

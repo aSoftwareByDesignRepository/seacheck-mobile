@@ -2,7 +2,12 @@ import type { StyleSpecification } from '@maplibre/maplibre-react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { MAP_ATTRIBUTION } from './constants';
-import { CHART_BASE_TILE_URL, SEAMARK_TILE_URL } from '../lib/settings/chartBaseStyle';
+import {
+  CHART_BASE_ATTRIBUTION,
+  CHART_BASE_TILE_URLS,
+  CHART_SEAMARK_ATTRIBUTION,
+  SEAMARK_TILE_URL,
+} from '../lib/settings/chartBaseStyle';
 
 export const CHART_STYLE_FILENAME = 'chart-style.json';
 
@@ -11,37 +16,37 @@ export type ChartLayerVisibility = {
   seamarks: boolean;
 };
 
-/** MapLibre style with Voyager base + OpenSeaMap seamark raster sources. */
+/** MapLibre style with OSM base + OpenSeaMap seamark raster sources. */
 export function buildChartStyleSpec(): StyleSpecification {
   return {
     version: 8,
     name: 'SeaCheck Chart',
     sources: {
-      'carto-base': {
+      'osm-base': {
         type: 'raster',
-        tiles: [CHART_BASE_TILE_URL],
+        tiles: [...CHART_BASE_TILE_URLS],
         tileSize: 256,
         maxzoom: 19,
-        attribution: '© OpenStreetMap contributors © CARTO',
+        attribution: CHART_BASE_ATTRIBUTION,
       },
       'openseamap-seamarks': {
         type: 'raster',
         tiles: [SEAMARK_TILE_URL],
         tileSize: 256,
         maxzoom: 18,
-        attribution: '© OpenSeaMap contributors',
+        attribution: CHART_SEAMARK_ATTRIBUTION,
       },
     },
     layers: [
       {
         id: 'background',
         type: 'background',
-        paint: { 'background-color': '#b8d4e8' },
+        paint: { 'background-color': '#aad3df' },
       },
       {
-        id: 'carto-base-layer',
+        id: 'osm-base-layer',
         type: 'raster',
-        source: 'carto-base',
+        source: 'osm-base',
       },
       {
         id: 'openseamap-seamarks-layer',

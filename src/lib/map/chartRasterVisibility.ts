@@ -1,5 +1,5 @@
 /**
- * Whether Carto / OpenSeaMap raster layers should be visible on the main chart.
+ * Whether OSM / OpenSeaMap raster layers should be visible on the main chart.
  * Always visible — MapLibre serves live tiles, ambient cache, or offline packs.
  */
 export function shouldShowChartRasterTiles(): boolean {

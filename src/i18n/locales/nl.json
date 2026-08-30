@@ -176,7 +176,7 @@
     "mapBehaviourTitle": "Breng gedrag in kaart",
     "chartDataTitle": "Grafiek en gegevens",
     "chartDataSummary": "Basiskaart en OpenSeaMap-zeemarkeringen: wat SeaCheck downloadt en offline toont.",
-    "chartDataLayersBody": "SeaCheck gebruikt Carto Voyager-basistegels plus OpenSeaMap-zeemerktegels. Beide zijn opgenomen in offline regiopakketten.",
+    "chartDataLayersBody": "SeaCheck gebruikt OpenStreetMap-basistegels van OpenSeaMap plus OpenSeaMap-zeemerktegels. Beide zijn opgenomen in offline regiopakketten.",
     "underwayGpsTitle": "Terwijl je onderweg bent",
     "alarmFeedbackTitle": "Alarmfeedback",
     "alarmLimitsTitle": "Alarmafstanden",
@@ -248,7 +248,6 @@
     "disclaimerOfficial": "Hierdoor is SeaCheck op zichzelf niet geschikt voor navigatie. Gebruik het naast uw officiële, gecorrigeerde, actuele kaarten, controleer Berichten aan Zeevarenden en verifieer alles wat van cruciaal belang is voor de veiligheid voordat u vertrekt.",
     "openSeaMapLicense": "OpenSeaMap — project & licentie",
     "openStreetMapCopyright": "OpenStreetMap — project & licentie",
-    "cartoAttribution": "CARTO — toeschrijvingen",
     "privacyPolicy": "Privacybeleid",
     "termsOfUse": "Voorwaarden en navigatiekennisgeving",
     "publisher": "Software op ontwerp",
@@ -505,6 +504,7 @@
     "errorStatusFailed": "Kan de pakketstatus niet lezen",
     "errorPackMissing": "Offlinepakket ontbreekt — download opnieuw",
     "errorPackUnavailable": "Kan het offline pakket niet verifiëren. Probeer het opnieuw",
+    "errorAmbientPackRetired": "Dit offlinepakket gebruikte alleen een tijdelijke cache en moet opnieuw worden gedownload voor betrouwbare kaarten zonder bereik.",
     "errorDownloadBusy": "Er wordt al een nieuwe kaart gedownload. Wacht tot het klaar is of annuleer het eerst.",
     "errorOffline": "Geen internetverbinding: maak verbinding met wifi of mobiele data om kaarten te downloaden.",
     "errorTileServerTimeout": "De kaarttegelserver reageerde niet op tijd. Controleer uw verbinding en probeer het opnieuw.",
@@ -713,7 +713,10 @@
         "name": "Botnische Golf ten zuiden en Åland (erfenis)",
         "description": "Voormalig alles-in-één pakket - vervangen door zuidcorridorpakket Åland en Botnische Zee."
       }
-    }
+    },
+    "basemapUpdatedTitle": "Kaartondergrond bijgewerkt",
+    "basemapUpdatedBody": "SeaCheck gebruikt nu gratis OpenSeaMap-kustkaarten (zonder API-sleutel). Eerder gedownloade pakketten gebruikten de oude basis en zijn gewist. Download uw corridorpakketten opnieuw via wifi voordat u uitvaart.",
+    "basemapUpdatedDismiss": "Begrepen"
   },
   "waypoints": {
     "subtitle": "Opgeslagen markeringen en havens",

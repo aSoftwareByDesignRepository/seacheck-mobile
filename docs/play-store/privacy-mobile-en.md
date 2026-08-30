@@ -51,7 +51,7 @@ When you are **online**, the app may contact **third-party services** (not Softw
 
 | Service | Data sent | Purpose |
 |---------|-----------|---------|
-| **CARTO** (basemaps.cartocdn.com) | Map tile requests (area/zoom; no account) | Base map tiles |
+| **OpenSeaMap** (t1/t2.openseamap.org) | Map tile requests (area/zoom; no account) | Base map tiles |
 | **OpenSeaMap** (tiles.openseamap.org) | Map tile requests | Seamark overlay tiles |
 | **OpenStreetMap Overpass API** (e.g. overpass-api.de) | Bounding-box queries for seamarks | Online seamark lookup when local index has no match |
 
@@ -113,7 +113,7 @@ SeaCheck is intended for **skippers and crew** using boats responsibly. It is **
 
 ## 10. Map data attribution
 
-SeaCheck uses community map data from **OpenStreetMap**, **OpenSeaMap**, and **CARTO** Voyager base tiles. See in-app **Settings → About** and our [terms & navigation notice](https://nextcloud.software-by-design.de/en/terms-seacheck-mobile.html).
+SeaCheck uses community map data from **OpenStreetMap** and **OpenSeaMap** (OSM base + seamark overlay). See in-app **Settings → About** and our [terms & navigation notice](https://nextcloud.software-by-design.de/en/terms-seacheck-mobile.html).
 
 ---
 

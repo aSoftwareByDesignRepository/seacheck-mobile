@@ -19,6 +19,8 @@ type Props = {
   activeDownloadRegionId: string | null;
   downloadMapTeardownRegionId: string | null;
   hydrated: boolean;
+  basemapMigrationNotice?: boolean;
+  onDismissBasemapNotice?: () => void;
   onCancelActive?: () => void;
   cancelBusy?: boolean;
   onRetryFailed?: (regionId: string) => void;
@@ -30,6 +32,8 @@ export function DownloadsStatusBanner({
   activeDownloadRegionId,
   downloadMapTeardownRegionId,
   hydrated,
+  basemapMigrationNotice = false,
+  onDismissBasemapNotice,
   onCancelActive,
   cancelBusy = false,
   onRetryFailed,
@@ -45,6 +49,15 @@ export function DownloadsStatusBanner({
 
   return (
     <View style={{ gap: spacing.md, marginBottom: spacing.lg }} testID="downloads.statusBanners">
+      {basemapMigrationNotice ? (
+        <BasemapMigrationBanner
+          colors={colors}
+          spacing={spacing}
+          minTouch={minTouch}
+          onDismiss={onDismissBasemapNotice}
+        />
+      ) : null}
+
       {sessionRegionId ? (
         <ActiveDownloadBanner
           regions={regions}
@@ -74,6 +87,43 @@ export function DownloadsStatusBanner({
         ) : (
           <EmptyBanner colors={colors} />
         )
+      ) : null}
+    </View>
+  );
+}
+
+function BasemapMigrationBanner({
+  colors,
+  spacing,
+  minTouch,
+  onDismiss,
+}: {
+  colors: ReturnType<typeof useTheme>['colors'];
+  spacing: ReturnType<typeof useTheme>['spacing'];
+  minTouch: number;
+  onDismiss?: () => void;
+}) {
+  return (
+    <View
+      style={[styles.banner, { backgroundColor: colors.warningBg, borderColor: colors.warningBorder }]}
+      testID="downloads.statusBanner.basemapMigration"
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+      accessibilityLabel={t('downloads.basemapUpdatedTitle')}
+    >
+      <Text style={[styles.title, { color: colors.warningText }]} accessibilityRole="header">
+        {t('downloads.basemapUpdatedTitle')}
+      </Text>
+      <Text style={[styles.hint, { color: colors.text }]}>{t('downloads.basemapUpdatedBody')}</Text>
+      {onDismiss ? (
+        <View style={{ minHeight: minTouch, marginTop: spacing.xs }}>
+          <Button
+            label={t('downloads.basemapUpdatedDismiss')}
+            variant="secondary"
+            onPress={onDismiss}
+            testID="downloads.statusBanner.basemapMigration.dismiss"
+          />
+        </View>
       ) : null}
     </View>
   );

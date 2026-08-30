@@ -5,6 +5,7 @@ import { downloadCoordinator } from '../src/lib/offline/downloadCoordinator';
 import { resetSeamarkIndexQueueForTests } from '../src/lib/seamarks/seamarkIndexQueue';
 import { resetDownloadMapHostForTests, registerDownloadMapController } from '../src/lib/offline/downloadMapHost';
 import { resetOfflinePackStoreForTests, useOfflinePackStore } from '../src/store/offlinePackStore';
+import { OfflineManager } from '@maplibre/maplibre-react-native';
 
 jest.mock('../src/map/chartStyle', () => ({
   ensureChartStyleFile: jest.fn(async () => 'file:///mock/map/chart-style.json'),
@@ -31,7 +32,7 @@ jest.mock('../src/lib/offline/warmupOfflineEngine', () => ({
 
 const KIEL = REGION_PACKS[0]!;
 
-describe('offlinePackStore.startDownload (cache sweep)', () => {
+describe('offlinePackStore.startDownload (sweep + durable seal)', () => {
   jest.setTimeout(15_000);
 
   beforeEach(async () => {
@@ -39,6 +40,8 @@ describe('offlinePackStore.startDownload (cache sweep)', () => {
     resetDownloadMapHostForTests();
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
+    await AsyncStorage.setItem('seacheck.chart.basemapId', 'openseamap-osm-v1');
+    (OfflineManager.createPack as jest.Mock).mockClear();
     await useOfflinePackStore.getState().hydrate();
   });
 
@@ -46,7 +49,7 @@ describe('offlinePackStore.startDownload (cache sweep)', () => {
     downloadCoordinator.invalidate(KIEL.id);
   });
 
-  it('marks a region ready after tile cache sweep completes', async () => {
+  it('marks a region ready after tile sweep seals a durable OfflineManager pack', async () => {
     const { markDownloadMapStyleLoaded } = require('../src/lib/offline/downloadMapHost') as {
       markDownloadMapStyleLoaded: (uri: string) => void;
     };
@@ -59,9 +62,10 @@ describe('offlinePackStore.startDownload (cache sweep)', () => {
     await useOfflinePackStore.getState().startDownload(KIEL.id);
 
     const status = useOfflinePackStore.getState().regions[KIEL.id];
+    expect(OfflineManager.createPack).toHaveBeenCalled();
     expect(status?.state).toBe('ready');
-    expect(status?.cacheBacked).toBe(true);
+    expect(status?.cacheBacked).toBeFalsy();
     expect(status?.percentage).toBe(100);
-    expect(status?.packId).toBe(`cache:${KIEL.id}`);
+    expect(status?.packId).toBe('mock-pack');
   });
 });

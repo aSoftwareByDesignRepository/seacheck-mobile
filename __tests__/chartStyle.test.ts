@@ -1,29 +1,33 @@
 import { buildChartStyleSpec, toMapLibreStyleUri } from '../src/map/chartStyle';
-import { CHART_BASE_TILE_URL } from '../src/lib/settings/chartBaseStyle';
+import { CHART_BASE_TILE_URL, CHART_BASE_TILE_URLS } from '../src/lib/settings/chartBaseStyle';
 
 describe('buildChartStyleSpec', () => {
-  it('includes Carto base and OpenSeaMap seamark sources', () => {
+  it('includes OSM base and OpenSeaMap seamark raster sources', () => {
     const spec = buildChartStyleSpec();
-    expect(spec.sources?.['carto-base']?.type).toBe('raster');
+    expect(spec.sources?.['osm-base']?.type).toBe('raster');
     expect(spec.sources?.['openseamap-seamarks']?.type).toBe('raster');
-    expect(spec.sources?.['openseamap-seamarks']?.tiles?.[0]).toContain('openseamap.org/seamark');
   });
 
-  it('uses Voyager base tile URL', () => {
+  it('uses OpenSeaMap base tile URLs (primary + fallback)', () => {
     const spec = buildChartStyleSpec();
-    expect(spec.sources?.['carto-base']?.tiles?.[0]).toBe(CHART_BASE_TILE_URL);
+    expect(spec.sources?.['osm-base']?.tiles).toEqual([...CHART_BASE_TILE_URLS]);
+    expect(spec.sources?.['osm-base']?.tiles?.[0]).toBe(CHART_BASE_TILE_URL);
   });
 
-  it('orders layers: background, base, seamarks', () => {
+  it('orders background, base, then seamarks', () => {
     const spec = buildChartStyleSpec();
-    const ids = spec.layers?.map((layer) => layer.id);
-    expect(ids).toEqual(['background', 'carto-base-layer', 'openseamap-seamarks-layer']);
+    const ids = spec.layers?.map((l) => l.id);
+    expect(ids).toEqual(['background', 'osm-base-layer', 'openseamap-seamarks-layer']);
+  });
+});
+
+describe('toMapLibreStyleUri', () => {
+  it('prefixes absolute filesystem paths with file://', () => {
+    expect(toMapLibreStyleUri('/data/map/chart-style.json')).toBe('file:///data/map/chart-style.json');
   });
 
-  it('normalizes absolute paths to file URIs for MapLibre offline', () => {
-    expect(toMapLibreStyleUri('/data/user/0/app/map/chart-style.json')).toBe(
-      'file:///data/user/0/app/map/chart-style.json',
-    );
-    expect(toMapLibreStyleUri('file:///data/chart-style.json')).toBe('file:///data/chart-style.json');
+  it('leaves file and https URIs unchanged', () => {
+    expect(toMapLibreStyleUri('file:///tmp/style.json')).toBe('file:///tmp/style.json');
+    expect(toMapLibreStyleUri('https://example.com/style.json')).toBe('https://example.com/style.json');
   });
 });

@@ -1,12 +1,17 @@
+import {
+  CHART_BASE_TILE_URL,
+  SEAMARK_TILE_URL,
+} from '../lib/settings/chartBaseStyle';
+
 /** Kieler Bucht — default dev / UAT viewport. */
 export const KIEL_CENTER: [number, number] = [10.141, 54.323];
 
 export const TILE_URLS = {
-  /** Coastal base — Carto Voyager (dev / online only; attribution required). */
-  base: 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+  /** Coastal base — OpenSeaMap OSM Mapnik (free, no API key; attribution required). */
+  base: CHART_BASE_TILE_URL,
   /** OpenSeaMap seamark overlay (transparent PNG). */
-  seamarks: 'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png',
+  seamarks: SEAMARK_TILE_URL,
 } as const;
 
 export const MAP_ATTRIBUTION =
-  '© OpenStreetMap contributors © CARTO · © OpenSeaMap · Not for navigation';
+  '© OpenStreetMap contributors · © OpenSeaMap · Not for navigation';

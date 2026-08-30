@@ -91,8 +91,9 @@ export function CustomDownloadSection({
       return;
     }
     const allowed = await ensureDownloadAllowed();
-    if (!allowed) {
-      showInfo(t('downloads.cellularCancelledBody'));
+    if (!allowed.ok) {
+      if (allowed.reason === 'offline') showError(t('downloads.errorOffline'));
+      else showInfo(t('downloads.cellularCancelledBody'));
       return;
     }
     const name = t('downloads.customDefaultName', {

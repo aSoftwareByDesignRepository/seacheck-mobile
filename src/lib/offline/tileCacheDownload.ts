@@ -88,3 +88,24 @@ export function cacheBackedPackId(regionId: string): string {
 export function isCacheBackedPackId(packId: string | null | undefined): boolean {
   return typeof packId === 'string' && packId.startsWith('cache:');
 }
+
+const REDOWNLOAD_PACK_PREFIX = 'redownload:';
+
+/** Placeholder after basemap migration — custom region kept for one-tap re-download. */
+export function redownloadPlaceholderPackId(regionId: string): string {
+  return `${REDOWNLOAD_PACK_PREFIX}${regionId}`;
+}
+
+export function isRedownloadPlaceholderPackId(packId: string | null | undefined): boolean {
+  return typeof packId === 'string' && packId.startsWith(REDOWNLOAD_PACK_PREFIX);
+}
+
+/** True when packId is a real MapLibre offline pack (not cache: / redownload: placeholders). */
+export function isNativeOfflinePackId(packId: string | null | undefined): packId is string {
+  return (
+    typeof packId === 'string' &&
+    packId.length > 0 &&
+    !isCacheBackedPackId(packId) &&
+    !isRedownloadPlaceholderPackId(packId)
+  );
+}

@@ -16,7 +16,7 @@ export async function assertNetworkForDownload(): Promise<void> {
   }
 }
 
-/** NetInfo gate plus live Carto + OpenSeaMap tile fetches — fails fast before native download stalls. */
+/** NetInfo gate plus live OpenSeaMap base + seamark tile fetches — fails fast before native download stalls. */
 export async function assertChartDownloadNetworkReady(probeCenter?: LonLatPoint): Promise<void> {
   ensureMapLibreNetworkForDownload();
   await assertNetworkForDownload();

@@ -81,7 +81,7 @@ Draft metadata: [`docs/fdroid/de.softwarebydesign.seacheck.yml`](fdroid/de.softw
 
 | AntiFeature | Reason |
 |-------------|--------|
-| `NonFreeNet` | Optional online map tiles (OSM / CARTO) while downloading packs |
+| `NonFreeNet` | Optional online map tiles (OpenStreetMap via OpenSeaMap) while downloading packs |
 
 Background location and battery-optimization prompts are **not** F-Droid AntiFeatures (there is no `BackgroundLocation` flag in [fdroiddata](https://f-droid.org/docs/Anti-Features/)). Disclose them in `fastlane/metadata/android/*/full_description.txt` instead — anchor watch and track recording, opt-in permissions, data stays on device.
 

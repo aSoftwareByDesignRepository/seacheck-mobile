@@ -176,7 +176,7 @@
     "mapBehaviourTitle": "Zachowanie mapy",
     "chartDataTitle": "Wykres i dane",
     "chartDataSummary": "Mapa bazowa i znaczniki OpenSeaMap — co SeaCheck pobiera i wyświetla w trybie offline.",
-    "chartDataLayersBody": "SeaCheck wykorzystuje płytki bazowe Carto Voyager oraz płytki ze znakami morskimi OpenSeaMap. Obydwa są zawarte w pakietach regionalnych offline.",
+    "chartDataLayersBody": "SeaCheck wykorzystuje płytki bazowe OpenStreetMap z OpenSeaMap oraz płytki ze znakami morskimi OpenSeaMap. Obydwa są zawarte w pakietach regionalnych offline.",
     "underwayGpsTitle": "W trakcie",
     "alarmFeedbackTitle": "Informacja zwrotna o alarmie",
     "alarmLimitsTitle": "Odległości alarmowe",
@@ -248,7 +248,6 @@
     "disclaimerOfficial": "Z tego powodu SeaCheck nie nadaje się do samodzielnej nawigacji. Używaj go razem z oficjalnymi, poprawionymi i aktualnymi mapami, sprawdzaj powiadomienia dla marynarzy i przed wypłynięciem sprawdzaj wszystko, co ma kluczowe znaczenie dla bezpieczeństwa.",
     "openSeaMapLicense": "OpenSeaMap — projekt i licencja",
     "openStreetMapCopyright": "OpenStreetMap — projekt i licencja",
-    "cartoAttribution": "CARTO — atrybucje",
     "privacyPolicy": "Polityka prywatności",
     "termsOfUse": "Warunki i uwagi nawigacyjne",
     "publisher": "Oprogramowanie według projektu",
@@ -505,6 +504,7 @@
     "errorStatusFailed": "Nie udało się odczytać statusu pakietu",
     "errorPackMissing": "Brak pakietu offline — pobierz ponownie",
     "errorPackUnavailable": "Nie można zweryfikować pakietu offline — spróbuj ponownie",
+    "errorAmbientPackRetired": "Ten pakiet offline korzystał tylko z tymczasowej pamięci podręcznej i trzeba go pobrać ponownie, aby mapy działały bez zasięgu.",
     "errorDownloadBusy": "Trwa już pobieranie innego wykresu. Poczekaj na zakończenie lub najpierw je anuluj.",
     "errorOffline": "Brak połączenia z internetem — połącz się z Wi-Fi lub komórkową transmisją danych, aby pobrać wykresy.",
     "errorTileServerTimeout": "Serwer kafelków wykresów nie odpowiedział na czas. Sprawdź połączenie i spróbuj ponownie.",
@@ -713,7 +713,10 @@
         "name": "Zatoka Botnicka na południe i Wyspy Alandzkie (dziedzictwo)",
         "description": "Dawny pakiet „wszystko w jednym” — zastąpiony pakietem południowego korytarza Wysp Alandzkich i Morza Botnickiego."
       }
-    }
+    },
+    "basemapUpdatedTitle": "Zaktualizowano mapę bazową",
+    "basemapUpdatedBody": "SeaCheck korzysta teraz z bezpłatnych map wybrzeża OpenSeaMap (bez klucza API). Wcześniej pobrane pakiety używały starej bazy i zostały usunięte. Pobierz ponownie pakiety korytarzy przez Wi‑Fi przed wyjściem w morze.",
+    "basemapUpdatedDismiss": "Rozumiem"
   },
   "waypoints": {
     "subtitle": "Zapisane znaki i porty",

@@ -40,7 +40,14 @@ import {
   subscribeDownloadCoordinatorActivity,
   waitForDownloadMapTeardown,
 } from '../lib/offline/downloadCoordinator';
-import { cacheBackedPackId, isCacheBackedPackId, runTileCacheSweep } from '../lib/offline/tileCacheDownload';
+import {
+  cacheBackedPackId,
+  isCacheBackedPackId,
+  isNativeOfflinePackId,
+  isRedownloadPlaceholderPackId,
+  redownloadPlaceholderPackId,
+  runTileCacheSweep,
+} from '../lib/offline/tileCacheDownload';
 import { downloadMapLingerMs, tileSweepFinalSettleMs } from '../lib/offline/downloadMapConstants';
 import { waitForDownloadMapController } from '../lib/offline/downloadMapHost';
 import { isNativeDownloadKickstarted, isNativePackInitializing } from '../lib/offline/nativePackProgress';
@@ -58,9 +65,18 @@ import { warmupOfflineEngine } from '../lib/offline/warmupOfflineEngine';
 import { ensureStorageForDownload } from '../lib/offline/storageCheck';
 import { sanitizePersistedIndex, type PersistedIndex, type PersistedIndexEntry } from '../lib/offline/offlinePackIndex';
 import {
+  applyBasemapMigrationIfNeeded,
+  dismissBasemapMigrationNotice as clearBasemapMigrationNoticeFlag,
+  resetBasemapMigrationForTests,
+} from '../lib/offline/basemapMigration';
+import {
   reportDownloadFailure,
   reportDownloadFailureFromThrowable,
 } from '../lib/offline/reportDownloadFailure';
+import {
+  resumeDurableOfflinePack,
+  sealDurableOfflinePack,
+} from '../lib/offline/sealDurableOfflinePack';
 
 const STORAGE_KEY = 'seacheck.offline.v1';
 
@@ -98,7 +114,10 @@ export type RegionPackStatus = {
   legacy?: boolean;
   /** Native tile enumeration not finished (requiredResourceCount ≤ 1, no bytes yet). */
   downloadInitializing?: boolean;
-  /** Saved via visible-map tile sweep into ambient cache (not native OfflineManager). */
+  /**
+   * Legacy ambient-only download (pre-durable seal). Never treat as Ready —
+   * hydrate demotes these to re-download.
+   */
   cacheBacked?: boolean;
 };
 
@@ -110,6 +129,8 @@ type OfflinePackStore = {
   activeDownloadRegionId: string | null;
   /** Keeps DownloadMapEngine mounted after coordinator lock clears (Android GL teardown). */
   downloadMapTeardownRegionId: string | null;
+  /** One-shot notice after basemap URL migration invalidated offline packs. */
+  basemapMigrationNotice: boolean;
   hydrate: () => Promise<void>;
   /** Unblocks map UI when boot hydrate was abandoned by timeout but native work may still finish later. */
   ensureHydratedForUi: () => Promise<void>;
@@ -128,6 +149,7 @@ type OfflinePackStore = {
   markPreflightDownloadFailed: (regionId: string, message: string) => void;
   /** Clear a prior preflight error when the user starts a new attempt. */
   resetDownloadErrorForRetry: (regionId: string) => void;
+  dismissBasemapMigrationNotice: () => Promise<void>;
 };
 
 const NATIVE_STATUS_TIMEOUT_MS = 4_000;
@@ -275,20 +297,58 @@ function buildRecoveredRegionsFromIndex(
 ): Record<string, RegionPackStatus> {
   const regions: Record<string, RegionPackStatus> = { ...emptyRegions };
   for (const [regionId, entry] of Object.entries(index)) {
+    if (isRedownloadPlaceholderPackId(entry.packId)) {
+      regions[regionId] = {
+        ...emptyStatus(regionId),
+        custom: entry.custom,
+        displayName: entry.name,
+        state: 'idle',
+        legacy: isLegacyRegionPackId(regionId),
+      };
+      continue;
+    }
     const cacheBacked = entry.cacheBacked || isCacheBackedPackId(entry.packId);
     const sweepInProgress =
       cacheBacked &&
       entry.sweepTotal != null &&
       entry.sweepCompleted != null &&
       entry.sweepCompleted < entry.sweepTotal;
+    if (cacheBacked && sweepInProgress) {
+      regions[regionId] = {
+        ...emptyStatus(regionId),
+        custom: entry.custom,
+        displayName: entry.name,
+        packId: entry.packId,
+        state: 'downloading',
+        percentage: Math.min(
+          85,
+          Math.round(((entry.sweepCompleted ?? 0) / (entry.sweepTotal ?? 1)) * 85),
+        ),
+        cacheBacked: true,
+        legacy: isLegacyRegionPackId(regionId),
+        seamarksIndexed: entry.seamarksIndexed ?? false,
+      };
+      continue;
+    }
+    // Ambient-only “ready” is no longer trusted — require a durable OfflineManager pack.
+    if (cacheBacked) {
+      regions[regionId] = {
+        ...emptyStatus(regionId),
+        custom: entry.custom,
+        displayName: entry.name,
+        state: 'error',
+        error: t('downloads.errorAmbientPackRetired'),
+        legacy: isLegacyRegionPackId(regionId),
+      };
+      continue;
+    }
     regions[regionId] = {
       ...emptyStatus(regionId),
       custom: entry.custom,
       displayName: entry.name,
       packId: entry.packId,
-      state: cacheBacked && !sweepInProgress ? 'ready' : 'error',
-      error: cacheBacked && !sweepInProgress ? null : t('downloads.errorPackUnavailable'),
-      cacheBacked: cacheBacked || undefined,
+      state: 'error',
+      error: t('downloads.errorPackUnavailable'),
       legacy: isLegacyRegionPackId(regionId),
       seamarksIndexed: entry.seamarksIndexed ?? false,
     };
@@ -297,7 +357,7 @@ function buildRecoveredRegionsFromIndex(
 }
 
 async function removeNativePack(packId: string | null | undefined) {
-  if (!packId || isCacheBackedPackId(packId)) return;
+  if (!isNativeOfflinePackId(packId)) return;
   try {
     await OfflineManager.deletePack(packId);
   } catch {
@@ -404,16 +464,32 @@ type DownloadSessionContext = {
   };
 };
 
+function sweepUiPercentage(completed: number, total: number): number {
+  if (total <= 0) return 85;
+  return Math.min(85, Math.round((completed / total) * 85));
+}
+
+function sealUiPercentage(nativePercentage: number): number {
+  const clamped = Math.max(0, Math.min(100, nativePercentage));
+  return Math.min(99, 85 + Math.round((clamped / 100) * 14));
+}
+
 function createCacheDownloadSession(
   ctx: DownloadSessionContext,
   set: (partial: Partial<OfflinePackStore> | ((state: OfflinePackStore) => Partial<OfflinePackStore>)) => void,
 ) {
   type FinalizeOutcome = 'pending' | 'ready' | 'failed';
   let finalizeOutcome: FinalizeOutcome = 'pending';
-  const packId = cacheBackedPackId(ctx.regionId);
+  const ambientPackId = cacheBackedPackId(ctx.regionId);
+  let durablePackId: string | null = null;
 
   const markReady = async () => {
     if (finalizeOutcome !== 'pending') return;
+    const packId = durablePackId;
+    if (!packId || !isNativeOfflinePackId(packId)) {
+      await markFailed(t('downloads.errorDownloadStalled'));
+      return;
+    }
     finalizeOutcome = 'ready';
     rememberDownloadSessionPhase(ctx.regionId, 'finalize');
     try {
@@ -422,7 +498,7 @@ function createCacheDownloadSession(
         packId,
         ctx.previousPackId,
         ctx.bounds,
-        { ...ctx.finalizeExtra, cacheBacked: true },
+        { ...ctx.finalizeExtra, cacheBacked: false },
       );
     } catch (error) {
       finalizeOutcome = 'pending';
@@ -443,7 +519,10 @@ function createCacheDownloadSession(
       } catch {
         /* best effort */
       }
-      await new Promise((resolve) => setTimeout(resolve, tileSweepFinalSettleMs()));
+      const settleMs = tileSweepFinalSettleMs();
+      if (settleMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, settleMs));
+      }
       if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
 
       set((state) => ({
@@ -455,7 +534,7 @@ function createCacheDownloadSession(
             percentage: 100,
             packId,
             error: null,
-            cacheBacked: true,
+            cacheBacked: undefined,
             ...ctx.customMeta,
             seamarksIndexed: false,
             seamarksIndexing: false,
@@ -478,7 +557,10 @@ function createCacheDownloadSession(
         /* best effort — linger below still guards native teardown */
       }
 
-      await new Promise((resolve) => setTimeout(resolve, downloadMapLingerMs()));
+      const lingerMs = downloadMapLingerMs();
+      if (lingerMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, lingerMs));
+      }
       if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
 
       rememberDownloadSessionPhase(ctx.regionId, 'teardown');
@@ -511,9 +593,14 @@ function createCacheDownloadSession(
   const markFailed = async (message: string, cause?: unknown) => {
     if (finalizeOutcome !== 'pending') return;
     finalizeOutcome = 'failed';
-    const phase = 'sweep';
+    const phase = durablePackId ? 'seal' : 'sweep';
     finishDownloadSession(ctx.regionId, set);
     clearDownloadSessionPhase(ctx.regionId);
+
+    if (durablePackId) {
+      await removeNativePack(durablePackId);
+      durablePackId = null;
+    }
 
     if (ctx.restoreOnFailure) {
       set((state) => ({
@@ -531,6 +618,7 @@ function createCacheDownloadSession(
           if (entry) {
             entry.sweepCompleted = undefined;
             entry.sweepTotal = undefined;
+            entry.cacheBacked = undefined;
           }
         });
       } catch {
@@ -570,8 +658,9 @@ function createCacheDownloadSession(
     await updateIndex((index) => {
       // Never regress a finalized/failed outcome with a late progress tick.
       if (finalizeOutcome !== 'pending') return;
+      if (durablePackId) return;
       index[ctx.regionId] = {
-        packId,
+        packId: ambientPackId,
         name: ctx.finalizeExtra?.name ?? ctx.customMeta?.displayName ?? index[ctx.regionId]?.name,
         custom: ctx.customMeta != null ? true : index[ctx.regionId]?.custom,
         bounds: ctx.bounds,
@@ -583,6 +672,92 @@ function createCacheDownloadSession(
         seamarksIndexed: index[ctx.regionId]?.seamarksIndexed,
       };
     });
+  };
+
+  const persistDurablePack = async (packId: string) => {
+    durablePackId = packId;
+    await updateIndex((index) => {
+      if (finalizeOutcome !== 'pending') return;
+      index[ctx.regionId] = {
+        packId,
+        name: ctx.finalizeExtra?.name ?? ctx.customMeta?.displayName ?? index[ctx.regionId]?.name,
+        custom: ctx.customMeta != null ? true : index[ctx.regionId]?.custom,
+        bounds: ctx.bounds,
+        minZoom: ctx.minZoom,
+        maxZoom: ctx.maxZoom,
+        cacheBacked: undefined,
+        sweepCompleted: undefined,
+        sweepTotal: undefined,
+        seamarksIndexed: index[ctx.regionId]?.seamarksIndexed,
+      };
+    });
+  };
+
+  const applySealProgress = (pack: OfflinePack, status: OfflinePackStatus) => {
+    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
+    if (finalizeOutcome !== 'pending') return;
+    durablePackId = pack.id;
+    set((state) => ({
+      regions: {
+        ...state.regions,
+        [ctx.regionId]: {
+          ...(state.regions[ctx.regionId] ?? emptyStatus(ctx.regionId)),
+          regionId: ctx.regionId,
+          state: 'downloading',
+          percentage: sealUiPercentage(status.percentage),
+          packId: pack.id,
+          error: null,
+          cacheBacked: undefined,
+          downloadInitializing: isNativePackInitializing(status),
+          ...ctx.customMeta,
+        },
+      },
+    }));
+  };
+
+  const runSeal = async () => {
+    rememberDownloadSessionPhase(ctx.regionId, 'seal');
+    set((state) => ({
+      regions: {
+        ...state.regions,
+        [ctx.regionId]: {
+          ...(state.regions[ctx.regionId] ?? emptyStatus(ctx.regionId)),
+          regionId: ctx.regionId,
+          state: 'downloading',
+          percentage: 85,
+          packId: durablePackId ?? ambientPackId,
+          error: null,
+          downloadInitializing: true,
+          ...ctx.customMeta,
+        },
+      },
+    }));
+
+    const packId = await sealDurableOfflinePack({
+      regionId: ctx.regionId,
+      session: ctx.session,
+      chartStyleUri: ctx.chartStyleUri,
+      bounds: ctx.bounds,
+      minZoom: ctx.minZoom,
+      maxZoom: ctx.maxZoom,
+      metadata: {
+        name: ctx.finalizeExtra?.name ?? ctx.customMeta?.displayName,
+        custom: ctx.customMeta != null,
+      },
+      stallMessage: t('downloads.errorDownloadStalled'),
+      mapEngineStallMessage: t('downloads.errorMapEngineStyle'),
+      isCancelled: () => downloadCoordinator.isStale(ctx.regionId, ctx.session),
+      isNativeDownloadComplete,
+      kickstartNativeDownload,
+      onPackCreated: async (pack) => {
+        await persistDurablePack(pack.id);
+      },
+      onProgress: applySealProgress,
+    });
+
+    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
+    durablePackId = packId;
+    await markReady();
   };
 
   const runSweep = async (startIndex = 0) => {
@@ -618,8 +793,8 @@ function createCacheDownloadSession(
                 ...(state.regions[ctx.regionId] ?? emptyStatus(ctx.regionId)),
                 regionId: ctx.regionId,
                 state: 'downloading',
-                percentage: progress.percentage,
-                packId,
+                percentage: sweepUiPercentage(progress.completed, progress.total),
+                packId: ambientPackId,
                 error: null,
                 cacheBacked: true,
                 downloadInitializing: progress.percentage <= 0,
@@ -635,10 +810,11 @@ function createCacheDownloadSession(
         await markFailed(t('downloads.errorDownloadStalled'));
         return;
       }
-      await markReady();
+      await runSeal();
     } catch (error) {
       if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
       const code = error instanceof Error ? error.message : '';
+      if (code === 'DOWNLOAD_CANCELLED') return;
       if (code === 'DOWNLOAD_MAP_NOT_READY') {
         await markFailed(t('downloads.errorMapEngineStyle'), error);
         return;
@@ -647,7 +823,7 @@ function createCacheDownloadSession(
     }
   };
 
-  return { markReady, markFailed, runSweep };
+  return { markReady, markFailed, runSweep, runSeal, persistDurablePack, applySealProgress };
 }
 
 async function reattachCacheDownload(
@@ -666,7 +842,7 @@ async function reattachCacheDownload(
         regionId: ctx.regionId,
         state: 'downloading',
         percentage: entry.sweepTotal
-          ? Math.min(99, Math.round(((entry.sweepCompleted ?? 0) / entry.sweepTotal) * 100))
+          ? sweepUiPercentage(entry.sweepCompleted ?? 0, entry.sweepTotal)
           : 0,
         packId: cacheBackedPackId(ctx.regionId),
         error: null,
@@ -679,6 +855,83 @@ async function reattachCacheDownload(
   void runSweep(startIndex).catch((error) => {
     if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
     showDownloadSessionFailure(ctx.regionId, error, 'sweep');
+  });
+}
+
+async function reattachNativeDownload(
+  pack: OfflinePack,
+  entry: PersistedIndexEntry,
+  ctx: DownloadSessionContext,
+  set: (partial: Partial<OfflinePackStore> | ((state: OfflinePackStore) => Partial<OfflinePackStore>)) => void,
+) {
+  if (!downloadCoordinator.restoreActive(ctx.regionId)) return;
+  const { markReady, markFailed, persistDurablePack, applySealProgress } = createCacheDownloadSession(ctx, set);
+
+  set((state) => ({
+    ...syncActiveDownloadId(),
+    regions: {
+      ...state.regions,
+      [ctx.regionId]: {
+        regionId: ctx.regionId,
+        state: 'downloading',
+        percentage: sealUiPercentage(0),
+        packId: pack.id,
+        error: null,
+        cacheBacked: undefined,
+        custom: entry.custom,
+        displayName: entry.name,
+        downloadInitializing: true,
+      },
+    },
+  }));
+
+  void (async () => {
+    rememberDownloadSessionPhase(ctx.regionId, 'seal');
+    try {
+      await persistDurablePack(pack.id);
+      const packId = await resumeDurableOfflinePack({
+        pack,
+        regionId: ctx.regionId,
+        session: ctx.session,
+        chartStyleUri: ctx.chartStyleUri,
+        bounds: ctx.bounds,
+        minZoom: ctx.minZoom,
+        stallMessage: t('downloads.errorDownloadStalled'),
+        mapEngineStallMessage: t('downloads.errorMapEngineStyle'),
+        createOptions: {
+          mapStyle: ctx.chartStyleUri,
+          bounds: ctx.bounds,
+          minZoom: ctx.minZoom,
+          maxZoom: ctx.maxZoom,
+          metadata: {
+            regionId: ctx.regionId,
+            name: entry.name,
+            custom: entry.custom === true,
+            minZoom: ctx.minZoom,
+            maxZoom: ctx.maxZoom,
+          },
+        },
+        isCancelled: () => downloadCoordinator.isStale(ctx.regionId, ctx.session),
+        isNativeDownloadComplete,
+        kickstartNativeDownload,
+        onPackReplaced: async (replacement) => {
+          await persistDurablePack(replacement.id);
+        },
+        onProgress: applySealProgress,
+      });
+      if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
+      await persistDurablePack(packId);
+      // markReady reads durablePackId from the session closure — set via persistDurablePack
+      await markReady();
+    } catch (error) {
+      if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
+      const code = error instanceof Error ? error.message : '';
+      if (code === 'DOWNLOAD_CANCELLED') return;
+      await markFailed(formatDownloadError(error, t('downloads.errorDownloadInterrupted')), error);
+    }
+  })().catch((error) => {
+    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
+    showDownloadSessionFailure(ctx.regionId, error, 'seal');
   });
 }
 
@@ -800,7 +1053,8 @@ async function finalizeReadyDownload(
       bounds: extra?.bounds ?? index[regionId]?.bounds ?? bounds,
       minZoom: extra?.minZoom ?? index[regionId]?.minZoom,
       maxZoom: extra?.maxZoom ?? index[regionId]?.maxZoom,
-      cacheBacked: extra?.cacheBacked ?? index[regionId]?.cacheBacked,
+      // Durable OfflineManager packs must never keep the ambient-cache flag.
+      cacheBacked: extra?.cacheBacked === true ? true : undefined,
       sweepCompleted: undefined,
       sweepTotal: undefined,
     };
@@ -817,6 +1071,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
   customBoundsIndex: {},
   activeDownloadRegionId: null,
   downloadMapTeardownRegionId: null,
+  basemapMigrationNotice: false,
   regions: Object.fromEntries(REGION_PACKS.map((p) => [p.id, emptyStatus(p.id)])),
 
   hydrate: async () => {
@@ -837,7 +1092,13 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         console.warn('[offlinePackStore] offline engine warmup failed', error);
       }
 
-      const index = await loadIndex();
+      let index = await loadIndex();
+      const migration = await applyBasemapMigrationIfNeeded(index);
+      index = migration.index;
+      if (migration.migrated) {
+        await withIndexMutation(() => saveIndex(index));
+      }
+
       const { packs: nativePacksRaw, ok: nativeOk } = await loadNativePacksWithRetry(
         () => OfflineManager.getPacks(),
         BOOT_NATIVE_PACK_ATTEMPTS,
@@ -849,26 +1110,68 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       const regions: Record<string, RegionPackStatus> = { ...emptyRegions };
 
       for (const [regionId, entry] of Object.entries(index)) {
+        if (isRedownloadPlaceholderPackId(entry.packId)) {
+          regions[regionId] = {
+            ...emptyStatus(regionId),
+            custom: entry.custom,
+            displayName: entry.name,
+            state: 'idle',
+            legacy: isLegacyRegionPackId(regionId),
+          };
+          continue;
+        }
+
         if (entry.cacheBacked || isCacheBackedPackId(entry.packId)) {
           const sweepInProgress =
             entry.sweepTotal != null &&
             entry.sweepCompleted != null &&
             entry.sweepCompleted < entry.sweepTotal;
-          const percentage = sweepInProgress
-            ? Math.min(99, Math.round(((entry.sweepCompleted ?? 0) / (entry.sweepTotal ?? 1)) * 100))
-            : 100;
-          regions[regionId] = {
-            regionId,
-            state: sweepInProgress ? 'downloading' : 'ready',
-            percentage,
-            packId: entry.packId,
-            error: null,
-            cacheBacked: true,
-            custom: entry.custom,
-            displayName: entry.name,
-            seamarksIndexed: entry.seamarksIndexed ?? false,
-            legacy: isLegacyRegionPackId(regionId),
-          };
+          if (sweepInProgress) {
+            const percentage = sweepUiPercentage(entry.sweepCompleted ?? 0, entry.sweepTotal ?? 1);
+            regions[regionId] = {
+              regionId,
+              state: 'downloading',
+              percentage,
+              packId: entry.packId,
+              error: null,
+              cacheBacked: true,
+              custom: entry.custom,
+              displayName: entry.name,
+              seamarksIndexed: entry.seamarksIndexed ?? false,
+              legacy: isLegacyRegionPackId(regionId),
+            };
+            continue;
+          }
+
+          // Ambient-only packs can be emptied by MapLibre LRU — demote to re-download.
+          void clearSeamarkIndex(regionId);
+          if (entry.custom && entry.bounds) {
+            index[regionId] = {
+              packId: redownloadPlaceholderPackId(regionId),
+              name: entry.name,
+              custom: true,
+              bounds: entry.bounds,
+              minZoom: entry.minZoom,
+              maxZoom: entry.maxZoom,
+            };
+            regions[regionId] = {
+              ...emptyStatus(regionId),
+              custom: true,
+              displayName: entry.name,
+              state: 'idle',
+              legacy: isLegacyRegionPackId(regionId),
+            };
+          } else {
+            delete index[regionId];
+            regions[regionId] = {
+              ...emptyStatus(regionId),
+              custom: entry.custom,
+              displayName: entry.name,
+              state: 'error',
+              error: t('downloads.errorAmbientPackRetired'),
+              legacy: isLegacyRegionPackId(regionId),
+            };
+          }
           continue;
         }
 
@@ -907,6 +1210,17 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
             error: t('downloads.errorStatusFailed'),
             custom: entry.custom,
             displayName: entry.name,
+            legacy: isLegacyRegionPackId(regionId),
+          };
+          continue;
+        }
+        if (!isNativeDownloadComplete(nativeStatus)) {
+          // Kill mid-seal / process death — resume the durable OfflineManager pack.
+          regions[regionId] = {
+            ...statusFromNative(regionId, native.id, nativeStatus, { sessionActive: true }),
+            custom: entry.custom,
+            displayName: entry.name,
+            seamarksIndexed: entry.seamarksIndexed ?? false,
             legacy: isLegacyRegionPackId(regionId),
           };
           continue;
@@ -994,7 +1308,13 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         };
 
         if (entry?.cacheBacked || regionStatus.cacheBacked) {
-          void reattachCacheDownload(entry, ctx, set);
+          void reattachCacheDownload(entry!, ctx, set);
+          continue;
+        }
+
+        const nativePack = nativePacks.find((p) => p.id === regionStatus.packId);
+        if (nativePack && isNativeOfflinePackId(nativePack.id)) {
+          void reattachNativeDownload(nativePack, entry ?? { packId: nativePack.id }, ctx, set);
           continue;
         }
 
@@ -1011,6 +1331,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         chartStyleUri,
         regions,
         customBoundsIndex,
+        basemapMigrationNotice: migration.showNotice,
         ...syncActiveDownloadId(),
       });
 
@@ -1039,9 +1360,18 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
           customBoundsIndex: buildCustomBoundsIndex(index),
           activeDownloadRegionId: null,
           downloadMapTeardownRegionId: null,
+          basemapMigrationNotice: false,
         });
       } catch {
-        set({ hydrated: true, chartStyleUri, regions: emptyRegions, customBoundsIndex: {}, activeDownloadRegionId: null, downloadMapTeardownRegionId: null });
+        set({
+          hydrated: true,
+          chartStyleUri,
+          regions: emptyRegions,
+          customBoundsIndex: {},
+          activeDownloadRegionId: null,
+          downloadMapTeardownRegionId: null,
+          basemapMigrationNotice: false,
+        });
       }
     } finally {
       if (!get().hydrated) {
@@ -1052,6 +1382,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
           customBoundsIndex: {},
           activeDownloadRegionId: null,
           downloadMapTeardownRegionId: null,
+          basemapMigrationNotice: false,
         });
       }
     }
@@ -1453,6 +1784,11 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
     });
   },
 
+  dismissBasemapMigrationNotice: async () => {
+    await clearBasemapMigrationNoticeFlag();
+    set({ basemapMigrationNotice: false });
+  },
+
   retryPendingSeamarkIndexing: async () => {
     if (!(await fetchIsEffectivelyOnline())) return;
     const index = await loadIndex();
@@ -1503,12 +1839,14 @@ export function resetOfflinePackStoreForTests(): void {
   attachDownloadCoordinatorStoreSync();
   resetOfflineManagerSetupForTests();
   resetOfflineMapEngineHostForTests();
+  void resetBasemapMigrationForTests();
   useOfflinePackStore.setState({
     hydrated: false,
     chartStyleUri: null,
     customBoundsIndex: {},
     activeDownloadRegionId: null,
     downloadMapTeardownRegionId: null,
+    basemapMigrationNotice: false,
     regions: Object.fromEntries(REGION_PACKS.map((p) => [p.id, emptyStatus(p.id)])),
   });
 }

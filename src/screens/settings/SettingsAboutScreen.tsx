@@ -49,11 +49,6 @@ export function SettingsAboutScreen() {
       <Card>
         <Text style={[settingsStyles.bodyText, { color: colors.textMuted }]}>{MAP_ATTRIBUTION}</Text>
         <ExternalLinkRow
-          label={t('legal.cartoAttribution')}
-          url={EXTERNAL_LINKS.cartoAttribution}
-          testID="settings.about.carto"
-        />
-        <ExternalLinkRow
           label={t('legal.privacyPolicy')}
           url={privacyPolicyUrl()}
           testID="settings.about.privacy"

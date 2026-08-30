@@ -176,7 +176,7 @@
     "mapBehaviourTitle": "Kartenverhalten",
     "chartDataTitle": "Karte & Daten",
     "chartDataSummary": "Basiskarte und OpenSeaMap-Seezeichen — was SeaCheck offline lädt und anzeigt.",
-    "chartDataLayersBody": "SeaCheck nutzt Carto-Voyager-Basiskacheln plus OpenSeaMap-Seezeichen-Kacheln. Beides ist in offline Regionen-Paketen enthalten.",
+    "chartDataLayersBody": "SeaCheck nutzt OpenStreetMap-Basiskacheln von OpenSeaMap plus OpenSeaMap-Seezeichen-Kacheln. Beides ist in Offline-Regionen-Paketen enthalten.",
     "underwayGpsTitle": "Unterwegs",
     "alarmFeedbackTitle": "Alarm-Rückmeldung",
     "alarmLimitsTitle": "Alarm-Entfernungen",
@@ -248,7 +248,6 @@
     "disclaimerOfficial": "Daher ist SeaCheck allein nicht für die Navigation geeignet. Nutzen Sie die App ergänzend zu Ihren offiziellen, berichtigten und aktuellen Seekarten, prüfen Sie NtM und sicherheitsrelevante Angaben vor dem Auslaufen.",
     "openSeaMapLicense": "OpenSeaMap — Projekt & Lizenz",
     "openStreetMapCopyright": "OpenStreetMap — Projekt & Lizenz",
-    "cartoAttribution": "CARTO — Attribution",
     "privacyPolicy": "Datenschutzerklärung",
     "termsOfUse": "Nutzungsbedingungen & Navigation-Hinweis",
     "publisher": "Software by Design",
@@ -505,6 +504,7 @@
     "errorStatusFailed": "Pack-Status konnte nicht gelesen werden",
     "errorPackMissing": "Offline-Paket fehlt — erneut herunterladen",
     "errorPackUnavailable": "Offline-Paket konnte nicht geprüft werden — erneut versuchen",
+    "errorAmbientPackRetired": "Dieses Offline-Paket nutzte nur einen temporären Cache und muss erneut geladen werden, damit Karten ohne Empfang zuverlässig bleiben.",
     "errorDownloadBusy": "Ein anderer Karten-Download läuft bereits. Warten oder zuerst abbrechen.",
     "errorOffline": "Keine Internetverbindung — WLAN oder Mobilfunk für Karten-Downloads nötig.",
     "errorTileServerTimeout": "Kartenkachel-Server antwortet nicht rechtzeitig. Verbindung prüfen und erneut versuchen.",
@@ -713,7 +713,10 @@
         "name": "Bottnisches Meer & Åland (Legacy)",
         "description": "Ehemaliges Sammelpaket — ersetzt durch Åland & südliches Bottnische Meer."
       }
-    }
+    },
+    "basemapUpdatedTitle": "Kartengrundlage aktualisiert",
+    "basemapUpdatedBody": "SeaCheck nutzt jetzt kostenlose OpenSeaMap-Küstenkarten (ohne API-Schlüssel). Früher heruntergeladene Pakete nutzten die alte Basis und wurden entfernt. Laden Sie Ihre Korridor-Pakete erneut per WLAN herunter, bevor Sie ablegen.",
+    "basemapUpdatedDismiss": "Verstanden"
   },
   "waypoints": {
     "subtitle": "Gespeicherte Tonnen und Häfen",

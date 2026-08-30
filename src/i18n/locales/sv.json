@@ -176,7 +176,7 @@
     "mapBehaviourTitle": "Kartbeteende",
     "chartDataTitle": "Diagram & data",
     "chartDataSummary": "Grundkarta och OpenSeaMap sjömärken — vad SeaCheck laddar ner och visar offline.",
-    "chartDataLayersBody": "SeaCheck använder Carto Voyager basplattor plus OpenSeaMap sjömärkesplattor. Båda ingår i offlineregionspaket.",
+    "chartDataLayersBody": "SeaCheck använder OpenStreetMap-baskartor från OpenSeaMap plus OpenSeaMap-sjömärkesplattor. Båda ingår i offlineregionspaket.",
     "underwayGpsTitle": "Under pågående",
     "alarmFeedbackTitle": "Larmåterkoppling",
     "alarmLimitsTitle": "Larmavstånd",
@@ -248,7 +248,6 @@
     "disclaimerOfficial": "På grund av detta är SeaCheck inte lämplig för navigering på egen hand. Använd den tillsammans med dina officiella, korrigerade, uppdaterade sjökort, kontrollera meddelanden till sjöfarare och verifiera allt som är viktigt för säkerheten innan du går.",
     "openSeaMapLicense": "OpenSeaMap — projekt & licens",
     "openStreetMapCopyright": "OpenStreetMap — projekt och licens",
-    "cartoAttribution": "CARTO — tillskrivningar",
     "privacyPolicy": "Integritetspolicy",
     "termsOfUse": "Villkor och navigeringsmeddelande",
     "publisher": "Software by Design",
@@ -505,6 +504,7 @@
     "errorStatusFailed": "Kunde inte läsa paketstatus",
     "errorPackMissing": "Offlinepaket saknas – ladda ner igen",
     "errorPackUnavailable": "Det gick inte att verifiera offlinepaketet – försök igen",
+    "errorAmbientPackRetired": "Detta offlinepaket använde bara en tillfällig cache och måste laddas ner igen för tillförlitliga sjökort utan signal.",
     "errorDownloadBusy": "En annan diagramnedladdning körs redan. Vänta tills det är klart eller avbryt det först.",
     "errorOffline": "Ingen internetanslutning – anslut till Wi-Fi eller mobildata för att ladda ner sjökort.",
     "errorTileServerTimeout": "Sjökortsservern svarade inte i tid. Kontrollera din anslutning och försök igen.",
@@ -713,7 +713,10 @@
         "name": "Bottenviken söder & Åland (arv)",
         "description": "Tidigare allt-i-ett-paket — ersatt av Åland & Bottenhavets sydkorridorpaket."
       }
-    }
+    },
+    "basemapUpdatedTitle": "Kartbas uppdaterad",
+    "basemapUpdatedBody": "SeaCheck använder nu gratis OpenSeaMap-kustkort (utan API-nyckel). Tidigare nedladdade paket använde den gamla basen och rensades. Ladda ner dina korridorpaket igen via Wi‑Fi innan du går till sjöss.",
+    "basemapUpdatedDismiss": "Jag förstår"
   },
   "waypoints": {
     "subtitle": "Sparade märken och hamnar",

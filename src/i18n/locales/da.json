@@ -176,7 +176,7 @@
     "mapBehaviourTitle": "Kortlægge adfærd",
     "chartDataTitle": "Diagram & data",
     "chartDataSummary": "Grundkort og OpenSeaMap-sømærker — hvad SeaCheck downloader og viser offline.",
-    "chartDataLayersBody": "SeaCheck bruger Carto Voyager basisfliser plus OpenSeaMap sømærkefliser. Begge er inkluderet i offline regionspakker.",
+    "chartDataLayersBody": "SeaCheck bruger OpenStreetMap-basiskortfliser fra OpenSeaMap plus OpenSeaMap-sømærkefliser. Begge er inkluderet i offline regionspakker.",
     "underwayGpsTitle": "Undervejs",
     "alarmFeedbackTitle": "Alarmfeedback",
     "alarmLimitsTitle": "Alarm afstande",
@@ -248,7 +248,6 @@
     "disclaimerOfficial": "På grund af dette er SeaCheck ikke egnet til navigation alene. Brug det sammen med dine officielle, rettede, ajourførte søkort, tjek meddelelser til søfarende, og bekræft alt, hvad der er vigtigt for sikkerheden, før du går.",
     "openSeaMapLicense": "OpenSeaMap — projekt og licens",
     "openStreetMapCopyright": "OpenStreetMap — projekt og licens",
-    "cartoAttribution": "CARTO — attributioner",
     "privacyPolicy": "Privatlivspolitik",
     "termsOfUse": "Vilkår og navigationsmeddelelse",
     "publisher": "Software by Design",
@@ -505,6 +504,7 @@
     "errorStatusFailed": "Pakkestatus kunne ikke læses",
     "errorPackMissing": "Offlinepakke mangler – download igen",
     "errorPackUnavailable": "Offlinepakke kunne ikke bekræftes – prøv igen",
+    "errorAmbientPackRetired": "Denne offlinepakke brugte kun midlertidig cache og skal downloades igen for pålidelige kort uden signal.",
     "errorDownloadBusy": "En anden diagramdownload kører allerede. Vent til det er færdigt, eller annuller det først.",
     "errorOffline": "Ingen internetforbindelse — opret forbindelse til Wi-Fi eller mobildata for at downloade diagrammer.",
     "errorTileServerTimeout": "Kortfliseserver svarede ikke i tide. Tjek din forbindelse, og prøv igen.",
@@ -713,7 +713,10 @@
         "name": "Botniske Bugt syd og Åland (arv)",
         "description": "Tidligere alt-i-en-pakke — erstattet af Åland & Bottenhavets sydkorridorpakke."
       }
-    }
+    },
+    "basemapUpdatedTitle": "Kortgrundlag opdateret",
+    "basemapUpdatedBody": "SeaCheck bruger nu gratis OpenSeaMap-kystkort (uden API-nøgle). Tidligere downloadede pakker brugte det gamle grundlag og er blevet ryddet. Download dine korridorpakker igen via Wi‑Fi, før du sejler ud.",
+    "basemapUpdatedDismiss": "Forstået"
   },
   "waypoints": {
     "subtitle": "Gemte mærker og havne",

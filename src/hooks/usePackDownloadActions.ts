@@ -50,8 +50,9 @@ export function usePackDownloadActions() {
         return false;
       }
       const allowed = await ensureDownloadAllowed();
-      if (!allowed) {
-        showInfo(t('downloads.cellularCancelledBody'));
+      if (!allowed.ok) {
+        if (allowed.reason === 'offline') showError(t('downloads.errorOffline'));
+        else showInfo(t('downloads.cellularCancelledBody'));
         return false;
       }
       setActionBusyId(regionId);

@@ -2,7 +2,7 @@
 
 Use **Play Console → App content → Data safety**. Answers match the **production** app (`de.softwarebydesign.seacheck`) as implemented in this repository.
 
-**Framing:** SeaCheck is **standalone**. Navigation data stays **on the device**. The app contacts **third-party map services** when online (CARTO, OpenSeaMap, Overpass). **No** Software by Design backend receives your passages or GPS history.
+**Framing:** SeaCheck is **standalone**. Navigation data stays **on the device**. The app contacts **third-party map services** when online (OpenSeaMap, Overpass). **No** Software by Design backend receives your passages or GPS history.
 
 ---
 
@@ -10,7 +10,7 @@ Use **Play Console → App content → Data safety**. Answers match the **produc
 
 Suggested short summary:
 
-> SeaCheck stores waypoints, passages, and tracks on your device. Location is used for the chart, alarms, and track recording. Chart downloads contact CARTO and OpenSeaMap. No ads or analytics. No account required.
+> SeaCheck stores waypoints, passages, and tracks on your device. Location is used for the chart, alarms, and track recording. Chart downloads contact OpenSeaMap (base + seamarks). No ads or analytics. No account required.
 
 ---
 
@@ -92,7 +92,7 @@ SeaCheck does **not** use body / health sensors (no heart rate, steps, or barome
 |----------|--------|
 | Is all user data encrypted in transit? | **Yes** |
 
-HTTPS for CARTO, OpenSeaMap, and Overpass tile/API requests.
+HTTPS for OpenSeaMap and Overpass tile/API requests.
 
 ---
 

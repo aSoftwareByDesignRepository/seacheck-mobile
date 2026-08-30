@@ -1,6 +1,6 @@
 # Nutzungsbedingungen & Navigation-Hinweis — SeaCheck Mobile
 
-**Stand:** 12.07.2026  
+**Stand:** 30.08.2026  
 **App:** SeaCheck Mobile  
 **Anbieter:** Software by Design GbR, Husumer Baum 2, 24837 Schleswig, Deutschland  
 **Kontakt:** info@software-by-design.de  
@@ -29,7 +29,7 @@ SeaCheck ist **kein** zertifiziertes ECDIS, kein Kartenplotter und **kein** Ersa
 
 ## 3. Kartendaten & Drittanbieter
 
-SeaCheck nutzt die freiwillige Arbeit von **OpenSeaMap** und **OpenStreetMap** sowie **CARTO** Voyager-Basiskacheln. Diese Gemeinschaftsdaten sind wertvoll für Orientierung und Routenplanung.
+SeaCheck nutzt die freiwillige Arbeit von **OpenSeaMap** und **OpenStreetMap** (OSM-Küstenbasis + Seezeichen-Overlay). Diese Gemeinschaftsdaten sind wertvoll für Orientierung und Routenplanung.
 
 Die Daten werden von Freiwilligen gepflegt und **können veraltet oder lückenhaft** sein. Es handelt sich nicht um vermessene Seekarten; amtliche Tiefen, Fahrwasser und Berichtigungen der Seebehörden sind nicht enthalten.
 
@@ -39,7 +39,6 @@ Attribution und Lizenzen:
 
 - [OpenSeaMap — Projekt & Lizenz](https://www.openseamap.org/index.php?L=1&id=faq)
 - [OpenStreetMap — Urheberrecht & Lizenz](https://www.openstreetmap.org/copyright)
-- [CARTO — Attribution](https://carto.com/attributions/)
 
 ---
 
@@ -74,7 +73,7 @@ Siehe unsere [Datenschutzerklärung](https://nextcloud.software-by-design.de/de/
 
 ## 7. Urheberrecht
 
-Die SeaCheck-App-Software ist proprietär © Software by Design GbR. Kartendaten unterliegen den Lizenzen von OpenStreetMap, OpenSeaMap und CARTO.
+Die SeaCheck-App-Software steht unter der **GNU Affero General Public License v3.0 oder später (AGPL-3.0-or-later)** © Software by Design GbR. Der zur verteilten App gehörende Quellcode ist unter dieser Lizenz verfügbar. Kartendaten unterliegen den Lizenzen von OpenStreetMap und OpenSeaMap.
 
 ---
 

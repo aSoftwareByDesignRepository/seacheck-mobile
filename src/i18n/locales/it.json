@@ -176,7 +176,7 @@
     "mapBehaviourTitle": "Comportamento della mappa",
     "chartDataTitle": "Grafico e dati",
     "chartDataSummary": "Mappa di base e segnali marittimi OpenSeaMap: cosa SeaCheck scarica e mostra offline.",
-    "chartDataLayersBody": "SeaCheck utilizza i riquadri base di Carto Voyager più i riquadri dei segnali marittimi OpenSeaMap. Entrambi sono inclusi nei pacchetti regionali offline.",
+    "chartDataLayersBody": "SeaCheck utilizza i riquadri base OpenStreetMap di OpenSeaMap più i riquadri dei segnali marittimi OpenSeaMap. Entrambi sono inclusi nei pacchetti regionali offline.",
     "underwayGpsTitle": "Durante il viaggio",
     "alarmFeedbackTitle": "Feedback di allarme",
     "alarmLimitsTitle": "Distanze di allarme",
@@ -248,7 +248,6 @@
     "disclaimerOfficial": "Per questo motivo, SeaCheck non è adatto alla navigazione da solo. Usalo insieme alle tue carte ufficiali, corrette e aggiornate, controlla gli avvisi ai naviganti e verifica qualsiasi cosa critica per la sicurezza prima di partire.",
     "openSeaMapLicense": "OpenSeaMap — progetto e licenza",
     "openStreetMapCopyright": "OpenStreetMap: progetto e licenza",
-    "cartoAttribution": "CARTO — attribuzioni",
     "privacyPolicy": "Politica sulla riservatezza",
     "termsOfUse": "Termini e avviso di navigazione",
     "publisher": "Software in base alla progettazione",
@@ -505,6 +504,7 @@
     "errorStatusFailed": "Impossibile leggere lo stato del pacchetto",
     "errorPackMissing": "Pacchetto offline mancante: scaricalo di nuovo",
     "errorPackUnavailable": "Impossibile verificare il pacchetto offline: riprova",
+    "errorAmbientPackRetired": "Questo pacchetto offline usava solo una cache temporanea e va scaricato di nuovo per carte affidabili senza segnale.",
     "errorDownloadBusy": "Un altro download della carta è già in esecuzione. Attendi prima che finisca o annullalo.",
     "errorOffline": "Nessuna connessione Internet: connettiti alla rete Wi-Fi o ai dati mobili per scaricare le carte.",
     "errorTileServerTimeout": "Il server delle tessere cartografiche non ha risposto in tempo. Controlla la connessione e riprova.",
@@ -713,7 +713,10 @@
         "name": "Golfo di Botnia sud e Åland (eredità)",
         "description": "Ex pacchetto tutto in uno: sostituito dal pacchetto corridoio sud Åland e Mare di Botnia."
       }
-    }
+    },
+    "basemapUpdatedTitle": "Mappa di base aggiornata",
+    "basemapUpdatedBody": "SeaCheck ora usa le carte costiere gratuite OpenSeaMap (senza chiave API). I pacchetti scaricati in precedenza usavano la vecchia base ed sono stati cancellati. Scarica di nuovo i pacchetti corridoio via Wi‑Fi prima di andare al largo.",
+    "basemapUpdatedDismiss": "Ho capito"
   },
   "waypoints": {
     "subtitle": "Segnali e porti salvati",

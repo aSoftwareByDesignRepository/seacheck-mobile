@@ -101,8 +101,9 @@ export function CustomDownloadMapPanel() {
     const regionId = `custom_${Date.now().toString(36)}`;
     try {
       const allowed = await ensureDownloadAllowed();
-      if (!allowed) {
-        showInfo(t('downloads.cellularCancelledBody'));
+      if (!allowed.ok) {
+        if (allowed.reason === 'offline') showError(t('downloads.errorOffline'));
+        else showInfo(t('downloads.cellularCancelledBody'));
         return;
       }
       const center = boundsCenter(bounds);

@@ -10,7 +10,7 @@ Open-source maritime navigation companion (offline charts, GPS instruments, pass
 - React Navigation 7 (bottom tabs)
 - Zustand + AsyncStorage
 - expo-location, expo-keep-awake
-- EN / DE (i18n-js)
+- i18n-js (EN, DE, DA, ES, FR, IT, NB, NL, PL, PT, SV)
 
 ## Run
 
@@ -81,7 +81,7 @@ npm run preflight
 
 On-water testing targets: **Kieler Bucht**, **Småland**, **Dänische Südsee** — see plan §6.9.
 
-## Scope (scaffold)
+## Offline charts
 
 This app is **offline-first**: download region packs (base + OpenSeaMap seamarks) on Wi‑Fi, then use charts without signal.
 
@@ -92,7 +92,7 @@ This app is **offline-first**: download region packs (base + OpenSeaMap seamarks
 
 Live online tiles still work while downloading; once a pack is **Ready for offline use**, MapLibre serves cached tiles.
 
-**After adding MapLibre**, rebuild the native app once:
+Native rebuild is required after changing MapLibre or `app.config.ts` plugins:
 
 ```bash
 npm run android   # or npm run ios

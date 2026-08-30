@@ -176,7 +176,7 @@
     "mapBehaviourTitle": "Kartlegg atferd",
     "chartDataTitle": "Diagram og data",
     "chartDataSummary": "Grunnkart og OpenSeaMap sjømerker — hva SeaCheck laster ned og viser offline.",
-    "chartDataLayersBody": "SeaCheck bruker Carto Voyager bunnfliser pluss OpenSeaMap sjømerkefliser. Begge er inkludert i frakoblede regionpakker.",
+    "chartDataLayersBody": "SeaCheck bruker OpenStreetMap-grunnkartfliser fra OpenSeaMap pluss OpenSeaMap-sjømerkefliser. Begge er inkludert i frakoblede regionpakker.",
     "underwayGpsTitle": "Underveis",
     "alarmFeedbackTitle": "Alarmtilbakemelding",
     "alarmLimitsTitle": "Alarmavstander",
@@ -248,7 +248,6 @@
     "disclaimerOfficial": "På grunn av dette er SeaCheck ikke egnet for navigering alene. Bruk den sammen med de offisielle, korrigerte, oppdaterte kartene dine, sjekk Notices to Mariners, og kontroller alt som er viktig for sikkerheten før du drar.",
     "openSeaMapLicense": "OpenSeaMap — prosjekt og lisens",
     "openStreetMapCopyright": "OpenStreetMap — prosjekt og lisens",
-    "cartoAttribution": "CARTO — attribusjoner",
     "privacyPolicy": "Personvernerklæring",
     "termsOfUse": "Vilkår og navigasjonsvarsel",
     "publisher": "Software by Design",
@@ -505,6 +504,7 @@
     "errorStatusFailed": "Kunne ikke lese pakkestatus",
     "errorPackMissing": "Frakoblet pakke mangler – last ned igjen",
     "errorPackUnavailable": "Kunne ikke bekrefte frakoblet pakke – prøv igjen",
+    "errorAmbientPackRetired": "Denne frakoblede pakken brukte bare midlertidig hurtigbuffer og må lastes ned på nytt for pålitelige kart uten signal.",
     "errorDownloadBusy": "En annen kartnedlasting kjører allerede. Vent til den er ferdig, eller avbryt den først.",
     "errorOffline": "Ingen Internett-tilkobling – koble til Wi-Fi eller mobildata for å laste ned kart.",
     "errorTileServerTimeout": "Kartflisserver svarte ikke i tide. Sjekk tilkoblingen og prøv igjen.",
@@ -713,7 +713,10 @@
         "name": "Bottenviken sør og Åland (arv)",
         "description": "Tidligere alt-i-ett-pakke — erstattet av sørkorridorpakken Åland og Bottenhavet."
       }
-    }
+    },
+    "basemapUpdatedTitle": "Kartgrunnlag oppdatert",
+    "basemapUpdatedBody": "SeaCheck bruker nå gratis OpenSeaMap-kystkart (uten API-nøkkel). Tidligere nedlastede pakker brukte det gamle grunnlaget og ble slettet. Last ned korridorpakkene på nytt over Wi‑Fi før du går til sjøs.",
+    "basemapUpdatedDismiss": "Skjønner"
   },
   "waypoints": {
     "subtitle": "Lagrede merker og havner",

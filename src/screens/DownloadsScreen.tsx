@@ -139,6 +139,8 @@ export function DownloadsScreen() {
   const activeDownloadRegionId = useOfflinePackStore((s) => s.activeDownloadRegionId);
   const downloadMapTeardownRegionId = useOfflinePackStore((s) => s.downloadMapTeardownRegionId);
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
+  const basemapMigrationNotice = useOfflinePackStore((s) => s.basemapMigrationNotice);
+  const dismissBasemapMigrationNotice = useOfflinePackStore((s) => s.dismissBasemapMigrationNotice);
   const deleteRegion = useOfflinePackStore((s) => s.deleteRegion);
   const retryPendingSeamarkIndexing = useOfflinePackStore((s) => s.retryPendingSeamarkIndexing);
   const ensureChartStyle = useOfflinePackStore((s) => s.ensureChartStyle);
@@ -462,6 +464,8 @@ export function DownloadsScreen() {
         activeDownloadRegionId={activeDownloadRegionId}
         downloadMapTeardownRegionId={downloadMapTeardownRegionId}
         hydrated={hydrated}
+        basemapMigrationNotice={basemapMigrationNotice}
+        onDismissBasemapNotice={() => void dismissBasemapMigrationNotice()}
         onCancelActive={
           activeDownloadRegionId ? () => void handleCancel(activeDownloadRegionId) : undefined
         }
