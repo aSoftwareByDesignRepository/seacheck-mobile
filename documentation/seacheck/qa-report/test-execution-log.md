@@ -55,6 +55,20 @@ Command: npm run mutate:core
 Result: 16 killed, 0 survived of 16
 ```
 
+---
+
+## 2026-08-30T14:30:xxZ — Download honesty hardening
+
+Fixes: cancel settles mid-seal; frozen-tile stall; style-only Ready rejected; Ready deferred to post-teardown (99% Saving); cancel-after-seal keeps Ready; hydrate preserves live download.
+
+```
+Command: npm test -- --forceExit
+Result: 129 suites / 625 tests PASS
+
+Command: npm run mutate:core
+Result: 16 killed, 0 survived of 16
+```
+
 Includes: `download-wifi-netinfo-fail-open`, `download-wifi-offline-as-cellular`, GPS/anchor mutants, download exclusivity.
 
 ---
