@@ -36,10 +36,8 @@ tags:
 - tapOn:
     text: "Continue"
     optional: true
-- extendedWaitUntil:
-    visible:
-      id: "tab.map"
-    timeout: 180000
+# Dev client may re-show onboarding chrome after process death — reuse helper.
+- runFlow: 01-onboarding-skip.yaml
 - runFlow: 01b-open-downloads.yaml
 - waitForAnimationToEnd:
     timeout: 5000

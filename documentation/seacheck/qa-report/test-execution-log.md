@@ -124,6 +124,35 @@ depth.openseamap.org tracks_100m → HTTP/2 200 image/png
 
 ---
 
+## 2026-08-30T18:50Z — Maestro CI false-green caught + fixed
+
+GitHub run [33327634960](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33327634960) concluded **success** but the log showed:
+
+```
+[Failed] 02-download-cancel-mid ... (attempt 1)
+[Failed] 03-download-kill-mid ... screen.onboarding (attempt 1+2)
+==> maestro attempt N failed (exit 0)   # ← bash $? after `if` is always 0
+==> ci-maestro passed                   # ← FALSE GREEN
+```
+
+Root causes:
+1. `rc=$?` after `if cmd; then ...; fi` reads the `if` status (0), not `cmd`.
+2. `maestro test cancel.yaml kill.yaml` in one shot: kill's onboarding assert failed after cancel finished onboarding.
+3. Cancel attempt-1 CDN/UI flake recovered on attempt-2, but kill never passed.
+
+Fixes landed:
+- `scripts/ci-maestro.sh`: `set +e` + explicit `flow_rc`; run **cancel** then **kill** as separate `maestro-e2e.sh` invocations (each pm-clears).
+- `.maestro/01-onboarding-skip.yaml`: wait for `screen.onboarding|tab.map` (warm start OK).
+- `.maestro/03-download-kill-mid.yaml`: re-run onboarding helper after killApp relaunch.
+- Workflow: env block for APK/attempts; single-line script with ANDROID_SERIAL.
+
+```
+Command: npm test -- --ci --no-coverage
+Result: exits 0 without forceExit (downloadMapConstants zero under NODE_ENV=test)
+```
+
+---
+
 ## 2026-08-30T16:55Z — Jest exits without forceExit + CI wiring
 
 ```

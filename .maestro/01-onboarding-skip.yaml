@@ -2,11 +2,11 @@ appId: de.softwarebydesign.seacheck
 tags:
   - helper
 ---
-# Skip onboarding (any step) to map chrome. Runtime permission grants may skip
-# disclaimer/location and land on battery/finish.
+# Reach map chrome from cold start (onboarding) or warm start (already past it).
+# Never require screen.onboarding — kill-mid / chained runs may already be on tabs.
 - extendedWaitUntil:
     visible:
-      id: "screen.onboarding"
+      id: "screen\\.onboarding|tab\\.map"
     timeout: 180000
 - tapOn:
     id: "onboarding.disclaimer.continue"

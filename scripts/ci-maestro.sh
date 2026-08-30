@@ -99,19 +99,30 @@ start_metro
 adb -s "$DEVICE" reverse "tcp:${METRO_PORT}" "tcp:${METRO_PORT}" >/dev/null 2>&1 || true
 
 # Retry once — OpenSeaMap CDN / cold Metro bundle flakes are common on GHA.
+# Run cancel and kill as separate invocations (each pm-clears). Chaining both
+# in one `maestro test` left kill mid-flow asserting onboarding after cancel
+# already finished it — false failures. Also: never read $? after `if`; that
+# always yields 0 and falsely green-lit failed Maestro (caught 2026-08-30).
 attempts="${SEACHECK_MAESTRO_ATTEMPTS:-2}"
-rc=1
-for attempt in $(seq 1 "$attempts"); do
-  log "maestro attempt $attempt/$attempts (device=$DEVICE)"
-  if bash "$ROOT/scripts/maestro-e2e.sh" all; then
-    rc=0
-    break
-  fi
-  rc=$?
-  log "maestro attempt $attempt failed (exit $rc)"
-  sleep 5
+flows=(cancel kill)
+for flow in "${flows[@]}"; do
+  flow_ok=0
+  for attempt in $(seq 1 "$attempts"); do
+    log "maestro $flow attempt $attempt/$attempts (device=$DEVICE)"
+    set +e
+    bash "$ROOT/scripts/maestro-e2e.sh" "$flow"
+    flow_rc=$?
+    set -e
+    if [[ "$flow_rc" -eq 0 ]]; then
+      flow_ok=1
+      log "maestro $flow passed (attempt $attempt)"
+      break
+    fi
+    log "maestro $flow attempt $attempt failed (exit $flow_rc)"
+    sleep 5
+  done
+  [[ "$flow_ok" -eq 1 ]] || die "Maestro $flow failed after $attempts attempt(s)"
 done
 
-[[ "$rc" -eq 0 ]] || die "Maestro download honesty failed after $attempts attempt(s)"
 log "ci-maestro passed"
 exit 0

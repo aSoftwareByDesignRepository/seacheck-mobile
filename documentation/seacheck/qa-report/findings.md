@@ -20,10 +20,10 @@
 | Low | — | README HTTPS; storageCheck fail-closed; Maestro cancel/kill device E2E + CI; Jest exits without forceExit |
 
 **Fit for client/auditor today?**  
-**Yes** for functional + download integrity (including cancel/seal/hydrate honesty) + depth opt-in + limited-anchor honesty. Residual: Maestro CI needs a healthy GHA emulator host (`libpulse0` + lighter AVD; OpenSeaMap CDN retried once); native WMS pixels not visually audited on device.
+**Yes** for functional + download integrity (including cancel/seal/hydrate honesty) + depth opt-in + limited-anchor honesty. Residual: native WMS pixels not visually audited on device; OpenSeaMap CDN flakes retried once in Maestro CI.
 
 Safety/offline mutation: **16 killed / 0 survived / 16**.  
-Full Jest after download honesty pass: **130 suites / 632 tests** green (no `--forceExit`).
+Full Jest after download honesty pass: **130+ suites** green (no `--forceExit`).
 
 ---
 
@@ -225,7 +225,11 @@ Flows under `.maestro/` + `scripts/maestro-e2e.sh` (`npm run e2e:maestro:cancel`
 - `03-download-kill-mid` → **PASS** on `emulator-5554` (Pixel_3_API_33); killApp mid-flight → relaunch → no Ready banner.
 - Script disables other `softwarebydesign.*` packages for the run (DutyCheck FG steal) and re-enables on EXIT.
 
-**CI:** `.github/workflows/e2e-maestro.yml` builds a debug APK, boots **one** API-33 emulator, runs `npm run ci:maestro` (cancel + kill, one retry for CDN flakes). Also on `workflow_dispatch` / weekly schedule / download-path PRs.
+**CI:** `.github/workflows/e2e-maestro.yml` builds a debug APK, boots **one** API-33 emulator, runs `npm run ci:maestro` (cancel then kill as **separate** clear+run invocations; one retry each for CDN flakes). Also on `workflow_dispatch` / weekly schedule / download-path PRs.
+
+**CI honesty fix (2026-08-30):** Prior `ci-maestro.sh` read `$?` after `if`, which is always 0 in bash — a failed Maestro could still print `ci-maestro passed` (false green on run 33327634960). Exit codes are now captured with `set +e` / explicit `flow_rc`. Onboarding helper accepts warm start (`tab.map` already visible).
+
+**Proof:** GitHub Actions run [33327634960](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33327634960) booted emulator + ran flows (cancel passed on retry); follow-up commit closes the false-green + kill-after-cancel onboarding gap.
 
 ### [LOW] [FIXED] Jest worker timer leaks after offlinePackStore tests
 
@@ -255,7 +259,7 @@ Download map linger / post-teardown delays are **zero under `NODE_ENV=test`** (`
 
 | Metric | Result |
 |--------|--------|
-| Full Jest | **130 passed / 632 tests** (exits without `--forceExit`) |
+| Full Jest | **131 passed / 634 tests** (exits without `--forceExit`) |
 | Skipped tests | **0** |
 | a11y contrast | PASS |
 | a11y touch targets | PASS |
