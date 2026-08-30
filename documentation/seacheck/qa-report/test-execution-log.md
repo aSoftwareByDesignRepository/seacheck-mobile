@@ -141,6 +141,8 @@ Command: npm test -- --ci --no-coverage
 Result: Test Suites: 131 passed, 131 total; Tests: 634 passed; EXIT 0 (no forceExit)
 ```
 
+**Follow-up proof:** GitHub Actions [33330890339](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33330890339) — cancel + kill both passed attempt 1; `ci-maestro passed`.
+
 ---
 
 ## 2026-08-30T18:50Z — Maestro CI false-green caught + fixed

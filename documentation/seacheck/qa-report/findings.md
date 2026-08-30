@@ -231,7 +231,7 @@ Flows under `.maestro/` + `scripts/maestro-e2e.sh` (`npm run e2e:maestro:cancel`
 
 **CI false-red (2026-08-30 run [33329507994](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33329507994)):** Maestro cancel printed `==> OK` twice, then EXIT trap crashed on `${#DISABLED_RIVALS[@]:-0}` (`bad substitution`) → exit 1. Fixed: valid `${#DISABLED_RIVALS[@]}` + trap `|| true`.
 
-**Proof:** GitHub Actions run [33327634960](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33327634960) booted emulator + ran flows; follow-ups close false-green, kill-after-cancel onboarding, and EXIT-trap false-red.
+**Proof:** GitHub Actions run [33330890339](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33330890339) (`77db70d`): **cancel + kill both PASS on attempt 1** on a single API-33 emulator; `ci-maestro passed`. Earlier false-green (33327634960) and EXIT-trap false-red (33329507994) are closed.
 
 ### [LOW] [FIXED] Jest worker timer leaks after offlinePackStore tests
 
