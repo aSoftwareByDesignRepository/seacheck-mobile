@@ -131,11 +131,14 @@ Command: CI=false npm test -- --no-coverage
 Result: Test Suites: 130 passed, 130 total; Tests: 632 passed; EXIT 0 (no forceExit)
 
 Command: npm run ci:unit
-Result: typecheck + jest + mutate:core + a11y + i18n (see below)
+Result: PASS — typecheck + jest + mutate:core + a11y + i18n
 
 jest.config.js: forceExit: false (download map linger/teardown already 0 under NODE_ENV=test)
-GitHub: .github/workflows/ci.yml → npm run ci:unit
-GitHub: .github/workflows/e2e-maestro.yml → single API-33 emulator + npm run ci:maestro
+GitHub unit CI (main @ 6bd70df): success
+GitHub E2E Maestro (run 33324955241): FAILED — qemu never started:
+  "error while loading shared libraries: libpulse.so.0"
+  (host runner, not SeaCheck app). Workflow fix: apt install libpulse0,
+  -no-audio, drop pixel_6 profile, free-disk-space, google_apis image.
 Vendor: vendor/android15-play-compliance (standalone npm ci without ../shared)
 ```
 
