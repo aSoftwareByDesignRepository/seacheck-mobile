@@ -53,11 +53,35 @@ describe('packStateFromNative', () => {
       packStateFromNative({ state: 'complete', percentage: 100, requiredResourceCount: 0, completedResourceCount: 0 } as never),
     ).toBe('idle');
   });
+
+  it('does not mark style-only complete (required=1) as ready', () => {
+    expect(
+      packStateFromNative({
+        state: 'complete',
+        percentage: 100,
+        requiredResourceCount: 1,
+        completedResourceCount: 1,
+        completedTileCount: 0,
+      } as never),
+    ).toBe('idle');
+  });
 });
 
 describe('isNativeDownloadComplete', () => {
   it('rejects complete status with zero required resources', () => {
     expect(isNativeDownloadComplete({ state: 'complete', percentage: 100, requiredResourceCount: 0, completedResourceCount: 0 } as never)).toBe(false);
+  });
+
+  it('rejects style-only complete packs', () => {
+    expect(
+      isNativeDownloadComplete({
+        state: 'complete',
+        percentage: 100,
+        requiredResourceCount: 1,
+        completedResourceCount: 1,
+        completedTileCount: 0,
+      } as never),
+    ).toBe(false);
   });
 
   it('accepts fully downloaded packs', () => {

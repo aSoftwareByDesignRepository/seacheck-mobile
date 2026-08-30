@@ -20,12 +20,10 @@
 | Low | Maestro E2E; Jest timer leaks | README HTTPS; storageCheck fail-closed |
 
 **Fit for client/auditor today?**  
-**Yes** for functional + download integrity + depth opt-in + limited-anchor honesty. **No** only if they require on-device Maestro kill-mid-download.
-
-**Auth / BOLA:** N/A — no multi-user server. Residual risk is local integrity + third-party HTTPS.
+**Yes** for functional + download integrity (including cancel/seal/hydrate honesty) + depth opt-in + limited-anchor honesty. Residual Low: no Maestro on-device E2E farm; Jest timer-leak warnings with `--forceExit`.
 
 Safety/offline mutation: **16 killed / 0 survived / 16**.  
-Full Jest after fixes: **129 suites / 618 tests** green.
+Full Jest after download honesty pass: **129 suites / 625 tests** green.
 
 ---
 
@@ -250,7 +248,7 @@ Suites pass; RN Jest preset still warns about timeouts after teardown. Does not 
 
 | Metric | Result |
 |--------|--------|
-| Full Jest | **129 passed / 618 tests** (2026-08-30) |
+| Full Jest | **129 passed / 625 tests** (2026-08-30 download honesty) |
 | Skipped tests | **0** |
 | a11y contrast | PASS |
 | a11y touch targets | PASS |
@@ -262,6 +260,7 @@ New / extended adversarial tests this engagement:
 - durableDownload: seal-pending resume + cancel-not-Ready  
 - `__tests__/anchorLimitedWatch.durable.test.ts`  
 - `storageCheck` fail-closed (throw + missing API)  
+- download honesty: style-only Ready rejected; frozen-tile stall; cancel settles seal; cancel-after-seal keeps Ready; completing UI @ 99% before Ready  
 
 ---
 

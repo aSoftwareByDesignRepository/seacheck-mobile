@@ -145,10 +145,18 @@ async function waitUntilNativePackComplete(
     },
   );
 
+  const cancelPoll = setInterval(() => {
+    if (!settled && args.isCancelled()) {
+      fail('DOWNLOAD_CANCELLED');
+    }
+  }, 250);
+
   try {
     await done;
+    if (args.isCancelled()) throw new Error('DOWNLOAD_CANCELLED');
     return activePack.id;
   } finally {
+    clearInterval(cancelPoll);
     stopWatchdog();
   }
 }

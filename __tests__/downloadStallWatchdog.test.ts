@@ -271,6 +271,55 @@ describe('startDownloadStallWatchdog', () => {
     stop();
     downloadCoordinator.end('kiel-bay');
   });
+
+  it('stalls when tile count is frozen (does not heartbeat forever)', async () => {
+    const stuck: OfflinePackStatus = {
+      id: 'pack-test',
+      state: 'active',
+      percentage: 12,
+      completedResourceCount: 3,
+      completedResourceSize: 300,
+      completedTileCount: 1,
+      completedTileSize: 100,
+      requiredResourceCount: 40,
+    };
+    const pack = makePack([stuck]);
+    const session = downloadCoordinator.tryBegin('kiel-bay')!;
+    const onStall = jest.fn();
+    const stop = startDownloadStallWatchdog('kiel-bay', session, pack, onStall, 'stalled');
+
+    await jest.advanceTimersByTimeAsync(3_000);
+    // Production partialStallTimeoutMs = 3 minutes after last advance
+    await jest.advanceTimersByTimeAsync(3 * 60_000 + 5_000);
+    expect(onStall).toHaveBeenCalledWith('stalled', expect.objectContaining({ percentage: 12 }));
+
+    stop();
+    downloadCoordinator.end('kiel-bay');
+  });
+
+  it('rejects the seal waiter when the session is cancelled mid-poll', async () => {
+    const stuck: OfflinePackStatus = {
+      id: 'pack-test',
+      state: 'active',
+      percentage: 40,
+      completedResourceCount: 10,
+      completedResourceSize: 1000,
+      completedTileCount: 4,
+      completedTileSize: 400,
+      requiredResourceCount: 40,
+    };
+    const pack = makePack([stuck]);
+    const session = downloadCoordinator.tryBegin('kiel-bay')!;
+    const onStall = jest.fn();
+    const stop = startDownloadStallWatchdog('kiel-bay', session, pack, onStall, 'stalled');
+
+    await jest.advanceTimersByTimeAsync(3_000);
+    downloadCoordinator.invalidate('kiel-bay');
+    await jest.advanceTimersByTimeAsync(3_000);
+    expect(onStall).toHaveBeenCalledWith('DOWNLOAD_CANCELLED', expect.any(Object));
+
+    stop();
+  });
 });
 
 describe('recreateOfflinePack', () => {

@@ -40,7 +40,8 @@ function isNativeDownloadComplete(status: OfflinePackStatus | null | undefined):
   if (!status) return false;
   const nominallyComplete = status.state === 'complete' || status.percentage >= 100;
   if (!nominallyComplete) return false;
-  if (status.requiredResourceCount <= 0) return false;
+  // Match store Ready gate — style-only (required ≤ 1) is never complete.
+  if (status.requiredResourceCount <= 1) return false;
   return status.completedResourceCount >= status.requiredResourceCount;
 }
 
@@ -116,6 +117,7 @@ export function startDownloadStallWatchdog(
   let lastPercentage = 0;
   let lastCompletedResources = 0;
   let lastRequiredResources = 0;
+  let lastCompletedTiles = 0;
   let lastAdvanceAt = startedAt;
   let resumeAttemptIndex = 0;
   let packRecreateCount = 0;
@@ -142,11 +144,17 @@ export function startDownloadStallWatchdog(
       try {
         if (downloadCoordinator.isStale(regionId, session)) {
           stop();
+          // Settle seal waiters — cancel must never leave startDownload hung forever.
+          onStall('DOWNLOAD_CANCELLED', lastDiagnostics);
           return;
         }
         ensureMapLibreNetworkForDownload();
         const rawStatus = await pollNativePackStatus(currentPack);
-        if (downloadCoordinator.isStale(regionId, session)) return;
+        if (downloadCoordinator.isStale(regionId, session)) {
+          stop();
+          onStall('DOWNLOAD_CANCELLED', lastDiagnostics);
+          return;
+        }
         lastDiagnostics = stallDiagnostics(rawStatus, chartStyleUri);
         if (isNativeDownloadComplete(rawStatus)) {
           stop();
@@ -155,16 +163,16 @@ export function startDownloadStallWatchdog(
         const status = rawStatus ?? initializingNativePackStatus(currentPack.id);
         onStatus?.(status);
         if (rawStatus) {
-          if (rawStatus.percentage > lastPercentage) {
-            lastPercentage = rawStatus.percentage;
-            lastAdvanceAt = Date.now();
-          } else if (rawStatus.completedResourceCount > lastCompletedResources) {
-            lastCompletedResources = rawStatus.completedResourceCount;
-            lastAdvanceAt = Date.now();
-          } else if (rawStatus.requiredResourceCount > lastRequiredResources) {
-            lastRequiredResources = rawStatus.requiredResourceCount;
-            lastAdvanceAt = Date.now();
-          } else if (rawStatus.completedTileCount > 0) {
+          const advanced =
+            rawStatus.percentage > lastPercentage ||
+            rawStatus.completedResourceCount > lastCompletedResources ||
+            rawStatus.requiredResourceCount > lastRequiredResources ||
+            rawStatus.completedTileCount > lastCompletedTiles;
+          lastPercentage = Math.max(lastPercentage, rawStatus.percentage);
+          lastCompletedResources = Math.max(lastCompletedResources, rawStatus.completedResourceCount);
+          lastRequiredResources = Math.max(lastRequiredResources, rawStatus.requiredResourceCount);
+          lastCompletedTiles = Math.max(lastCompletedTiles, rawStatus.completedTileCount);
+          if (advanced) {
             lastAdvanceAt = Date.now();
           }
         }
@@ -201,6 +209,7 @@ export function startDownloadStallWatchdog(
                 lastPercentage = 0;
                 lastCompletedResources = 0;
                 lastRequiredResources = 0;
+                lastCompletedTiles = 0;
                 lastAdvanceAt = Date.now();
               }
             } catch {

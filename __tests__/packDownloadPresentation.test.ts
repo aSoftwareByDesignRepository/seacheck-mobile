@@ -54,6 +54,14 @@ describe('packDownloadPresentation', () => {
     expect(packStatusLabel({ state: 'downloading', percentage: 42 })).toMatch(/42/);
   });
 
+  it('shows saving label while seal is finishing (99%)', () => {
+    expect(packStatusLabel({ state: 'downloading', percentage: 99 })).toMatch(/saving/i);
+  });
+
+  it('keeps download map during finishing (99%) teardown', () => {
+    expect(isDownloadMapSessionActive('kiel-bay', { state: 'downloading' }, null, 'kiel-bay')).toBe(true);
+  });
+
   it('shows initializing label before native enumeration', () => {
     expect(packStatusLabel({ state: 'downloading', percentage: 0, downloadInitializing: true })).toMatch(/loading charts/i);
   });

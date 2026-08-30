@@ -55,6 +55,7 @@ export function isDownloadMapSessionActive(
   downloadMapTeardownRegionId: string | null = null,
 ): boolean {
   const ownsMap = activeDownloadRegionId === regionId || downloadMapTeardownRegionId === regionId;
+  // Completing keeps state=downloading until Ready flips after teardown — both must hold the map.
   return ownsMap && (status?.state === 'downloading' || status?.state === 'ready');
 }
 
@@ -72,6 +73,9 @@ export function packStatusLabel(
   if (packHasDownloadFailure(status)) return t('downloads.statusError');
   if (status.state === 'ready') return t('downloads.statusReady');
   if (status.state === 'downloading') {
+    if (status.percentage >= 99) {
+      return t('downloads.statusCompleting');
+    }
     if (status.downloadInitializing || status.percentage <= 0) {
       return t('downloads.statusInitializing');
     }

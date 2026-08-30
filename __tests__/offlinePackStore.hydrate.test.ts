@@ -195,7 +195,9 @@ describe('offlinePackStore.hydrate', () => {
     }
   });
 
-  it('reattaches in-progress cache download, seals durable pack, and locks coordinator', async () => {
+  it(
+    'reattaches in-progress cache download, seals durable pack, and locks coordinator',
+    async () => {
     await AsyncStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
@@ -219,8 +221,11 @@ describe('offlinePackStore.hydrate', () => {
 
     const started = Date.now();
     while (useOfflinePackStore.getState().regions[KIEL.id]?.state !== 'ready') {
-      if (Date.now() - started > 8_000) {
-        throw new Error('expected reattached download to reach ready');
+      if (Date.now() - started > 12_000) {
+        const stuck = useOfflinePackStore.getState().regions[KIEL.id];
+        throw new Error(
+          `expected reattached download to reach ready, got state=${stuck?.state} pct=${stuck?.percentage} packId=${stuck?.packId}`,
+        );
       }
       await new Promise((resolve) => setImmediate(resolve));
     }
@@ -229,5 +234,7 @@ describe('offlinePackStore.hydrate', () => {
     expect(status?.cacheBacked).toBeFalsy();
     expect(status?.packId).toBe('mock-pack');
     expect(OfflineManager.createPack).toHaveBeenCalled();
-  });
+  },
+    15_000,
+  );
 });

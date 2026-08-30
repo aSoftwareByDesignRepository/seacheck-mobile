@@ -46,7 +46,7 @@ OWASP API BOLA/IDOR: **N/A**. Residual: local integrity, download honesty, alarm
 
 | Workflow | Critical risks | Coverage status |
 |----------|----------------|-----------------|
-| Downloads / offline packs | Lock, Wi‑Fi policy, probe, migration, durable seal, cancel/seal race, sweep→seal resume | Strong unit + mutation + process-death sims; **gap:** device Maestro |
+| Downloads / offline packs | Lock, Wi‑Fi policy, probe, migration, durable seal, cancel/seal race, sweep→seal resume, style-only Ready, freeze-stall, hydrate vs live | Strong unit + mutation + process-death sims; **gap:** device Maestro |
 | Depth overlay | Confirm, allowlist, online gate, pack exclusion | Unit + live HTTP probe; **gap:** native WMS render E2E |
 | Basemap migration | Wipe without notice | Unit covered |
 | Anchor / alarms | Accuracy fail-open (display), limited mode | Strong unit + mutation; **limited chrome persisted** (`armedLimited` + non-dismissible banner) |
@@ -78,7 +78,7 @@ OWASP API BOLA/IDOR: **N/A**. Residual: local integrity, download honesty, alarm
 
 ## Existing suite (this audit)
 
-- **Full Jest:** 129 suites / 618 tests green  
+- **Full Jest:** 129 suites / 625 tests green  
 - Skipped tests: **none**  
 - Mutation (`npm run mutate:core`): 16/16 killed  
 - a11y contrast + touch: PASS  

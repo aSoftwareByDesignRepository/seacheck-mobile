@@ -153,10 +153,12 @@ function ActiveDownloadBanner({
   const active = regions[sessionRegionId];
   const name = resolvePackDisplayName(active ?? { regionId: sessionRegionId });
   const downloading = active?.state === 'downloading';
-  const completing = active?.state === 'ready';
-  const tearingDown = completing && activeDownloadRegionId == null && downloadMapTeardownRegionId === sessionRegionId;
   const percent = active?.percentage ?? 0;
-  const initializing = downloading && (active?.downloadInitializing || percent <= 0);
+  // Seal finished — UI stays downloading@99 until map teardown; treat as completing (not Ready yet).
+  const completing = active?.state === 'ready' || (downloading && percent >= 99);
+  const tearingDown =
+    completing && activeDownloadRegionId == null && downloadMapTeardownRegionId === sessionRegionId;
+  const initializing = downloading && !completing && (active?.downloadInitializing || percent <= 0);
   const summaryLabel = completing
     ? t('downloads.statusSummaryCompleting', { name })
     : initializing
@@ -178,7 +180,7 @@ function ActiveDownloadBanner({
         {completing ? t('downloads.statusSummaryCompletingTitle') : t('downloads.statusSummaryActiveTitle')}
       </Text>
       <Text style={[styles.body, { color: colors.text }]}>{name}</Text>
-      {downloading ? (
+      {downloading && !completing ? (
         <DownloadProgressBar
           percentage={percent}
           indeterminate={initializing}
@@ -199,7 +201,7 @@ function ActiveDownloadBanner({
       <Text style={[styles.hint, { color: colors.textMuted }]}>
         {completing ? t('downloads.statusSummaryCompletingHint') : t('downloads.statusSummaryActiveHint')}
       </Text>
-      {downloading && onCancelActive && !tearingDown ? (
+      {downloading && onCancelActive && !tearingDown && !completing ? (
         <View style={{ minHeight: minTouch, marginTop: spacing.xs }}>
           <Button
             label={t('downloads.cancelDownload')}

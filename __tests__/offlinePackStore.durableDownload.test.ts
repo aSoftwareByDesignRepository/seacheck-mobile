@@ -306,8 +306,8 @@ describe('offline pack durable ready + kill-mid-download', () => {
     expect(useOfflinePackStore.getState().regions[KIEL.id]?.cacheBacked).toBeFalsy();
   });
 
-  it('cancel during seal (index native, UI still cache:*) must not leave Ready', async () => {
-    const sealing = mockNativePack('pack-sealing', KIEL.id, completeNativeStatus('pack-sealing'));
+  it('cancel during incomplete seal (index native, UI still cache:*) must not leave Ready', async () => {
+    const sealing = mockNativePack('pack-sealing', KIEL.id, incompleteNativeStatus('pack-sealing', 55));
     await AsyncStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
@@ -343,5 +343,44 @@ describe('offline pack durable ready + kill-mid-download', () => {
     const status = useOfflinePackStore.getState().regions[KIEL.id];
     expect(status?.state).not.toBe('ready');
     expect(OfflineManager.deletePack).toHaveBeenCalledWith('pack-sealing');
+  });
+
+  it('cancel after durable seal already complete keeps Ready', async () => {
+    const sealed = mockNativePack('pack-sealed', KIEL.id, completeNativeStatus('pack-sealed'));
+    await AsyncStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        [KIEL.id]: {
+          packId: 'pack-sealed',
+          bounds: KIEL.bounds,
+          minZoom: KIEL.minZoom,
+          maxZoom: KIEL.maxZoom,
+        },
+      }),
+    );
+    getPacks.mockResolvedValue([sealed]);
+
+    useOfflinePackStore.setState({
+      hydrated: true,
+      activeDownloadRegionId: KIEL.id,
+      regions: {
+        ...useOfflinePackStore.getState().regions,
+        [KIEL.id]: {
+          regionId: KIEL.id,
+          state: 'downloading',
+          percentage: 99,
+          packId: 'pack-sealed',
+          error: null,
+        },
+      },
+    });
+    downloadCoordinator.restoreActive(KIEL.id);
+
+    await useOfflinePackStore.getState().cancelDownload(KIEL.id);
+
+    const status = useOfflinePackStore.getState().regions[KIEL.id];
+    expect(status?.state).toBe('ready');
+    expect(status?.packId).toBe('pack-sealed');
+    expect(OfflineManager.deletePack).not.toHaveBeenCalledWith('pack-sealed');
   });
 });

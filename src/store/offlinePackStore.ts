@@ -208,7 +208,9 @@ export function isNativeDownloadComplete(status: OfflinePackStatus | null | unde
   if (!status) return false;
   const nominallyComplete = status.state === 'complete' || status.percentage >= 100;
   if (!nominallyComplete) return false;
-  if (status.requiredResourceCount <= 0) return false;
+  // MapLibre often reports required=1 (style JSON only) before tile enumeration.
+  // That must never become Ready — ambient-style false complete.
+  if (status.requiredResourceCount <= 1) return false;
   return status.completedResourceCount >= status.requiredResourceCount;
 }
 
@@ -497,6 +499,7 @@ function createCacheDownloadSession(
 
   const markReady = async () => {
     if (finalizeOutcome !== 'pending') return;
+    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
     const packId = durablePackId;
     if (!packId || !isNativeOfflinePackId(packId)) {
       await markFailed(t('downloads.errorDownloadStalled'));
@@ -520,8 +523,29 @@ function createCacheDownloadSession(
 
     rememberDownloadSessionPhase(ctx.regionId, 'completing');
     try {
-      // Finish native tile/GL work before flipping UI to completing — avoids peak pressure
-      // while the banner re-renders and other surfaces would react to state: ready.
+      // Keep UI as downloading @ 99% until map teardown finishes — never show Ready/Delete
+      // while the exclusive download session / “saving” banner is still active.
+      set((state) => ({
+        regions: {
+          ...state.regions,
+          [ctx.regionId]: {
+            regionId: ctx.regionId,
+            state: 'downloading',
+            percentage: 99,
+            packId,
+            error: null,
+            cacheBacked: undefined,
+            downloadInitializing: false,
+            ...ctx.customMeta,
+            seamarksIndexed: false,
+            seamarksIndexing: false,
+          },
+        },
+        ...(ctx.finalizeExtra?.bounds
+          ? { customBoundsIndex: { ...state.customBoundsIndex, [ctx.regionId]: ctx.finalizeExtra.bounds } }
+          : {}),
+      }));
+
       await yieldToUi();
       try {
         const controller = await waitForDownloadMapController(3_000);
@@ -535,27 +559,10 @@ function createCacheDownloadSession(
       if (settleMs > 0) {
         await new Promise((resolve) => setTimeout(resolve, settleMs));
       }
-      if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
-
-      set((state) => ({
-        regions: {
-          ...state.regions,
-          [ctx.regionId]: {
-            regionId: ctx.regionId,
-            state: 'ready',
-            percentage: 100,
-            packId,
-            error: null,
-            cacheBacked: undefined,
-            ...ctx.customMeta,
-            seamarksIndexed: false,
-            seamarksIndexing: false,
-          },
-        },
-        ...(ctx.finalizeExtra?.bounds
-          ? { customBoundsIndex: { ...state.customBoundsIndex, [ctx.regionId]: ctx.finalizeExtra.bounds } }
-          : {}),
-      }));
+      if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) {
+        // Seal already persisted — cancel during completing keeps Ready (see cancelDownload).
+        return;
+      }
 
       await yieldToUi();
       await yieldToUi();
@@ -579,26 +586,59 @@ function createCacheDownloadSession(
       finishDownloadSession(ctx.regionId, set);
       await waitForDownloadMapTeardown(ctx.regionId);
       if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
-      // Failsafe: the wait above times out if the teardown timer was throttled
-      // (background/Doze). Force-end the window so the map hand-off always completes;
-      // no-op when the window already closed normally. Runs only while this session
-      // still owns the region, so it can never cut short a later session's window.
       downloadCoordinator.cancelMapTeardown(ctx.regionId);
+
+      set((state) => ({
+        regions: {
+          ...state.regions,
+          [ctx.regionId]: {
+            regionId: ctx.regionId,
+            state: 'ready',
+            percentage: 100,
+            packId,
+            error: null,
+            cacheBacked: undefined,
+            ...ctx.customMeta,
+            seamarksIndexed: false,
+            seamarksIndexing: false,
+          },
+        },
+        ...syncActiveDownloadId(),
+      }));
+
       clearDownloadSessionPhase(ctx.regionId);
       void scheduleSeamarkIndexing(ctx.regionId, ctx.bounds);
     } catch (error) {
-      const uiAlreadyReady = useOfflinePackStore.getState().regions[ctx.regionId]?.state === 'ready';
+      const indexEntry = (await loadIndex().catch(() => ({} as PersistedIndex)))[ctx.regionId];
+      const sealedInIndex = Boolean(indexEntry && isNativeOfflinePackId(indexEntry.packId));
       downloadCoordinator.cancelMapTeardown(ctx.regionId);
       set(syncActiveDownloadId());
       clearDownloadSessionPhase(ctx.regionId);
-      if (!uiAlreadyReady) {
+      if (!sealedInIndex) {
         finalizeOutcome = 'pending';
         await markFailed(formatDownloadError(error, t('downloads.statusError')), error);
         return;
       }
-      // Charts were persisted — keep ready state but surface a copyable debug report
-      // instead of crashing or leaving the completing banner stuck forever.
+      // Charts were persisted — promote Ready and surface a copyable debug report
+      set((state) => ({
+        regions: {
+          ...state.regions,
+          [ctx.regionId]: {
+            regionId: ctx.regionId,
+            state: 'ready',
+            percentage: 100,
+            packId,
+            error: null,
+            cacheBacked: undefined,
+            ...ctx.customMeta,
+            seamarksIndexed: false,
+            seamarksIndexing: false,
+          },
+        },
+        ...syncActiveDownloadId(),
+      }));
       showDownloadSessionFailure(ctx.regionId, error, 'completing');
+      void scheduleSeamarkIndexing(ctx.regionId, ctx.bounds);
     }
   };
 
@@ -668,8 +708,9 @@ function createCacheDownloadSession(
 
   const persistSweepProgress = async (completed: number, total: number) => {
     await updateIndex((index) => {
-      // Never regress a finalized/failed outcome with a late progress tick.
+      // Never regress a finalized/failed/cancelled outcome with a late progress tick.
       if (finalizeOutcome !== 'pending') return;
+      if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
       if (durablePackId) return;
       index[ctx.regionId] = {
         packId: ambientPackId,
@@ -687,9 +728,13 @@ function createCacheDownloadSession(
   };
 
   const persistDurablePack = async (packId: string) => {
+    if (finalizeOutcome !== 'pending' || downloadCoordinator.isStale(ctx.regionId, ctx.session)) {
+      return;
+    }
     durablePackId = packId;
     await updateIndex((index) => {
       if (finalizeOutcome !== 'pending') return;
+      if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
       index[ctx.regionId] = {
         packId,
         name: ctx.finalizeExtra?.name ?? ctx.customMeta?.displayName ?? index[ctx.regionId]?.name,
@@ -1290,11 +1335,33 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
 
       const customBoundsIndex = buildCustomBoundsIndex(index);
 
+      const liveDownloadId = downloadCoordinator.getActiveRegionId();
+      if (liveDownloadId) {
+        // Never clobber an in-flight exclusive download's index row with a stale hydrate snapshot.
+        try {
+          const fresh = await loadIndex();
+          if (fresh[liveDownloadId]) {
+            index[liveDownloadId] = fresh[liveDownloadId]!;
+          }
+        } catch {
+          /* keep hydrate snapshot */
+        }
+      }
+
       await withIndexMutation(() => saveIndex(index));
 
       let restoredDownloadId: string | null = null;
       for (const [regionId, regionStatus] of Object.entries(regions)) {
         if (regionStatus.state !== 'downloading' || !regionStatus.packId) continue;
+        if (liveDownloadId === regionId) {
+          // Live session already owns this region — preserve UI, do not reattach a second runner.
+          const liveUi = get().regions[regionId];
+          if (liveUi?.state === 'downloading') {
+            regions[regionId] = liveUi;
+          }
+          restoredDownloadId = regionId;
+          continue;
+        }
         if (restoredDownloadId) {
           regions[regionId] = {
             ...regionStatus,
@@ -1358,7 +1425,14 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       set({
         hydrated: true,
         chartStyleUri,
-        regions,
+        regions: (() => {
+          const liveId = downloadCoordinator.getActiveRegionId();
+          const liveUi = liveId ? get().regions[liveId] : null;
+          if (liveId && liveUi?.state === 'downloading') {
+            return { ...regions, [liveId]: liveUi };
+          }
+          return regions;
+        })(),
         customBoundsIndex,
         basemapMigrationNotice: migration.showNotice,
         ...syncActiveDownloadId(),
@@ -1646,75 +1720,92 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
     if (!current || (current.state !== 'downloading' && !sessionActive)) return;
 
     downloadCoordinator.invalidate(regionId);
-    const packId = current.packId;
-    if (packId) {
-      await removeNativePack(packId);
-    } else {
+    downloadCoordinator.cancelMapTeardown(regionId);
+
+    const nextCustom = { ...get().customBoundsIndex };
+    const index = await loadIndex();
+    const indexedPackId = index[regionId]?.packId ?? null;
+    const uiPackId = current.packId;
+
+    // If seal already committed a complete native pack, keep Ready — cancel only ends the session UI.
+    const sealedCandidates = [...new Set([indexedPackId, uiPackId].filter(isNativeOfflinePackId))];
+    for (const candidateId of sealedCandidates) {
       try {
         const nativePacks = await OfflineManager.getPacks();
-        for (const pack of nativePacks) {
-          if (pack.metadata?.regionId === regionId) {
-            await removeNativePack(pack.id);
-          }
-        }
+        const native = nativePacks.find((p) => p.id === candidateId);
+        if (!native) continue;
+        const nativeStatus = await readHydrateNativePackStatus(native);
+        if (!nativeStatus || !isNativeDownloadComplete(nativeStatus)) continue;
+        await updateIndex((latest) => {
+          latest[regionId] = {
+            packId: native.id,
+            name: latest[regionId]?.name ?? current.displayName,
+            custom: current.custom ?? latest[regionId]?.custom,
+            bounds: latest[regionId]?.bounds ?? nextCustom[regionId],
+            minZoom: latest[regionId]?.minZoom,
+            maxZoom: latest[regionId]?.maxZoom,
+            seamarksIndexed: latest[regionId]?.seamarksIndexed,
+          };
+        });
+        await removeOrphanNativePacksForRegion(regionId, native.id);
+        set({
+          ...syncActiveDownloadId(),
+          customBoundsIndex: nextCustom,
+          regions: {
+            ...get().regions,
+            [regionId]: {
+              ...statusFromNative(regionId, native.id, nativeStatus),
+              custom: current.custom,
+              displayName: current.displayName,
+            },
+          },
+        });
+        return;
       } catch {
-        /* best effort */
+        /* try next / fall through */
       }
     }
 
-    const index = await loadIndex();
-    const indexedPackId = index[regionId]?.packId;
-    const nextCustom = { ...get().customBoundsIndex };
+    // True cancel of in-progress work.
+    if (uiPackId) await removeNativePack(uiPackId);
+    if (indexedPackId && indexedPackId !== uiPackId) await removeNativePack(indexedPackId);
+    await removeOrphanNativePacksForRegion(regionId, null);
 
-    if (indexedPackId && indexedPackId !== packId) {
-      // Index ahead of UI with a native pack while the in-flight id is still cache:* —
-      // that native pack belongs to THIS cancelled seal session. Never restore it as Ready.
-      if (isCacheBackedPackId(packId) || !isNativeOfflinePackId(packId)) {
-        await removeNativePack(indexedPackId);
-      } else {
-        try {
-          const nativePacks = await OfflineManager.getPacks();
-          const native = nativePacks.find((p) => p.id === indexedPackId);
-          if (native) {
-            const nativeStatus = await readHydrateNativePackStatus(native);
-            if (!nativeStatus) {
-              set({
-                ...syncActiveDownloadId(),
-                customBoundsIndex: nextCustom,
-                regions: {
-                  ...get().regions,
-                  [regionId]: {
-                    ...emptyStatus(regionId),
-                    custom: current.custom,
-                    displayName: current.displayName,
-                    state: 'error',
-                    error: t('downloads.errorStatusFailed'),
-                  },
-                },
-              });
-              return;
-            }
-            if (isNativeDownloadComplete(nativeStatus)) {
-              set({
-                ...syncActiveDownloadId(),
-                customBoundsIndex: nextCustom,
-                regions: {
-                  ...get().regions,
-                  [regionId]: {
-                    ...statusFromNative(regionId, native.id, nativeStatus),
-                    custom: current.custom,
-                    displayName: current.displayName,
-                  },
-                },
-              });
-              return;
-            }
-            await removeNativePack(indexedPackId);
-          }
-        } catch {
-          /* fall through to idle */
-        }
+    // Re-download cancel: restore a prior Ready pack still on disk if present.
+    try {
+      const nativePacks = await OfflineManager.getPacks();
+      for (const pack of nativePacks) {
+        if (pack.metadata?.regionId !== regionId) continue;
+        const nativeStatus = await readHydrateNativePackStatus(pack);
+        if (!nativeStatus || !isNativeDownloadComplete(nativeStatus)) continue;
+        await updateIndex((latest) => {
+          latest[regionId] = {
+            packId: pack.id,
+            name: latest[regionId]?.name ?? current.displayName,
+            custom: current.custom ?? latest[regionId]?.custom,
+            bounds: pack.bounds ?? latest[regionId]?.bounds ?? nextCustom[regionId],
+            minZoom: latest[regionId]?.minZoom,
+            maxZoom: latest[regionId]?.maxZoom,
+            seamarksIndexed: latest[regionId]?.seamarksIndexed,
+          };
+        });
+        await removeOrphanNativePacksForRegion(regionId, pack.id);
+        set({
+          ...syncActiveDownloadId(),
+          customBoundsIndex: nextCustom,
+          regions: {
+            ...get().regions,
+            [regionId]: {
+              ...statusFromNative(regionId, pack.id, nativeStatus),
+              custom: current.custom,
+              displayName: current.displayName,
+            },
+          },
+        });
+        return;
       }
+    } catch {
+      /* fall through to idle */
     }
 
     const boundsBeforeDelete = index[regionId]?.bounds ?? nextCustom[regionId];
