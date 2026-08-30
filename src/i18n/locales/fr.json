@@ -175,8 +175,8 @@
     "panelSideStarboard": "Tribord (droite)",
     "mapBehaviourTitle": "Comportement de la carte",
     "chartDataTitle": "Graphique et données",
-    "chartDataSummary": "Carte de base et repères OpenSeaMap : ce que SeaCheck télécharge et affiche hors ligne.",
-    "chartDataLayersBody": "SeaCheck utilise les tuiles de base OpenStreetMap d’OpenSeaMap ainsi que les tuiles Seamark OpenSeaMap. Les deux sont inclus dans les packs régionaux hors ligne.",
+    "chartDataSummary": "Fond de carte, balises et profondeurs en ligne optionnelles.",
+    "chartDataLayersBody": "Les packs hors ligne enregistrent les tuiles OpenStreetMap d’OpenSeaMap plus les balises OpenSeaMap. L’ombrage des profondeurs est séparé — en ligne uniquement, jamais dans les packs.",
     "underwayGpsTitle": "En cours",
     "alarmFeedbackTitle": "Retour d'alarme",
     "alarmLimitsTitle": "Distances d'alarme",
@@ -240,18 +240,24 @@
     "legAdvanceAuto": "Jambes de passage à avance automatique à l'arrivée",
     "legAdvanceAutoHint": "Lorsqu'un waypoint est atteint ou dépassé, passez automatiquement à l'étape suivante. Vous pouvez toujours sauter manuellement sur la bannière de la carte.",
     "aboutTitle": "À propos et mentions légales",
-    "version": "SeaCheck v%{v}"
+    "version": "SeaCheck v%{v}",
+    "depthOverlaySection": "Profondeurs d’eau (optionnel)",
+    "depthOverlayIntro": "Affiche la bathymétrie GEBCO non officielle et les profondeurs de traces OpenSeaMap sur la carte lorsque vous êtes en ligne.",
+    "mapShowDepthOverlay": "Afficher le calque de profondeur",
+    "mapShowDepthOverlayHint": "Nécessite Internet. Se désactive sans signal. Non inclus dans les packs hors ligne.",
+    "depthOverlayWarning": "Pas pour la navigation. Ces profondeurs sont des données bénévoles / modèles — pas des sondages officiels. Utilisez toujours des cartes officielles et votre sondeur."
   },
   "legal": {
     "disclaimerLead": "SeaCheck est un compagnon utile sur l'eau : une aide à la navigation, pas un traceur de cartes certifié ou un remplacement des cartes marines officielles.",
-    "disclaimerCharts": "SeaCheck s'appuie sur le travail bénévole d'OpenSeaMap et OpenStreetMap : des repères communautaires et une carte générale du littoral que vous pouvez utiliser hors ligne. C'est précieux pour l'orientation et la planification d'itinéraire. Les données sont conservées par des bénévoles et peuvent être obsolètes ou incomplètes : il ne s'agit pas d'une carte marine étudiée et ne comprend aucune profondeur officielle, fairway ou correction.",
+    "disclaimerCharts": "SeaCheck s’appuie sur le travail bénévole d’OpenSeaMap et d’OpenStreetMap : balises communautaires et une carte côtière générale utilisable hors ligne. Un calque de profondeur optionnel en ligne peut afficher la bathymétrie GEBCO non officielle et des profondeurs de traces — jamais des sondages officiels. Les données sont maintenues par des bénévoles et des modèles et peuvent être obsolètes ou incomplètes — ce n’est pas une carte marine levée et elle ne contient pas de profondeurs, chenaux ou corrections officiels.",
     "disclaimerOfficial": "Pour cette raison, SeaCheck ne convient pas à la navigation à lui seul. Utilisez-le avec vos cartes officielles, corrigées et à jour, consultez les avis aux navigateurs et vérifiez tout ce qui est critique pour la sécurité avant de partir.",
     "openSeaMapLicense": "OpenSeaMap — projet et licence",
     "openStreetMapCopyright": "OpenStreetMap — projet et licence",
     "privacyPolicy": "Politique de confidentialité",
     "termsOfUse": "Conditions et avis de navigation",
     "publisher": "Logiciel par conception",
-    "publisherHint": "Fabriqué par Software by Design à Kiel, Allemagne"
+    "publisherHint": "Fabriqué par Software by Design à Kiel, Allemagne",
+    "gebcoAttribution": "GEBCO — bathymétrie (non officielle)"
   },
   "map": {
     "cog": "DENT",
@@ -427,7 +433,13 @@
     "waypointActiveGoTo": "Cible de référence active",
     "instrumentsOnlyA11y": "Instruments de navigation plein écran sans carte",
     "instrumentPanelA11y": "Panneau d'instruments de navigation",
-    "splitMapPaneA11y": "Carte graphique"
+    "splitMapPaneA11y": "Carte graphique",
+    "depthChip": "Profondeurs · non officiel",
+    "depthChipA11y": "Calque de profondeur activé — profondeurs GEBCO et OpenSeaMap non officielles",
+    "depthChipOffline": "Profondeurs en pause · hors ligne",
+    "depthChipOfflineA11y": "Calque de profondeur en pause car l’appareil est hors ligne",
+    "depthChipHint": "Ouvre les réglages carte pour le calque de profondeur",
+    "chartA11yDepthOn": "Calque de profondeur non officiel visible"
   },
   "profiles": {
     "cruisePassage": "Croisière / passage"

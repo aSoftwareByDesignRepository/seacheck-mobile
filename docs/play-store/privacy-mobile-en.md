@@ -1,6 +1,6 @@
 # Privacy policy — SeaCheck Mobile (Android / iOS)
 
-**Last updated:** 2026-07-12  
+**Last updated:** 2026-08-30  
 **App:** SeaCheck Mobile  
 **Publisher:** Software by Design GbR, Husumer Baum 2, 24837 Schleswig, Germany  
 **Contact:** info@software-by-design.de · datenschutz@software-by-design.de  
@@ -53,6 +53,7 @@ When you are **online**, the app may contact **third-party services** (not Softw
 |---------|-----------|---------|
 | **OpenSeaMap** (t1/t2.openseamap.org) | Map tile requests (area/zoom; no account) | Base map tiles |
 | **OpenSeaMap** (tiles.openseamap.org) | Map tile requests | Seamark overlay tiles |
+| **OpenSeaMap GeoServer** (geoserver.openseamap.org, depth.openseamap.org) | Optional WMS requests when you enable the depth overlay | Unofficial GEBCO / track-depth images (online only; not stored in offline packs) |
 | **OpenStreetMap Overpass API** (e.g. overpass-api.de) | Bounding-box queries for seamarks | Online seamark lookup when local index has no match |
 
 These requests reveal **which map areas** you view or query, not your identity. No account is required.

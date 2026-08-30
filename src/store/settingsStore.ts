@@ -54,6 +54,8 @@ type PersistPayload = {
   mapShowXte: boolean;
   /** Leeway (COG vs heading) readout in instrument panels. */
   mapShowLeeway: boolean;
+  /** Optional OpenSeaMap/GEBCO depth overlay (online-only; not in offline packs). */
+  mapShowDepthOverlay: boolean;
   anchorRadiusNm: AnchorRadiusNm;
   followMode: boolean;
   keepAwakeUnderway: boolean;
@@ -103,6 +105,7 @@ async function persist(state: SettingsState) {
     mapShowRecordingDistance: state.mapShowRecordingDistance,
     mapShowXte: state.mapShowXte,
     mapShowLeeway: state.mapShowLeeway,
+    mapShowDepthOverlay: state.mapShowDepthOverlay,
     anchorRadiusNm: state.anchorRadiusNm,
     followMode: state.followMode,
     keepAwakeUnderway: state.keepAwakeUnderway,
@@ -138,6 +141,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   mapShowRecordingDistance: false,
   mapShowXte: CRUISE_PASSAGE_DEFAULTS.mapShowXte,
   mapShowLeeway: CRUISE_PASSAGE_DEFAULTS.mapShowLeeway,
+  mapShowDepthOverlay: CRUISE_PASSAGE_DEFAULTS.mapShowDepthOverlay,
   vessel: emptyVessel,
   downloadWifiOnly: true,
   gloveMode: false,
@@ -179,6 +183,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           mapShowRecordingDistance: parsed.mapShowRecordingDistance ?? false,
           mapShowXte: parsePersistedBoolean(parsed.mapShowXte, CRUISE_PASSAGE_DEFAULTS.mapShowXte),
           mapShowLeeway: parsePersistedBoolean(parsed.mapShowLeeway, CRUISE_PASSAGE_DEFAULTS.mapShowLeeway),
+          mapShowDepthOverlay: parsePersistedBoolean(
+            parsed.mapShowDepthOverlay,
+            CRUISE_PASSAGE_DEFAULTS.mapShowDepthOverlay,
+          ),
           anchorRadiusNm: normalizeAnchorRadiusNm(parsed.anchorRadiusNm),
           followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode,
           keepAwakeUnderway: parsed.keepAwakeUnderway ?? CRUISE_PASSAGE_DEFAULTS.keepAwakeUnderway,

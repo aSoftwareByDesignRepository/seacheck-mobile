@@ -86,6 +86,7 @@ import { SeamarkDetailSheet } from './SeamarkDetailSheet';
 import { TrackPointMapDetailSheet } from './TrackPointMapDetailSheet';
 import { WaypointMapDetailSheet } from './WaypointMapDetailSheet';
 import { MapOverlays } from './MapOverlays';
+import { DepthOverlay } from './DepthOverlay';
 import { CustomDownloadOverlays } from './CustomDownloadOverlays';
 import { mapChromeInsets } from './mapChromeInsets';
 import { CUSTOM_DOWNLOAD_PANEL_CONTENT_MAX, PASSAGE_PLANNING_PANEL_CONTENT_MAX } from './mapChromeLayout';
@@ -96,6 +97,7 @@ import {
   type SeamarkHit,
 } from '../../lib/seamarks/querySeamark';
 import type { TrackPointRow, WaypointRow } from '../../lib/db/database';
+import { shouldShowDepthOverlay } from '../../lib/settings/chartDepthOverlay';
 
 export function NavigationMap() {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
@@ -115,6 +117,7 @@ export function NavigationMap() {
   const mapCourseUp = useSettingsStore((s) => s.mapCourseUp);
   const keepAwakeUnderway = useSettingsStore((s) => s.keepAwakeUnderway);
   const coordFormat = useSettingsStore((s) => s.coordFormat);
+  const mapShowDepthOverlay = useSettingsStore((s) => s.mapShowDepthOverlay);
   const fix = useLocationStore((s) => s.fix);
   const lastGoodFix = useLocationStore((s) => s.lastGoodFix);
   const screenLocked = useNavigationStore((s) => s.screenLocked);
@@ -209,6 +212,12 @@ export function NavigationMap() {
   const chartCoverage = useChartCoverageAtPoint(mapCenter.latitude, mapCenter.longitude);
   const showScaleBar = Platform.OS === 'ios' || Device.isDevice;
   const boatFix = fix ?? lastGoodFix;
+  const showDepthOverlay = shouldShowDepthOverlay({
+    settingEnabled: mapShowDepthOverlay,
+    isOffline,
+    downloadSessionActive: exclusiveChartDownload,
+    mapStyleLoaded,
+  });
 
   useEffect(() => {
     if (!activePassageId) {
@@ -242,6 +251,7 @@ export function NavigationMap() {
         isOffline: offlineHydrated && isOffline,
         hasReadyPack,
         chartCovered: offlineHydrated && hasReadyPack ? chartCoverage.covered : undefined,
+        depthOverlayVisible: showDepthOverlay,
       }),
     [
       mapCenter.latitude,
@@ -261,6 +271,7 @@ export function NavigationMap() {
       offlineHydrated,
       hasReadyPack,
       chartCoverage.covered,
+      showDepthOverlay,
     ],
   );
 
@@ -705,6 +716,10 @@ export function NavigationMap() {
     navigation.navigate('Passage');
   }, [navigation, activePassageId]);
   const openTracks = useCallback(() => navigation.navigate('Tracks'), [navigation]);
+  const openDepthSettings = useCallback(
+    () => navigation.navigate('Settings', { screen: 'SettingsMap' }),
+    [navigation],
+  );
 
   const mapOverlays = !customSelecting && !passageMapPlanning ? (
     <View pointerEvents="box-none" style={[styles.topOverlay, { top: mapBottom.top, left: mapBottom.left, right: mapBottom.right }]}>
@@ -712,6 +727,7 @@ export function NavigationMap() {
         actionColumnWidth={showSideActions ? mapBottom.actionColumnWidth : 0}
         onOpenDownloads={() => navigation.navigate('Downloads')}
         onOpenSettings={() => navigation.navigate('Settings')}
+        onOpenDepthSettings={openDepthSettings}
         onOpenTracks={openTracks}
         showRecenter={showRecenter}
         onRecenter={() => setFollowActive(true)}
@@ -839,6 +855,7 @@ export function NavigationMap() {
       />
       {!passageMapPlanning ? <CourseVectorOverlay mapZoom={mapZoom} fallbackZoom={mapFollowZoom} /> : null}
       <ExpoLocationPuck mapZoom={mapZoom} fallbackZoom={mapFollowZoom} />
+      <DepthOverlay visible={showDepthOverlay} />
       <MapOverlays
         planningMode={passageMapPlanning && !customSelecting}
         planningSelectedWaypointId={planningSelectedWaypointId}
@@ -859,6 +876,7 @@ export function NavigationMap() {
                 actionColumnWidth={0}
                 onOpenDownloads={() => navigation.navigate('Downloads')}
                 onOpenSettings={() => navigation.navigate('Settings')}
+                onOpenDepthSettings={openDepthSettings}
                 onOpenTracks={openTracks}
                 showRecenter={showRecenter}
                 onRecenter={() => setFollowActive(true)}
@@ -914,6 +932,7 @@ export function NavigationMap() {
               actionColumnWidth={instrumentsTopChromeLayout.actionColumnWidth}
               onOpenDownloads={() => navigation.navigate('Downloads')}
               onOpenSettings={() => navigation.navigate('Settings')}
+              onOpenDepthSettings={openDepthSettings}
               onOpenTracks={openTracks}
               showRecenter={false}
               onRecenter={() => setFollowActive(true)}

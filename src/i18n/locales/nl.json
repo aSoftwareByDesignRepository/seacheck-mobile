@@ -175,8 +175,8 @@
     "panelSideStarboard": "Stuurboord (rechts)",
     "mapBehaviourTitle": "Breng gedrag in kaart",
     "chartDataTitle": "Grafiek en gegevens",
-    "chartDataSummary": "Basiskaart en OpenSeaMap-zeemarkeringen: wat SeaCheck downloadt en offline toont.",
-    "chartDataLayersBody": "SeaCheck gebruikt OpenStreetMap-basistegels van OpenSeaMap plus OpenSeaMap-zeemerktegels. Beide zijn opgenomen in offline regiopakketten.",
+    "chartDataSummary": "Basiskaart, betonning en optionele online dieptes.",
+    "chartDataLayersBody": "Offlinepakketten slaan OpenStreetMap-basistegels van OpenSeaMap plus OpenSeaMap-betonning op. Diepteshaduw is apart — alleen online, nooit in pakketten.",
     "underwayGpsTitle": "Terwijl je onderweg bent",
     "alarmFeedbackTitle": "Alarmfeedback",
     "alarmLimitsTitle": "Alarmafstanden",
@@ -240,18 +240,24 @@
     "legAdvanceAuto": "Automatisch voortbewegende passagepoten bij aankomst",
     "legAdvanceAutoHint": "Wanneer een waypoint wordt bereikt of gepasseerd, gaat u automatisch naar de volgende etappe. U kunt altijd handmatig overslaan op de kaartbanner.",
     "aboutTitle": "Over & legaal",
-    "version": "SeaCheck v%{v}"
+    "version": "SeaCheck v%{v}",
+    "depthOverlaySection": "Waterdiepten (optioneel)",
+    "depthOverlayIntro": "Toont niet-officiële GEBCO-bathymetrie en OpenSeaMap-trackdieptes op de kaart wanneer u online bent.",
+    "mapShowDepthOverlay": "Diepte-overlay tonen",
+    "mapShowDepthOverlayHint": "Internet vereist. Schakelt automatisch uit zonder bereik. Niet in offline kaartpakketten.",
+    "depthOverlayWarning": "Niet voor navigatie. Deze dieptes zijn vrijwilligers-/modelgegevens — geen officiële peilingen. Gebruik altijd officiële zeekaarten en uw echolood."
   },
   "legal": {
     "disclaimerLead": "SeaCheck is een behulpzame metgezel op het water: een navigatiehulpmiddel, geen gecertificeerde kaartplotter of vervanging voor officiële zeekaarten.",
-    "disclaimerCharts": "SeaCheck bouwt voort op het vrijwilligerswerk van OpenSeaMap en OpenStreetMap: gemeenschapsmarkeringen en een algemene kustlijnkaart die u offline kunt gebruiken. Dat is waardevol voor de oriëntatie en routeplanning. De gegevens worden bijgehouden door vrijwilligers en kunnen verouderd of onvolledig zijn; het is geen onderzochte zeekaart en bevat geen officiële diepten, vaarwegen of correcties.",
+    "disclaimerCharts": "SeaCheck bouwt voort op het vrijwilligerswerk van OpenSeaMap en OpenStreetMap: community-betonning en een algemene kustkaart voor offline gebruik. Een optionele online diepte-overlay kan niet-officiële GEBCO-bathymetrie en trackdieptes tonen — nooit officiële peilingen. De gegevens worden door vrijwilligers en modellen onderhouden en kunnen verouderd of onvolledig zijn — het is geen gepeilde zeekaart en bevat geen officiële dieptes, vaargeulen of correcties.",
     "disclaimerOfficial": "Hierdoor is SeaCheck op zichzelf niet geschikt voor navigatie. Gebruik het naast uw officiële, gecorrigeerde, actuele kaarten, controleer Berichten aan Zeevarenden en verifieer alles wat van cruciaal belang is voor de veiligheid voordat u vertrekt.",
     "openSeaMapLicense": "OpenSeaMap — project & licentie",
     "openStreetMapCopyright": "OpenStreetMap — project & licentie",
     "privacyPolicy": "Privacybeleid",
     "termsOfUse": "Voorwaarden en navigatiekennisgeving",
     "publisher": "Software op ontwerp",
-    "publisherHint": "Gemaakt door Software by Design in Kiel, Duitsland"
+    "publisherHint": "Gemaakt door Software by Design in Kiel, Duitsland",
+    "gebcoAttribution": "GEBCO — bathymetrie (niet-officieel)"
   },
   "map": {
     "cog": "COG",
@@ -427,7 +433,13 @@
     "waypointActiveGoTo": "Actief doelwit",
     "instrumentsOnlyA11y": "Navigatie-instrumenten op volledig scherm zonder kaart",
     "instrumentPanelA11y": "Navigatie-instrumentenpaneel",
-    "splitMapPaneA11y": "Grafiek kaart"
+    "splitMapPaneA11y": "Grafiek kaart",
+    "depthChip": "Dieptes · niet-officieel",
+    "depthChipA11y": "Diepte-overlay aan — niet-officiële GEBCO- en OpenSeaMap-dieptes",
+    "depthChipOffline": "Dieptes gepauzeerd · offline",
+    "depthChipOfflineA11y": "Diepte-overlay gepauzeerd omdat het apparaat offline is",
+    "depthChipHint": "Opent kaartinstellingen voor de diepte-overlay",
+    "chartA11yDepthOn": "Niet-officiële diepte-overlay zichtbaar"
   },
   "profiles": {
     "cruisePassage": "Vaart / passage"

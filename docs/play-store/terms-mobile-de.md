@@ -31,7 +31,9 @@ SeaCheck ist **kein** zertifiziertes ECDIS, kein Kartenplotter und **kein** Ersa
 
 SeaCheck nutzt die freiwillige Arbeit von **OpenSeaMap** und **OpenStreetMap** (OSM-Küstenbasis + Seezeichen-Overlay). Diese Gemeinschaftsdaten sind wertvoll für Orientierung und Routenplanung.
 
-Die Daten werden von Freiwilligen gepflegt und **können veraltet oder lückenhaft** sein. Es handelt sich nicht um vermessene Seekarten; amtliche Tiefen, Fahrwasser und Berichtigungen der Seebehörden sind nicht enthalten.
+Ein **optionales** Online-Tiefen-Overlay kann inoffizielle **GEBCO**-Bathymetrie und OpenSeaMap-Tracktiefen zeigen. Diese Layer sind **keine** amtlichen Lotungen, werden **nicht** in Offline-Kartenpaketen gespeichert und benötigen Netzempfang.
+
+Die Daten werden von Freiwilligen und Modellen gepflegt und **können veraltet oder lückenhaft** sein. Es handelt sich nicht um vermessene Seekarten; amtliche Tiefen, Fahrwasser und Berichtigungen der Seebehörden sind nicht enthalten.
 
 **Daher ist SeaCheck allein nicht für die Navigation geeignet.** Nutzen Sie die App ergänzend zu Ihren offiziellen, berichtigten und aktuellen Seekarten. Prüfen Sie NtM und sicherheitsrelevante Angaben vor dem Auslaufen.
 
@@ -39,6 +41,7 @@ Attribution und Lizenzen:
 
 - [OpenSeaMap — Projekt & Lizenz](https://www.openseamap.org/index.php?L=1&id=faq)
 - [OpenStreetMap — Urheberrecht & Lizenz](https://www.openstreetmap.org/copyright)
+- [GEBCO](https://www.gebco.net/)
 
 ---
 

@@ -31,7 +31,9 @@ SeaCheck is **not** a certified electronic chart display (ECDIS), chart plotter,
 
 SeaCheck builds on the volunteer work of **OpenSeaMap** and **OpenStreetMap** (OSM coastline base + seamark overlay). That community data is valuable for orientation and route planning.
 
-The data is maintained by volunteers and **may be outdated or incomplete**. It is not a surveyed nautical chart and does not include official depths, fairways, or corrections from hydrographic offices.
+An **optional** online depth overlay may show unofficial **GEBCO** bathymetry colouring and OpenSeaMap crowd-sourced track depths. Those layers are **not** official soundings, are **not** stored in offline chart packs, and require a network connection.
+
+The data is maintained by volunteers and models and **may be outdated or incomplete**. It is not a surveyed nautical chart and does not include official depths, fairways, or corrections from hydrographic offices.
 
 **Because of this, SeaCheck is not suitable for navigation on its own.** Use it alongside your official, corrected, up-to-date charts. Check Notices to Mariners and verify anything safety-critical before you go.
 
@@ -39,6 +41,7 @@ Attribution and licence information:
 
 - [OpenSeaMap — project & licence](https://www.openseamap.org/index.php?L=1&id=faq)
 - [OpenStreetMap — copyright & licence](https://www.openstreetmap.org/copyright)
+- [GEBCO](https://www.gebco.net/)
 
 ---
 

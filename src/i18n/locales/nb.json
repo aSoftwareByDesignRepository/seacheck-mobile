@@ -175,8 +175,8 @@
     "panelSideStarboard": "Styrbord (høyre)",
     "mapBehaviourTitle": "Kartlegg atferd",
     "chartDataTitle": "Diagram og data",
-    "chartDataSummary": "Grunnkart og OpenSeaMap sjømerker — hva SeaCheck laster ned og viser offline.",
-    "chartDataLayersBody": "SeaCheck bruker OpenStreetMap-grunnkartfliser fra OpenSeaMap pluss OpenSeaMap-sjømerkefliser. Begge er inkludert i frakoblede regionpakker.",
+    "chartDataSummary": "Grunnkart, sjømerker og valgfri online dybde.",
+    "chartDataLayersBody": "Offline-pakker lagrer OpenStreetMap-grunnfliser fra OpenSeaMap pluss OpenSeaMap-sjømerker. Dybdeskygge er separat — kun online, aldri i pakker.",
     "underwayGpsTitle": "Underveis",
     "alarmFeedbackTitle": "Alarmtilbakemelding",
     "alarmLimitsTitle": "Alarmavstander",
@@ -240,18 +240,24 @@
     "legAdvanceAuto": "Automatisk fremrykk passasjeben ved ankomst",
     "legAdvanceAutoHint": "Når et veipunkt nås eller passeres, går du automatisk til neste etappe. Du kan alltid hoppe manuelt på kartbanneret.",
     "aboutTitle": "Om & lovlig",
-    "version": "SeaCheck v%{v}"
+    "version": "SeaCheck v%{v}",
+    "depthOverlaySection": "Vanndybder (valgfritt)",
+    "depthOverlayIntro": "Viser uoffisiell GEBCO-batymetri og OpenSeaMap-sporingsdybder på kartet når du er online.",
+    "mapShowDepthOverlay": "Vis dybde-overlay",
+    "mapShowDepthOverlayHint": "Krever internett. Slås automatisk av uten signal. Ikke i offline-kartpakker.",
+    "depthOverlayWarning": "Ikke for navigasjon. Disse dybdene er frivillige-/modelldata — ikke offisielle lodninger. Bruk alltid offisielle sjøkart og ekkoloddet."
   },
   "legal": {
     "disclaimerLead": "SeaCheck er en nyttig følgesvenn på vannet - et navigasjonshjelpemiddel, ikke en sertifisert kartplotter eller erstatning for offisielle sjøkart.",
-    "disclaimerCharts": "SeaCheck bygger på frivilligheten til OpenSeaMap og OpenStreetMap: fellesskaps sjømerker og et generelt kystlinjekart du kan bruke offline. Det er verdifullt for orientering og ruteplanlegging. Dataene vedlikeholdes av frivillige og kan være utdaterte eller ufullstendige – det er ikke et kartlagt sjøkart og inkluderer ingen offisielle dybder, fairways eller korrigeringer.",
+    "disclaimerCharts": "SeaCheck bygger på frivillig arbeid fra OpenSeaMap og OpenStreetMap: fellesskapsmerke og et generelt kystkart til offline bruk. Et valgfritt online dybde-overlay kan vise uoffisiell GEBCO-batymetri og sporingsdybder — aldri offisielle lodninger. Dataene vedlikeholdes av frivillige og modeller og kan være utdaterte eller ufullstendige — det er ikke et oppmålt sjøkart og inneholder ingen offisielle dybder, farleder eller rettelser.",
     "disclaimerOfficial": "På grunn av dette er SeaCheck ikke egnet for navigering alene. Bruk den sammen med de offisielle, korrigerte, oppdaterte kartene dine, sjekk Notices to Mariners, og kontroller alt som er viktig for sikkerheten før du drar.",
     "openSeaMapLicense": "OpenSeaMap — prosjekt og lisens",
     "openStreetMapCopyright": "OpenStreetMap — prosjekt og lisens",
     "privacyPolicy": "Personvernerklæring",
     "termsOfUse": "Vilkår og navigasjonsvarsel",
     "publisher": "Software by Design",
-    "publisherHint": "Laget av Software by Design i Kiel, Tyskland"
+    "publisherHint": "Laget av Software by Design i Kiel, Tyskland",
+    "gebcoAttribution": "GEBCO — batymetri (uoffisiell)"
   },
   "map": {
     "cog": "COG",
@@ -427,7 +433,13 @@
     "waypointActiveGoTo": "Aktivt mål",
     "instrumentsOnlyA11y": "Fullskjerms navigasjonsinstrumenter uten kart",
     "instrumentPanelA11y": "Navigasjonsinstrumentpanel",
-    "splitMapPaneA11y": "Kart kart"
+    "splitMapPaneA11y": "Kart kart",
+    "depthChip": "Dybder · uoffisiell",
+    "depthChipA11y": "Dybde-overlay på — uoffisielle GEBCO- og OpenSeaMap-dybder",
+    "depthChipOffline": "Dybder pause · offline",
+    "depthChipOfflineA11y": "Dybde-overlay pauset fordi enheten er offline",
+    "depthChipHint": "Åpner kartinnstillinger for dybde-overlay",
+    "chartA11yDepthOn": "Uoffisielt dybde-overlay synlig"
   },
   "profiles": {
     "cruisePassage": "Cruise/passasje"

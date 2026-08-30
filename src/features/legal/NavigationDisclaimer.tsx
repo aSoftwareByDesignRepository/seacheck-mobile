@@ -28,6 +28,11 @@ export function NavigationDisclaimer({ testIDPrefix = 'legal' }: Props) {
           url={EXTERNAL_LINKS.openStreetMapCopyright}
           testID={`${testIDPrefix}.link.osm`}
         />
+        <ExternalLinkRow
+          label={t('legal.gebcoAttribution')}
+          url={EXTERNAL_LINKS.gebco}
+          testID={`${testIDPrefix}.link.gebco`}
+        />
       </View>
     </View>
   );

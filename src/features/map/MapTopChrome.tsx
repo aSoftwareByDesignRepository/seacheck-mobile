@@ -12,6 +12,7 @@ import { GpsStatusStrip } from './GpsStatusStrip';
 import { MapStatusChipRow } from './MapStatusChipRow';
 import { MapPreviewTrackBanner } from './MapPreviewTrackBanner';
 import { MapRecordingChip } from './MapRecordingChip';
+import { MapDepthChip } from './MapDepthChip';
 import { MAP_CHROME_GAP } from './mapChromeLayout';
 import { MapModeHintStrip } from './MapModeHintStrip';
 import { MapTopAlertBanner } from './MapTopAlertBanner';
@@ -20,6 +21,7 @@ type Props = {
   actionColumnWidth: number;
   onOpenDownloads: () => void;
   onOpenSettings: () => void;
+  onOpenDepthSettings?: () => void;
   onOpenTracks: () => void;
   showRecenter: boolean;
   onRecenter: () => void;
@@ -49,6 +51,7 @@ export function MapTopChrome({
   actionColumnWidth,
   onOpenDownloads,
   onOpenSettings,
+  onOpenDepthSettings,
   onOpenTracks,
   showRecenter,
   onRecenter,
@@ -117,6 +120,7 @@ export function MapTopChrome({
             inline
           />
           <MapRecordingChip onOpenTracks={onOpenTracks} />
+          <MapDepthChip onOpenDepthSettings={onOpenDepthSettings ?? onOpenSettings} />
         </MapStatusChipRow>
 
         <MapPreviewTrackBanner compact />

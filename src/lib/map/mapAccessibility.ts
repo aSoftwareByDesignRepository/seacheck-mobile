@@ -17,6 +17,7 @@ type MapChartA11yInput = {
   isOffline?: boolean;
   hasReadyPack?: boolean;
   chartCovered?: boolean;
+  depthOverlayVisible?: boolean;
 };
 
 /** Spoken summary for VoiceOver / TalkBack — chart centre, boat position, follow state. */
@@ -75,6 +76,8 @@ export function buildMapChartAccessibilityLabel(input: MapChartA11yInput): strin
     } else if (input.chartCovered === true) {
       parts.push(t('map.chartA11yOfflineCovered'));
     }
+  } else if (input.depthOverlayVisible) {
+    parts.push(t('map.chartA11yDepthOn'));
   }
 
   return parts.join('. ');

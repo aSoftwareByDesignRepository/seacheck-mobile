@@ -1,6 +1,6 @@
 # Datenschutzerklärung — SeaCheck Mobile (Android / iOS)
 
-**Stand:** 12.07.2026  
+**Stand:** 30.08.2026  
 **App:** SeaCheck Mobile  
 **Anbieter:** Software by Design GbR, Husumer Baum 2, 24837 Schleswig, Deutschland  
 **Kontakt:** info@software-by-design.de · datenschutz@software-by-design.de  
@@ -53,6 +53,7 @@ Die App erstellt **kein** Konto und lädt Törns, Tracks oder dauerhafte Standor
 |--------|-------------------|-------|
 | **OpenSeaMap** (t1/t2.openseamap.org) | Kartenkachel-Anfragen (Gebiet/Zoom; kein Konto) | Basiskarte |
 | **OpenSeaMap** (tiles.openseamap.org) | Kachel-Anfragen | Seezeichen-Overlay |
+| **OpenSeaMap GeoServer** (geoserver.openseamap.org, depth.openseamap.org) | Optionale WMS-Anfragen, wenn Sie das Tiefen-Overlay einschalten | Inoffizielle GEBCO-/Track-Tiefenbilder (nur online; nicht in Offline-Paketen) |
 | **OpenStreetMap Overpass API** (z. B. overpass-api.de) | Bereichsabfragen für Seezeichen | Online-Seezeichen-Suche, wenn der lokale Index nicht reicht |
 
 Diese Anfragen zeigen, **welche Kartenbereiche** Sie ansehen oder abfragen — nicht Ihre Identität. Kein Konto erforderlich.

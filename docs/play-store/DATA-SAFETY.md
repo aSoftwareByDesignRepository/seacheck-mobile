@@ -10,7 +10,7 @@ Use **Play Console → App content → Data safety**. Answers match the **produc
 
 Suggested short summary:
 
-> SeaCheck stores waypoints, passages, and tracks on your device. Location is used for the chart, alarms, and track recording. Chart downloads contact OpenSeaMap (base + seamarks). No ads or analytics. No account required.
+> SeaCheck stores waypoints, passages, and tracks on your device. Location is used for the chart, alarms, and track recording. Chart downloads contact OpenSeaMap (base + seamarks). An optional depth overlay may contact OpenSeaMap/GEBCO WMS hosts when enabled (online only). No ads or analytics. No account required.
 
 ---
 

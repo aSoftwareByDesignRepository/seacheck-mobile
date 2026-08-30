@@ -175,8 +175,8 @@
     "panelSideStarboard": "Starboard (right)",
     "mapBehaviourTitle": "Map behaviour",
     "chartDataTitle": "Chart & data",
-    "chartDataSummary": "Base map and OpenSeaMap seamarks — what SeaCheck downloads and shows offline.",
-    "chartDataLayersBody": "SeaCheck uses OpenStreetMap base tiles from OpenSeaMap plus OpenSeaMap seamark tiles. Both are included in offline region packs.",
+    "chartDataSummary": "Base map, seamarks, and optional online depth shading.",
+    "chartDataLayersBody": "Offline packs save OpenStreetMap base tiles from OpenSeaMap plus OpenSeaMap seamarks. Depth shading is separate — online only, never stored in packs.",
     "underwayGpsTitle": "While underway",
     "alarmFeedbackTitle": "Alarm feedback",
     "alarmLimitsTitle": "Alarm distances",
@@ -240,18 +240,24 @@
     "legAdvanceAuto": "Auto-advance passage legs at arrival",
     "legAdvanceAutoHint": "When a waypoint is reached or passed, move to the next leg automatically. You can always skip manually on the map banner.",
     "aboutTitle": "About & legal",
-    "version": "SeaCheck v%{v}"
+    "version": "SeaCheck v%{v}",
+    "depthOverlaySection": "Water depths (optional)",
+    "depthOverlayIntro": "Shows unofficial GEBCO bathymetry colouring and OpenSeaMap crowd-sourced track depths on the map when you are online.",
+    "mapShowDepthOverlay": "Show depth overlay",
+    "mapShowDepthOverlayHint": "Needs internet. Turns off automatically without signal. Not included in offline chart packs.",
+    "depthOverlayWarning": "Not for navigation. These depths are volunteer / model data — not official soundings. Always use official charts and your sounder."
   },
   "legal": {
     "disclaimerLead": "SeaCheck is a helpful companion on the water — a navigation aid, not a certified chart plotter or replacement for official nautical charts.",
-    "disclaimerCharts": "SeaCheck builds on the volunteer work of OpenSeaMap and OpenStreetMap: community seamarks and a general coastline map you can use offline. That is valuable for orientation and route planning. The data is maintained by volunteers and may be outdated or incomplete — it is not a surveyed nautical chart and includes no official depths, fairways, or corrections.",
+    "disclaimerCharts": "SeaCheck builds on the volunteer work of OpenSeaMap and OpenStreetMap: community seamarks and a general coastline map you can use offline. An optional online depth overlay can show unofficial GEBCO bathymetry and crowd-sourced track depths — never official soundings. The data is maintained by volunteers and models and may be outdated or incomplete — it is not a surveyed nautical chart and includes no official depths, fairways, or corrections.",
     "disclaimerOfficial": "Because of this, SeaCheck is not suitable for navigation on its own. Use it alongside your official, corrected, up-to-date charts, check Notices to Mariners, and verify anything safety-critical before you go.",
     "openSeaMapLicense": "OpenSeaMap — project & license",
     "openStreetMapCopyright": "OpenStreetMap — project & license",
     "privacyPolicy": "Privacy policy",
     "termsOfUse": "Terms & navigation notice",
     "publisher": "Software by Design",
-    "publisherHint": "Made by Software by Design in Kiel, Germany"
+    "publisherHint": "Made by Software by Design in Kiel, Germany",
+    "gebcoAttribution": "GEBCO — bathymetry (unofficial)"
   },
   "map": {
     "cog": "COG",
@@ -427,7 +433,13 @@
     "waypointActiveGoTo": "Active go-to target",
     "instrumentsOnlyA11y": "Full-screen navigation instruments without chart",
     "instrumentPanelA11y": "Navigation instruments panel",
-    "splitMapPaneA11y": "Chart map"
+    "splitMapPaneA11y": "Chart map",
+    "depthChip": "Depths · unofficial",
+    "depthChipA11y": "Depth overlay on — unofficial GEBCO and OpenSeaMap depths",
+    "depthChipOffline": "Depths paused · offline",
+    "depthChipOfflineA11y": "Depth overlay paused because the device is offline",
+    "depthChipHint": "Opens Map settings to change the depth overlay",
+    "chartA11yDepthOn": "Unofficial depth overlay visible"
   },
   "profiles": {
     "cruisePassage": "Cruise / passage"

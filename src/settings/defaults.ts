@@ -28,6 +28,11 @@ export const CRUISE_PASSAGE_DEFAULTS = {
   mapShowXte: false,
   /** Leeway (COG vs heading) in instrument panels — off by default. */
   mapShowLeeway: false,
+  /**
+   * Optional OpenSeaMap/GEBCO depth overlay — off by default, online-only,
+   * never included in offline packs.
+   */
+  mapShowDepthOverlay: false,
   /** Accuracy-weighted position smoothing for map display — alarms always use raw GPS. */
   gpsSmoothPosition: true,
 };

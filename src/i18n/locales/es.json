@@ -175,8 +175,8 @@
     "panelSideStarboard": "Estribor (derecha)",
     "mapBehaviourTitle": "Comportamiento del mapa",
     "chartDataTitle": "Gráficos y datos",
-    "chartDataSummary": "Mapa base y marcas marítimas de OpenSeaMap: lo que SeaCheck descarga y muestra sin conexión.",
-    "chartDataLayersBody": "SeaCheck utiliza mosaicos base de OpenStreetMap de OpenSeaMap más mosaicos de marcas marinas OpenSeaMap. Ambos están incluidos en paquetes regionales fuera de línea.",
+    "chartDataSummary": "Mapa base, marcas marinas y profundidades en línea opcionales.",
+    "chartDataLayersBody": "Los paquetes sin conexión guardan teselas OpenStreetMap de OpenSeaMap más marcas OpenSeaMap. El sombreado de profundidad es aparte — solo en línea, nunca en paquetes.",
     "underwayGpsTitle": "Mientras está en marcha",
     "alarmFeedbackTitle": "Comentarios de alarma",
     "alarmLimitsTitle": "Distancias de alarma",
@@ -240,18 +240,24 @@
     "legAdvanceAuto": "Tramos de paso con avance automático a la llegada",
     "legAdvanceAutoHint": "Cuando se alcanza o se pasa un waypoint, se pasa automáticamente al siguiente tramo. Siempre puedes saltar manualmente en el banner del mapa.",
     "aboutTitle": "Acerca de y legal",
-    "version": "SeaCheckv%{v}"
+    "version": "SeaCheckv%{v}",
+    "depthOverlaySection": "Profundidades de agua (opcional)",
+    "depthOverlayIntro": "Muestra batimetría GEBCO no oficial y profundidades de tracks OpenSeaMap en el mapa cuando está en línea.",
+    "mapShowDepthOverlay": "Mostrar capa de profundidad",
+    "mapShowDepthOverlayHint": "Requiere internet. Se desactiva sin señal. No incluida en paquetes sin conexión.",
+    "depthOverlayWarning": "No para navegación. Estas profundidades son datos de voluntarios/modelos — no sondas oficiales. Use siempre cartas oficiales y su ecosonda."
   },
   "legal": {
     "disclaimerLead": "SeaCheck es un compañero útil en el agua: una ayuda para la navegación, no un trazador de cartas certificado ni un sustituto de las cartas náuticas oficiales.",
-    "disclaimerCharts": "SeaCheck se basa en el trabajo voluntario de OpenSeaMap y OpenStreetMap: marcas marítimas comunitarias y un mapa general de la costa que puedes usar sin conexión. Esto es valioso para la orientación y la planificación de rutas. Los datos son mantenidos por voluntarios y pueden estar desactualizados o incompletos; no es una carta náutica topográfica y no incluye profundidades, calles ni correcciones oficiales.",
+    "disclaimerCharts": "SeaCheck se basa en el trabajo voluntario de OpenSeaMap y OpenStreetMap: marcas comunitarias y un mapa costero general para uso sin conexión. Una capa de profundidad opcional en línea puede mostrar batimetría GEBCO no oficial y profundidades de tracks — nunca sondas oficiales. Los datos los mantienen voluntarios y modelos y pueden estar desactualizados o incompletos — no es una carta náutica levantada y no incluye profundidades, canales ni correcciones oficiales.",
     "disclaimerOfficial": "Debido a esto, SeaCheck no es adecuado para la navegación por sí solo. Úselo junto con sus cartas oficiales, corregidas y actualizadas, consulte los Avisos a los navegantes y verifique cualquier cosa que sea crítica para la seguridad antes de partir.",
     "openSeaMapLicense": "OpenSeaMap: proyecto y licencia",
     "openStreetMapCopyright": "OpenStreetMap: proyecto y licencia",
     "privacyPolicy": "Política de privacidad",
     "termsOfUse": "Términos y aviso de navegación",
     "publisher": "Software por diseño",
-    "publisherHint": "Hecho por Software by Design en Kiel, Alemania"
+    "publisherHint": "Hecho por Software by Design en Kiel, Alemania",
+    "gebcoAttribution": "GEBCO — batimetría (no oficial)"
   },
   "map": {
     "cog": "DIENTE",
@@ -427,7 +433,13 @@
     "waypointActiveGoTo": "Objetivo de acceso activo",
     "instrumentsOnlyA11y": "Instrumentos de navegación en pantalla completa sin carta",
     "instrumentPanelA11y": "Panel de instrumentos de navegación",
-    "splitMapPaneA11y": "mapa gráfico"
+    "splitMapPaneA11y": "mapa gráfico",
+    "depthChip": "Profundidades · no oficial",
+    "depthChipA11y": "Capa de profundidad activada — profundidades GEBCO y OpenSeaMap no oficiales",
+    "depthChipOffline": "Profundidades en pausa · sin conexión",
+    "depthChipOfflineA11y": "Capa de profundidad en pausa porque el dispositivo está sin conexión",
+    "depthChipHint": "Abre ajustes del mapa para la capa de profundidad",
+    "chartA11yDepthOn": "Capa de profundidad no oficial visible"
   },
   "profiles": {
     "cruisePassage": "Crucero/Pasaje"

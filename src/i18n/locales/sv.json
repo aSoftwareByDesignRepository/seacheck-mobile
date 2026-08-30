@@ -175,8 +175,8 @@
     "panelSideStarboard": "Styrbord (höger)",
     "mapBehaviourTitle": "Kartbeteende",
     "chartDataTitle": "Diagram & data",
-    "chartDataSummary": "Grundkarta och OpenSeaMap sjömärken — vad SeaCheck laddar ner och visar offline.",
-    "chartDataLayersBody": "SeaCheck använder OpenStreetMap-baskartor från OpenSeaMap plus OpenSeaMap-sjömärkesplattor. Båda ingår i offlineregionspaket.",
+    "chartDataSummary": "Baskarta, sjömärken och valfri online-djupskuggning.",
+    "chartDataLayersBody": "Offlinepaket sparar OpenStreetMap-baskakel från OpenSeaMap plus OpenSeaMap-sjömärken. Djupskuggning är separat — endast online, aldrig i paket.",
     "underwayGpsTitle": "Under pågående",
     "alarmFeedbackTitle": "Larmåterkoppling",
     "alarmLimitsTitle": "Larmavstånd",
@@ -240,18 +240,24 @@
     "legAdvanceAuto": "Auto-förflyttning passage ben vid ankomst",
     "legAdvanceAutoHint": "När en waypoint nås eller passeras, gå automatiskt till nästa etapp. Du kan alltid hoppa manuellt på kartbannern.",
     "aboutTitle": "Om & lagligt",
-    "version": "SeaCheck v%{v}"
+    "version": "SeaCheck v%{v}",
+    "depthOverlaySection": "Vattendjup (valfritt)",
+    "depthOverlayIntro": "Visar inofficiell GEBCO-batymetri och OpenSeaMap-spårningsdjup på kartan när du är online.",
+    "mapShowDepthOverlay": "Visa djupöverlägg",
+    "mapShowDepthOverlayHint": "Kräver internet. Stängs av automatiskt utan signal. Ingår inte i offline-kartpaket.",
+    "depthOverlayWarning": "Inte för navigation. Dessa djup är volontär-/modelldata — inte officiella lodningar. Använd alltid officiella sjökort och ditt ekolod."
   },
   "legal": {
     "disclaimerLead": "SeaCheck är en hjälpsam följeslagare på vattnet - ett navigationshjälpmedel, inte en certifierad kartplotter eller ersättning för officiella sjökort.",
-    "disclaimerCharts": "SeaCheck bygger på frivilligarbetet från OpenSeaMap och OpenStreetMap: gemenskapssjömärken och en allmän kustlinjekarta som du kan använda offline. Det är värdefullt för orientering och ruttplanering. Uppgifterna underhålls av frivilliga och kan vara föråldrade eller ofullständiga – det är inte ett övervakat sjökort och innehåller inga officiella djup, farleder eller korrigeringar.",
+    "disclaimerCharts": "SeaCheck bygger på OpenSeaMaps och OpenStreetMaps volontärarbete: community-sjömärken och en allmän kustkarta för offlinebruk. Ett valfritt online-djupöverlägg kan visa inofficiell GEBCO-batymetri och spårningsdjup — aldrig officiella lodningar. Data underhålls av volontärer och modeller och kan vara inaktuella eller ofullständiga — det är inte ett uppmätt sjökort och innehåller inga officiella djup, farleder eller rättelser.",
     "disclaimerOfficial": "På grund av detta är SeaCheck inte lämplig för navigering på egen hand. Använd den tillsammans med dina officiella, korrigerade, uppdaterade sjökort, kontrollera meddelanden till sjöfarare och verifiera allt som är viktigt för säkerheten innan du går.",
     "openSeaMapLicense": "OpenSeaMap — projekt & licens",
     "openStreetMapCopyright": "OpenStreetMap — projekt och licens",
     "privacyPolicy": "Integritetspolicy",
     "termsOfUse": "Villkor och navigeringsmeddelande",
     "publisher": "Software by Design",
-    "publisherHint": "Tillverkad av Software by Design i Kiel, Tyskland"
+    "publisherHint": "Tillverkad av Software by Design i Kiel, Tyskland",
+    "gebcoAttribution": "GEBCO — batymetri (inofficiell)"
   },
   "map": {
     "cog": "KUGGE",
@@ -427,7 +433,13 @@
     "waypointActiveGoTo": "Aktivt mål",
     "instrumentsOnlyA11y": "Helskärmsnavigeringsinstrument utan sjökort",
     "instrumentPanelA11y": "Navigationsinstrumentpanel",
-    "splitMapPaneA11y": "Karta karta"
+    "splitMapPaneA11y": "Karta karta",
+    "depthChip": "Djup · inofficiellt",
+    "depthChipA11y": "Djupöverlägg på — inofficiella GEBCO- och OpenSeaMap-djup",
+    "depthChipOffline": "Djup pausat · offline",
+    "depthChipOfflineA11y": "Djupöverlägg pausat eftersom enheten är offline",
+    "depthChipHint": "Öppnar kartinställningar för djupöverlägget",
+    "chartA11yDepthOn": "Inofficiellt djupöverlägg synligt"
   },
   "profiles": {
     "cruisePassage": "Kryssning/passage"
