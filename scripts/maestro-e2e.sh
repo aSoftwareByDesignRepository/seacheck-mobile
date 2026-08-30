@@ -104,15 +104,19 @@ disable_rival_apps() {
 }
 
 enable_rival_apps() {
+  # Must never fail the EXIT trap: a successful Maestro run previously exited 1
+  # because `${#DISABLED_RIVALS[@]:-0}` is invalid bash ("bad substitution").
   local pkg
-  for pkg in "${DISABLED_RIVALS[@]:-}"; do
+  local count="${#DISABLED_RIVALS[@]}"
+  for pkg in "${DISABLED_RIVALS[@]}"; do
     [[ -z "$pkg" ]] && continue
     adb -s "$DEVICE" shell pm enable "$pkg" >/dev/null 2>&1 || true
   done
-  if ((${#DISABLED_RIVALS[@]:-0} > 0)); then
+  if ((count > 0)); then
     log "re-enabled rival packages"
   fi
   DISABLED_RIVALS=()
+  return 0
 }
 
 launch_deep_link() {
@@ -148,7 +152,8 @@ fi
 adb -s "$DEVICE" reverse "tcp:${METRO_PORT}" "tcp:${METRO_PORT}" >/dev/null 2>&1 || true
 
 # Always restore rivals even on die()/SIGINT (DutyCheck etc. must not stay disabled).
-trap enable_rival_apps EXIT
+# `|| true` so a restore glitch cannot flip a green Maestro into red (EXIT trap exit).
+trap 'enable_rival_apps || true' EXIT
 
 disable_rival_apps
 stop_rival_apps

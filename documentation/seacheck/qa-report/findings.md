@@ -229,7 +229,9 @@ Flows under `.maestro/` + `scripts/maestro-e2e.sh` (`npm run e2e:maestro:cancel`
 
 **CI honesty fix (2026-08-30):** Prior `ci-maestro.sh` read `$?` after `if`, which is always 0 in bash — a failed Maestro could still print `ci-maestro passed` (false green on run 33327634960). Exit codes are now captured with `set +e` / explicit `flow_rc`. Onboarding helper accepts warm start (`tab.map` already visible).
 
-**Proof:** GitHub Actions run [33327634960](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33327634960) booted emulator + ran flows (cancel passed on retry); follow-up commit closes the false-green + kill-after-cancel onboarding gap.
+**CI false-red (2026-08-30 run [33329507994](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33329507994)):** Maestro cancel printed `==> OK` twice, then EXIT trap crashed on `${#DISABLED_RIVALS[@]:-0}` (`bad substitution`) → exit 1. Fixed: valid `${#DISABLED_RIVALS[@]}` + trap `|| true`.
+
+**Proof:** GitHub Actions run [33327634960](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33327634960) booted emulator + ran flows; follow-ups close false-green, kill-after-cancel onboarding, and EXIT-trap false-red.
 
 ### [LOW] [FIXED] Jest worker timer leaks after offlinePackStore tests
 

@@ -124,6 +124,25 @@ depth.openseamap.org tracks_100m → HTTP/2 200 image/png
 
 ---
 
+## 2026-08-30T21:25Z — Maestro CI EXIT-trap false-red
+
+GitHub run [33329507994](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33329507994) failed after cancel flow **actually passed**:
+
+```
+==> OK
+scripts/maestro-e2e.sh: line 112: ${#DISABLED_RIVALS[@]:-0} > 0: bad substitution
+==> maestro cancel attempt N failed (exit 1)
+```
+
+`${#array[@]:-0}` is invalid bash. EXIT trap then flipped green Maestro into red. Fixed in `enable_rival_apps` + `trap '… || true' EXIT`.
+
+```
+Command: npm test -- --ci --no-coverage
+Result: Test Suites: 131 passed, 131 total; Tests: 634 passed; EXIT 0 (no forceExit)
+```
+
+---
+
 ## 2026-08-30T18:50Z — Maestro CI false-green caught + fixed
 
 GitHub run [33327634960](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33327634960) concluded **success** but the log showed:
