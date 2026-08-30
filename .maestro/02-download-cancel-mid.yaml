@@ -1,0 +1,54 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - downloads
+  - honesty
+---
+# Start Kiel Bay download, cancel mid-flight, assert Ready is NOT claimed.
+- runFlow: 01-onboarding-skip.yaml
+- runFlow: 01a-warm-map.yaml
+- runFlow: 01b-open-downloads.yaml
+- tapOn:
+    id: "confirm.proceed"
+    optional: true
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "downloads.download.kiel-bay"
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    id: "downloads.download.kiel-bay"
+- tapOn:
+    id: "confirm.proceed"
+    optional: true
+# Active download affordance (banner and/or per-pack cancel).
+- extendedWaitUntil:
+    visible:
+      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay"
+    timeout: 180000
+- assertNotVisible:
+    id: "downloads.statusBanner.ready"
+- tapOn:
+    id: "downloads.statusBanner.cancel"
+    optional: true
+- tapOn:
+    id: "downloads.cancel.kiel-bay"
+    optional: true
+- extendedWaitUntil:
+    notVisible:
+      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay"
+    timeout: 90000
+- extendedWaitUntil:
+    notVisible:
+      id: "downloads.statusBanner.completing"
+    timeout: 90000
+    optional: true
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+# Honesty: cancel must not leave ambient Ready.
+- assertNotVisible:
+    id: "downloads.statusBanner.ready"
+- takeScreenshot: download-cancel-mid

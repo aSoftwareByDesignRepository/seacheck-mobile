@@ -1,0 +1,16 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - probe
+---
+# Smoke: after scripts/maestro-e2e.sh deep-link bootstrap, onboarding (or tabs) must be visible.
+- extendedWaitUntil:
+    visible:
+      id: "screen.onboarding"
+    timeout: 180000
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "tab.downloads"
+    timeout: 5000
+    optional: true
+- takeScreenshot: maestro-probe-launch

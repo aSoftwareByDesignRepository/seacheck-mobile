@@ -1,0 +1,51 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - downloads
+  - honesty
+  - kill-mid
+---
+# Start Kiel Bay download, kill mid-flight, relaunch, assert no Ready lie.
+- runFlow: 01-onboarding-skip.yaml
+- runFlow: 01a-warm-map.yaml
+- runFlow: 01b-open-downloads.yaml
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "downloads.download.kiel-bay"
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    id: "downloads.download.kiel-bay"
+- tapOn:
+    id: "confirm.proceed"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay"
+    timeout: 180000
+- assertNotVisible:
+    id: "downloads.statusBanner.ready"
+- killApp
+- launchApp:
+    appId: "de.softwarebydesign.seacheck"
+    clearState: false
+    stopApp: false
+- openLink: "exp+seacheck://expo-development-client/?url=http%3A%2F%2F10.0.2.2%3A8092"
+- tapOn:
+    text: "Continue"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "tab.map"
+    timeout: 180000
+- runFlow: 01b-open-downloads.yaml
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- assertNotVisible:
+    id: "downloads.statusBanner.ready"
+- takeScreenshot: download-kill-mid

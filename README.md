@@ -77,6 +77,15 @@ npm run i18n:parity
 npm run preflight
 ```
 
+Device E2E (download honesty — needs Android emulator + Metro on `:8092` + [Maestro](https://maestro.mobile.dev)):
+
+```bash
+npx expo start --port 8092 --dev-client   # separate terminal
+npm run e2e:maestro:cancel                # cancel mid-download → no Ready
+npm run e2e:maestro:kill                  # killApp mid-download → no Ready after relaunch
+```
+
+Prefer a single emulator. The runner disables other `softwarebydesign.*` apps for the run so they cannot steal foreground.
 ## UAT corridors (Baltic)
 
 On-water testing targets: **Kieler Bucht**, **Småland**, **Dänische Südsee** — see plan §6.9.

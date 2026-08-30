@@ -1,0 +1,7 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - helper
+---
+- tapOn:
+    text: "Continue"
+    optional: true

@@ -1,0 +1,6 @@
+# SeaCheck Maestro E2E — device flows for download honesty.
+# Prefer a dedicated emulator (SeaCheck_Maestro_API_33 / emulator-5556).
+# Shared AVDs fighting Detox/other apps will steal focus mid-flow.
+appId: de.softwarebydesign.seacheck
+excludeTags:
+  - helper

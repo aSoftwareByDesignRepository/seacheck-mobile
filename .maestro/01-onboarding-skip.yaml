@@ -1,0 +1,36 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - helper
+---
+# Skip onboarding (any step) to map chrome. Runtime permission grants may skip
+# disclaimer/location and land on battery/finish.
+- extendedWaitUntil:
+    visible:
+      id: "screen.onboarding"
+    timeout: 180000
+- tapOn:
+    id: "onboarding.disclaimer.continue"
+    optional: true
+- tapOn:
+    id: "onboarding.location.skip"
+    optional: true
+- tapOn:
+    id: "onboarding.battery.ack"
+    optional: true
+- tapOn:
+    id: "onboarding.finish"
+    optional: true
+# System permission sheets may still appear despite pm grant.
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    text: "While using the app"
+    optional: true
+- tapOn:
+    text: "Allow only while using the app"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "tab.map"
+    timeout: 120000

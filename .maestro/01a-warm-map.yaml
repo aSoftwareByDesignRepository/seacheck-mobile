@@ -1,0 +1,13 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - helper
+---
+# Warm MapLibre on the Map tab before starting a pack download (emulator chart-engine).
+- tapOn:
+    id: "tab.map"
+- extendedWaitUntil:
+    visible:
+      id: "screen.map"
+    timeout: 60000
+- waitForAnimationToEnd:
+    timeout: 8000

@@ -15,12 +15,12 @@
 | Severity | Open after this engagement | Fixed this engagement |
 |----------|----------------------------|------------------------|
 | Critical | **0** | 0 new Critical (prior Wi‑Fi Critical stays fixed) |
-| High | **0** (device Maestro E2E still absent — tracked as process/Low) | 4 High honesty bugs fixed |
+| High | **0** | 4 High honesty bugs fixed |
 | Medium | **0** | Limited-anchor chrome + Overpass privacy copy |
-| Low | Maestro E2E; Jest timer leaks | README HTTPS; storageCheck fail-closed |
+| Low | Jest timer leaks; Maestro not yet in CI | README HTTPS; storageCheck fail-closed; Maestro cancel/kill device E2E |
 
 **Fit for client/auditor today?**  
-**Yes** for functional + download integrity (including cancel/seal/hydrate honesty) + depth opt-in + limited-anchor honesty. Residual Low: no Maestro on-device E2E farm; Jest timer-leak warnings with `--forceExit`.
+**Yes** for functional + download integrity (including cancel/seal/hydrate honesty) + depth opt-in + limited-anchor honesty. Residual Low: Jest timer-leak warnings with `--forceExit`; Maestro proven on emulator locally, not yet wired into CI.
 
 Safety/offline mutation: **16 killed / 0 survived / 16**.  
 Full Jest after download honesty pass: **129 suites / 625 tests** green.
@@ -216,9 +216,14 @@ State that chart-object lookup may send the tapped coordinates to Overpass mirro
 
 Now `https://nextcloud.software-by-design.de/`.
 
-### [LOW] No Maestro/Detox device E2E for kill-mid-download
+### [LOW] [FIXED] Maestro device E2E for cancel-mid + kill-mid download honesty
 
-Jest process-death sims cover sweep / seal / cancel. Physical emulator farm still absent.
+Flows under `.maestro/` + `scripts/maestro-e2e.sh` (`npm run e2e:maestro:cancel` / `:kill`).
+
+**Proof (2026-08-30):**
+- `02-download-cancel-mid` → **PASS** on `emulator-5556` (SeaCheck_Maestro_API_33); cancel mid-flight → no Ready banner.
+- `03-download-kill-mid` → **PASS** on `emulator-5554` (Pixel_3_API_33); killApp mid-flight → relaunch → no Ready banner.
+- Script disables other `softwarebydesign.*` packages for the run (DutyCheck FG steal) and re-enables on EXIT.
 
 ### [LOW] Jest worker timer leaks after offlinePackStore tests
 
@@ -281,5 +286,5 @@ New / extended adversarial tests this engagement:
 ## Open Questions
 
 1. Product choice: limited watch still arms after explicit confirm; chrome stays LIMITED until background + notifications + battery exemption + BG task are healthy.  
-2. Can CI host a Maestro kill-mid-download on emulator?  
+2. Wire Maestro cancel/kill into CI (needs emulator + Metro + Maestro CLI; proven locally).  
 3. Should Overpass be disabled when depth/privacy “minimal network” mode is desired?

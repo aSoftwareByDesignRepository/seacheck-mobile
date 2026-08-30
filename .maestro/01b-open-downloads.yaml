@@ -1,0 +1,14 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - helper
+---
+# Open Downloads — on compact phones it lives under More.
+- tapOn:
+    id: "tab.more"
+    optional: true
+- tapOn:
+    id: "tab.downloads"
+- extendedWaitUntil:
+    visible:
+      id: "screen.downloads"
+    timeout: 30000

@@ -118,10 +118,36 @@ depth.openseamap.org tracks_100m → HTTP/2 200 image/png
 
 ## Not executed (explicit gaps)
 
-- Device E2E kill-mid-download (Maestro/Detox) — Jest sims only  
 - Native MapLibre WMS visual render on device  
 - Playwright/Axe on RN — N/A; contrast + touch scripts used  
 - Live load test against OpenSeaMap CDN — intentionally avoided  
+- Maestro in CI (local emulator proof done; see 2026-08-30T16:12Z below)  
+
+---
+
+## 2026-08-30T16:12Z / 16:30Z — Maestro download honesty (device)
+
+Metro: `expo start --port 8092 --dev-client`. Runner: `scripts/maestro-e2e.sh`.
+
+```
+Command: SEACHECK_MAESTRO_DEVICE=emulator-5556 bash scripts/maestro-e2e.sh cancel
+Device: SeaCheck_Maestro_API_33 (emulator-5556)
+Result: PASS — Flow 02-download-cancel-mid
+  - active/cancel visible mid-download
+  - after cancel: active/cancel gone; statusBanner.ready NOT visible
+  - screenshot: download-cancel-mid
+PIPE_EXIT:0 (~149s)
+
+Command: SEACHECK_MAESTRO_DEVICE=emulator-5554 bash scripts/maestro-e2e.sh kill
+Device: Pixel_3_API_33 (emulator-5554); rival softwarebydesign.* disabled for run
+Result: PASS — Flow 03-download-kill-mid
+  - killApp mid-download; relaunch via deep link
+  - after hydrate: statusBanner.ready NOT visible
+  - screenshot: download-kill-mid
+PIPE_EXIT:0 (~242s)
+```
+
+Note: SeaCheck_Maestro AVD disconnected under dual-emulator load after cancel; kill-mid proven on stable Pixel AVD with rivals disabled.
 
 ---
 
