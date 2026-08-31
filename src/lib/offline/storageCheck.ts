@@ -10,7 +10,10 @@ export type StorageCheckResult =
 
 /** Best-effort free-space guard before large offline chart downloads. */
 export async function ensureStorageForDownload(estimatedKb: number): Promise<StorageCheckResult> {
-  if (!Number.isFinite(estimatedKb) || estimatedKb <= 0) return { ok: true };
+  // Invalid / missing estimate → fail closed (do not skip the disk check).
+  if (!Number.isFinite(estimatedKb) || estimatedKb <= 0) {
+    return { ok: false, reason: 'unavailable' };
+  }
 
   try {
     if (!FileSystem.getFreeDiskStorageAsync) {

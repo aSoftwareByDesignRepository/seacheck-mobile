@@ -157,8 +157,8 @@ jest.mock('@maplibre/maplibre-react-native', () => {
 });
 
 jest.mock('@react-native-community/netinfo', () => ({
-  useNetInfo: jest.fn(() => ({ isConnected: true, isInternetReachable: true })),
-  fetch: jest.fn(async () => ({ isConnected: true, isInternetReachable: true })),
+  useNetInfo: jest.fn(() => ({ isConnected: true, isInternetReachable: true, type: 'wifi' })),
+  fetch: jest.fn(async () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' })),
   addEventListener: jest.fn(() => jest.fn()),
 }));
 

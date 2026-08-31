@@ -1,32 +1,33 @@
 # SeaCheck QA Findings — Momos Re-Audit
 
 **Product:** SeaCheck Mobile (`seacheck-mobile` 0.1.3)  
-**Audit date:** 2026-08-30 (UTC)  
+**Audit date:** 2026-08-31 (UTC) — second Momos pass after Maestro CI green  
 **Auditor:** Momos (hostile QA / red-team)  
 **Environment:** Native Jest on developer host — **no** Docker Compose for this app  
-**Code tip:** `main` @ `ab93a72` (download honesty + Maestro CI green + Jest without forceExit)  
+**Code tip:** `main` @ Momos pass 2 (Wi‑Fi store gate + Overpass NetInfo timeout + boolean hydrate)
 
 ---
 
 ## Executive Summary
 
-**Audit / store-functional ready: YES** for the safety-critical invariants this engagement locked down (download Ready honesty, Wi‑Fi/depth fail-closed, limited-anchor chrome, a11y/i18n gates).  
-**“Absolutely flawless UX every path online↔offline forever”: NO** — that claim would fail a mean auditor. Residuals below are honest and non-Critical.
+**Not banana software for the invariants we attack — but not “perfect forever” either.**  
+This pass found **new High** honesty bugs the prior “0 open High” claim missed: Wi‑Fi policy only in the UI, Overpass skip-gate fail-**open** on NetInfo timeout, and corrupt settings booleans that could silence alarms or skip onboarding. Those are **fixed with red→green proof** below.
 
-| Severity | Open after this engagement | Fixed this engagement |
-|----------|----------------------------|------------------------|
-| Critical | **0** | 0 new Critical (prior Wi‑Fi Critical stays fixed) |
-| High | **0** | 4 High honesty bugs fixed |
-| Medium | **0** | Limited-anchor chrome + Overpass privacy copy |
-| Low | Native WMS pixels not on-device E2E; CDN flakes retried once | README HTTPS; storageCheck; Maestro local+CI; Jest no forceExit |
+| Severity | Open after this engagement | Fixed this engagement (pass 2) |
+|----------|----------------------------|--------------------------------|
+| Critical | **0** | — (prior Critical remains fixed) |
+| High | **0** | Wi‑Fi store/hydrate gate; Overpass NetInfo timeout; alarm/onboarding boolean hydrate |
+| Medium | **0** | storageCheck zero-estimate fail-closed |
+| Low | Native WMS pixels not on-device E2E; CDN flakes retried once; ConfirmSheet queue drain not fully tested | — |
 
-**Emulator proof (not a note):**  
-- Local: cancel-mid + kill-mid Maestro PASS  
-- CI (single API-33 emulator): [33330890339](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33330890339) + [33332377458](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33332377458) — cancel **and** kill PASS attempt 1; unit CI green on same tip  
+**Fit for client/auditor today?**  
+**Yes** for store/functional review of download integrity + local fail-closed gates — **with** the caveat that full-app UX and native WMS pixels are not Maestro-covered.  
+**No** if the auditor demands ECDIS certification or zero residual Low gaps.
 
-Safety/offline mutation: **16 killed / 0 survived / 16**.  
-Full Jest: **131 suites / 634 tests**, exits **without** `--forceExit`.  
+**Proof (executed this pass):** Jest **133 suites / 641 tests** EXIT 0 (no `--forceExit`); mutate **16/16**; a11y contrast+touch PASS; i18n 898×11 PASS. Prior Maestro CI cancel+kill still green on tip lineage.
+
 **Not** a certified ECDIS / SOLAS chart plotter — product truth, not a bug.
+
 ---
 
 ## Critical
@@ -36,6 +37,100 @@ Full Jest: **131 suites / 634 tests**, exits **without** `--forceExit`.
 ---
 
 ## High
+
+### [HIGH] [FIXED] Wi‑Fi-only policy enforced only in UI — store + hydrate reattach bypassed it
+
+**What is wrong (in plain words):**  
+The “download only on Wi‑Fi” setting was checked in download buttons, but `startDownload` / `startCustomDownload` and hydrate **reattach** after a kill never called that check. A future caller — or a resume on cellular after process death — could burn mobile data without the confirm dialog.
+
+**Where exactly:**  
+- File: `src/store/offlinePackStore.ts` — `startDownload`, `startCustomDownload`, hydrate reattach loop  
+- File: `src/hooks/usePackDownloadActions.ts` (UI-only gate, previously the sole caller)  
+- Workflow: Downloads → kill mid-pack → reopen on LTE with Wi‑Fi-only ON  
+
+**How to reproduce it (copy-paste steps):**  
+```bash
+cd nextcloud-dev/mobile/seacheck
+# Before fix — gate never called from store:
+npx jest __tests__/offlinePackStore.wifiGate.test.ts --ci
+# Observed: ensureDownloadAllowed call count 0 / downloading still possible
+```
+
+**What should happen instead:**  
+Every store entry that starts or resumes tile transfer must run `ensureDownloadAllowed`. Cancel/offline → throw / leave error, no sweep.
+
+**Why this matters:**  
+Wi‑Fi-only is a money/roaming safety promise. UI-only enforcement is not an invariant — it is hope.
+
+**Exact fix instructions:**  
+1. Add `assertDownloadWifiPolicy()` wrapping `ensureDownloadAllowed` in `offlinePackStore.ts`.  
+2. Call it from `startDownload`, `startCustomDownload`, and before hydrate `reattachCacheDownload` / `reattachNativeDownload`.  
+3. Default Jest NetInfo mock must include `type: 'wifi'` so honest paths still pass.
+
+**Proof this is fixed:**  
+- `__tests__/offlinePackStore.wifiGate.test.ts` › cellular cancel refuses `startDownload`  
+- Red before (gate not called), green after (logged 2026-08-31)
+
+---
+
+### [HIGH] [FIXED] NetInfo timeout treated Overpass as online (privacy fail-open)
+
+**What is wrong (in plain words):**  
+When NetInfo hung past 4s, the code logged “treating as offline” but `fetchIsEffectivelyOffline()` returned **false** (“not offline”). Chart-object lookup then POSTed exact lat/lon to Overpass.
+
+**Where exactly:**  
+- File: `src/lib/network/connectivity.ts` — `fetchIsEffectivelyOffline`  
+- Callers: `src/lib/seamarks/querySeamark.ts`  
+
+**How to reproduce it (copy-paste steps):**  
+```bash
+npx jest __tests__/connectivity.test.ts -t 'NetInfo timeout as offline' --ci
+# Before: Expected true, Received false
+```
+
+**What should happen instead:**  
+Timeout → offline for skip-gates (`true`). Online gate already returned `false` on null — keep that.
+
+**Why this matters:**  
+Privacy and “no network when we do not know” — the log lied; the behavior burned coordinates.
+
+**Exact fix instructions:**  
+In `fetchIsEffectivelyOffline`, `if (!state) return true`.
+
+**Proof this is fixed:**  
+- `__tests__/connectivity.test.ts` › treats NetInfo timeout as offline…  
+- Red → green 2026-08-31
+
+---
+
+### [HIGH] [FIXED] Corrupt settings hydrate could silence alarms or skip onboarding
+
+**What is wrong (in plain words):**  
+Only `downloadWifiOnly` / depth / XTE used strict boolean parsing. `alarmSoundEnabled: 0` became falsy → alarms silent. `onboardingCompleted: "false"` via `Boolean()` became **true** → disclaimer skipped.
+
+**Where exactly:**  
+- File: `src/store/settingsStore.ts` hydrate  
+
+**How to reproduce it (copy-paste steps):**  
+```bash
+npx jest __tests__/settingsStore.booleanHydrate.test.ts --ci
+# Before: alarmSoundEnabled false / onboardingCompleted true for corrupt values
+```
+
+**What should happen instead:**  
+Only real JSON booleans restore; anything else uses safe defaults (alarms ON, onboarding not completed).
+
+**Why this matters:**  
+Silent alarms and skipped navigation disclaimer are safety defects, not cosmetics.
+
+**Exact fix instructions:**  
+Route alarm/onboarding/dismiss/map toggles through `parsePersistedBoolean(...)`.
+
+**Proof this is fixed:**  
+- `__tests__/settingsStore.booleanHydrate.test.ts` (all cases)  
+- Red → green 2026-08-31
+
+---
 
 ### [HIGH] [FIXED] Corrupt `downloadWifiOnly` hydrate could disable Wi‑Fi-only policy
 
@@ -241,7 +336,7 @@ Download map linger / post-teardown delays are **zero under `NODE_ENV=test`** (`
 
 ### [LOW] [FIXED] `storageCheck` fail-opens when free-space API missing
 
-`ensureStorageForDownload` now returns `{ ok: false, reason: 'unavailable' }` on throw / missing API / NaN free bytes. `assertStorageForBounds` blocks the download with `downloads.errorStorageUnavailable`.
+`ensureStorageForDownload` returns `{ ok: false, reason: 'unavailable' }` on throw / missing API / NaN free bytes **and** on non-positive / non-finite `estimatedKb` (no silent skip). `assertStorageForBounds` blocks the download with `downloads.errorStorageUnavailable`.
 
 ### [LOW] qa-report inventory lagged WMS hosts (fixed in this write-up)
 
@@ -263,7 +358,7 @@ Download map linger / post-teardown delays are **zero under `NODE_ENV=test`** (`
 
 | Metric | Result |
 |--------|--------|
-| Full Jest | **131 passed / 634 tests** (exits without `--forceExit`) |
+| Full Jest | **133 passed / 641 tests** (exits without `--forceExit`, 2026-08-31 Momos pass 2) |
 | Skipped tests | **0** |
 | a11y contrast | PASS |
 | a11y touch targets | PASS |
@@ -297,4 +392,5 @@ New / extended adversarial tests this engagement:
 
 1. Product choice: limited watch still arms after explicit confirm; chrome stays LIMITED until background + notifications + battery exemption + BG task are healthy.  
 2. Native MapLibre WMS visual render on device (pixels) — still not automated.  
-3. Should Overpass be disabled when depth/privacy “minimal network” mode is desired?
+3. ConfirmSheet unmount with a **queued** second confirm — current code cancels the visible dialog only; add RTL coverage if product requires full queue drain.  
+4. Should `useOnlineLayersAllowed` also require `isInternetReachable === true` (captive-portal WMS)? Trade-off vs Android false negatives.

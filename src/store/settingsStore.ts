@@ -163,10 +163,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
             legacyPreset;
         }
         set({
-          onboardingCompleted: Boolean(parsed.onboardingCompleted),
-          batteryGuidanceAcknowledged: Boolean(parsed.batteryGuidanceAcknowledged),
-          downloadHintDismissed: Boolean(parsed.downloadHintDismissed),
-          passagePlanningGuideDismissed: Boolean(parsed.passagePlanningGuideDismissed),
+          onboardingCompleted: parsePersistedBoolean(parsed.onboardingCompleted, false),
+          batteryGuidanceAcknowledged: parsePersistedBoolean(parsed.batteryGuidanceAcknowledged, false),
+          downloadHintDismissed: parsePersistedBoolean(parsed.downloadHintDismissed, false),
+          passagePlanningGuideDismissed: parsePersistedBoolean(parsed.passagePlanningGuideDismissed, false),
           activityProfileId: normalizeActivityProfileId(parsed.activityProfileId),
           layoutPreset: legacyPreset,
           layoutOverrides,
@@ -174,13 +174,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           distanceUnit: parsed.distanceUnit ?? CRUISE_PASSAGE_DEFAULTS.distanceUnit,
           bearingReference: parsed.bearingReference ?? CRUISE_PASSAGE_DEFAULTS.bearingReference,
           coordFormat: parsed.coordFormat ?? CRUISE_PASSAGE_DEFAULTS.coordFormat,
-          mapCourseUp: parsed.mapCourseUp ?? CRUISE_PASSAGE_DEFAULTS.mapCourseUp,
-          mapShowCourseVector: parsed.mapShowCourseVector ?? CRUISE_PASSAGE_DEFAULTS.mapShowCourseVector,
+          mapCourseUp: parsePersistedBoolean(parsed.mapCourseUp, CRUISE_PASSAGE_DEFAULTS.mapCourseUp),
+          mapShowCourseVector: parsePersistedBoolean(
+            parsed.mapShowCourseVector,
+            CRUISE_PASSAGE_DEFAULTS.mapShowCourseVector,
+          ),
           mapCourseVectorMinutes: normalizeCourseVectorMinutes(parsed.mapCourseVectorMinutes),
           mapCourseVectorScale: normalizeCourseVectorScale(parsed.mapCourseVectorScale),
           mapFollowZoom: normalizeFollowZoom(parsed.mapFollowZoom),
-          mapShowPassageRouteLines: parsed.mapShowPassageRouteLines ?? true,
-          mapShowRecordingDistance: parsed.mapShowRecordingDistance ?? false,
+          mapShowPassageRouteLines: parsePersistedBoolean(parsed.mapShowPassageRouteLines, true),
+          mapShowRecordingDistance: parsePersistedBoolean(parsed.mapShowRecordingDistance, false),
           mapShowXte: parsePersistedBoolean(parsed.mapShowXte, CRUISE_PASSAGE_DEFAULTS.mapShowXte),
           mapShowLeeway: parsePersistedBoolean(parsed.mapShowLeeway, CRUISE_PASSAGE_DEFAULTS.mapShowLeeway),
           mapShowDepthOverlay: parsePersistedBoolean(
@@ -189,18 +192,23 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           ),
           anchorRadiusNm: normalizeAnchorRadiusNm(parsed.anchorRadiusNm),
           followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode,
-          keepAwakeUnderway: parsed.keepAwakeUnderway ?? CRUISE_PASSAGE_DEFAULTS.keepAwakeUnderway,
-          gpsSmoothPosition: parsed.gpsSmoothPosition ?? CRUISE_PASSAGE_DEFAULTS.gpsSmoothPosition,
-          backgroundTrackRecording: Boolean(parsed.backgroundTrackRecording),
-          alarmSoundEnabled: parsed.alarmSoundEnabled ?? true,
-          alarmHapticEnabled: parsed.alarmHapticEnabled ?? true,
-          legAdvanceAuto: Boolean(parsed.legAdvanceAuto),
+          keepAwakeUnderway: parsePersistedBoolean(
+            parsed.keepAwakeUnderway,
+            CRUISE_PASSAGE_DEFAULTS.keepAwakeUnderway,
+          ),
+          gpsSmoothPosition: parsePersistedBoolean(
+            parsed.gpsSmoothPosition,
+            CRUISE_PASSAGE_DEFAULTS.gpsSmoothPosition,
+          ),
+          backgroundTrackRecording: parsePersistedBoolean(parsed.backgroundTrackRecording, false),
+          alarmSoundEnabled: parsePersistedBoolean(parsed.alarmSoundEnabled, true),
+          alarmHapticEnabled: parsePersistedBoolean(parsed.alarmHapticEnabled, true),
+          legAdvanceAuto: parsePersistedBoolean(parsed.legAdvanceAuto, false),
           vessel: { ...emptyVessel, ...(parsed.vessel ?? {}) },
           downloadWifiOnly: parsePersistedBoolean(parsed.downloadWifiOnly, true),
-          gloveMode: Boolean(parsed.gloveMode),
+          gloveMode: parsePersistedBoolean(parsed.gloveMode, false),
           panelSide: parsed.panelSide === 'port' || parsed.panelSide === 'starboard' ? parsed.panelSide : 'auto',
-        });
-      } catch {
+        });      } catch {
         /* defaults */
       }
     }

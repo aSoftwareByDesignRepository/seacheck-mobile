@@ -40,7 +40,9 @@ export async function fetchNetInfoState(timeoutMs = NETINFO_FETCH_TIMEOUT_MS): P
 
 export async function fetchIsEffectivelyOffline(): Promise<boolean> {
   const state = await fetchNetInfoState();
-  if (!state) return false;
+  // Timeout / unknown → treat as offline so callers that *skip* network work
+  // (Overpass lat/lon POSTs) fail closed. Matches the log above and online gate.
+  if (!state) return true;
   return isEffectivelyOffline(state);
 }
 

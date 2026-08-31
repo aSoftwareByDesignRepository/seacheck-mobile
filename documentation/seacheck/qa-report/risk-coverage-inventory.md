@@ -46,8 +46,11 @@ OWASP API BOLA/IDOR: **N/A**. Residual: local integrity, download honesty, alarm
 
 | Workflow | Critical risks | Coverage status |
 |----------|----------------|-----------------|
-| Downloads / offline packs | Lock, Wi‑Fi policy, probe, migration, durable seal, cancel/seal race, sweep→seal resume, style-only Ready, freeze-stall, hydrate vs live | Strong unit + mutation + process-death sims + **Maestro cancel/kill local + CI green** (single API-33 emulator) |
-| Depth overlay | Confirm, allowlist, online gate, pack exclusion | Unit + live HTTP probe; **gap:** native WMS render E2E |
+| Downloads / offline packs | Lock, Wi‑Fi policy, probe, migration, durable seal, cancel/seal race, sweep→seal resume, style-only Ready, freeze-stall, hydrate vs live | Strong unit + mutation + process-death sims + **Maestro cancel/kill local + CI** + **store-level Wi‑Fi gate (pass 2)** |
+| Depth overlay | Confirm, allowlist, online gate, pack exclusion | Unit + live HTTP probe; **gap:** native WMS render E2E; captive-portal `isInternetReachable` optional tighten |
+| Settings hydrate | Boolean honesty | `parsePersistedBoolean` for Wi‑Fi, depth, alarms, onboarding, map toggles (pass 2) |
+| Overpass / seamarks | Offline skip, lat/lon privacy | NetInfo timeout fail-closed for skip gate (pass 2); privacy docs OK |
+| Confirm queue | Unmount cancel | Visible dialog fail-closes; **gap:** queued confirm RTL |
 | Basemap migration | Wipe without notice | Unit covered |
 | Anchor / alarms | Accuracy fail-open (display), limited mode | Strong unit + mutation; **limited chrome persisted** (`armedLimited` + non-dismissible banner) |
 | Map / MOB | Lock vs MOB | Sparse UI tests |

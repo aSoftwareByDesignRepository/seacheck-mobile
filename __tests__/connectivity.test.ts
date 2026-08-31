@@ -1,4 +1,4 @@
-import { fetchNetInfoState, isEffectivelyOffline, isEffectivelyOnline } from '../src/lib/network/connectivity';
+import { fetchNetInfoState, fetchIsEffectivelyOffline, fetchIsEffectivelyOnline, isEffectivelyOffline, isEffectivelyOnline } from '../src/lib/network/connectivity';
 
 jest.mock('@react-native-community/netinfo', () => ({
   __esModule: true,
@@ -45,5 +45,14 @@ describe('connectivity', () => {
     const pending = fetchNetInfoState(500);
     jest.advanceTimersByTime(500);
     await expect(pending).resolves.toBeNull();
+  });
+
+  it('treats NetInfo timeout as offline for Overpass/skip gates (fail-closed)', async () => {
+    NetInfo.fetch.mockReturnValue(new Promise(() => {}));
+    const offlinePending = fetchIsEffectivelyOffline();
+    const onlinePending = fetchIsEffectivelyOnline();
+    jest.advanceTimersByTime(5_000);
+    await expect(offlinePending).resolves.toBe(true);
+    await expect(onlinePending).resolves.toBe(false);
   });
 });

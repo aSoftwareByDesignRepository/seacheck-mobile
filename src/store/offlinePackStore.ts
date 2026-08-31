@@ -23,6 +23,7 @@ import {
   registerSeamarkIndexExecutor,
 } from '../lib/seamarks/seamarkIndexQueue';
 import { fetchIsEffectivelyOnline } from '../lib/network/connectivity';
+import { ensureDownloadAllowed } from '../lib/network/downloadPolicy';
 import { promiseWithTimeout } from '../lib/async/promiseWithTimeout';
 import { assertChartDownloadNetworkReady } from '../lib/network/downloadNetwork';
 import { resolveChartTileProbeCenter } from '../lib/network/chartTileProbeCenter';
@@ -455,6 +456,16 @@ async function assertStorageForBounds(bounds: LngLatBounds, minZoom: number, max
     }
     throw new Error(t('downloads.errorStorageUnavailable'));
   }
+}
+
+/** Wi‑Fi-only gate at the store boundary — UI also checks; hydrate reattach must too. */
+async function assertDownloadWifiPolicy(): Promise<void> {
+  const allowed = await ensureDownloadAllowed();
+  if (allowed.ok) return;
+  if (allowed.reason === 'offline') {
+    throw new Error(t('downloads.errorOffline'));
+  }
+  throw new Error(t('downloads.cellularCancelledBody'));
 }
 
 type DownloadSessionContext = {
@@ -1381,6 +1392,21 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         const customMeta = entry?.custom
           ? { custom: true as const, displayName: entry.name ?? regionId }
           : undefined;
+
+        // Resume burns tiles — never reattach on cellular without the same Wi‑Fi gate.
+        try {
+          await assertDownloadWifiPolicy();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : t('downloads.errorDownloadInterrupted');
+          regions[regionId] = {
+            ...regionStatus,
+            state: 'error',
+            error: message,
+          };
+          restoredDownloadId = null;
+          continue;
+        }
+
         const ctx: DownloadSessionContext = {
           regionId,
           session: downloadCoordinator.sessionToken(regionId) || 1,
@@ -1549,6 +1575,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       }
 
       await assertStorageForBounds(packDef.bounds, packDef.minZoom, packDef.maxZoom);
+      await assertDownloadWifiPolicy();
       await assertChartDownloadNetworkReady(
         resolveChartTileProbeCenter(regionId, get().customBoundsIndex),
       );
@@ -1625,6 +1652,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       }
 
       await assertStorageForBounds(bounds, minZoom, maxZoom);
+      await assertDownloadWifiPolicy();
       await assertChartDownloadNetworkReady(boundsCenter(bounds));
 
       session = beginDownloadSession(regionId);

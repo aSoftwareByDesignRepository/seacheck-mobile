@@ -39,4 +39,11 @@ describe('ensureStorageForDownload', () => {
       FileSystem.getFreeDiskStorageAsync = original;
     }
   });
+
+  it('fails closed when estimate is missing or non-positive', async () => {
+    await expect(ensureStorageForDownload(0)).resolves.toEqual({ ok: false, reason: 'unavailable' });
+    await expect(ensureStorageForDownload(-1)).resolves.toEqual({ ok: false, reason: 'unavailable' });
+    await expect(ensureStorageForDownload(Number.NaN)).resolves.toEqual({ ok: false, reason: 'unavailable' });
+    expect(getFree).not.toHaveBeenCalled();
+  });
 });

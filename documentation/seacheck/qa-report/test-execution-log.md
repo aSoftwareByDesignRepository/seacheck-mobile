@@ -124,6 +124,33 @@ depth.openseamap.org tracks_100m → HTTP/2 200 image/png
 
 ---
 
+## 2026-08-31T02:05Z — Momos pass 2 (adversarial residuals)
+
+Environment: native host, no Docker. Tip before commit: post-`dbc4aaf` working tree.
+
+**Bugs found (red first):**
+1. `fetchIsEffectivelyOffline` returned false on NetInfo timeout → Overpass could POST
+2. `startDownload` / hydrate reattach skipped `ensureDownloadAllowed`
+3. `alarmSoundEnabled ?? true` / `Boolean(onboardingCompleted)` corrupt hydrate
+4. `ensureStorageForDownload(<=0)` skipped disk check
+
+**Fixes + proof:**
+```
+Command: npx jest __tests__/connectivity.test.ts __tests__/settingsStore.booleanHydrate.test.ts __tests__/offlinePackStore.wifiGate.test.ts __tests__/storageCheck.test.ts --ci
+Result: PASS (after fix; RED before on connectivity/settings/wifiGate)
+
+Command: npm test -- --ci --no-coverage
+Result: Test Suites: 133 passed, 133 total; Tests: 641 passed; EXIT 0
+
+Command: npm run mutate:core
+Result: 16 killed, 0 survived of 16
+
+Command: npm run a11y:contrast && npm run a11y:touch && npm run i18n:parity
+Result: PASS
+```
+
+---
+
 ## 2026-08-30T21:25Z — Maestro CI EXIT-trap false-red
 
 GitHub run [33329507994](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33329507994) failed after cancel flow **actually passed**:
