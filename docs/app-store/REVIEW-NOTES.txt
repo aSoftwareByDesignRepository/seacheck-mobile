@@ -1,0 +1,34 @@
+App Review Information — Notes
+Paste into App Store Connect → App Review Information → Notes
+AND into the Resolution Center reply if needed.
+
+Sign-in required: **No** (standalone app — no account).
+
+--- paste below ---
+
+1) Typical flow
+Open SeaCheck → complete onboarding (navigation disclaimer, optional location permissions) → Map tab (GPS on chart) → Downloads → download a region pack on Wi‑Fi → Passage tab → Settings → About (privacy policy, terms, OpenSeaMap attribution). There is no login, no in-app purchase, no App Tracking Transparency prompt, and no social features.
+
+2) Devices and OS tested before submit
+• Android emulator SeaCheck_Maestro_API_33 and/or physical device
+• iPhone / iPad (supportsTablet: true) when iOS build is submitted
+• Bundle: de.softwarebydesign.seacheck · version 0.1.3
+
+3) What the app is
+SeaCheck is a standalone coastal navigation aid for small-boat sailors. It is **not** a certified chart plotter. Map data comes from OpenSeaMap/OpenStreetMap volunteers and may be outdated. The app stores passages, tracks, and settings **locally on the device** — Software by Design does not operate a central navigation cloud.
+
+4) Background location (iOS)
+We request **Always** / background location only so anchor-drag alarms and track recording continue when the screen is off at sea. Users can deny background location and still use the map while the app is open. This is explained during onboarding.
+
+5) External services (when online)
+• OpenSeaMap tile servers (base map + seamarks)
+• Optional GEBCO depth WMS via OpenSeaMap GeoServer (user-toggle in Settings → Map)
+• OpenStreetMap Overpass API for online chart-object lookup (sends tapped coordinates — documented in privacy policy)
+No Firebase, ads, analytics SDKs, or payment processor.
+
+6) Health / sensors
+We do **not** use the barometer or declare HealthKit features. Location is used for maritime navigation only.
+
+Support: info@software-by-design.de
+Privacy: https://nextcloud.software-by-design.de/en/privacy-seacheck-mobile.html
+Publisher: Software by Design GbR, Husumer Baum 2, 24837 Schleswig, Germany

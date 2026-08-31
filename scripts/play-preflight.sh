@@ -13,9 +13,14 @@ npm run i18n:parity
 echo "==> Unit tests"
 npm test -- --passWithNoTests
 
+echo "==> Store listing contracts"
+npm test -- --testPathPattern='(playStoreListingContract|appStoreReviewContract)' --ci
+
 echo "==> Play kit files"
 required=(
   docs/play-store/README.md
+  docs/play-store/ASO.md
+  docs/play-store/SCREENSHOT-CAPTURE.md
   docs/play-store/LISTING-en.txt
   docs/play-store/LISTING-de.txt
   docs/play-store/DATA-SAFETY.md
@@ -29,6 +34,16 @@ required=(
   docs/play-store/terms-mobile-en.md
   docs/play-store/terms-mobile-de.md
   docs/play-store/publish/README.md
+  docs/play-store/publish/en/privacy-seacheck-mobile.html
+  docs/play-store/publish/de/datenschutz-seacheck-mobile.html
+  docs/play-store/assets/feature-graphic-1024x500.png
+  docs/play-store/assets/play-icon-512.png
+  docs/app-store/README.md
+  docs/app-store/LISTING-en.txt
+  docs/app-store/LISTING-de.txt
+  docs/app-store/REVIEW-NOTES.txt
+  docs/app-store/GRAPHICS.md
+  keystore.properties.example
   ../../website/en/privacy-seacheck-mobile.html
   ../../website/en/terms-seacheck-mobile.html
   ../../website/de/datenschutz-seacheck-mobile.html
@@ -36,6 +51,14 @@ required=(
 )
 for f in "${required[@]}"; do
   [[ -f "$f" ]] || { echo "Missing: $f"; exit 1; }
+done
+
+echo "==> Screenshot placeholders (min 6)"
+for n in 01-map 02-disclaimer 03-passage 04-downloads 05-offline 06-about; do
+  [[ -f "docs/play-store/assets/screenshots/phone-${n}.png" ]] || {
+    echo "Missing screenshot: docs/play-store/assets/screenshots/phone-${n}.png (run: npm run play:screenshots)"
+    exit 1
+  }
 done
 
 echo "==> Assets"
@@ -47,5 +70,5 @@ grep -q 'privacy-seacheck-mobile' src/lib/legal/legalUrls.ts \
 
 echo ""
 echo "OK — local preflight passed."
-echo "Next: deploy website/ (docs/play-store/PUBLISH-LEGAL.md), graphics, then:"
+echo "Next: deploy website/ (docs/play-store/PUBLISH-LEGAL.md), replace illustrative screenshots, then:"
 echo "  SEACHECK_APP_VARIANT=production EAS_BUILD_PROFILE=production EAS_PROJECT_ID=<uuid> eas build --platform android --profile production"

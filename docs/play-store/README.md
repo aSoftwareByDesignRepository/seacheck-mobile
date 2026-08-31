@@ -7,6 +7,9 @@ For full technical steps (build, data safety, legal pages): table below and [REL
 | File | Use |
 |------|-----|
 | [SHARE.md](./SHARE.md) | **Start here** — unlisted share, pull-down, what to skip |
+| [ASO.md](./ASO.md) | **Discoverability** — category, tags, keywords |
+| [SCREENSHOT-CAPTURE.md](./SCREENSHOT-CAPTURE.md) | Live device/emulator capture guide |
+| [../app-store/README.md](../app-store/README.md) | **iOS App Store Connect** listing kit |
 | [LISTING-en.txt](./LISTING-en.txt) | Store listing (English) |
 | [LISTING-de.txt](./LISTING-de.txt) | Store listing (German) |
 | [DATA-SAFETY.md](./DATA-SAFETY.md) | **Data safety** form |
@@ -22,7 +25,9 @@ For full technical steps (build, data safety, legal pages): table below and [REL
 | [publish/README.md](./publish/README.md) | Pointer to `website/` HTML |
 | [release-notes/](./release-notes/) | Play release notes per version (`<en-US>` / `<de-DE>` — paste whole file) |
 
-**Local check:** `npm run play:preflight` from `mobile/seacheck`.
+**Local check:** `npm run play:preflight` from `mobile/seacheck` (runs store contract tests + kit file checks).
+
+**Generate assets:** `npm run play:graphics` · `npm run play:screenshots` · `npm run sync:legal-html`
 
 ---
 

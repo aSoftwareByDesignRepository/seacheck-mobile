@@ -1,0 +1,1 @@
+Depth overlay gate fail-closed on captive portals; confirm queue drain; Maestro warms GEBCO before pack downloads; Play/App Store kit aligned with AZC (ASO, graphics, legal HTML, iOS review notes).

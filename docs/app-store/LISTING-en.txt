@@ -1,0 +1,66 @@
+=== APP STORE CONNECT — ENGLISH (U.S.) ===
+Bundle ID: de.softwarebydesign.seacheck
+Version: 0.1.3
+Category: Navigation (primary). Secondary: Utilities if offered.
+
+--- Name (max 30) ---
+SeaCheck
+
+--- Subtitle (max 30) ---
+Coastal nav aid for sailors
+
+--- Promotional text (max 170, optional) ---
+Deck-side GPS, offline OpenSeaMap packs, anchor alarms — a companion to paper charts. Not a certified plotter. No account. No ads.
+
+--- Keywords (max 100, commas, no spaces after commas) ---
+sailing,coastal,GPS,chart,anchor,offline,OpenSeaMap,passage,navigation,boat
+
+--- Description (max 4000) ---
+SeaCheck is a personal coastal navigation companion for small-boat sailing — a deck-side aid to paper charts, not a replacement for official nautical charts.
+
+Who it is for
+• Coastal sailors who want GPS on a chart, passage sketches, and anchor alarms without a cloud account
+• Skippers who download OpenSeaMap regions on Wi‑Fi for offline use underway
+
+What you need
+• An Android or iPhone device with GPS
+• Optional: Wi‑Fi to download offline chart packs
+• No sign-up, no Nextcloud server, no license key
+
+What the app does
+• GPS on chart — COG, SOG, bearing
+• Passage planning, waypoints, GPX export
+• Offline region packs (OpenSeaMap base + seamarks)
+• Optional online depth overlay (GEBCO WMS — online only)
+• Anchor, arrival, and off-course alarms
+• Track recording
+• English and German UI
+
+Important — not for primary navigation
+Aid to navigation only. Maps use OpenSeaMap / OpenStreetMap volunteer data and may be outdated. Always carry official, corrected nautical charts.
+
+Privacy
+• No third-party analytics or advertising SDKs
+• Passages, tracks, and GPS history stay on your device
+• Online map tile and optional Overpass lookups may reveal map areas you view (see privacy policy)
+
+Publisher: Software by Design GbR, Schleswig, Germany · info@software-by-design.de
+
+--- What's New (this version) ---
+• Offline coastal charts (OpenSeaMap seamarks + base map)
+• GPS instruments, passage planning, anchor & arrival alarms
+• Track recording and GPX export
+• Navigation disclaimer — not a replacement for official charts
+• No ads, no analytics
+
+--- Support URL ---
+https://software-by-design.de
+
+--- Marketing URL ---
+https://software-by-design.de
+
+--- Privacy policy URL ---
+https://nextcloud.software-by-design.de/en/privacy-seacheck-mobile.html
+
+--- Copyright ---
+2026 Software by Design GbR

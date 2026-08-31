@@ -24,6 +24,7 @@ See [GRAPHICS.md](./GRAPHICS.md).
 - [ ] Feature graphic 1024×500
 - [ ] Phone screenshots ≥ 2
 - [ ] Copy listing from [LISTING-en.txt](./LISTING-en.txt) (+ [LISTING-de.txt](./LISTING-de.txt) optional)
+- [ ] Category + **5 tags** per [ASO.md](./ASO.md)
 
 ---
 
@@ -90,7 +91,7 @@ SEACHECK_APP_VARIANT=production EAS_BUILD_PROFILE=production EAS_PROJECT_ID=<uui
 - [ ] Package name: `de.softwarebydesign.seacheck`
 - [ ] **Internal testing** → upload AAB → install via Play
 - [ ] Fix pre-launch report issues
-- [ ] **Production** → paste [release-notes/0.1.0.txt](./release-notes/0.1.0.txt) (`<en-US>` / `<de-DE>`)
+- [ ] **Production** → paste [release-notes/0.1.3.txt](./release-notes/0.1.3.txt) (`<en-US>` / `<de-DE>`)
 - [ ] Submit for review
 
 ---
@@ -98,10 +99,11 @@ SEACHECK_APP_VARIANT=production EAS_BUILD_PROFILE=production EAS_PROJECT_ID=<uui
 ## G. iOS App Store (optional, later)
 
 - [ ] Apple Developer Program ($99/year)
-- [ ] App Store Connect app record
+- [ ] App Store Connect app record — paste [../app-store/LISTING-en.txt](../app-store/LISTING-en.txt) + DE
+- [ ] [../app-store/REVIEW-NOTES.txt](../app-store/REVIEW-NOTES.txt) — background location justification
 - [ ] Same privacy URL in App Privacy section
 - [ ] `eas build --platform ios --profile production`
-- [ ] TestFlight → App Review (location background justification required)
+- [ ] TestFlight → App Review
 
 ---
 

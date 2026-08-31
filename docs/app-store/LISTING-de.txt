@@ -1,0 +1,66 @@
+=== APP STORE CONNECT — DEUTSCH ===
+Bundle-ID: de.softwarebydesign.seacheck
+Version: 0.1.3
+Kategorie: Navigation (primär). Sekundär: Dienstprogramme, falls angeboten.
+
+--- Name (max 30) ---
+SeaCheck
+
+--- Untertitel (max 30) ---
+Küsten-Navigationshilfe
+
+--- Werbetext (max 170, optional) ---
+GPS auf der Karte, Offline-OpenSeaMap-Pakete, Ankeralarm — Begleiter zu Papierkarten. Kein zertifizierter Plotter. Kein Konto.
+
+--- Stichwörter (max 100, Kommas, keine Leerzeichen nach Kommas) ---
+Segeln,Küste,GPS,Karte,Anker,offline,OpenSeaMap,Törn,Navigation,Boot
+
+--- Beschreibung (max 4000) ---
+SeaCheck ist eine persönliche Küsten-Navigationshilfe für kleine Boote — eine Hilfe neben Papierkarten, kein Ersatz für amtliche Seekarten.
+
+Für wen
+• Küstensegler mit GPS auf der Karte, Törnskizzen und Ankeralarm ohne Cloud-Konto
+• Skipper, die OpenSeaMap-Regionen im WLAN für die Fahrt offline laden
+
+Was Sie brauchen
+• Android- oder iPhone-Gerät mit GPS
+• Optional: WLAN für Offline-Kartenpakete
+• Keine Anmeldung, kein Nextcloud-Server, kein Lizenzschlüssel
+
+Funktionen
+• GPS auf der Karte — Kurs, Fahrt, Peilung
+• Törnplanung, Wegpunkte, GPX-Export
+• Offline-Regionen (OpenSeaMap-Basis + Seezeichen)
+• Optionales Online-Tiefen-Overlay (GEBCO WMS — nur online)
+• Anker-, Ankunfts- und Abweichungsalarme
+• Track-Aufzeichnung
+• Deutsch- und Englisch-Oberfläche
+
+Wichtig — nicht für die Hauptnavigation
+Nur Navigationshilfe. Karten aus OpenSeaMap/OpenStreetMap-Freiwilligendaten können veraltet sein. Immer amtliche, berichtigte Seekarten mitführen.
+
+Datenschutz
+• Keine Analyse- oder Werbe-SDKs
+• Törns, Tracks und GPS-Verlauf bleiben auf dem Gerät
+• Online-Kacheln und optionale Overpass-Abfragen können Kartenbereiche verraten (siehe Datenschutzerklärung)
+
+Herausgeber: Software by Design GbR, Schleswig · info@software-by-design.de
+
+--- Neu in dieser Version ---
+• Offline-Küstenkarten (OpenSeaMap-Seezeichen + Basiskarte)
+• GPS-Instrumente, Törnplanung, Anker- und Ankunftsalarme
+• Track-Aufzeichnung und GPX-Export
+• Navigationshinweis — kein Ersatz für amtliche Karten
+• Keine Werbung, keine Analyse-SDKs
+
+--- Support-URL ---
+https://software-by-design.de
+
+--- Marketing-URL ---
+https://software-by-design.de
+
+--- Datenschutz-URL ---
+https://nextcloud.software-by-design.de/de/datenschutz-seacheck-mobile.html
+
+--- Copyright ---
+2026 Software by Design GbR
