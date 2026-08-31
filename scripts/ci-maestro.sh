@@ -10,6 +10,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  export EMULATOR_LOCK_BYPASS=1
+fi
+
 METRO_PORT="${SEACHECK_METRO_PORT:-8092}"
 ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 export PATH="${HOME}/.maestro/bin:${ANDROID_HOME:+$ANDROID_HOME/platform-tools:}${ANDROID_HOME:+$ANDROID_HOME/emulator:}${PATH:-}"

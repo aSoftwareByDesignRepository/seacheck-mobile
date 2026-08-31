@@ -1904,21 +1904,65 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
 
   preflightDownloadLock: (regionId) => {
     if (!downloadCoordinator.preflightLock(regionId)) return false;
-    set(syncActiveDownloadId());
+    set((state) => {
+      const current = state.regions[regionId] ?? emptyStatus(regionId);
+      if (current.state === 'ready') {
+        return syncActiveDownloadId();
+      }
+      return {
+        ...syncActiveDownloadId(),
+        regions: {
+          ...state.regions,
+          [regionId]: {
+            ...current,
+            regionId,
+            state: 'downloading',
+            percentage: 0,
+            packId: cacheBackedPackId(regionId),
+            error: null,
+            cacheBacked: true,
+            downloadInitializing: true,
+          },
+        },
+      };
+    });
     ensureMapLibreNetworkForDownload();
     return true;
   },
 
   releasePreflightDownloadLock: (regionId) => {
     downloadCoordinator.releasePreflightLock(regionId);
-    set(syncActiveDownloadId());
+    set((state) => {
+      const current = state.regions[regionId];
+      const base = syncActiveDownloadId();
+      if (
+        current?.state === 'downloading' &&
+        current.downloadInitializing === true &&
+        (current.percentage ?? 0) <= 0
+      ) {
+        return {
+          ...base,
+          regions: {
+            ...state.regions,
+            [regionId]: emptyStatus(regionId),
+          },
+        };
+      }
+      return base;
+    });
   },
 
   markPreflightDownloadFailed: (regionId, message) => {
     set((state) => {
       const current = state.regions[regionId] ?? emptyStatus(regionId);
-      if (current.state === 'ready' || current.state === 'downloading') return {};
+      if (current.state === 'ready') return {};
+      const preflightOnly =
+        current.state === 'downloading' &&
+        current.downloadInitializing === true &&
+        (current.percentage ?? 0) <= 0;
+      if (current.state === 'downloading' && !preflightOnly) return {};
       return {
+        ...syncActiveDownloadId(),
         regions: {
           ...state.regions,
           [regionId]: {
@@ -1928,6 +1972,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
             percentage: 0,
             packId: null,
             error: message,
+            downloadInitializing: false,
           },
         },
       };

@@ -10,8 +10,9 @@
 set -euo pipefail
 
 APP_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_ROOT="$(cd "$APP_ROOT/../.." && pwd)"
 METRO_PORT="${SEACHECK_METRO_PORT:-8092}"
-AVD="${SEACHECK_AVD:-Pixel_3_API_33}"
+AVD="${SEACHECK_AVD:-SeaCheck_Maestro_API_33}"
 ANDROID_HOME="${ANDROID_HOME:-/home/alex/Android/Sdk}"
 
 SKIP_EMULATOR=0
@@ -50,6 +51,9 @@ EMULATOR_STARTED_BY_SCRIPT=0
 
 cleanup() {
   local code=$?
+  # shellcheck source=../../scripts/emulator-acquire.sh
+  source "$APP_ROOT/../scripts/emulator-acquire.sh" 2>/dev/null || true
+  emulator_release 2>/dev/null || true
   if [[ $code -ne 0 ]]; then
     warn "dev-emulator failed (exit $code)."
   fi
@@ -116,22 +120,10 @@ wait_for_emulator_boot() {
 ensure_emulator() {
   [[ $SKIP_EMULATOR -eq 1 ]] && return 0
   setup_android_path
-
-  if adb_device_ready; then
-    log "Android device/emulator already connected"
-    return 0
-  fi
-
-  local avds
-  avds="$("$ANDROID_HOME/emulator/emulator" -list-avds)"
-  echo "$avds" | grep -qx "$AVD" || die "AVD not found: $AVD (available: $(echo "$avds" | tr '\n' ' '))"
-
-  log "Starting emulator: $AVD"
-  "$ANDROID_HOME/emulator/emulator" -avd "$AVD" -no-boot-anim >/dev/null 2>&1 &
-  EMULATOR_PID=$!
-  EMULATOR_STARTED_BY_SCRIPT=1
-  wait_for_emulator_boot
-  log "Emulator ready"
+  # shellcheck source=../../scripts/emulator-acquire.sh
+  source "$APP_ROOT/../scripts/emulator-acquire.sh"
+  emulator_acquire "$AVD" --boot-if-needed
+  log "Emulator ready: $ANDROID_SERIAL (acquired via lock registry)"
 }
 
 wait_for_metro() {

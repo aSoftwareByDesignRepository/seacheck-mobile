@@ -1,0 +1,46 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - helper
+  - overlays
+---
+# Enable the online depth overlay (GEBCO WMS) and confirm it appears on the map.
+- tapOn:
+    id: "tab.more"
+- extendedWaitUntil:
+    visible:
+      id: "tab.more.sheet"
+    timeout: 15000
+- tapOn:
+    id: "tab.settings"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings"
+    timeout: 30000
+- tapOn:
+    id: "settings.menu.map"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings.map"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "settings.mapShowDepthOverlay"
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    id: "settings.mapShowDepthOverlay"
+- tapOn:
+    id: "confirm.proceed"
+    optional: true
+- tapOn:
+    id: "tab.map"
+- extendedWaitUntil:
+    visible:
+      id: "screen.map"
+    timeout: 60000
+- extendedWaitUntil:
+    visible:
+      id: "map.depthChip"
+    timeout: 90000
+- waitForAnimationToEnd:
+    timeout: 10000

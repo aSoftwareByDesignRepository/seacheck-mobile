@@ -9,5 +9,9 @@ tags:
     visible:
       id: "screen.map"
     timeout: 60000
+- extendedWaitUntil:
+    notVisible:
+      id: "map.chartRetry"
+    timeout: 120000
 - waitForAnimationToEnd:
-    timeout: 8000
+    timeout: 15000

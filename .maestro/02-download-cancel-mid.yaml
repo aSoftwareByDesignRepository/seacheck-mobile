@@ -6,6 +6,7 @@ tags:
 # Start Kiel Bay download, cancel mid-flight, assert Ready is NOT claimed.
 - runFlow: 01-onboarding-skip.yaml
 - runFlow: 01a-warm-map.yaml
+- runFlow: 01c-warm-depth-overlay.yaml
 - runFlow: 01b-open-downloads.yaml
 - tapOn:
     id: "confirm.proceed"

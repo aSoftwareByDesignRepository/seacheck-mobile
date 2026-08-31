@@ -153,12 +153,18 @@ function ActiveDownloadBanner({
   const active = regions[sessionRegionId];
   const name = resolvePackDisplayName(active ?? { regionId: sessionRegionId });
   const downloading = active?.state === 'downloading';
+  const preflightOnly =
+    activeDownloadRegionId === sessionRegionId &&
+    !downloading &&
+    active?.state !== 'ready' &&
+    active?.state !== 'error';
   const percent = active?.percentage ?? 0;
   // Seal finished — UI stays downloading@99 until map teardown; treat as completing (not Ready yet).
   const completing = active?.state === 'ready' || (downloading && percent >= 99);
   const tearingDown =
     completing && activeDownloadRegionId == null && downloadMapTeardownRegionId === sessionRegionId;
-  const initializing = downloading && !completing && (active?.downloadInitializing || percent <= 0);
+  const initializing =
+    (downloading && !completing && (active?.downloadInitializing || percent <= 0)) || preflightOnly;
   const summaryLabel = completing
     ? t('downloads.statusSummaryCompleting', { name })
     : initializing
@@ -188,7 +194,19 @@ function ActiveDownloadBanner({
             state: 'downloading',
             percentage: percent,
             error: null,
-            downloadInitializing: active?.downloadInitializing,
+            downloadInitializing: active?.downloadInitializing || preflightOnly,
+          })}
+          testID="downloads.statusBanner.progress"
+        />
+      ) : preflightOnly ? (
+        <DownloadProgressBar
+          percentage={0}
+          indeterminate
+          label={packStatusLabel({
+            state: 'downloading',
+            percentage: 0,
+            error: null,
+            downloadInitializing: true,
           })}
           testID="downloads.statusBanner.progress"
         />
@@ -201,7 +219,7 @@ function ActiveDownloadBanner({
       <Text style={[styles.hint, { color: colors.textMuted }]}>
         {completing ? t('downloads.statusSummaryCompletingHint') : t('downloads.statusSummaryActiveHint')}
       </Text>
-      {downloading && onCancelActive && !tearingDown && !completing ? (
+      {(downloading || preflightOnly) && onCancelActive && !tearingDown && !completing ? (
         <View style={{ minHeight: minTouch, marginTop: spacing.xs }}>
           <Button
             label={t('downloads.cancelDownload')}

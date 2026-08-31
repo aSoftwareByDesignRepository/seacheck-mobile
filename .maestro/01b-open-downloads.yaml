@@ -3,12 +3,18 @@ tags:
   - helper
 ---
 # Open Downloads — on compact phones it lives under More.
+# Stay on this screen briefly so the hidden offline map engine can mount (Map tab unfocused).
 - tapOn:
     id: "tab.more"
-    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "tab.more.sheet"
+    timeout: 15000
 - tapOn:
     id: "tab.downloads"
 - extendedWaitUntil:
     visible:
       id: "screen.downloads"
+    timeout: 30000
+- waitForAnimationToEnd:
     timeout: 30000

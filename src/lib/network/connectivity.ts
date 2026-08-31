@@ -66,15 +66,27 @@ export function useIsEffectivelyOffline(): boolean {
 }
 
 /**
- * True only after the first NetInfo sample and while the device reports a connection.
- * Fail-closed for online-only overlays (depth WMS) — avoids a brief mount on airplane-mode boot.
+ * True only after the first NetInfo sample and while the device has usable internet.
+ * Fail-closed for online-only overlays (depth WMS):
+ * - airplane / disconnected → off
+ * - captive portal (`isInternetReachable === false`) → off (no WMS until real internet)
+ * - unknown reachability (`null`) → off until NetInfo affirms reachable
+ *
+ * Weakness (honest): Android sometimes reports reachable=false while Wi‑Fi works —
+ * optional depth stays hidden until the flag recovers. Prefer that over WMS on a portal.
  */
+export function onlineLayersAllowedFromNetInfo(
+  state: Pick<NetInfoState, 'isConnected' | 'isInternetReachable'>,
+): boolean {
+  return isEffectivelyOnline(state);
+}
+
 export function useOnlineLayersAllowed(): boolean {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
     const apply = (state: NetInfoState) => {
-      setAllowed(state.isConnected === true);
+      setAllowed(onlineLayersAllowedFromNetInfo(state));
     };
     void NetInfo.fetch().then(apply).catch(() => setAllowed(false));
     return NetInfo.addEventListener(apply);

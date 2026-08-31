@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 
 import { t } from '../i18n';
-import { useConfirmStore } from '../store/confirmStore';
+import { cancelAllPendingConfirms, useConfirmStore } from '../store/confirmStore';
 import { useTheme } from '../theme/ThemeContext';
 import { Button } from './Button';
 import { BottomSheetChrome, CONFIRM_SHEET_PRIORITY, useSheetHost } from './sheetHost';
@@ -23,10 +23,8 @@ export function ConfirmSheet() {
 
   useEffect(() => {
     return () => {
-      // Component unmount only — never leave requestConfirm() hung.
-      if (useConfirmStore.getState().visible) {
-        useConfirmStore.getState().resolveConfirm(false);
-      }
+      // Visible + every queued waiter — never leave requestConfirm() hung after unmount.
+      cancelAllPendingConfirms();
     };
   }, []);
 
@@ -42,7 +40,10 @@ export function ConfirmSheet() {
         CONFIRM_SHEET_PRIORITY,
         () => (
           <BottomSheetChrome
-            onClose={() => resolveConfirm(false)}
+            // Backdrop / chrome dismiss = leave the modal host — drain the whole queue
+            // (same as unmount). Explicit Cancel only rejects the active dialog so a
+            // queued follow-up can still ask. Screen-lock dismissAll uses this onClose.
+            onClose={cancelAllPendingConfirms}
             title={title}
             subtitle={message}
             testID="confirm.sheet"
@@ -64,7 +65,7 @@ export function ConfirmSheet() {
             }
           />
         ),
-        () => resolveConfirm(false),
+        cancelAllPendingConfirms,
       );
     });
 

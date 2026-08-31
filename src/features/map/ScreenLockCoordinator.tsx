@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import { useNavigationStore } from '../../store/navigationStore';
 import { useFeedbackStore } from '../../store/feedbackStore';
+import { cancelAllPendingConfirms } from '../../store/confirmStore';
 import { useTabOverflowStore } from '../../navigation/tabOverflowStore';
 import { useSheetHost } from '../../ui/sheetHost';
 
@@ -24,6 +25,9 @@ export function ScreenLockCoordinator() {
     if (wasLockedRef.current) return;
     wasLockedRef.current = true;
 
+    // Drain confirm queue BEFORE sheet dismissAll. Otherwise resolveConfirm(false)
+    // would showNext() a queued dialog and ConfirmSheet would re-register above the lock.
+    cancelAllPendingConfirms();
     dismissAll();
     setMenuOpen(false);
     clearFeedback();

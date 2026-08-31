@@ -1,10 +1,10 @@
 # SeaCheck QA Findings — Momos Re-Audit
 
 **Product:** SeaCheck Mobile (`seacheck-mobile` 0.1.3)  
-**Audit date:** 2026-08-31 (UTC) — second Momos pass after Maestro CI green  
+**Audit date:** 2026-08-31 (UTC) — Momos pass 3 (overlay + download Maestro on dedicated emulator)  
 **Auditor:** Momos (hostile QA / red-team)  
 **Environment:** Native Jest on developer host — **no** Docker Compose for this app  
-**Code tip:** `main` @ Momos pass 2 (Wi‑Fi store gate + Overpass NetInfo timeout + boolean hydrate)
+**Code tip:** `main` — commit `Harden overlay gates, confirm drain, and download preflight honesty.` (2026-08-31)
 
 ---
 
@@ -13,18 +13,18 @@
 **Not banana software for the invariants we attack — but not “perfect forever” either.**  
 This pass found **new High** honesty bugs the prior “0 open High” claim missed: Wi‑Fi policy only in the UI, Overpass skip-gate fail-**open** on NetInfo timeout, and corrupt settings booleans that could silence alarms or skip onboarding. Those are **fixed with red→green proof** below.
 
-| Severity | Open after this engagement | Fixed this engagement (pass 2) |
+| Severity | Open after this engagement | Fixed this engagement (pass 2 + Aristoteles verify) |
 |----------|----------------------------|--------------------------------|
 | Critical | **0** | — (prior Critical remains fixed) |
-| High | **0** | Wi‑Fi store/hydrate gate; Overpass NetInfo timeout; alarm/onboarding boolean hydrate |
-| Medium | **0** | storageCheck zero-estimate fail-closed |
-| Low | Native WMS pixels not on-device E2E; CDN flakes retried once; ConfirmSheet queue drain not fully tested | — |
+| High | **0** | Wi‑Fi store/hydrate gate; Overpass NetInfo timeout; alarm/onboarding boolean hydrate; screen-lock confirm queue resurface |
+| Medium | **0** | storageCheck zero-estimate fail-closed; captive-portal depth gate (`isInternetReachable`) |
+| Low | Native MapLibre framebuffer pixels not automated; CDN flakes retried once; multi-emulator adb fleet needs serial isolation | ConfirmSheet full queue drain + ScreenLockCoordinator drain-before-dismissAll; depth overlay Maestro (`01c`); preflight download UI honesty |
 
 **Fit for client/auditor today?**  
-**Yes** for store/functional review of download integrity + local fail-closed gates — **with** the caveat that full-app UX and native WMS pixels are not Maestro-covered.  
+**Yes** for store/functional review of download integrity + local fail-closed gates — **with** the caveat that full-app UX and native WMS framebuffer pixels are not Maestro-covered.  
 **No** if the auditor demands ECDIS certification or zero residual Low gaps.
 
-**Proof (executed this pass):** Jest **133 suites / 641 tests** EXIT 0 (no `--forceExit`); mutate **16/16**; a11y contrast+touch PASS; i18n 898×11 PASS. Prior Maestro CI cancel+kill still green on tip lineage.
+**Proof (executed this pass):** Jest **137 suites / 653 tests** EXIT 0 (no `--forceExit`); mutate **16/16**; a11y contrast+touch PASS; i18n 898×11 PASS; depth WMS live GetMap PNG probes PASS; Maestro cancel+kill **with depth overlay warm-up** (`01c-warm-depth-overlay.yaml`) on dedicated `emulator-5574` (SeaCheck_Maestro_API_33, ~184s + ~199s).
 
 **Not** a certified ECDIS / SOLAS chart plotter — product truth, not a bug.
 
@@ -317,10 +317,11 @@ Now `https://nextcloud.software-by-design.de/`.
 
 Flows under `.maestro/` + `scripts/maestro-e2e.sh` (`npm run e2e:maestro:cancel` / `:kill`).
 
-**Proof (2026-08-30 local):**
-- `02-download-cancel-mid` → **PASS** on `emulator-5556` (SeaCheck_Maestro_API_33); cancel mid-flight → no Ready banner.
-- `03-download-kill-mid` → **PASS** on `emulator-5554` (Pixel_3_API_33); killApp mid-flight → relaunch → no Ready banner.
+**Proof (2026-08-31 local, pass 3):**
+- `02-download-cancel-mid` → **PASS** on `emulator-5574` (SeaCheck_Maestro_API_33); includes `01a-warm-map` + `01c-warm-depth-overlay` (`map.depthChip` visible) before Kiel Bay download; cancel mid-flight → no Ready banner (~184s).
+- `03-download-kill-mid` → **PASS** on same `emulator-5574`; depth overlay warm-up + killApp mid-flight → relaunch → no Ready banner (~199s).
 - Script disables other `softwarebydesign.*` packages for the run (DutyCheck FG steal) and re-enables on EXIT.
+- **Operational note:** With 7 concurrent adb emulators, first run timed out on JS UI wait (launcher ANR). Isolating to one serial (`adb disconnect` rivals) fixed it — not an app bug, but Maestro operators must not share adb with a fleet.
 
 **CI:** `.github/workflows/e2e-maestro.yml` builds a debug APK, boots **one** API-33 emulator, runs `npm run ci:maestro` (cancel then kill as **separate** clear+run invocations; one retry each for CDN flakes). Also on `workflow_dispatch` / weekly schedule / download-path PRs.
 
@@ -358,7 +359,7 @@ Download map linger / post-teardown delays are **zero under `NODE_ENV=test`** (`
 
 | Metric | Result |
 |--------|--------|
-| Full Jest | **133 passed / 641 tests** (exits without `--forceExit`, 2026-08-31 Momos pass 2) |
+| Full Jest | **137 passed / 653 tests** (exits without `--forceExit`, 2026-08-31 Momos pass 3) |
 | Skipped tests | **0** |
 | a11y contrast | PASS |
 | a11y touch targets | PASS |
@@ -391,6 +392,6 @@ New / extended adversarial tests this engagement:
 ## Open Questions
 
 1. Product choice: limited watch still arms after explicit confirm; chrome stays LIMITED until background + notifications + battery exemption + BG task are healthy.  
-2. Native MapLibre WMS visual render on device (pixels) — still not automated.  
-3. ConfirmSheet unmount with a **queued** second confirm — current code cancels the visible dialog only; add RTL coverage if product requires full queue drain.  
-4. Should `useOnlineLayersAllowed` also require `isInternetReachable === true` (captive-portal WMS)? Trade-off vs Android false negatives.
+2. Native MapLibre WMS visual render on device (pixels) — still not automated as a framebuffer screenshot; live GetMap PNG probes + DepthOverlay mount URL allowlist tests + Maestro `map.depthChip` visibility cover the contract (chip presence, not pixel colour). Offline pack seamark/base tiles are exercised by download start (OpenSeaMap HTTPS) but not per-tile checksum in Maestro.  
+3. ~~ConfirmSheet unmount with a queued second confirm~~ — **FIXED**: `cancelAllPending()` drains visible + queue; ConfirmSheet unmount / backdrop / `dismissAll` onClose use it; ScreenLockCoordinator drains before `dismissAll` so lock cannot resurface a queued dialog (`__tests__/confirmStore.test.ts`, `__tests__/ScreenLockCoordinator.test.tsx`).  
+4. ~~Should `useOnlineLayersAllowed` require `isInternetReachable === true`?~~ — **FIXED**: gate uses `isEffectivelyOnline` (connected **and** reachable). Honest weakness: Android false-negative reachability can hide optional depth until NetInfo recovers — preferred over WMS on captive portals.

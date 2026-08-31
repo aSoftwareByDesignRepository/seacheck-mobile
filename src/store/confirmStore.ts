@@ -17,6 +17,8 @@ type ConfirmState = ConfirmRequest & {
   visible: boolean;
   requestConfirm: (req: ConfirmRequest) => Promise<boolean>;
   resolveConfirm: (confirmed: boolean) => void;
+  /** Cancel visible + every queued waiter (ConfirmSheet unmount / host teardown). */
+  cancelAllPending: () => void;
 };
 
 const EMPTY_CONFIRM: ConfirmRequest = {
@@ -47,6 +49,17 @@ function showNext(set: (partial: Partial<ConfirmState>) => void) {
   });
 }
 
+function drainAllAsCancelled(set: (partial: Partial<ConfirmState>) => void) {
+  if (activeResolve) {
+    activeResolve(false);
+    activeResolve = null;
+  }
+  while (queue.length > 0) {
+    queue.shift()!.resolve(false);
+  }
+  set({ visible: false, ...EMPTY_CONFIRM });
+}
+
 export const useConfirmStore = create<ConfirmState>((set) => ({
   visible: false,
   ...EMPTY_CONFIRM,
@@ -71,6 +84,9 @@ export const useConfirmStore = create<ConfirmState>((set) => ({
     activeResolve = null;
     showNext(set);
   },
+  cancelAllPending: () => {
+    drainAllAsCancelled(set);
+  },
 }));
 
 /** Async confirm dialog — replaces Alert.alert for in-app decisions. */
@@ -78,12 +94,12 @@ export function requestConfirm(req: ConfirmRequest): Promise<boolean> {
   return useConfirmStore.getState().requestConfirm(req);
 }
 
+/** Fail-close every waiter — used when ConfirmSheet / host unmounts. */
+export function cancelAllPendingConfirms(): void {
+  useConfirmStore.getState().cancelAllPending();
+}
+
 /** @internal test helper */
 export function resetConfirmStoreForTests() {
-  while (activeResolve) {
-    activeResolve(false);
-    activeResolve = null;
-  }
-  queue.length = 0;
-  useConfirmStore.setState({ visible: false, ...EMPTY_CONFIRM });
+  cancelAllPendingConfirms();
 }

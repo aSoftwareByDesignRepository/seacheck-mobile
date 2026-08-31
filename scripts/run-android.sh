@@ -4,6 +4,7 @@ set -euo pipefail
 
 PORT="${SEACHECK_METRO_PORT:-8092}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+AVD="${SEACHECK_AVD:-SeaCheck_Maestro_API_33}"
 
 metro_listening() {
   if command -v ss >/dev/null 2>&1; then
@@ -19,16 +20,16 @@ metro_listening() {
 
 cd "$ROOT"
 
-if command -v adb >/dev/null 2>&1; then
-  if adb devices 2>/dev/null | awk 'NR>1 && $2=="device" { found=1 } END { exit !found }'; then
-    adb reverse "tcp:$PORT" "tcp:$PORT" >/dev/null 2>&1 || true
-  fi
-fi
+# shellcheck source=../../scripts/emulator-acquire.sh
+source "$ROOT/../scripts/emulator-acquire.sh"
+emulator_acquire "$AVD" --boot-if-needed
+trap emulator_release EXIT
+emulator_adb_reverse "$PORT"
 
 if metro_listening; then
   echo "==> Metro already on port $PORT — reusing it (no second bundler)"
-  exec env CI=1 npx expo run:android --port "$PORT" "$@"
+  exec env CI=1 ANDROID_SERIAL="$ANDROID_SERIAL" npx expo run:android --port "$PORT" "$@"
 fi
 
 echo "==> Metro not detected on port $PORT — building and starting bundler"
-exec npx expo run:android --port "$PORT" "$@"
+exec env ANDROID_SERIAL="$ANDROID_SERIAL" npx expo run:android --port "$PORT" "$@"

@@ -7,6 +7,7 @@ tags:
 # Start Kiel Bay download, kill mid-flight, relaunch, assert no Ready lie.
 - runFlow: 01-onboarding-skip.yaml
 - runFlow: 01a-warm-map.yaml
+- runFlow: 01c-warm-depth-overlay.yaml
 - runFlow: 01b-open-downloads.yaml
 - tapOn:
     id: "downloadFailure.dismiss"

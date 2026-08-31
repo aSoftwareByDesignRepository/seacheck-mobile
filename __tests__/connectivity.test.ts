@@ -1,4 +1,11 @@
-import { fetchNetInfoState, fetchIsEffectivelyOffline, fetchIsEffectivelyOnline, isEffectivelyOffline, isEffectivelyOnline } from '../src/lib/network/connectivity';
+import {
+  fetchNetInfoState,
+  fetchIsEffectivelyOffline,
+  fetchIsEffectivelyOnline,
+  isEffectivelyOffline,
+  isEffectivelyOnline,
+  onlineLayersAllowedFromNetInfo,
+} from '../src/lib/network/connectivity';
 
 jest.mock('@react-native-community/netinfo', () => ({
   __esModule: true,
@@ -54,5 +61,20 @@ describe('connectivity', () => {
     jest.advanceTimersByTime(5_000);
     await expect(offlinePending).resolves.toBe(true);
     await expect(onlinePending).resolves.toBe(false);
+  });
+
+  it('blocks depth/online layers on captive portal and unknown reachability', () => {
+    expect(
+      onlineLayersAllowedFromNetInfo({ isConnected: true, isInternetReachable: true }),
+    ).toBe(true);
+    expect(
+      onlineLayersAllowedFromNetInfo({ isConnected: true, isInternetReachable: false }),
+    ).toBe(false);
+    expect(
+      onlineLayersAllowedFromNetInfo({ isConnected: true, isInternetReachable: null }),
+    ).toBe(false);
+    expect(
+      onlineLayersAllowedFromNetInfo({ isConnected: false, isInternetReachable: true }),
+    ).toBe(false);
   });
 });

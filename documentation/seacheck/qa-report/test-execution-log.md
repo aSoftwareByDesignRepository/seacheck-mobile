@@ -201,6 +201,49 @@ Result: exits 0 without forceExit (downloadMapConstants zero under NODE_ENV=test
 
 ---
 
+## 2026-08-31T05:34Z — Momos pass 3: ci:unit + overlay Maestro on dedicated emulator-5574
+
+```
+Command: npm run ci:unit
+Result: Test Suites: 137 passed, 137 total
+        Tests:       653 passed, 653 total
+        mutate:core: 16 killed, 0 survived of 16
+        a11y contrast + touch: PASS
+        i18n parity: PASS (898 keys × 11 locales)
+        EXIT 0 (~71s)
+Log: /tmp/seacheck-momos-ci-unit.log
+```
+
+Metro: already running on :8092 (`packager-status:running`).  
+Dedicated AVD: `SeaCheck_Maestro_API_33` on **emulator-5574** (fresh boot; rival adb serials disconnected first).
+
+```
+Command: SEACHECK_MAESTRO_DEVICE=emulator-5574 bash scripts/maestro-e2e.sh cancel
+Device: SeaCheck_Maestro_API_33 (emulator-5574); budgetcheck rival disabled for run
+Result: PASS — Flow 02-download-cancel-mid
+  - 01a-warm-map: MapLibre warm, no chartRetry
+  - 01c-warm-depth-overlay: settings → depth ON → confirm.proceed → map.depthChip visible (90s)
+  - Kiel Bay download started; cancel mid-flight
+  - after cancel: active/cancel gone; statusBanner.ready NOT visible
+  - screenshot: download-cancel-mid
+PIPE_EXIT:0 (~184s)
+Log: /tmp/seacheck-maestro-cancel-5574-v2.log
+
+Command: SEACHECK_MAESTRO_DEVICE=emulator-5574 bash scripts/maestro-e2e.sh kill
+Device: same (emulator-5574)
+Result: PASS — Flow 03-download-kill-mid
+  - depth overlay warm-up (01c) before download
+  - killApp mid-download; relaunch via deep link + onboarding helper
+  - after hydrate: statusBanner.ready NOT visible
+  - screenshot: download-kill-mid
+PIPE_EXIT:0 (~199s)
+Log: /tmp/seacheck-maestro-kill-5574.log
+```
+
+Note: First Maestro attempt on 5574 with **7** concurrent adb emulators failed JS UI wait (launcher ANR stole foreground). Fix: `adb disconnect` all non-5574 serials before run.
+
+---
+
 ## 2026-08-30T16:55Z — Jest exits without forceExit + CI wiring
 
 ```
