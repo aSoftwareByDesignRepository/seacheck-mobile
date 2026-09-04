@@ -47,7 +47,7 @@ describe('offlinePackStore Wi‑Fi policy at store boundary', () => {
     resetDownloadMapHostForTests();
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
-    await AsyncStorage.setItem('seacheck.chart.basemapId', 'openseamap-osm-v1');
+    await AsyncStorage.setItem('seacheck.chart.basemapId', 'osm-standard-v1');
     useSettingsStore.setState({ downloadWifiOnly: true });
     fetchNet.mockResolvedValue({ isConnected: true, type: 'cellular', isInternetReachable: true });
     confirm.mockResolvedValue(false);

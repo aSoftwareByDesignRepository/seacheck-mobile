@@ -21,10 +21,12 @@ describe('tileCacheDownload', () => {
   });
 
   it('reports progress while sweeping tiles', async () => {
-    const { markDownloadMapStyleLoaded } = require('../src/lib/offline/downloadMapHost') as {
+    const { markDownloadMapStyleLoaded, markDownloadMapFrameRendered } = require('../src/lib/offline/downloadMapHost') as {
       markDownloadMapStyleLoaded: (uri: string) => void;
+      markDownloadMapFrameRendered: () => void;
     };
     markDownloadMapStyleLoaded('file:///style.json');
+    markDownloadMapFrameRendered();
     registerDownloadMapController({
       fitBounds: jest.fn(async () => {}),
       waitForFrame: jest.fn(async () => {}),

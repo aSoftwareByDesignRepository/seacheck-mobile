@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
 import { useIsDeviceDisconnected } from '../lib/network/connectivity';
 import { ensureMapLibreNetworkForDownload, syncMapLibreNetworkState } from '../lib/network/mapLibreNetworkGate';
+import { isMapScreenFocused, subscribeMapScreenFocus } from '../lib/map/mapScreenFocus';
 import { downloadCoordinator, subscribeDownloadCoordinatorActivity } from '../lib/offline/downloadCoordinator';
 import { useOfflinePackStore } from '../store/offlinePackStore';
 
@@ -19,6 +20,11 @@ export function useMapLibreNetworkSync(): void {
   const downloadMapTeardownRegionId = useOfflinePackStore((s) => s.downloadMapTeardownRegionId);
   const regions = useOfflinePackStore((s) => s.regions);
   const [coordinatorTick, setCoordinatorTick] = useState(0);
+  const mapScreenFocused = useSyncExternalStore(
+    subscribeMapScreenFocus,
+    isMapScreenFocused,
+    () => false,
+  );
   const hasDownloadingRegion = useMemo(
     () => Object.values(regions).some((r) => r.state === 'downloading'),
     [regions],
@@ -31,7 +37,8 @@ export function useMapLibreNetworkSync(): void {
     downloadCoordinator.hasExclusiveMapSession() ||
     activeDownloadRegionId != null ||
     downloadMapTeardownRegionId != null ||
-    hasDownloadingRegion;
+    hasDownloadingRegion ||
+    mapScreenFocused;
 
   useEffect(() => {
     syncMapLibreNetworkState(disconnected, downloadActive);

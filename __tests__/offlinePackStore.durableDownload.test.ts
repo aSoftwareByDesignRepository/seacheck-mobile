@@ -132,7 +132,7 @@ describe('offline pack durable ready + kill-mid-download', () => {
     resetDownloadMapHostForTests();
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
-    await AsyncStorage.setItem('seacheck.chart.basemapId', 'openseamap-osm-v1');
+    await AsyncStorage.setItem('seacheck.chart.basemapId', 'osm-standard-v1');
     getPacks.mockReset();
     getPacks.mockResolvedValue([]);
     createPack.mockClear();

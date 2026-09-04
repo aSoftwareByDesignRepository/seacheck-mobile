@@ -68,7 +68,7 @@ export function MainShell() {
         <Tab.Screen
           name="Map"
           component={MapScreen}
-          options={{ title: t('tabs.map'), tabBarButtonTestID: 'tab.map', lazy: false }}
+          options={{ title: t('tabs.map'), tabBarButtonTestID: 'tab.map' }}
         />
         <Tab.Screen
           name="Passage"

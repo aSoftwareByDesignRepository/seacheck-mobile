@@ -38,8 +38,13 @@ class DownloadCoordinator {
     return this.preflightOnly && this.activeRegionId === regionId;
   }
 
+  /** True while async preflight holds the slot but the download map must stay unmounted. */
+  isPreflightOnly(): boolean {
+    return this.preflightOnly;
+  }
+
   hasActiveDownload(): boolean {
-    return this.activeRegionId != null;
+    return this.activeRegionId != null && !this.preflightOnly;
   }
 
   subscribeActivity(listener: () => void): () => void {

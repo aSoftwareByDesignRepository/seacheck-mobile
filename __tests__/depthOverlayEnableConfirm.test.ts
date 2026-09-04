@@ -23,6 +23,7 @@ describe('confirmEnableDepthOverlay', () => {
       expect.objectContaining({
         title: 'settings.depthOverlayConfirmTitle',
         confirmLabel: 'settings.depthOverlayConfirmEnable',
+        cancelLabel: 'common.cancel',
         destructive: false,
       }),
     );

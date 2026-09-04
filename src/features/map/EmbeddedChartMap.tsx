@@ -1,8 +1,14 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Camera, Map, type CameraRef, type LngLatBounds } from '@maplibre/maplibre-react-native';
 
 import { useExclusiveChartDownloadSession } from '../../hooks/useExclusiveChartDownloadSession';
+import { claimEmbeddedChartMapSlot, releaseEmbeddedChartMapSlot } from '../../lib/map/embeddedChartMapRegistry';
+import { shouldMountEmbeddedChartMap } from '../../lib/map/chartMapGlPolicy';
+import { subscribeMapScreenFocus } from '../../lib/map/mapScreenFocus';
+import { ensureMapLibreNetworkForDownload } from '../../lib/network/mapLibreNetworkGate';
+import { subscribeDownloadCoordinatorActivity } from '../../lib/offline/downloadCoordinator';
+import { markOfflineMapEngineStyleLoaded } from '../../lib/offline/offlineMapEngineHost';
 import { KIEL_CENTER } from '../../map/constants';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 
@@ -26,6 +32,7 @@ type Props = {
 /**
  * Embedded MapLibre chart for scroll views and side panels.
  * Android needs `collapsable={false}` and `androidView="texture"` or the GL surface stays blank.
+ * Claims the embedded GL slot in useLayoutEffect so OfflineMapEngineHost can yield before paint.
  */
 export function EmbeddedChartMap({
   mapKey,
@@ -41,10 +48,41 @@ export function EmbeddedChartMap({
 }: Props) {
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
   const exclusiveChartDownload = useExclusiveChartDownloadSession();
+  const embedAllowed = useSyncExternalStore(
+    (listener) => {
+      const unsubFocus = subscribeMapScreenFocus(listener);
+      const unsubDownload = subscribeDownloadCoordinatorActivity(listener);
+      return () => {
+        unsubFocus();
+        unsubDownload();
+      };
+    },
+    shouldMountEmbeddedChartMap,
+    () => false,
+  );
   const cameraRef = useRef<CameraRef>(null);
   const [ready, setReady] = useState(false);
 
-  const markReady = useCallback(() => setReady(true), []);
+  const wantsMap = Boolean(chartStyleUri && !exclusiveChartDownload && embedAllowed);
+
+  useLayoutEffect(() => {
+    if (!wantsMap) {
+      releaseEmbeddedChartMapSlot(mapKey);
+      return;
+    }
+    claimEmbeddedChartMapSlot(mapKey);
+    return () => releaseEmbeddedChartMapSlot(mapKey);
+  }, [wantsMap, mapKey]);
+
+  const markReady = useCallback(() => {
+    setReady(true);
+    if (Platform.OS === 'android') {
+      ensureMapLibreNetworkForDownload();
+    }
+    if (chartStyleUri) {
+      markOfflineMapEngineStyleLoaded(chartStyleUri);
+    }
+  }, [chartStyleUri]);
 
   useEffect(() => {
     setReady(false);
@@ -55,7 +93,7 @@ export function EmbeddedChartMap({
     cameraRef.current?.fitBounds(fitBounds, { padding: fitPadding, duration: 0 });
   }, [ready, fitBounds, fitPadding, mapKey]);
 
-  if (!chartStyleUri || exclusiveChartDownload) {
+  if (!wantsMap) {
     return <>{placeholder}</>;
   }
 
@@ -76,7 +114,7 @@ export function EmbeddedChartMap({
       <Map
         key={mapKey}
         style={styles.map}
-        mapStyle={chartStyleUri}
+        mapStyle={chartStyleUri!}
         androidView={Platform.OS === 'android' ? 'texture' : undefined}
         onDidFinishLoadingStyle={markReady}
         onDidFinishLoadingMap={markReady}
@@ -89,6 +127,6 @@ export function EmbeddedChartMap({
 }
 
 const styles = StyleSheet.create({
-  wrap: { overflow: 'hidden' },
+  wrap: { overflow: 'hidden', marginTop: 8 },
   map: { ...StyleSheet.absoluteFill },
 });

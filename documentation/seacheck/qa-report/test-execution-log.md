@@ -1,316 +1,278 @@
-# SeaCheck — Test Execution Log (Momos re-audit)
+2026-09-04T15:56:37Z
 
-All timestamps UTC. Host: developer workstation. App path: `nextcloud-dev/mobile/seacheck`.  
-No Docker Compose for this app — commands run natively.
+> seacheck-mobile@0.1.3 test
+> jest
 
----
+PASS __tests__/passagePlanning.test.ts
+PASS __tests__/keyboardAware.test.ts
+PASS __tests__/chartSymbolScale.test.ts
+PASS __tests__/mapLibreNetworkSync.test.ts
+PASS __tests__/passageMapPlanningAddWaypoint.test.ts
+PASS __tests__/instrumentDetailMetrics.test.ts
+PASS __tests__/passageBackgroundMonitoring.test.ts
+PASS __tests__/depthOverlayEnableConfirm.test.ts
+PASS __tests__/foregroundGpsDemand.test.ts
+PASS __tests__/DepthOverlay.render.test.tsx
+PASS __tests__/passageMapPlanningRemoveWaypoint.test.ts
+PASS __tests__/startupModules.test.ts
+PASS __tests__/anchorLimitedWatch.durable.test.ts
+PASS __tests__/ScreenLockCoordinator.test.tsx
+PASS __tests__/metroConfig.test.ts
+PASS __tests__/maritimeAlarmNotifications.test.ts
+PASS __tests__/downloadsLayoutHelpers.test.ts
+PASS __tests__/processLocationAlarms.test.ts
+PASS __tests__/downloadStallWatchdog.test.ts
+PASS __tests__/tabBarHelpers.test.ts
+PASS __tests__/offlineMapEngineHost.test.ts
+PASS __tests__/chartTileProbeCenter.test.ts
+PASS __tests__/mapAccessibility.test.ts
+PASS __tests__/layoutRegression.test.ts
+PASS __tests__/chartMapGlPolicy.test.ts
+PASS __tests__/customDownloadStore.test.ts
+PASS __tests__/depthWmsLiveProbe.test.ts
+PASS __tests__/tileCacheDownload.test.ts
+PASS __tests__/downloadPolicy.test.ts
+PASS __tests__/usePassageDeactivate.test.ts
+PASS __tests__/downloadCoordinator.teardown.test.ts
+PASS __tests__/backgroundLocationMode.test.ts
+PASS __tests__/sheetHost.test.ts
+PASS __tests__/maydayMessage.test.ts
+PASS __tests__/offlinePackIndex.test.ts
+PASS __tests__/packDownloadPresentation.test.ts
+PASS __tests__/fetchWithTimeout.test.ts
+PASS __tests__/nearestWaypoint.test.ts
+PASS __tests__/regionPacks.test.ts
+PASS __tests__/buildPassageGeoJson.test.ts
+PASS __tests__/legArrival.test.ts
+PASS __tests__/settingsStore.downloadWifiOnly.test.ts
+PASS __tests__/customDownloadOverlay.test.ts
+PASS __tests__/coordDisplayLayout.test.ts
+PASS __tests__/mapChromeLayout.test.ts
+PASS __tests__/installGlobalErrorLogging.test.ts
+PASS __tests__/copyMaydayClipboard.test.ts
+PASS __tests__/courseVector.test.ts
+PASS __tests__/passageMapPlanning.test.ts
+PASS __tests__/planningRegionsSync.test.ts
+PASS __tests__/downloadTiming.test.ts
+PASS __tests__/beginDownloadSession.test.ts
+PASS __tests__/customDownloadCorners.test.ts
+PASS __tests__/anchorDrift.test.ts
+PASS __tests__/chartTileQuality.test.ts
+PASS __tests__/downloadCoordinator.test.ts
+PASS __tests__/offlinePackStatus.test.ts
+PASS __tests__/buildPlanningPassageGeoJson.test.ts
+PASS __tests__/formatElapsed.test.ts
+PASS __tests__/reportDownloadFailure.test.ts
+PASS __tests__/instrumentLayout.test.ts
+PASS __tests__/exclusiveChartDownloadSession.test.ts
+PASS __tests__/offlinePackStore.startDownload.test.ts
+PASS __tests__/offlinePackStore.preflightUi.test.ts
+PASS __tests__/mapCameraFollow.test.ts
+PASS __tests__/mapChartInteraction.test.ts
+PASS __tests__/tileGrid.test.ts
+PASS __tests__/overpassClient.test.ts
+PASS __tests__/mapStatusChipRow.test.ts
+PASS __tests__/safeLayout.test.ts
+PASS __tests__/fixQuality.test.ts
+PASS __tests__/mapScreenLayoutPolicy.test.ts
+PASS __tests__/navigationInstrumentXte.test.ts
+PASS __tests__/formatDateTimeLocal.test.ts
+PASS __tests__/layoutPresetsLandscape.test.ts
+PASS __tests__/seamarkIndexQueue.test.ts
+PASS __tests__/chipTokens.test.ts
+PASS __tests__/mapSurfaceMode.test.ts
+PASS __tests__/alarmLimits.test.ts
+PASS __tests__/seamark.test.ts
+PASS __tests__/mapChromeInsets.test.ts
+PASS __tests__/chartRasterVisibility.test.ts
+PASS __tests__/connectivity.test.ts
+PASS __tests__/mapVisibleWaypoints.test.ts
+PASS __tests__/reversePassageOrder.test.ts
+PASS __tests__/units.test.ts
+PASS __tests__/offlinePackStore.wifiGate.test.ts
+PASS __tests__/bounds.test.ts
+PASS __tests__/batteryBackground.test.ts
+PASS __tests__/tileMath.test.ts
+PASS __tests__/downloadMapConstants.test.ts
+PASS __tests__/reportDownloadOutcome.test.ts
+PASS __tests__/configureChartTileHttp.test.ts
+PASS __tests__/resolveOfflineEngineCamera.test.ts
+PASS __tests__/leewayFixAge.test.ts
+PASS __tests__/formatEta.test.ts
+PASS __tests__/downloadNetwork.test.ts
+PASS __tests__/formFactor.test.ts
+PASS __tests__/cogPipeline.test.ts
+PASS __tests__/chartStyle.test.ts
+PASS __tests__/offlinePackStore.teardownSync.test.ts
+PASS __tests__/settingsDefaults.test.ts
+PASS __tests__/storageCheck.test.ts
+PASS __tests__/magnetic.test.ts
+PASS __tests__/passageEditorLayoutPolicy.test.ts
+PASS __tests__/chartBaseStyle.test.ts
+PASS __tests__/layoutPreferences.test.ts
+PASS __tests__/coverage.test.ts
+PASS __tests__/confirmStore.test.ts
+PASS __tests__/courseVectorLabels.test.ts
+PASS __tests__/mapLibreNetworkGate.test.ts
+PASS __tests__/gpsFilter.test.ts
+PASS __tests__/foregroundAlarmPipeline.test.ts
+PASS __tests__/boundsAreaSchematic.test.tsx
+PASS __tests__/navigationGeo.test.ts
+PASS __tests__/tabBarLayout.test.ts
+PASS __tests__/evaluateForegroundSafetyAlarms.test.ts
+PASS __tests__/locationPermissionState.test.ts
+PASS __tests__/playStoreListingContract.test.ts
+PASS __tests__/settingsStore.hydrate.test.ts
+PASS __tests__/nearestTrackPoint.test.ts
+PASS __tests__/activityProfiles.test.ts
+PASS __tests__/tabBarGeometry.test.ts
+PASS __tests__/boatIcon.test.ts
+PASS __tests__/promiseWithTimeout.test.ts
+PASS __tests__/chartDepthOverlay.test.ts
+PASS __tests__/nativePackProgress.test.ts
+PASS __tests__/parsePersistedBoolean.test.ts
+PASS __tests__/basemapMigration.test.ts
+PASS __tests__/pathDistance.test.ts
+PASS __tests__/mapSettings.test.ts
+PASS __tests__/appStoreReviewContract.test.ts
+PASS __tests__/coordFormatCycle.test.ts
+PASS __tests__/shellLayoutPolicy.test.ts
+PASS __tests__/resolveThemeAppearance.test.ts
+PASS __tests__/splitLayout.test.ts
+PASS __tests__/coords.test.ts
+PASS __tests__/embeddedChartMapRegistry.test.ts
+PASS __tests__/settingsStore.booleanHydrate.test.ts
+PASS __tests__/nativePackStatus.test.ts
+PASS src/i18n/__tests__/localeParity.test.ts
+PASS __tests__/offlinePackStore.hydrate.test.ts (8.4 s)
+PASS __tests__/offlinePackStore.durableDownload.test.ts (8.414 s)
+PASS __tests__/chartTileReachability.test.ts (10.267 s)
 
-## 2026-08-30T13:42:41Z — Engagement start
+Test Suites: 144 passed, 144 total
+Tests:       689 passed, 689 total
+Snapshots:   0 total
+Time:        10.868 s
+Ran all test suites.
 
-```
-git log -5 --oneline
-b79d7b3 Harden optional depth overlay for safe opt-in use.
-ce89de6 Note optional depth WMS in Play Data Safety copy.
-7f886d7 Add optional online OpenSeaMap/GEBCO depth overlay.
-c87713e Seal offline packs with OfflineManager and close QA High gaps.
-dc072b6 Repo hygiene, feedback UX, CSS cleanup, and l10n alignment
-## main...origin/main (clean)
-```
+> seacheck-mobile@0.1.3 i18n:parity
+> node scripts/i18n-parity.mjs
 
-Environment: no `docker-compose.yml` in app root.
+PASS i18n parity (899 keys × 11 locales)
 
----
+> seacheck-mobile@0.1.3 a11y:contrast
+> node scripts/contrast-check.mjs
 
-## 2026-08-30T13:45:xxZ — Full Jest baseline (pre-honesty-fixes)
+PASS 13.65:1 (min 4.5) text on light bg
+PASS 14.64:1 (min 4.5) text on light card
+PASS 5.18:1 (min 4.5) white on light primary
+PASS 16.49:1 (min 4.5) text on dark bg
+PASS 14.08:1 (min 4.5) text on dark card
+PASS 7.36:1 (min 4.5) dark on dark primary
+PASS 21.00:1 (min 4.5) high contrast text
+PASS 19.56:1 (min 4.5) high contrast primary
+PASS 5.67:1 (min 3) muted text on light bg
+PASS 11.12:1 (min 3) muted text on dark bg
+PASS 6.44:1 (min 4.5) danger button light
+PASS 6.57:1 (min 4.5) danger button dark
+PASS 6.42:1 (min 4.5) danger button high contrast
+PASS 6.26:1 (min 4.5) warning text on light
+PASS 9.84:1 (min 4.5) text on red night bg
+PASS 5.42:1 (min 3) muted on red night bg
+PASS 5.90:1 (min 4.5) primary text on red night primary
 
-```
-Command: npm test -- --no-coverage --forceExit
-Result: Test Suites: 127 passed, 127 total
-        Tests:       608 passed, 608 total
-```
+> seacheck-mobile@0.1.3 a11y:touch
+> node scripts/a11y-touch-target-audit.mjs
 
-(Timer leak warnings from offlinePackStore suites — non-fatal with --forceExit.)
+PASS src/ui/Button.tsx
+PASS src/ui/Screen.tsx
+PASS src/ui/GlobalFeedback.tsx
+PASS src/ui/BottomSheet.tsx
+PASS src/ui/ActionSheet.tsx
+PASS src/ui/SheetSection.tsx
+PASS src/screens/OnboardingScreen.tsx
+PASS src/ui/SettingsMenuRow.tsx
+PASS src/screens/settings/SettingsDisplayScreen.tsx
+PASS src/ui/PanelSidePicker.tsx
+PASS src/screens/settings/SettingsMapScreen.tsx
+PASS src/features/map/NavigationMap.tsx
+PASS src/features/map/MapInstruments.tsx
+PASS src/features/map/MapInstrumentDock.tsx
+PASS src/features/map/InstrumentDockFrame.tsx
+PASS src/features/map/InstrumentCoordsLine.tsx
+PASS src/features/map/MapActions.tsx
+PASS src/features/map/MapBottomPanelFrame.tsx
+PASS src/features/map/MapBottomDock.tsx
+PASS src/features/map/ScreenLockOverlay.tsx
+PASS src/features/map/GpsStatusStrip.tsx
+PASS src/features/map/MapTopAlertBanner.tsx
+PASS src/features/map/AnchorLimitedBanner.tsx
+PASS src/features/map/MapTopChrome.tsx
+PASS src/features/map/MobNavigateBackOverlay.tsx
+PASS src/features/map/MapPreviewTrackBanner.tsx
+PASS src/features/map/PassageInstrumentBlock.tsx
+PASS src/features/map/MapRecordingChip.tsx
+PASS src/navigation/AdaptiveTabBar.tsx
+PASS src/ui/CoordinateBlock.tsx
+PASS src/features/downloads/RegionPackMapPreview.tsx
+PASS src/features/downloads/CustomDownloadSection.tsx
+PASS src/features/downloads/CustomDownloadMapPanel.tsx
+PASS src/features/downloads/RegionPackCard.tsx
+PASS src/features/downloads/CollapsibleDownloadsSection.tsx
+PASS src/features/downloads/CustomPackCard.tsx
+PASS src/features/downloads/LegacyPackCard.tsx
+PASS src/screens/DownloadsScreen.tsx
+PASS src/screens/TracksScreen.tsx
+PASS src/features/tracks/TrackDetailPanel.tsx
+PASS src/ui/ToggleRow.tsx
+PASS src/features/passage/PassageListCard.tsx
+PASS src/features/passage/PassageDeactivateButton.tsx
+PASS src/screens/passage/PassageDetailScreen.tsx
+PASS src/features/passage/PassageMapPreviewPanel.tsx
+PASS src/features/passage/PassageCoverageCard.tsx
+PASS src/features/passage/PassagePackSuggestionRow.tsx
+PASS src/features/passage/PassageWaypointSection.tsx
+PASS src/features/passage/PassageMetaSection.tsx
+PASS src/features/passage/PassageMapPlanningPanel.tsx
+PASS src/features/passage/PassageMapPlanningGuideBanner.tsx
+PASS src/ui/FilterChip.tsx
+PASS src/ui/InstrumentCell.tsx
+Touch-target audit passed.
 
----
+> seacheck-mobile@0.1.3 mutate:core
+> node scripts/run-safety-core-mutations.cjs
 
-## 2026-08-30T13:46:xxZ — a11y + i18n
+SeaCheck safety/offline core mutations
+Baseline: PASS
+Killed: gps-outlier-never-rejects
+Killed: gps-gap-keeps-stale-baseline
+Killed: safety-unknown-accuracy-ok
+Killed: anchor-drag-ignores-accuracy
+Killed: anchor-defer-gap-ignored
+Killed: download-offline-allowed
+Killed: download-wifi-netinfo-fail-open
+Killed: download-wifi-offline-as-cellular
+Killed: download-parallel-allowed
+Killed: stale-callback-accepted
+Killed: persist-index-accepts-arrays
+Killed: tile-budget-disabled
+Killed: mmsi-always-valid
+Killed: mayday-invents-fresh
+Killed: persist-bool-truthy-strings
+Killed: online-ops-unknown-ok
 
-```
-Command: npm run a11y:contrast
-Result: PASS (all listed pairs)
-
-Command: npm run a11y:touch
-Result: Touch-target audit passed.
-
-Command: npm run i18n:parity
-Result: PASS i18n parity (891 keys × 11 locales)
-```
-
----
-
-## 2026-08-30T13:47:xxZ — Mutation core
-
-```
-Command: npm run mutate:core
 Result: 16 killed, 0 survived of 16
-```
-
----
-
-## 2026-08-30T14:30:xxZ — Download honesty hardening
-
-Fixes: cancel settles mid-seal; frozen-tile stall; style-only Ready rejected; Ready deferred to post-teardown (99% Saving); cancel-after-seal keeps Ready; hydrate preserves live download.
-
-```
-Command: npm test -- --forceExit
-Result: 129 suites / 625 tests PASS
-
-Command: npm run mutate:core
-Result: 16 killed, 0 survived of 16
-```
-
-Includes: `download-wifi-netinfo-fail-open`, `download-wifi-offline-as-cellular`, GPS/anchor mutants, download exclusivity.
-
----
-
-## 2026-08-30T13:48:xxZ — RED: downloadWifiOnly corrupt hydrate
-
-```
-Command: npx jest __tests__/settingsStore.downloadWifiOnly.test.ts --forceExit
-Result: FAIL
-  Expected: true
-  Received: 0
-  Received: "false"
-```
-
-Proves `parsed.downloadWifiOnly ?? true` keeps falsy non-booleans.
-
----
-
-## 2026-08-30T13:50:xxZ — GREEN after honesty fixes
-
-Fixes landed:
-- `parsePersistedBoolean(parsed.downloadWifiOnly, true)`
-- cancel seal race (no Ready restore for cache:* UI + native index)
-- sweep-complete → seal-pending reattach
-- `useOnlineLayersAllowed` for depth
-- `handleDownloadAll` counts only `state === 'ready'`
-
-```
-Command: npx jest __tests__/settingsStore.downloadWifiOnly.test.ts __tests__/offlinePackStore.durableDownload.test.ts --forceExit
-Result: PASS — 10 tests
-
-Command: npm test -- --no-coverage --forceExit
-Result: Test Suites: 128 passed, 128 total
-        Tests:       613 passed, 613 total
-```
-
----
-
-## Live depth WMS probes (manual)
-
-```
-GEBCO GWC GetMap Kiel-ish bbox → HTTP/2 200, geowebcache-cache-result: HIT
-depth.openseamap.org tracks_100m → HTTP/2 200 image/png
-```
-
----
-
-## Not executed (explicit gaps)
-
-- Native MapLibre WMS visual render on device  
-- Playwright/Axe on RN — N/A; contrast + touch scripts used  
-- Live load test against OpenSeaMap CDN — intentionally avoided  
-
----
-
-## 2026-08-31T02:05Z — Momos pass 2 (adversarial residuals)
-
-Environment: native host, no Docker. Tip before commit: post-`dbc4aaf` working tree.
-
-**Bugs found (red first):**
-1. `fetchIsEffectivelyOffline` returned false on NetInfo timeout → Overpass could POST
-2. `startDownload` / hydrate reattach skipped `ensureDownloadAllowed`
-3. `alarmSoundEnabled ?? true` / `Boolean(onboardingCompleted)` corrupt hydrate
-4. `ensureStorageForDownload(<=0)` skipped disk check
-
-**Fixes + proof:**
-```
-Command: npx jest __tests__/connectivity.test.ts __tests__/settingsStore.booleanHydrate.test.ts __tests__/offlinePackStore.wifiGate.test.ts __tests__/storageCheck.test.ts --ci
-Result: PASS (after fix; RED before on connectivity/settings/wifiGate)
-
-Command: npm test -- --ci --no-coverage
-Result: Test Suites: 133 passed, 133 total; Tests: 641 passed; EXIT 0
-
-Command: npm run mutate:core
-Result: 16 killed, 0 survived of 16
-
-Command: npm run a11y:contrast && npm run a11y:touch && npm run i18n:parity
-Result: PASS
-```
-
----
-
-## 2026-08-30T21:25Z — Maestro CI EXIT-trap false-red
-
-GitHub run [33329507994](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33329507994) failed after cancel flow **actually passed**:
-
-```
-==> OK
-scripts/maestro-e2e.sh: line 112: ${#DISABLED_RIVALS[@]:-0} > 0: bad substitution
-==> maestro cancel attempt N failed (exit 1)
-```
-
-`${#array[@]:-0}` is invalid bash. EXIT trap then flipped green Maestro into red. Fixed in `enable_rival_apps` + `trap '… || true' EXIT`.
-
-```
-Command: npm test -- --ci --no-coverage
-Result: Test Suites: 131 passed, 131 total; Tests: 634 passed; EXIT 0 (no forceExit)
-```
-
-**Follow-up proof:** GitHub Actions [33330890339](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33330890339) — cancel + kill both passed attempt 1; `ci-maestro passed`.
-
----
-
-## 2026-08-30T18:50Z — Maestro CI false-green caught + fixed
-
-GitHub run [33327634960](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33327634960) concluded **success** but the log showed:
-
-```
-[Failed] 02-download-cancel-mid ... (attempt 1)
-[Failed] 03-download-kill-mid ... screen.onboarding (attempt 1+2)
-==> maestro attempt N failed (exit 0)   # ← bash $? after `if` is always 0
-==> ci-maestro passed                   # ← FALSE GREEN
-```
-
-Root causes:
-1. `rc=$?` after `if cmd; then ...; fi` reads the `if` status (0), not `cmd`.
-2. `maestro test cancel.yaml kill.yaml` in one shot: kill's onboarding assert failed after cancel finished onboarding.
-3. Cancel attempt-1 CDN/UI flake recovered on attempt-2, but kill never passed.
-
-Fixes landed:
-- `scripts/ci-maestro.sh`: `set +e` + explicit `flow_rc`; run **cancel** then **kill** as separate `maestro-e2e.sh` invocations (each pm-clears).
-- `.maestro/01-onboarding-skip.yaml`: wait for `screen.onboarding|tab.map` (warm start OK).
-- `.maestro/03-download-kill-mid.yaml`: re-run onboarding helper after killApp relaunch.
-- Workflow: env block for APK/attempts; single-line script with ANDROID_SERIAL.
-
-```
-Command: npm test -- --ci --no-coverage
-Result: exits 0 without forceExit (downloadMapConstants zero under NODE_ENV=test)
-```
-
----
-
-## 2026-08-31T05:34Z — Momos pass 3: ci:unit + overlay Maestro on dedicated emulator-5574
-
-```
-Command: npm run ci:unit
-Result: Test Suites: 137 passed, 137 total
-        Tests:       653 passed, 653 total
-        mutate:core: 16 killed, 0 survived of 16
-        a11y contrast + touch: PASS
-        i18n parity: PASS (898 keys × 11 locales)
-        EXIT 0 (~71s)
-Log: /tmp/seacheck-momos-ci-unit.log
-```
-
-Metro: already running on :8092 (`packager-status:running`).  
-Dedicated AVD: `SeaCheck_Maestro_API_33` on **emulator-5574** (fresh boot; rival adb serials disconnected first).
-
-```
-Command: SEACHECK_MAESTRO_DEVICE=emulator-5574 bash scripts/maestro-e2e.sh cancel
-Device: SeaCheck_Maestro_API_33 (emulator-5574); budgetcheck rival disabled for run
-Result: PASS — Flow 02-download-cancel-mid
-  - 01a-warm-map: MapLibre warm, no chartRetry
-  - 01c-warm-depth-overlay: settings → depth ON → confirm.proceed → map.depthChip visible (90s)
-  - Kiel Bay download started; cancel mid-flight
-  - after cancel: active/cancel gone; statusBanner.ready NOT visible
-  - screenshot: download-cancel-mid
-PIPE_EXIT:0 (~184s)
-Log: /tmp/seacheck-maestro-cancel-5574-v2.log
-
-Command: SEACHECK_MAESTRO_DEVICE=emulator-5574 bash scripts/maestro-e2e.sh kill
-Device: same (emulator-5574)
-Result: PASS — Flow 03-download-kill-mid
-  - depth overlay warm-up (01c) before download
-  - killApp mid-download; relaunch via deep link + onboarding helper
-  - after hydrate: statusBanner.ready NOT visible
-  - screenshot: download-kill-mid
-PIPE_EXIT:0 (~199s)
-Log: /tmp/seacheck-maestro-kill-5574.log
-```
-
-Note: First Maestro attempt on 5574 with **7** concurrent adb emulators failed JS UI wait (launcher ANR stole foreground). Fix: `adb disconnect` all non-5574 serials before run.
-
----
-
-## 2026-08-30T16:55Z — Jest exits without forceExit + CI wiring
-
-```
-Command: CI=false npm test -- --no-coverage
-Result: Test Suites: 130 passed, 130 total; Tests: 632 passed; EXIT 0 (no forceExit)
-
-Command: npm run ci:unit
-Result: PASS — typecheck + jest + mutate:core + a11y + i18n
-
-jest.config.js: forceExit: false (download map linger/teardown already 0 under NODE_ENV=test)
-GitHub unit CI (main @ 6bd70df): success
-GitHub E2E Maestro (run 33324955241): FAILED — qemu never started:
-  "error while loading shared libraries: libpulse.so.0"
-  (host runner, not SeaCheck app). Workflow fix: apt install libpulse0,
-  -no-audio, drop pixel_6 profile, free-disk-space, google_apis image.
-Vendor: vendor/android15-play-compliance (standalone npm ci without ../shared)
-```
-
----
-
-## 2026-08-30T16:12Z / 16:30Z — Maestro download honesty (device)
-
-Metro: `expo start --port 8092 --dev-client`. Runner: `scripts/maestro-e2e.sh`.
-
-```
-Command: SEACHECK_MAESTRO_DEVICE=emulator-5556 bash scripts/maestro-e2e.sh cancel
-Device: SeaCheck_Maestro_API_33 (emulator-5556)
-Result: PASS — Flow 02-download-cancel-mid
-  - active/cancel visible mid-download
-  - after cancel: active/cancel gone; statusBanner.ready NOT visible
-  - screenshot: download-cancel-mid
-PIPE_EXIT:0 (~149s)
-
-Command: SEACHECK_MAESTRO_DEVICE=emulator-5554 bash scripts/maestro-e2e.sh kill
-Device: Pixel_3_API_33 (emulator-5554); rival softwarebydesign.* disabled for run
-Result: PASS — Flow 03-download-kill-mid
-  - killApp mid-download; relaunch via deep link
-  - after hydrate: statusBanner.ready NOT visible
-  - screenshot: download-kill-mid
-PIPE_EXIT:0 (~242s)
-```
-
-Note: SeaCheck_Maestro AVD disconnected under dual-emulator load after cancel; kill-mid proven on stable Pixel AVD with rivals disabled.
-
----
-
-## 2026-08-30T14:05:xxZ — Limited-anchor + residual gaps
-
-Fixes landed:
-- Persist `anchorAlarm.armedLimited`; non-dismissible banner / warning FAB / instrument / settings
-- Overpass tap lat/lon in privacy EN/DE + Data Safety
-- README publisher HTTPS
-- `storageCheck` fail-closed; downloads blocked with unavailable error
-- ConfirmSheet unmount fail-closes hung `requestConfirm`
-- Offline pack hydrate single-flight mutex
-
-```
-Command: npm test -- --forceExit
-Result: Test Suites: 129 passed, 129 total
-        Tests:       618 passed, 618 total
-
-Command: npm run i18n:parity
-Result: PASS i18n parity (898 keys × 11 locales)
-
-Command: npm run a11y:contrast && npm run a11y:touch
-Result: PASS
-
-Command: npm run mutate:core
-Result: 16 killed, 0 survived of 16
-```  
+2026-09-04T15:57:35Z
+
+=== Coverage summary (separate run) ===
+Statements 61.38% (3728/6073) | Branches 54.63% (2228/4078) | Functions 62.48% (781/1250) | Lines 64.11% (3373/5261)
+=== 416 red proof (pre-fix, earlier same session) ===
+assertChartTileReachability › rejects 416 on seamark — Received promise resolved instead of rejected
+=== Post-fix 416 + UA contract ===
+PASS __tests__/configureChartTileHttp.test.ts
+PASS __tests__/chartTileReachability.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       13 skipped, 3 passed, 16 total
+Snapshots:   0 total
+Time:        0.762 s, estimated 11 s
+Ran all test suites matching /__tests__\/chartTileReachability.test.ts|__tests__\/configureChartTileHttp.test.ts/i with tests matching "416|module scope".

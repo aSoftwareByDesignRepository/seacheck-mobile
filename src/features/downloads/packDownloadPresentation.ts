@@ -1,5 +1,6 @@
 import type { RegionPackStatus } from '../../store/offlinePackStore';
 import { t } from '../../i18n';
+import { downloadCoordinator } from '../../lib/offline/downloadCoordinator';
 import { resolveRegionPack } from '../../map/regionPacks';
 
 export type PackStatusBadgeVariant = 'success' | 'warning' | 'danger' | 'neutral';
@@ -54,6 +55,9 @@ export function isDownloadMapSessionActive(
   activeDownloadRegionId: string | null,
   downloadMapTeardownRegionId: string | null = null,
 ): boolean {
+  // Preflight may show downloading UI before the exclusive GL session starts — keep the
+  // minimap + hidden engine alive so chart style and tiles can prime (July behaviour).
+  if (downloadCoordinator.isPreflightOnly()) return false;
   const ownsMap = activeDownloadRegionId === regionId || downloadMapTeardownRegionId === regionId;
   // Completing keeps state=downloading until Ready flips after teardown — both must hold the map.
   return ownsMap && (status?.state === 'downloading' || status?.state === 'ready');

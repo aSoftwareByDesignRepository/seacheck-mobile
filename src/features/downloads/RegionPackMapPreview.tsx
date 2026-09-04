@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
 import type { Feature, FeatureCollection } from 'geojson';
@@ -10,6 +10,7 @@ import { t } from '../../i18n';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { EmbeddedChartMap } from '../map/EmbeddedChartMap';
+import { BoundsAreaSchematic } from './BoundsAreaSchematic';
 
 type Props = {
   pack: RegionPackDefinition;
@@ -42,14 +43,43 @@ export function RegionPackMapPreview({ pack }: Props) {
     <View
       style={[styles.placeholder, { backgroundColor: colors.surface, borderColor: colors.border }]}
       accessibilityRole="summary"
-      accessibilityLabel={exclusiveChartDownload ? t('downloads.statusSummaryActiveTitle') : t('passage.mapPreviewOffline')}
+      accessibilityLabel={
+        exclusiveChartDownload ? t('downloads.statusSummaryActiveTitle') : t('downloads.previewTitle')
+      }
     >
-      <Text style={[styles.placeholderTitle, { color: colors.text }]}>
-        {exclusiveChartDownload ? t('downloads.statusSummaryActiveTitle') : t('downloads.previewUnavailableTitle')}
-      </Text>
-      <Text style={[styles.placeholderBody, { color: colors.textMuted }]}>
-        {exclusiveChartDownload ? t('downloads.statusSummaryActiveHint') : t('passage.mapPreviewOffline')}
-      </Text>
+      {exclusiveChartDownload ? (
+        <>
+          <Text style={[styles.placeholderTitle, { color: colors.text }]}>
+            {t('downloads.statusSummaryActiveTitle')}
+          </Text>
+          <Text style={[styles.placeholderBody, { color: colors.textMuted }]}>
+            {t('downloads.statusSummaryActiveHint')}
+          </Text>
+        </>
+      ) : (
+        <>
+          <BoundsAreaSchematic
+            corners={[
+              { longitude: west, latitude: south },
+              { longitude: east, latitude: south },
+              { longitude: east, latitude: north },
+              { longitude: west, latitude: north },
+            ]}
+            bounds={pack.bounds}
+            height={MAP_EMBED_PREVIEW_HEIGHT}
+            fillColor="#0073ad33"
+            lineColor="#0073ad"
+            backgroundColor={colors.surface}
+            borderColor={colors.border}
+            testID="downloads.packPreview.schematic"
+          />
+          {!chartStyleUri ? (
+            <Text style={[styles.placeholderBody, { color: colors.textMuted }]}>
+              {t('passage.mapPreviewOffline')}
+            </Text>
+          ) : null}
+        </>
+      )}
     </View>
   );
 

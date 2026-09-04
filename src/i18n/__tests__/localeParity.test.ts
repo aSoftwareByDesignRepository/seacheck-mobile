@@ -1,4 +1,4 @@
-import { readdirSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 import da from '../locales/da.json';
@@ -57,6 +57,29 @@ function flattenValues(
   return out;
 }
 
+function collectStaticTranslationKeys(srcRoot: string): string[] {
+  const keys = new Set<string>();
+  const keyRe = /\bt\(\s*['"]([a-zA-Z0-9_.]+)['"]/g;
+  const stack = [srcRoot];
+  while (stack.length > 0) {
+    const dir = stack.pop()!;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === 'locales' || entry.name === 'node_modules') continue;
+        stack.push(full);
+        continue;
+      }
+      if (!entry.name.endsWith('.ts') && !entry.name.endsWith('.tsx')) continue;
+      const text = readFileSync(full, 'utf8');
+      for (const match of text.matchAll(keyRe)) {
+        keys.add(match[1]!);
+      }
+    }
+  }
+  return [...keys].sort();
+}
+
 describe('i18n locale parity', () => {
   it('covers the full Check-suite language family', () => {
     expect([...SUPPORTED_LOCALES].sort()).toEqual(
@@ -93,5 +116,20 @@ describe('i18n locale parity', () => {
     expect(files).toEqual(
       ['da.json', 'de.json', 'en.json', 'es.json', 'fr.json', 'it.json', 'nb.json', 'nl.json', 'pl.json', 'pt.json', 'sv.json'],
     );
+  });
+
+  it('includes every static t("…") key used in src/ in the English catalog', () => {
+    const enKeys = new Set(flatten(catalogs.en));
+    const used = collectStaticTranslationKeys(join(__dirname, '../..'));
+    const missing = used.filter((key) => !enKeys.has(key));
+    expect(missing).toEqual([]);
+  });
+
+  it('provides common.cancel for confirm dialogs in every locale', () => {
+    for (const code of SUPPORTED_LOCALES) {
+      const common = catalogs[code]?.common as Record<string, string> | undefined;
+      expect(common?.cancel?.trim().length).toBeGreaterThan(0);
+      expect(common?.dismiss?.trim().length).toBeGreaterThan(0);
+    }
   });
 });

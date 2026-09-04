@@ -1,19 +1,18 @@
 /**
  * Coastal base map + OpenSeaMap seamark overlay for MapLibre.
  *
- * Base tiles come from OpenSeaMap’s public OSM Mapnik mirrors (same stack their
- * web chart uses under seamarks). Free, no API key, commercial-friendly for
- * OpenSeaMap apps — unlike CARTO Voyager which now watermarks without a key.
+ * Base tiles: OpenStreetMap standard raster (per OpenSeaMap project docs).
+ * Seamarks: OpenSeaMap overlay only — never use t*.openseamap.org/tile/ for the base;
+ * that endpoint serves empty.png placeholders, not OSM cartography.
  *
- * Keep this as XYZ raster so OfflineManager / ambient-cache downloads stay
- * identical to the previous Carto-based packs (two raster sources).
+ * Tile usage policy: configureChartTileHttp() must set a SeaCheck-identifying User-Agent
+ * before any MapLibre map loads (see App.tsx).
  */
-export const CHART_BASEMAP_ID = 'openseamap-osm-v1';
+export const CHART_BASEMAP_ID = 'osm-standard-v1';
 
-/** Primary + fallback hosts (MapLibre load-balances across `tiles` entries). */
+/** OSM standard tiles — MapLibre rotates across entries when multiple are listed. */
 export const CHART_BASE_TILE_URLS = [
-  'https://t1.openseamap.org/tile/{z}/{x}/{y}.png',
-  'https://t2.openseamap.org/tile/{z}/{x}/{y}.png',
+  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 ] as const;
 
 /** Canonical probe / logging URL (first host). */
@@ -22,5 +21,5 @@ export const CHART_BASE_TILE_URL = CHART_BASE_TILE_URLS[0];
 /** OpenSeaMap seamark overlay — second raster source in offline chart packs. */
 export const SEAMARK_TILE_URL = 'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png';
 
-export const CHART_BASE_ATTRIBUTION = '© OpenStreetMap contributors © OpenSeaMap';
+export const CHART_BASE_ATTRIBUTION = '© OpenStreetMap contributors';
 export const CHART_SEAMARK_ATTRIBUTION = '© OpenSeaMap contributors';

@@ -16,3 +16,9 @@ export function subscribeMapScreenFocus(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
+
+/** Test-only reset. */
+export function resetMapScreenFocusForTests(): void {
+  mapScreenFocused = false;
+  listeners.clear();
+}

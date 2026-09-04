@@ -4,6 +4,7 @@ import { REGION_PACKS } from '../src/map/regionPacks';
 import { downloadCoordinator } from '../src/lib/offline/downloadCoordinator';
 import { resetSeamarkIndexQueueForTests } from '../src/lib/seamarks/seamarkIndexQueue';
 import { resetDownloadMapHostForTests, registerDownloadMapController } from '../src/lib/offline/downloadMapHost';
+import * as downloadMapHost from '../src/lib/offline/downloadMapHost';
 import { resetOfflinePackStoreForTests, useOfflinePackStore } from '../src/store/offlinePackStore';
 import { OfflineManager } from '@maplibre/maplibre-react-native';
 
@@ -40,7 +41,7 @@ describe('offlinePackStore.startDownload (sweep + durable seal)', () => {
     resetDownloadMapHostForTests();
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
-    await AsyncStorage.setItem('seacheck.chart.basemapId', 'openseamap-osm-v1');
+    await AsyncStorage.setItem('seacheck.chart.basemapId', 'osm-standard-v1');
     (OfflineManager.createPack as jest.Mock).mockClear();
     await useOfflinePackStore.getState().hydrate();
   });
@@ -50,14 +51,12 @@ describe('offlinePackStore.startDownload (sweep + durable seal)', () => {
   });
 
   it('marks a region ready after tile sweep seals a durable OfflineManager pack', async () => {
-    const { markDownloadMapStyleLoaded } = require('../src/lib/offline/downloadMapHost') as {
-      markDownloadMapStyleLoaded: (uri: string) => void;
-    };
-    markDownloadMapStyleLoaded('file:///mock/map/chart-style.json');
-    registerDownloadMapController({
+    const controller = {
       fitBounds: jest.fn(async () => {}),
       waitForFrame: jest.fn(async () => {}),
-    });
+    };
+    jest.spyOn(downloadMapHost, 'waitForDownloadMapReady').mockResolvedValue(true);
+    jest.spyOn(downloadMapHost, 'waitForDownloadMapController').mockResolvedValue(controller);
 
     await useOfflinePackStore.getState().startDownload(KIEL.id);
 

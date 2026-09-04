@@ -34,9 +34,13 @@ describe('downloadCoordinator', () => {
 
   it('preflight lock keeps slot for same region then converts on tryBegin', () => {
     expect(downloadCoordinator.preflightLock('a')).toBe(true);
-    expect(downloadCoordinator.hasActiveDownload()).toBe(true);
+    expect(downloadCoordinator.isPreflightOnly()).toBe(true);
+    expect(downloadCoordinator.hasActiveDownload()).toBe(false);
+    expect(downloadCoordinator.getActiveRegionId()).toBe('a');
     expect(downloadCoordinator.tryBegin('b')).toBeNull();
     expect(downloadCoordinator.tryBegin('a')).toBe(1);
+    expect(downloadCoordinator.isPreflightOnly()).toBe(false);
+    expect(downloadCoordinator.hasActiveDownload()).toBe(true);
     expect(downloadCoordinator.tryBegin('a')).toBeNull();
     downloadCoordinator.end('a');
   });

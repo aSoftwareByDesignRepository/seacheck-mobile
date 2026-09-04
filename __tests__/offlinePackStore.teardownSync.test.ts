@@ -8,6 +8,7 @@ import {
   registerDownloadMapController,
   resetDownloadMapHostForTests,
 } from '../src/lib/offline/downloadMapHost';
+import * as downloadMapHost from '../src/lib/offline/downloadMapHost';
 import { resetOfflinePackStoreForTests, useOfflinePackStore } from '../src/store/offlinePackStore';
 
 jest.mock('../src/map/chartStyle', () => ({
@@ -38,10 +39,22 @@ const KIEL = REGION_PACKS[0]!;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function markDownloadMapReady() {
-  const { markDownloadMapStyleLoaded } = require('../src/lib/offline/downloadMapHost') as {
+  const { markDownloadMapStyleLoaded, markDownloadMapFrameRendered } = require('../src/lib/offline/downloadMapHost') as {
     markDownloadMapStyleLoaded: (uri: string) => void;
+    markDownloadMapFrameRendered: () => void;
   };
   markDownloadMapStyleLoaded('file:///mock/map/chart-style.json');
+  markDownloadMapFrameRendered();
+}
+
+async function startDownloadWithMapReady(regionId: string) {
+  const controller = {
+    fitBounds: jest.fn(async () => {}),
+    waitForFrame: jest.fn(async () => {}),
+  };
+  jest.spyOn(downloadMapHost, 'waitForDownloadMapReady').mockResolvedValue(true);
+  jest.spyOn(downloadMapHost, 'waitForDownloadMapController').mockResolvedValue(controller);
+  await useOfflinePackStore.getState().startDownload(regionId);
 }
 
 /**
@@ -58,7 +71,7 @@ describe('offlinePackStore coordinator teardown sync (production timing)', () =>
     resetDownloadMapHostForTests();
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
-    await AsyncStorage.setItem('seacheck.chart.basemapId', 'openseamap-osm-v1');
+    await AsyncStorage.setItem('seacheck.chart.basemapId', 'osm-standard-v1');
     await useOfflinePackStore.getState().hydrate();
   });
 
@@ -87,13 +100,7 @@ describe('offlinePackStore coordinator teardown sync (production timing)', () =>
     jest.spyOn(downloadMapConstants, 'downloadMapLingerMs').mockReturnValue(30);
     jest.spyOn(downloadMapConstants, 'downloadMapPostTeardownMs').mockReturnValue(60);
 
-    markDownloadMapReady();
-    registerDownloadMapController({
-      fitBounds: jest.fn(async () => {}),
-      waitForFrame: jest.fn(async () => {}),
-    });
-
-    await useOfflinePackStore.getState().startDownload(KIEL.id);
+    await startDownloadWithMapReady(KIEL.id);
 
     const state = useOfflinePackStore.getState();
     expect(state.regions[KIEL.id]?.state).toBe('ready');
@@ -106,8 +113,8 @@ describe('offlinePackStore coordinator teardown sync (production timing)', () =>
   it('clears the teardown region after a failed download session', async () => {
     jest.spyOn(downloadMapConstants, 'downloadMapPostTeardownMs').mockReturnValue(40);
 
-    markDownloadMapReady();
-    registerDownloadMapController({
+    jest.spyOn(downloadMapHost, 'waitForDownloadMapReady').mockResolvedValue(true);
+    jest.spyOn(downloadMapHost, 'waitForDownloadMapController').mockResolvedValue({
       fitBounds: jest.fn(async () => {
         throw new Error('gl surface lost');
       }),

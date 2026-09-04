@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { isDownloadMapSessionActive } from './packDownloadPresentation';
+import { shouldMountDownloadMapSession } from '../../lib/map/chartMapGlPolicy';
 import { DownloadMapEngine } from './DownloadMapEngine';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 
@@ -19,7 +19,7 @@ export function DownloadMapSessionHost() {
   const status = sessionRegionId != null ? regions[sessionRegionId] : undefined;
   const active =
     sessionRegionId != null &&
-    isDownloadMapSessionActive(
+    shouldMountDownloadMapSession(
       sessionRegionId,
       status ?? { state: 'idle' },
       activeDownloadRegionId,
@@ -45,11 +45,11 @@ export function DownloadMapSessionHost() {
 const styles = StyleSheet.create({
   host: {
     position: 'absolute',
-    width: 280,
-    height: 240,
-    overflow: 'hidden',
+    top: 0,
     left: 0,
+    right: 0,
     bottom: 0,
+    overflow: 'hidden',
     opacity: 0.01,
     elevation: 0,
   },

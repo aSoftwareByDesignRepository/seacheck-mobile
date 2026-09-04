@@ -240,8 +240,8 @@ export function BootGate({ children }: PropsWithChildren) {
           </Pressable>
         </View>
       ) : null}
-      <OfflineMapBootstrap />
       <View style={styles.content}>{children}</View>
+      <OfflineMapBootstrap />
     </View>
   );
 }

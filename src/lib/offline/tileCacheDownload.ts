@@ -1,9 +1,15 @@
 import type { LngLatBounds } from '@maplibre/maplibre-react-native';
+import { Platform } from 'react-native';
 
 import { ensureMapLibreNetworkForDownload } from '../network/mapLibreNetworkGate';
 import { yieldToUi } from '../async/yieldToUi';
 import { tileSweepFinalSettleMs } from './downloadMapConstants';
+import { downloadCoordinator } from './downloadCoordinator';
 import { waitForDownloadMapReady, waitForDownloadMapController } from './downloadMapHost';
+import {
+  ensureOfflineMapEngineReadyForDownload,
+  offlineEngineViewportFromBounds,
+} from './offlineMapEngineHost';
 
 export type TileSweepProgress = {
   completed: number;
@@ -44,6 +50,12 @@ export async function runTileCacheSweep(options: TileCacheSweepOptions): Promise
   let completed = Math.min(options.startIndex ?? 0, total);
 
   options.onProgress(buildProgress(completed, total));
+
+  if (Platform.OS === 'android' && downloadCoordinator.hasActiveDownload()) {
+    const viewport = offlineEngineViewportFromBounds(options.bounds, options.minZoom);
+    await ensureOfflineMapEngineReadyForDownload(options.chartStyleUri, viewport, options.bounds);
+    await yieldToUi();
+  }
 
   const mapReady = await waitForDownloadMapReady(options.chartStyleUri);
   if (!mapReady) {

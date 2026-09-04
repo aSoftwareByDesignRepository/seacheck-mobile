@@ -4,6 +4,12 @@ import { Platform } from 'react-native';
 import { t } from '../../i18n';
 import { boundsCenter } from '../map/bounds';
 import { yieldToUi } from '../async/yieldToUi';
+import { downloadCoordinator } from './downloadCoordinator';
+import {
+  isDownloadMapStyleLoaded,
+  waitForDownloadMapController,
+  waitForDownloadMapReady,
+} from './downloadMapHost';
 
 const STYLE_LOAD_TIMEOUT_MS = 20_000;
 const STYLE_ENSURE_ATTEMPTS = 4;
@@ -107,6 +113,17 @@ export function resetOfflineMapEngineHostForTests(): void {
   viewportListeners.clear();
 }
 
+/** Drop viewport priming before an exclusive download — NavigationMap must not satisfy seal gates. */
+export function resetOfflineMapEngineViewportPrimed(): void {
+  pendingViewport = null;
+  primedViewport = null;
+  viewportGeneration += 1;
+  notifyViewportListeners();
+  const waiters = viewportWaiters;
+  viewportWaiters = [];
+  waiters.forEach((resolve) => resolve(false));
+}
+
 export function subscribeOfflineMapEngineViewport(listener: () => void): () => void {
   viewportListeners.add(listener);
   return () => viewportListeners.delete(listener);
@@ -114,6 +131,14 @@ export function subscribeOfflineMapEngineViewport(listener: () => void): () => v
 
 export function getPendingOfflineMapEngineViewport(): OfflineEngineViewport | null {
   return pendingViewport;
+}
+
+/** NavigationMap owns the camera while the Map tab is focused — drop download viewport aims. */
+export function releaseOfflineMapEngineViewportForNavigation(): void {
+  if (pendingViewport == null) return;
+  pendingViewport = null;
+  viewportGeneration += 1;
+  notifyViewportListeners();
 }
 
 export function getOfflineMapEngineViewportGeneration(): number {
@@ -199,7 +224,24 @@ export async function ensureOfflineMapEngineViewportPrimed(
 
 /** True when the hidden Android map engine parsed the style and rendered at least one frame. */
 export function isOfflineMapEngineStyleLoaded(styleUri: string): boolean {
-  return loadedStyleUri === styleUri && loadedStyleGeneration === styleReloadNonce;
+  if (loadedStyleUri === styleUri && loadedStyleGeneration === styleReloadNonce) return true;
+  if (downloadCoordinator.hasActiveDownload() && isDownloadMapStyleLoaded(styleUri)) return true;
+  return false;
+}
+
+/**
+ * Mirror download-map readiness into hidden-host signals so seal/kickstart/stall
+ * logic stays consistent while OfflineMapEngineHost is unmounted.
+ */
+export function syncOfflineMapEngineFromDownloadMap(styleUri: string, viewport: OfflineEngineViewport): void {
+  markOfflineMapEngineStyleLoaded(styleUri, getOfflineMapEngineStyleReloadNonce());
+  pendingViewport = viewport;
+  primedViewport = viewport;
+  viewportGeneration += 1;
+  notifyViewportListeners();
+  const waiters = viewportWaiters;
+  viewportWaiters = [];
+  waiters.forEach((resolve) => resolve(true));
 }
 
 /**
@@ -274,8 +316,23 @@ export async function ensureOfflineMapEnginePrimedBeforeDownload(styleUri: strin
 export async function ensureOfflineMapEngineReadyForDownload(
   styleUri: string,
   viewport: OfflineEngineViewport,
+  bounds?: LngLatBounds,
 ): Promise<void> {
   if (Platform.OS !== 'android') return;
+
+  if (downloadCoordinator.hasActiveDownload()) {
+    const ready = await waitForDownloadMapReady(styleUri, FOREGROUND_MAP_WAIT_MS);
+    if (!ready) {
+      throw new Error(t('downloads.errorMapEngineStyle'));
+    }
+    const mapController = await waitForDownloadMapController();
+    if (bounds && mapController) {
+      await mapController.fitBounds(bounds, viewport.zoom);
+      await mapController.waitForFrame();
+    }
+    syncOfflineMapEngineFromDownloadMap(styleUri, viewport);
+    return;
+  }
 
   await ensureOfflineMapEnginePrimedBeforeDownload(styleUri);
   if (!isOfflineMapEngineStyleLoaded(styleUri)) {

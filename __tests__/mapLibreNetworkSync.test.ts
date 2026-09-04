@@ -8,6 +8,11 @@ jest.mock('../src/lib/network/connectivity', () => ({
   useIsDeviceDisconnected: jest.fn(() => false),
 }));
 
+jest.mock('../src/lib/map/mapScreenFocus', () => ({
+  isMapScreenFocused: jest.fn(() => false),
+  subscribeMapScreenFocus: jest.fn(() => () => {}),
+}));
+
 jest.mock('../src/store/offlinePackStore', () => ({
   useOfflinePackStore: jest.fn((selector: (s: {
     activeDownloadRegionId: string | null;
@@ -19,6 +24,7 @@ jest.mock('../src/store/offlinePackStore', () => ({
 
 const useIsDeviceDisconnected = require('../src/lib/network/connectivity').useIsDeviceDisconnected as jest.Mock;
 const useOfflinePackStore = require('../src/store/offlinePackStore').useOfflinePackStore as jest.Mock;
+const isMapScreenFocused = require('../src/lib/map/mapScreenFocus').isMapScreenFocused as jest.Mock;
 const setConnected = NetworkManager.setConnected as jest.Mock;
 
 function mockStore(activeDownloadRegionId: string | null, regions: Record<string, { state: string }> = {}) {
@@ -34,6 +40,7 @@ describe('useMapLibreNetworkSync', () => {
   beforeEach(() => {
     setConnected.mockClear();
     useIsDeviceDisconnected.mockReturnValue(false);
+    isMapScreenFocused.mockReturnValue(false);
     mockStore(null);
   });
 
@@ -66,6 +73,14 @@ describe('useMapLibreNetworkSync', () => {
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
     useIsDeviceDisconnected.mockReturnValue(true);
     mockStore(null, { 'kiel-bay': { state: 'downloading' } });
+    renderHook(() => useMapLibreNetworkSync());
+    expect(setConnected).toHaveBeenCalledWith(true);
+  });
+
+  it('keeps MapLibre network on when the Map tab is focused', () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
+    useIsDeviceDisconnected.mockReturnValue(true);
+    isMapScreenFocused.mockReturnValue(true);
     renderHook(() => useMapLibreNetworkSync());
     expect(setConnected).toHaveBeenCalledWith(true);
   });

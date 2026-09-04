@@ -7,13 +7,14 @@ import {
   createDownloadMapController,
   getDownloadMapGeneration,
   invalidateDownloadMapGeneration,
+  markDownloadMapFrameRendered,
   markDownloadMapStyleFailed,
   markDownloadMapStyleLoaded,
   registerDownloadMapController,
 } from '../../lib/offline/downloadMapHost';
+import { syncOfflineMapEngineFromDownloadMap } from '../../lib/offline/offlineMapEngineHost';
 import { resolveOfflineEngineCamera } from '../../lib/offline/resolveOfflineEngineCamera';
 import { getRegionPack } from '../../map/regionPacks';
-import { MAP_EMBED_PREVIEW_HEIGHT } from '../../map/previewConstants';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 
 /**
@@ -89,6 +90,18 @@ export function DownloadMapEngine() {
     waiters.forEach((resolve) => resolve());
   };
 
+  const onStyleReady = () => {
+    markDownloadMapStyleLoaded(chartStyleUri, mapGeneration);
+  };
+
+  const onFrameReady = () => {
+    flushFrameWaiters();
+    markDownloadMapFrameRendered(mapGeneration);
+    if (startViewport) {
+      syncOfflineMapEngineFromDownloadMap(chartStyleUri, startViewport);
+    }
+  };
+
   return (
     <View
       style={styles.host}
@@ -102,10 +115,10 @@ export function DownloadMapEngine() {
         style={styles.map}
         mapStyle={chartStyleUri}
         androidView={Platform.OS === 'android' ? 'texture' : undefined}
-        onDidFinishLoadingStyle={() => markDownloadMapStyleLoaded(chartStyleUri, mapGeneration)}
-        onDidFinishLoadingMap={() => markDownloadMapStyleLoaded(chartStyleUri, mapGeneration)}
-        onDidFinishRenderingFrameFully={flushFrameWaiters}
-        onDidFinishRenderingMapFully={flushFrameWaiters}
+        onDidFinishLoadingStyle={onStyleReady}
+        onDidFinishLoadingMap={onStyleReady}
+        onDidFinishRenderingFrameFully={onFrameReady}
+        onDidFinishRenderingMapFully={onFrameReady}
         onDidFailLoadingMap={() => markDownloadMapStyleFailed(chartStyleUri, mapGeneration)}
       >
         <Camera
@@ -119,10 +132,10 @@ export function DownloadMapEngine() {
 
 const styles = StyleSheet.create({
   host: {
-    height: MAP_EMBED_PREVIEW_HEIGHT,
-    borderRadius: 14,
+    flex: 1,
+    borderRadius: 0,
     overflow: 'hidden',
-    marginTop: 4,
+    marginTop: 0,
   },
   map: { flex: 1 },
 });

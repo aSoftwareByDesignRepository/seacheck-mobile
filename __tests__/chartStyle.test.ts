@@ -8,7 +8,7 @@ describe('buildChartStyleSpec', () => {
     expect(spec.sources?.['openseamap-seamarks']?.type).toBe('raster');
   });
 
-  it('uses OpenSeaMap base tile URLs (primary + fallback)', () => {
+  it('uses OSM base tile URLs', () => {
     const spec = buildChartStyleSpec();
     expect(spec.sources?.['osm-base']?.tiles).toEqual([...CHART_BASE_TILE_URLS]);
     expect(spec.sources?.['osm-base']?.tiles?.[0]).toBe(CHART_BASE_TILE_URL);

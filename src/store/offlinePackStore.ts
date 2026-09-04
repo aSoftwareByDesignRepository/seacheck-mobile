@@ -50,7 +50,7 @@ import {
   runTileCacheSweep,
 } from '../lib/offline/tileCacheDownload';
 import { downloadMapLingerMs, tileSweepFinalSettleMs } from '../lib/offline/downloadMapConstants';
-import { waitForDownloadMapController } from '../lib/offline/downloadMapHost';
+import { resetDownloadMapSession, waitForDownloadMapController } from '../lib/offline/downloadMapHost';
 import { isNativeDownloadKickstarted, isNativePackInitializing } from '../lib/offline/nativePackProgress';
 import { initializingNativePackStatus, pollNativePackStatus, readNativePackStatus, resolveNativePackStatus } from '../lib/offline/nativePackStatus';
 import type { OfflineEngineViewport } from '../lib/offline/offlineMapEngineHost';
@@ -59,6 +59,7 @@ import {
   isOfflineMapEngineStyleLoaded,
   isOfflineMapEngineViewportPrimed,
   resetOfflineMapEngineHostForTests,
+  resetOfflineMapEngineViewportPrimed,
 } from '../lib/offline/offlineMapEngineHost';
 import { yieldToUi } from '../lib/async/yieldToUi';
 import { resetOfflineManagerSetupForTests } from '../lib/offline/offlineManagerSetup';
@@ -1009,10 +1010,19 @@ export async function kickstartNativeDownload(
   chartStyleUri?: string,
   isSessionActive?: () => boolean,
   viewport?: OfflineEngineViewport,
+  bounds?: LngLatBounds,
 ): Promise<OfflinePackStatus> {
   const sessionLive = () => isSessionActive?.() !== false;
 
   ensureMapLibreNetworkForDownload();
+
+  if (chartStyleUri && viewport && downloadCoordinator.hasActiveDownload()) {
+    try {
+      await ensureOfflineMapEngineReadyForDownload(chartStyleUri, viewport, bounds);
+    } catch {
+      /* resume polling below may still recover */
+    }
+  }
 
   const tryResume = async (usePauseCycle = false) => {
     if (!sessionLive()) return;
@@ -1581,6 +1591,10 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       );
 
       session = beginDownloadSession(regionId);
+      resetDownloadMapSession();
+      resetOfflineMapEngineViewportPrimed();
+      await yieldToUi();
+      await yieldToUi();
 
       const previous = get().regions[regionId] ?? emptyStatus(regionId);
       const previousPackId = previous.state === 'ready' ? previous.packId : null;
@@ -1656,6 +1670,10 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       await assertChartDownloadNetworkReady(boundsCenter(bounds));
 
       session = beginDownloadSession(regionId);
+      resetDownloadMapSession();
+      resetOfflineMapEngineViewportPrimed();
+      await yieldToUi();
+      await yieldToUi();
 
       const previous = get().regions[regionId] ?? emptyStatus(regionId);
       const previousWasReady = previous.state === 'ready';

@@ -113,6 +113,10 @@ jest.mock('@maplibre/maplibre-react-native', () => {
     NetworkManager: {
       setConnected: jest.fn(),
     },
+    TransformRequestManager: {
+      addHeader: jest.fn(),
+      removeHeader: jest.fn(),
+    },
     OfflineManager: {
       getPacks: jest.fn(async () => []),
       addListener: jest.fn(async () => {}),

@@ -1,4 +1,6 @@
 import { t } from '../../i18n';
+import { isPlaceholderChartTileBytes } from '../map/chartTileQuality';
+import { buildChartTileUserAgent } from '../map/configureChartTileHttp';
 import { boundsCenter, type LonLatPoint } from '../map/bounds';
 import { getRegionPack } from '../../map/regionPacks';
 import { formatRasterTileUrl, tileCoordsAt } from '../../map/tileMath';
@@ -62,7 +64,9 @@ function probeTileUrls(probeCenter?: LonLatPoint): { baseUrl: string; seamarkUrl
 }
 
 function isProbeResponseOk(status: number): boolean {
-  return status === 200 || status === 206 || status === 416;
+  // 416 Range Not Satisfiable is NOT success — some CDNs reject Range with an empty body.
+  // Treating 416 as OK green-lit downloads when tiles were never proven reachable.
+  return status === 200 || status === 206;
 }
 
 function isRetryableHttpStatus(status: number): boolean {
@@ -97,11 +101,19 @@ async function fetchTileProbe(url: string, fetchFn: typeof fetch): Promise<Respo
     return await fetchFn(url, {
       method: 'GET',
       signal: controller.signal,
-      headers: { Range: 'bytes=0-511' },
+      headers: {
+        Range: 'bytes=0-511',
+        'User-Agent': buildChartTileUserAgent(),
+      },
     });
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function readProbeBody(response: Response): Promise<Uint8Array> {
+  const buffer = await response.arrayBuffer();
+  return new Uint8Array(buffer);
 }
 
 async function probeSingleUrl(
@@ -121,6 +133,17 @@ async function probeSingleUrl(
       const response = await fetchTileProbe(url, fetchFn);
       diagnostics.lastHttpStatus = response.status;
       if (isProbeResponseOk(response.status)) {
+        if (!seamark) {
+          const body = await readProbeBody(response);
+          if (isPlaceholderChartTileBytes(body)) {
+            lastError = errorForHttpStatus(403, false);
+            diagnostics.lastError = lastError.message;
+            if (attempt === PROBE_ATTEMPTS - 1) {
+              throw lastError;
+            }
+            continue;
+          }
+        }
         diagnostics.lastError = null;
         return;
       }
@@ -151,7 +174,7 @@ async function probeSingleUrl(
 /**
  * Try a one-shot fetch against fallback base hosts after the primary exhausted retries.
  * Avoids multi-host × multi-retry delays while still green-lighting downloads when only
- * one OpenSeaMap mirror is healthy.
+ * one OSM / OpenSeaMap host is healthy.
  */
 async function probeBaseTileWithFallback(
   primaryUrl: string,
@@ -170,8 +193,11 @@ async function probeBaseTileWithFallback(
         diagnostics.baseUrl = url;
         diagnostics.lastHttpStatus = response.status;
         if (isProbeResponseOk(response.status)) {
-          diagnostics.lastError = null;
-          return;
+          const body = await readProbeBody(response);
+          if (!isPlaceholderChartTileBytes(body)) {
+            diagnostics.lastError = null;
+            return;
+          }
         }
       } catch {
         diagnostics.attempts += 1;

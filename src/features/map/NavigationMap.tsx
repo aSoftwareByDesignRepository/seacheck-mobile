@@ -14,18 +14,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Device from 'expo-device';
 
 import {
-  getOfflineMapEngineViewportGeneration,
-  getPendingOfflineMapEngineViewport,
   markOfflineMapEngineStyleFailed,
   markOfflineMapEngineStyleLoaded,
-  markOfflineMapEngineViewportPrimed,
-  subscribeOfflineMapEngineViewport,
 } from '../../lib/offline/offlineMapEngineHost';
-import { isMapScreenFocused } from '../../lib/map/mapScreenFocus';
+import { ensureMapLibreNetworkForDownload } from '../../lib/network/mapLibreNetworkGate';
 import { useIsDeviceDisconnected, useOnlineLayersAllowed } from '../../lib/network/connectivity';
 import { useChartCoverageAtPoint } from '../../hooks/useChartCoverageAtPoint';
 import { useExclusiveChartDownloadSession } from '../../hooks/useExclusiveChartDownloadSession';
-import { selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
+import { shouldShowChartRasterTiles, selectHasReadyOfflinePack } from '../../lib/map/chartRasterVisibility';
+import { shouldMountNavigationChartMap } from '../../lib/map/chartMapGlPolicy';
+import { subscribeMapScreenFocus } from '../../lib/map/mapScreenFocus';
+import { subscribeDownloadCoordinatorActivity } from '../../lib/offline/downloadCoordinator';
 import { useMapCameraFollow } from '../../hooks/useMapCameraFollow';
 import { CustomDownloadMapPanel } from '../downloads/CustomDownloadMapPanel';
 import { CustomDownloadCornerSheet } from '../downloads/CustomDownloadCornerSheet';
@@ -124,6 +123,18 @@ export function NavigationMap() {
   const mobTarget = useNavigationStore((s) => s.mobTarget);
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
   const exclusiveChartDownload = useExclusiveChartDownloadSession();
+  const navigationChartAllowed = useSyncExternalStore(
+    (listener) => {
+      const unsubFocus = subscribeMapScreenFocus(listener);
+      const unsubDownload = subscribeDownloadCoordinatorActivity(listener);
+      return () => {
+        unsubFocus();
+        unsubDownload();
+      };
+    },
+    shouldMountNavigationChartMap,
+    () => true,
+  );
   const offlineHydrated = useOfflinePackStore((s) => s.hydrated);
   const hydrateOffline = useOfflinePackStore((s) => s.hydrate);
   const offlineRegions = useOfflinePackStore((s) => s.regions);
@@ -183,23 +194,23 @@ export function NavigationMap() {
   const [mapZoom, setMapZoom] = useState<number>(() => (followMode ? mapFollowZoom : 11));
   const [chartRetryBusy, setChartRetryBusy] = useState(false);
   const [mapStyleLoaded, setMapStyleLoaded] = useState(false);
-  const pendingOfflineViewport = useSyncExternalStore(
-    subscribeOfflineMapEngineViewport,
-    getPendingOfflineMapEngineViewport,
-    () => null,
-  );
-  const offlineViewportGeneration = useSyncExternalStore(
-    subscribeOfflineMapEngineViewport,
-    getOfflineMapEngineViewportGeneration,
-    () => 0,
-  );
-  const reportNavigationChartReady = useCallback(() => {
-    if (!chartStyleUri || !isMapScreenFocused()) return;
-    markOfflineMapEngineStyleLoaded(chartStyleUri);
-    const viewport = getPendingOfflineMapEngineViewport();
-    if (viewport) {
-      markOfflineMapEngineViewportPrimed(viewport, getOfflineMapEngineViewportGeneration());
+  const [navMapReloadNonce, setNavMapReloadNonce] = useState(0);
+  const [prevExclusiveChartDownload, setPrevExclusiveChartDownload] = useState(exclusiveChartDownload);
+
+  // Remount after exclusive download so Android raster tiles recover from GL teardown.
+  if (prevExclusiveChartDownload !== exclusiveChartDownload) {
+    setPrevExclusiveChartDownload(exclusiveChartDownload);
+    if (prevExclusiveChartDownload && !exclusiveChartDownload) {
+      setNavMapReloadNonce((nonce) => nonce + 1);
+      setMapStyleLoaded(false);
     }
+  }
+  const reportNavigationChartReady = useCallback(() => {
+    if (!chartStyleUri) return;
+    if (Platform.OS === 'android') {
+      ensureMapLibreNetworkForDownload();
+    }
+    markOfflineMapEngineStyleLoaded(chartStyleUri);
   }, [chartStyleUri]);
   const [longPressAction, setLongPressAction] = useState<{ lat: number; lon: number; coordLabel: string } | null>(null);
   const [planningSelectedWaypointId, setPlanningSelectedWaypointId] = useState<string | null>(null);
@@ -212,6 +223,7 @@ export function NavigationMap() {
   const onlineLayersAllowed = useOnlineLayersAllowed();
   const chartCoverage = useChartCoverageAtPoint(mapCenter.latitude, mapCenter.longitude);
   const showScaleBar = Platform.OS === 'ios' || Device.isDevice;
+  const chartRasterVisible = shouldShowChartRasterTiles();
   const boatFix = fix ?? lastGoodFix;
   const showDepthOverlay = shouldShowDepthOverlay({
     settingEnabled: mapShowDepthOverlay,
@@ -483,20 +495,29 @@ export function NavigationMap() {
     setMapStyleLoaded(false);
   }, [chartStyleUri]);
 
+  const applyChartRasterVisibility = useCallback(async (visible: boolean) => {
+    try {
+      await mapRef.current?.setSourceVisibility(visible, 'osm-base');
+      await mapRef.current?.setSourceVisibility(visible, 'openseamap-seamarks');
+    } catch {
+      /* map not ready */
+    }
+  }, []);
+
   useEffect(() => {
-    if (!mapStyleLoaded || !pendingOfflineViewport) return;
-    cameraRef.current?.jumpTo({
-      center: pendingOfflineViewport.center,
-      zoom: pendingOfflineViewport.zoom,
-    });
-  }, [mapStyleLoaded, pendingOfflineViewport, offlineViewportGeneration]);
+    if (!mapStyleLoaded) return;
+    if (Platform.OS === 'android') {
+      ensureMapLibreNetworkForDownload();
+    }
+    void applyChartRasterVisibility(chartRasterVisible);
+  }, [chartRasterVisible, mapStyleLoaded, applyChartRasterVisibility]);
 
   const navigationMapKey = useMemo(
     () =>
       Platform.OS === 'android'
-        ? `nav-chart-${formFactor}-${isLandscape ? 'land' : 'port'}-${chartStyleUri ?? 'pending'}`
-        : `nav-chart-${chartStyleUri ?? 'pending'}`,
-    [formFactor, isLandscape, chartStyleUri],
+        ? `nav-chart-${formFactor}-${isLandscape ? 'land' : 'port'}-${chartStyleUri ?? 'pending'}-${navMapReloadNonce}`
+        : `nav-chart-${chartStyleUri ?? 'pending'}-${navMapReloadNonce}`,
+    [formFactor, isLandscape, chartStyleUri, navMapReloadNonce],
   );
 
   useMapCameraFollow({
@@ -756,9 +777,9 @@ export function NavigationMap() {
         {t('downloads.statusSummaryActiveHint')}
       </Text>
     </View>
-  ) : chartStyleUri ? (
-    <View style={styles.mapHost} pointerEvents={screenLocked ? 'none' : 'box-none'}>
-      <View style={styles.mapClip}>
+  ) : chartStyleUri && navigationChartAllowed ? (
+    <View style={styles.mapHost} pointerEvents={screenLocked ? 'none' : 'box-none'} collapsable={false}>
+      <View style={styles.mapClip} collapsable={false}>
         <Map
         key={navigationMapKey}
         ref={mapRef}
@@ -768,6 +789,7 @@ export function NavigationMap() {
         accessibilityLabel={mapAccessibilityLabel}
         accessibilityHint={t('map.chartA11yHint')}
         mapStyle={chartStyleUri}
+        androidView={Platform.OS === 'android' ? 'texture' : undefined}
         attribution
         attributionPosition={{
           bottom: mapBottom.attributionBottom,
@@ -796,7 +818,7 @@ export function NavigationMap() {
       }}
       onDidFailLoadingMap={() => {
         setMapStyleLoaded(false);
-        if (chartStyleUri && isMapScreenFocused()) {
+        if (chartStyleUri) {
           markOfflineMapEngineStyleFailed(chartStyleUri);
         }
       }}
@@ -890,6 +912,13 @@ export function NavigationMap() {
         </View>
       ) : null}
     </View>
+  ) : chartStyleUri ? (
+    <View
+      style={[styles.map, { backgroundColor: '#aad3df' }]}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      testID="map.chartYielded"
+    />
   ) : (
     <View style={[styles.map, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.md }]} accessibilityRole="alert">
       <Text style={{ color: colors.text, fontWeight: '700', fontSize: 16, textAlign: 'center' }}>{t('map.chartInitFailedTitle')}</Text>

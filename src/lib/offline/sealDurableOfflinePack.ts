@@ -36,6 +36,7 @@ export type SealDurableOfflinePackArgs = {
     chartStyleUri?: string,
     isSessionActive?: () => boolean,
     viewport?: OfflineEngineViewport,
+    bounds?: LngLatBounds,
   ) => Promise<OfflinePackStatus>;
   /** Fired as soon as createPack returns so the index can store a durable pack id. */
   onPackCreated: (pack: OfflinePack) => void | Promise<void>;
@@ -105,6 +106,7 @@ async function waitUntilNativePackComplete(
     args.chartStyleUri,
     () => !args.isCancelled() && !settled,
     args.viewport,
+    args.createOptions.bounds,
   );
   if (args.isCancelled()) throw new Error('DOWNLOAD_CANCELLED');
   args.onProgress(activePack, kickstarted);
@@ -168,7 +170,7 @@ async function waitUntilNativePackComplete(
 export async function sealDurableOfflinePack(args: SealDurableOfflinePackArgs): Promise<string> {
   const viewport = offlineEngineViewportFromBounds(args.bounds, args.minZoom);
   await warmupOfflineEngine(args.chartStyleUri, { requireStyleLoaded: false, requireFileSource: true });
-  await ensureOfflineMapEngineReadyForDownload(args.chartStyleUri, viewport);
+  await ensureOfflineMapEngineReadyForDownload(args.chartStyleUri, viewport, args.bounds);
   if (args.isCancelled()) {
     throw new Error('DOWNLOAD_CANCELLED');
   }

@@ -63,14 +63,16 @@ describe('offlineMapEngineHost', () => {
     Object.defineProperty(Platform, 'OS', { configurable: true, value: original });
   });
 
-  it('remounts before download when the hidden host is not primed', () => {
+  it('waits for NavigationMap / preview to prime before download', async () => {
     const original = Platform.OS;
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
 
     const styleUri = 'file:///data/chart-style-download.json';
-    void ensureOfflineMapEnginePrimedBeforeDownload(styleUri);
-    expect(getOfflineMapEngineStyleReloadNonce()).toBe(1);
-    expect(isOfflineMapEngineStyleLoaded(styleUri)).toBe(false);
+    const pending = ensureOfflineMapEnginePrimedBeforeDownload(styleUri);
+    markOfflineMapEngineStyleLoaded(styleUri);
+    await pending;
+
+    expect(isOfflineMapEngineStyleLoaded(styleUri)).toBe(true);
 
     Object.defineProperty(Platform, 'OS', { configurable: true, value: original });
   });
@@ -110,6 +112,51 @@ describe('offlineMapEngineHost', () => {
     jest.useRealTimers();
     Object.defineProperty(Platform, 'OS', { configurable: true, value: original });
   }, 15_000);
+
+  it('uses the visible download map while an active download holds the GL session', async () => {
+    const original = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
+
+    const { downloadCoordinator, resetDownloadCoordinatorForTests } = require('../src/lib/offline/downloadCoordinator') as {
+      downloadCoordinator: { tryBegin: (id: string) => number | null };
+      resetDownloadCoordinatorForTests: () => void;
+    };
+    const {
+      markDownloadMapStyleLoaded,
+      markDownloadMapFrameRendered,
+      registerDownloadMapController,
+      resetDownloadMapHostForTests,
+    } = require('../src/lib/offline/downloadMapHost') as {
+      markDownloadMapStyleLoaded: (uri: string) => void;
+      markDownloadMapFrameRendered: () => void;
+      registerDownloadMapController: (controller: {
+        fitBounds: () => Promise<void>;
+        waitForFrame: () => Promise<void>;
+      }) => void;
+      resetDownloadMapHostForTests: () => void;
+    };
+
+    resetDownloadCoordinatorForTests();
+    resetDownloadMapHostForTests();
+
+    const styleUri = 'file:///data/chart-style-download-map.json';
+    const viewport = { center: [10.15, 54.32] as [number, number], zoom: 10 };
+    const bounds: [number, number, number, number] = [10.05, 54.22, 10.25, 54.42];
+
+    downloadCoordinator.tryBegin('kiel-bay');
+    markDownloadMapStyleLoaded(styleUri);
+    markDownloadMapFrameRendered();
+    registerDownloadMapController({
+      fitBounds: jest.fn(async () => {}),
+      waitForFrame: jest.fn(async () => {}),
+    });
+
+    await ensureOfflineMapEngineReadyForDownload(styleUri, viewport, bounds);
+    expect(isOfflineMapEngineStyleLoaded(styleUri)).toBe(true);
+    expect(isOfflineMapEngineViewportPrimed(viewport)).toBe(true);
+
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: original });
+  });
 
   it('throws when Android style never loads after retries', async () => {
     jest.useFakeTimers();

@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 import { assertChartDownloadNetworkReady } from '../network/downloadNetwork';
 import type { LonLatPoint } from '../map/bounds';
 import { resolveChartTileProbeCenter } from '../network/chartTileProbeCenter';
@@ -18,6 +20,9 @@ export async function prepareChartDownload(
   await assertChartDownloadNetworkReady(probeCenter);
   const chartStyleUri = await ensureChartStyle();
   await yieldToUi();
-  await warmupOfflineEngine(chartStyleUri, { requireStyleLoaded: false, requireFileSource: true });
+  await warmupOfflineEngine(chartStyleUri, {
+    requireStyleLoaded: Platform.OS === 'android',
+    requireFileSource: true,
+  });
   return chartStyleUri;
 }

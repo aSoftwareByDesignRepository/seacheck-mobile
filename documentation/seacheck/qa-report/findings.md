@@ -1,397 +1,255 @@
-# SeaCheck QA Findings — Momos Re-Audit
+# SeaCheck QA Findings — Momos Audit
 
 **Product:** SeaCheck Mobile (`seacheck-mobile` 0.1.3)  
-**Audit date:** 2026-08-31 (UTC) — Momos pass 3 (overlay + download Maestro on dedicated emulator)  
+**Audit date:** 2026-09-04 (UTC) — Momos pass (basemap / GL / i18n / tile probe honesty)  
 **Auditor:** Momos (hostile QA / red-team)  
 **Environment:** Native Jest on developer host — **no** Docker Compose for this app  
-**Code tip:** `main` — commit `Harden overlay gates, confirm drain, and download preflight honesty.` (2026-08-31)
+**Scope:** `nextcloud-dev/mobile/seacheck` only (standalone Expo client; no multi-user API)
 
 ---
 
 ## Executive Summary
 
-**Not banana software for the invariants we attack — but not “perfect forever” either.**  
-This pass found **new High** honesty bugs the prior “0 open High” claim missed: Wi‑Fi policy only in the UI, Overpass skip-gate fail-**open** on NetInfo timeout, and corrupt settings booleans that could silence alarms or skip onboarding. Those are **fixed with red→green proof** below.
+**Fit for a store / functional auditor today: yes — with residual Low gaps below.**  
+**Fit for ECDIS / SOLAS / “certified plotter” claims: no** — product truth, not a bug.
 
-| Severity | Open after this engagement | Fixed this engagement (pass 2 + Aristoteles verify) |
-|----------|----------------------------|--------------------------------|
-| Critical | **0** | — (prior Critical remains fixed) |
-| High | **0** | Wi‑Fi store/hydrate gate; Overpass NetInfo timeout; alarm/onboarding boolean hydrate; screen-lock confirm queue resurface |
-| Medium | **0** | storageCheck zero-estimate fail-closed; captive-portal depth gate (`isInternetReachable`) |
-| Low | Native MapLibre framebuffer pixels not automated; CDN flakes retried once; multi-emulator adb fleet needs serial isolation | ConfirmSheet full queue drain + ScreenLockCoordinator drain-before-dismissAll; depth overlay Maestro (`01c`); preflight download UI honesty |
+This pass did **not** dig up a Critical BOLA or auth hole (there is still **no** multi-user auth surface). It **did** find and kill honesty bugs that would have embarrassed you in front of a mean auditor:
 
-**Fit for client/auditor today?**  
-**Yes** for store/functional review of download integrity + local fail-closed gates — **with** the caveat that full-app UX and native WMS framebuffer pixels are not Maestro-covered.  
-**No** if the auditor demands ECDIS certification or zero residual Low gaps.
+| Severity | Open after this engagement | Fixed this engagement |
+|----------|----------------------------|------------------------|
+| Critical | **0** | — |
+| High | **0** | OSM User-Agent registered only after first paint; tile probe treated HTTP **416** as success (seamark fail-open) |
+| Medium | **0** | Stale CARTO claims in published terms HTML; `common.cancel` missing from all locales |
+| Low | Native MapLibre framebuffer pixels not Maestro-covered; overall line coverage ~64% (UI-heavy); multi-emulator adb fleet still needs serial isolation | GL policy + schematic download previews; i18n static-key contract |
 
-**Proof (executed this pass):** Jest **137 suites / 653 tests** EXIT 0 (no `--forceExit`); mutate **16/16**; a11y contrast+touch PASS; i18n 898×11 PASS; depth WMS live GetMap PNG probes PASS; Maestro cancel+kill **with depth overlay warm-up** (`01c-warm-depth-overlay.yaml`) on dedicated `emulator-5574` (SeaCheck_Maestro_API_33, ~184s + ~199s).
+**Proof (executed this pass):** Jest **144 suites / 689 tests** EXIT 0; typecheck EXIT 0; i18n **899 × 11** PASS; a11y contrast + touch PASS; mutate:core **16/16 killed**; coverage statements **61.38%** / lines **64.11%** (honest, not gamed). Raw output: `test-execution-log.md`.
 
-**Not** a certified ECDIS / SOLAS chart plotter — product truth, not a bug.
+---
+
+## Step 0 — What this app is for (code-derived)
+
+**Purpose:** Offline-first coastal navigation companion — OSM base + OpenSeaMap seamarks, GPS instruments, passage planning, tracks, anchor / XTE / arrival / MOB, Mayday clipboard. **Not** a certified chart plotter.
+
+**Actors & stakes:**
+
+| Actor | If wrong… |
+|-------|-----------|
+| Skipper underway | Blank “ready” charts, missed anchor drag, delayed MOB, unofficial depths trusted as truth |
+| Dockside prep | Downloads burn cellular / lie Ready / wipe packs without notice |
+| Store / privacy auditor | Attribution lies, privacy hosts wrong, missing translation keys in confirm dialogs |
+
+**Invariants attacked this pass (subset of full inventory):**
+
+1. Chart tiles that reach MapLibre must identify SeaCheck (OSM User-Agent) **before** the first map paint.  
+2. Download preflight must not green-light tile CDNs on empty / Range-failure responses.  
+3. At most one exclusive Android MapLibre GL owner (nav / download / embed / offline host).  
+4. Every static `t('…')` key exists in all 11 locales; confirm cancel uses a real string.  
+5. Public legal HTML must not attribute map data to providers the app no longer uses.
 
 ---
 
 ## Critical
 
-*None open.* Prior Critical (Wi‑Fi-only silent allow when NetInfo throws) remains fixed — see `__tests__/downloadPolicy.test.ts` and mutate mutants `download-wifi-netinfo-fail-open`, `download-wifi-offline-as-cellular`.
+*None open. No multi-user API → OWASP BOLA/IDOR N/A for this package.*
 
 ---
 
 ## High
 
-### [HIGH] [FIXED] Wi‑Fi-only policy enforced only in UI — store + hydrate reattach bypassed it
+### [HIGH] [FIXED] OSM User-Agent registered only inside `useEffect` — cold-start tile race
 
 **What is wrong (in plain words):**  
-The “download only on Wi‑Fi” setting was checked in download buttons, but `startDownload` / `startCustomDownload` and hydrate **reattach** after a kill never called that check. A future caller — or a resume on cellular after process death — could burn mobile data without the confirm dialog.
+The app told OpenStreetMap who it is only *after* React finished the first paint. MapLibre can request tiles in that first frame with a generic OkHttp User-Agent. OSM then returns a solid `#aad3df` placeholder that looks exactly like “map broken.”
 
 **Where exactly:**  
-- File: `src/store/offlinePackStore.ts` — `startDownload`, `startCustomDownload`, hydrate reattach loop  
-- File: `src/hooks/usePackDownloadActions.ts` (UI-only gate, previously the sole caller)  
-- Workflow: Downloads → kill mid-pack → reopen on LTE with Wi‑Fi-only ON  
+- File: `App.tsx` (was only `useEffect(() => configureChartTileHttp(), [])`)  
+- File: `src/lib/map/configureChartTileHttp.ts`  
+- Workflow: cold launch → Map tab → raster base tiles  
 
 **How to reproduce it (copy-paste steps):**  
 ```bash
 cd nextcloud-dev/mobile/seacheck
-# Before fix — gate never called from store:
-npx jest __tests__/offlinePackStore.wifiGate.test.ts --ci
-# Observed: ensureDownloadAllowed call count 0 / downloading still possible
+# Contract before fix: configureChartTileHttp only inside useEffect
+grep -n 'configureChartTileHttp' App.tsx
+# Observed: call only inside useEffect — first paint can fetch without UA
 ```
+Adversarial device observation (prior session): blank ocean background until reload after UA landed.
 
 **What should happen instead:**  
-Every store entry that starts or resumes tile transfer must run `ensureDownloadAllowed`. Cancel/offline → throw / leave error, no sweep.
+`configureChartTileHttp()` must run at module load **before** `RootNavigator` mounts any Map.
 
 **Why this matters:**  
-Wi‑Fi-only is a money/roaming safety promise. UI-only enforcement is not an invariant — it is hope.
+A skipper who trusts “charts are online” gets a blank blue chart. That is a navigation honesty failure, not a cosmetic flake.
 
 **Exact fix instructions:**  
-1. Add `assertDownloadWifiPolicy()` wrapping `ensureDownloadAllowed` in `offlinePackStore.ts`.  
-2. Call it from `startDownload`, `startCustomDownload`, and before hydrate `reattachCacheDownload` / `reattachNativeDownload`.  
-3. Default Jest NetInfo mock must include `type: 'wifi'` so honest paths still pass.
+1. Open `App.tsx`.  
+2. Call `configureChartTileHttp()` at module scope (before `export default function App`).  
+3. Keep the idempotent call inside `useEffect` as a safety net.  
+4. Run `__tests__/configureChartTileHttp.test.ts` › `App tile User-Agent boot contract`.
 
 **Proof this is fixed:**  
-- `__tests__/offlinePackStore.wifiGate.test.ts` › cellular cancel refuses `startDownload`  
-- Red before (gate not called), green after (logged 2026-08-31)
+- `__tests__/configureChartTileHttp.test.ts` › registers configureChartTileHttp at module scope before export default  
+- Red contract before (no module-scope call) → green after (2026-09-04 log)
 
 ---
 
-### [HIGH] [FIXED] NetInfo timeout treated Overpass as online (privacy fail-open)
+### [HIGH] [FIXED] Tile probe treated HTTP 416 as “tiles work” (seamark fail-open)
 
 **What is wrong (in plain words):**  
-When NetInfo hung past 4s, the code logged “treating as offline” but `fetchIsEffectivelyOffline()` returned **false** (“not offline”). Chart-object lookup then POSTed exact lat/lon to Overpass.
+The download preflight accepted HTTP **416 Range Not Satisfiable** as success. For seamark tiles it did not even read the body. A CDN that hates `Range` headers (or returns empty 416s) could green-light a download that then fails or packs empty overlays.
 
 **Where exactly:**  
-- File: `src/lib/network/connectivity.ts` — `fetchIsEffectivelyOffline`  
-- Callers: `src/lib/seamarks/querySeamark.ts`  
-
-**How to reproduce it (copy-paste steps):**  
-```bash
-npx jest __tests__/connectivity.test.ts -t 'NetInfo timeout as offline' --ci
-# Before: Expected true, Received false
-```
-
-**What should happen instead:**  
-Timeout → offline for skip-gates (`true`). Online gate already returned `false` on null — keep that.
-
-**Why this matters:**  
-Privacy and “no network when we do not know” — the log lied; the behavior burned coordinates.
-
-**Exact fix instructions:**  
-In `fetchIsEffectivelyOffline`, `if (!state) return true`.
-
-**Proof this is fixed:**  
-- `__tests__/connectivity.test.ts` › treats NetInfo timeout as offline…  
-- Red → green 2026-08-31
-
----
-
-### [HIGH] [FIXED] Corrupt settings hydrate could silence alarms or skip onboarding
-
-**What is wrong (in plain words):**  
-Only `downloadWifiOnly` / depth / XTE used strict boolean parsing. `alarmSoundEnabled: 0` became falsy → alarms silent. `onboardingCompleted: "false"` via `Boolean()` became **true** → disclaimer skipped.
-
-**Where exactly:**  
-- File: `src/store/settingsStore.ts` hydrate  
-
-**How to reproduce it (copy-paste steps):**  
-```bash
-npx jest __tests__/settingsStore.booleanHydrate.test.ts --ci
-# Before: alarmSoundEnabled false / onboardingCompleted true for corrupt values
-```
-
-**What should happen instead:**  
-Only real JSON booleans restore; anything else uses safe defaults (alarms ON, onboarding not completed).
-
-**Why this matters:**  
-Silent alarms and skipped navigation disclaimer are safety defects, not cosmetics.
-
-**Exact fix instructions:**  
-Route alarm/onboarding/dismiss/map toggles through `parsePersistedBoolean(...)`.
-
-**Proof this is fixed:**  
-- `__tests__/settingsStore.booleanHydrate.test.ts` (all cases)  
-- Red → green 2026-08-31
-
----
-
-### [HIGH] [FIXED] Corrupt `downloadWifiOnly` hydrate could disable Wi‑Fi-only policy
-
-**What is wrong (in plain words):**  
-Settings restore used `parsed.downloadWifiOnly ?? true`. A corrupted store value of `0` or the string `"false"` is not `null`/`undefined`, so it was kept. Those values are falsy in JS, so Wi‑Fi-only checks treated the setting as **off** and skipped the cellular confirm.
-
-**Where exactly:**  
-- File: `src/store/settingsStore.ts` (hydrate)  
-- Workflow: boot → Downloads on cellular with Wi‑Fi-only intended ON  
+- File: `src/lib/network/chartTileReachability.ts` — `isProbeResponseOk`  
+- Workflow: Downloads → Start pack → preflight probe  
 
 **How to reproduce it (copy-paste steps):**  
 ```bash
 cd nextcloud-dev/mobile/seacheck
-# Before fix — failing:
-npx jest __tests__/settingsStore.downloadWifiOnly.test.ts --forceExit
-# Observed: Expected true, Received 0 / "false"
+npx jest __tests__/chartTileReachability.test.ts -t '416 on seamark' --ci
+# Before fix: Received promise resolved instead of rejected
 ```
 
 **What should happen instead:**  
-Only a real boolean `false` may turn Wi‑Fi-only off. Anything else falls back to `true` (safe default).
+Only **200** and **206** count as reachable. 416 is a hard failure for that URL.
 
 **Why this matters:**  
-A bit-rot or bad write in AsyncStorage could burn roaming data or skip the user-facing cellular warning — the exact class of bug the prior Critical engagement fixed for NetInfo throws.
+Preflight is the last honesty gate before burning Wi‑Fi time and lying about “charts available.” Fail-open here is inexcusable.
 
 **Exact fix instructions:**  
-1. Open `src/store/settingsStore.ts`.  
-2. Hydrate with `parsePersistedBoolean(parsed.downloadWifiOnly, true)` (literal `true` fallback — it is not on `CRUISE_PASSAGE_DEFAULTS`).  
-3. Re-run `__tests__/settingsStore.downloadWifiOnly.test.ts`.
+1. In `isProbeResponseOk`, return `status === 200 || status === 206` only.  
+2. Keep placeholder-byte rejection for base tiles.  
+3. Re-run the 416 tests — must reject.
 
 **Proof this is fixed:**  
-- `__tests__/settingsStore.downloadWifiOnly.test.ts` › numeric `0` / string `"false"` → stays `true`; boolean `false` restores off.  
-- Red before fix, green after (logged in `test-execution-log.md`).
-
----
-
-### [HIGH] [FIXED] Cancel during seal could restore a just-created pack as Ready
-
-**What is wrong (in plain words):**  
-Between `createPack` (index gets native pack id) and UI catch-up (still `cache:…`), Cancel saw “indexed id ≠ UI id” and **restored** the native pack. If that pack was already complete, Cancel left the region **Ready** — cancel did not cancel.
-
-**Where exactly:**  
-- File: `src/store/offlinePackStore.ts` — `cancelDownload`  
-- Workflow: Downloads → mid-seal → Cancel  
-
-**How to reproduce it:**  
-```bash
-npx jest __tests__/offlinePackStore.durableDownload.test.ts -t 'cancel during seal' --forceExit
-```
-
-**What should happen instead:**  
-If the in-flight UI pack id is still cache-backed, any newer native id in the index belongs to the cancelled session — **delete it**, never restore as Ready.
-
-**Why this matters:**  
-Skipper hits Cancel, UI looks idle, charts still claim Ready from a pack they meant to abort — navigation integrity lie.
-
-**Exact fix instructions:**  
-1. In `cancelDownload`, when `indexedPackId !== packId` and `packId` is `cache:*` (or not native), `removeNativePack(indexedPackId)` and fall through to idle cleanup.  
-2. Only restore a differing native id when it is **complete** and the in-flight id was also native (prior ready pack case).
-
-**Proof this is fixed:**  
-- `__tests__/offlinePackStore.durableDownload.test.ts` › `cancel during seal (index native, UI still cache:*) must not leave Ready`
-
----
-
-### [HIGH] [FIXED] Kill after sweep 100% / before createPack demoted instead of sealing
-
-**What is wrong (in plain words):**  
-If the app died after ambient sweep finished (`sweepCompleted >= sweepTotal`) but before `OfflineManager.createPack`, hydrate treated the row as ambient-only Ready legacy and **demoted** it. The long sweep work was thrown away; seal was never resumed.
-
-**Where exactly:**  
-- File: `src/store/offlinePackStore.ts` — hydrate + `buildRecoveredRegionsFromIndex`  
-- Workflow: Downloads → sweep completes → process death → reopen  
-
-**How to reproduce it:**  
-```bash
-npx jest __tests__/offlinePackStore.durableDownload.test.ts -t 'between sweep-complete and createPack' --forceExit
-```
-
-**What should happen instead:**  
-Treat sweep-complete + still `cacheBacked` + bounds as **downloading / seal-pending** and reattach (sweep at 100% → `runSeal`).
-
-**Why this matters:**  
-Marina Wi‑Fi downloads are long; process death after the hard part must resume, not force a full re-download with a scary “retired” error.
-
-**Exact fix instructions:**  
-1. Add `sweepDonePendingSeal` when `sweepCompleted >= sweepTotal` and bounds exist.  
-2. Mark `downloading` and reattach like mid-sweep.  
-3. Do **not** run ambient-retired demotion for that case.
-
-**Proof this is fixed:**  
-- `__tests__/offlinePackStore.durableDownload.test.ts` › `resumes seal after process death between sweep-complete and createPack`
-
----
-
-### [HIGH] [FIXED] Depth overlay assumed online before first NetInfo sample
-
-**What is wrong (in plain words):**  
-`useIsDeviceDisconnected` started as `false` (not disconnected). With depth enabled, the overlay could mount for a frame on airplane-mode boot and fire WMS requests before NetInfo said offline.
-
-**Where exactly:**  
-- Files: `src/lib/network/connectivity.ts`, `NavigationMap.tsx`, `MapDepthChip.tsx`, `ChartDataSettingsGroup.tsx`  
-- Workflow: depth ON + cold start offline  
-
-**What should happen instead:**  
-Online-only layers use fail-closed `useOnlineLayersAllowed()` — `false` until first NetInfo sample with `isConnected === true`.
-
-**Why this matters:**  
-Unexpected WMS traffic offline; chip/settings can disagree with map briefly.
-
-**Exact fix instructions:**  
-1. Add `useOnlineLayersAllowed` in `connectivity.ts`.  
-2. Gate `shouldShowDepthOverlay` with `isOffline: !onlineLayersAllowed`.  
-3. Align chip + settings pause copy to the same hook.
-
-**Proof this is fixed:**  
-- Code path + existing `shouldShowDepthOverlay` unit matrix; connectivity suite still green. Native first-paint race closed by initial `allowed=false`.
+- `__tests__/chartTileReachability.test.ts` › rejects HTTP 416…  
+- `__tests__/chartTileReachability.test.ts` › rejects 416 on seamark…  
+- Red → green 2026-09-04
 
 ---
 
 ## Medium
 
-### [MEDIUM] [FIXED] “Download all” toast counted in-flight packs as ready
+### [MEDIUM] [FIXED] Published terms HTML still credited CARTO after basemap migration
 
 **What is wrong (in plain words):**  
-`handleDownloadAll` incremented `ready` when state was `downloading`, so the passage toast could claim success for packs still running.
+In-app attribution and markdown terms correctly say OpenStreetMap + OpenSeaMap. The **HTML** terms pages users open from Settings still said map data comes from CARTO and linked `carto.com/attributions`.
 
 **Where exactly:**  
-- File: `src/hooks/usePackDownloadActions.ts`  
-- UI: `PassageCoverageCard.tsx` → `passage.downloadAllProgress`  
+- `docs/play-store/publish/en/terms-seacheck-mobile.html`  
+- `docs/play-store/publish/de/nutzungsbedingungen-seacheck-mobile.html`  
+- Code truth: `src/lib/settings/chartBaseStyle.ts` → `tile.openstreetmap.org` + `tiles.openseamap.org/seamark`
+
+**How to reproduce it:**  
+```bash
+grep -n CARTO docs/play-store/publish/en/terms-seacheck-mobile.html
+# Before: lines claiming CARTO volunteers + carto.com link
+```
 
 **What should happen instead:**  
-Count `ready` only when `state === 'ready'`.
+Legal HTML matches the live basemap providers.
+
+**Why this matters:**  
+Store / privacy auditors compare Settings → Terms to the network hosts. A dead provider in the terms is a documentation lie.
+
+**Exact fix instructions:**  
+Remove CARTO from the notice paragraph and attribution list in EN + DE HTML (done this pass). Re-deploy publish copies if the hosted Nextcloud pages mirror these files.
 
 **Proof this is fixed:**  
-- Code change in `usePackDownloadActions.ts` (sequential `handleDownload` already awaits completion for Ready on success path).
+```bash
+grep -R CARTO docs/play-store/publish/*/terms*.html docs/play-store/publish/*/nutzungsbedingungen*.html || echo 'clean'
+```
 
 ---
 
-### [MEDIUM] [FIXED] Anchor “limited mode” can look like a full watch
+### [MEDIUM] [FIXED] Missing `common.cancel` in all 11 locales
 
 **What is wrong (in plain words):**  
-Anchor alarm can activate without background location / notifications / battery exemption after confirmation. There was no durable, impossible-to-miss “LIMITED WATCH” chrome after restart.
+Depth-overlay confirm used `t('common.cancel')` but catalogs only had `common.dismiss`. Users saw a raw key / missing translation on a safety dialog.
 
 **Where exactly:**  
-- `src/lib/anchor/activateAnchorAlarm.ts`  
-- `src/store/navigationStore.ts` (`armedLimited`)  
-- `src/features/map/AnchorLimitedBanner.tsx`  
+- `src/lib/settings/depthOverlayEnableConfirm.ts`  
+- `src/i18n/locales/*.json` `common` block  
+
+**How to reproduce it:**  
+```bash
+node -e "const e=require('./src/i18n/locales/en.json'); console.log(e.common.cancel)"
+# Before: undefined
+```
 
 **What should happen instead:**  
-Persist limited flag + permanent map chrome until permissions are complete.
+`common.cancel` present and non-empty in every supported locale.
+
+**Exact fix instructions:**  
+Add `cancel` next to `dismiss` in all 11 locale files (done). Extend `localeParity.test.ts` to scan static `t('…')` keys against English (done).
 
 **Proof this is fixed:**  
-- Persist `anchorAlarm.armedLimited`; hydrate restores it.  
-- Non-dismissible `map.anchorLimitedBanner`; warning FAB/instrument/settings chrome.  
-- `__tests__/anchorLimitedWatch.durable.test.ts` — activate → persist → hydrate still limited; refresh clears when full.
+- `src/i18n/__tests__/localeParity.test.ts` › provides common.cancel…  
+- › includes every static t("…") key…  
+- `npm run i18n:parity` → 899 keys × 11 locales PASS
 
 ---
 
-### [MEDIUM] [FIXED] Privacy copy understates Overpass precision
+## Low / residual gaps
 
-**What is wrong (in plain words):**  
-Privacy text emphasized “map areas”; seamark long-press lookup posts near-exact lat/lon to Overpass.
-
-**Where exactly:**  
-- `docs/play-store/privacy-mobile-en.md` / DE  
-- `docs/play-store/DATA-SAFETY.md`  
-- `src/lib/seamarks/querySeamark.ts`  
-
-**What should happen instead:**  
-State that chart-object lookup may send the tapped coordinates to Overpass mirrors when online.
-
-**Proof this is fixed:**  
-- Privacy EN/DE + Data Safety now name Overpass tap lat/lon and kumi.systems failover.
+| Gap | Why still open | Severity |
+|-----|----------------|----------|
+| Native MapLibre framebuffer / WMS pixels not asserted in Maestro | Needs device framebuffer capture tooling | Low |
+| Jest line coverage ~64% | UI shells dominate uncovered lines; core safety mutants all killed | Low (not Critical) |
+| Rapid Map↔Downloads tab switch can flash ocean placeholder while GL yields | By design for Android single-GL; schematic fallback covers pack preview | Low |
+| Hosted Nextcloud terms URLs may lag local `docs/play-store/publish/*` until redeploy | Ops follow-up | Low |
+| No multi-emulator isolation in human adb sessions | Documented; Maestro runner isolates | Low |
 
 ---
 
-## Low
+## Auth / API checklist (mandatory)
 
-### [LOW] [FIXED] README publisher link used `http://` for nextcloud.software-by-design.de
+| OWASP-style item | Result |
+|------------------|--------|
+| BOLA / IDOR | **N/A** — no user accounts / object APIs |
+| Broken authentication | **N/A** — device-local app |
+| Mass assignment / property auth | **N/A** |
+| Resource consumption | Tile budget + pack size gates unit-tested; no remote API pagination |
+| Function-level auth | **N/A** |
+| Business-flow abuse | Download coordinator single-flight + Wi‑Fi gate covered |
+| SSRF | No user-controlled fetch URLs; depth WMS allowlisted; Overpass hosts fixed |
+| Security misconfiguration | Dev client only; no production debug API in app |
+| Injection | SQLite parameterized; Overpass QL uses numeric lat/lon interpolation only |
+| Inventory / stale endpoints | No app HTTP server |
+| Session / JWT | **N/A** |
+| Schema validation | Local stores + confirm gates |
 
-Now `https://nextcloud.software-by-design.de/`.
-
-### [LOW] [FIXED] Maestro device E2E for cancel-mid + kill-mid download honesty
-
-Flows under `.maestro/` + `scripts/maestro-e2e.sh` (`npm run e2e:maestro:cancel` / `:kill`).
-
-**Proof (2026-08-31 local, pass 3):**
-- `02-download-cancel-mid` → **PASS** on `emulator-5574` (SeaCheck_Maestro_API_33); includes `01a-warm-map` + `01c-warm-depth-overlay` (`map.depthChip` visible) before Kiel Bay download; cancel mid-flight → no Ready banner (~184s).
-- `03-download-kill-mid` → **PASS** on same `emulator-5574`; depth overlay warm-up + killApp mid-flight → relaunch → no Ready banner (~199s).
-- Script disables other `softwarebydesign.*` packages for the run (DutyCheck FG steal) and re-enables on EXIT.
-- **Operational note:** With 7 concurrent adb emulators, first run timed out on JS UI wait (launcher ANR). Isolating to one serial (`adb disconnect` rivals) fixed it — not an app bug, but Maestro operators must not share adb with a fleet.
-
-**CI:** `.github/workflows/e2e-maestro.yml` builds a debug APK, boots **one** API-33 emulator, runs `npm run ci:maestro` (cancel then kill as **separate** clear+run invocations; one retry each for CDN flakes). Also on `workflow_dispatch` / weekly schedule / download-path PRs.
-
-**CI honesty fix (2026-08-30):** Prior `ci-maestro.sh` read `$?` after `if`, which is always 0 in bash — a failed Maestro could still print `ci-maestro passed` (false green on run 33327634960). Exit codes are now captured with `set +e` / explicit `flow_rc`. Onboarding helper accepts warm start (`tab.map` already visible).
-
-**CI false-red (2026-08-30 run [33329507994](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33329507994)):** Maestro cancel printed `==> OK` twice, then EXIT trap crashed on `${#DISABLED_RIVALS[@]:-0}` (`bad substitution`) → exit 1. Fixed: valid `${#DISABLED_RIVALS[@]}` + trap `|| true`.
-
-**Proof:** GitHub Actions run [33330890339](https://github.com/aSoftwareByDesignRepository/seacheck-mobile/actions/runs/33330890339) (`77db70d`): **cancel + kill both PASS on attempt 1** on a single API-33 emulator; `ci-maestro passed`. Earlier false-green (33327634960) and EXIT-trap false-red (33329507994) are closed.
-
-### [LOW] [FIXED] Jest worker timer leaks after offlinePackStore tests
-
-Download map linger / post-teardown delays are **zero under `NODE_ENV=test`** (`downloadMapConstants`). Full suite exits cleanly without `--forceExit` (`forceExit: false` in `jest.config.js`). CI unit job runs `npm run ci:unit` with no forceExit.
-
-### [LOW] [FIXED] `storageCheck` fail-opens when free-space API missing
-
-`ensureStorageForDownload` returns `{ ok: false, reason: 'unavailable' }` on throw / missing API / NaN free bytes **and** on non-positive / non-finite `estimatedKb` (no silent skip). `assertStorageForBounds` blocks the download with `downloads.errorStorageUnavailable`.
-
-### [LOW] qa-report inventory lagged WMS hosts (fixed in this write-up)
+Residual sensitive surface: vessel MMSI / Mayday clipboard / Overpass lat-lon privacy (documented; NetInfo timeout fail-closed for skip gate — prior pass).
 
 ---
 
 ## Documentation-vs-code mismatches
 
-| Claim | Code reality | Severity |
-|-------|--------------|----------|
-| Terms proprietary | AGPL in LICENSE + terms | Fixed prior |
-| Ready = ambient cache | Sweep + OfflineManager seal | Fixed prior |
-| Privacy “map areas” only | Overpass gets tap lat/lon | Fixed — privacy + Data Safety |
-| README http publisher | HTTPS elsewhere | Fixed |
-| Prior qa-report “0 High” | New Highs found & fixed this pass | Updated herein |
+| Doc | Code | Status |
+|-----|------|--------|
+| QA `risk-coverage-inventory.md` still listed `t1/t2.openseamap.org` basemap | `chartBaseStyle.ts` → `tile.openstreetmap.org` | **Updated this pass** |
+| HTML terms CARTO | OSM + OpenSeaMap only | **Fixed this pass** |
+| Markdown terms / privacy | Already OSM-correct | OK |
+| In-app `MAP_ATTRIBUTION` | OSM + OpenSeaMap | OK |
 
 ---
 
 ## Test suite quality
 
-| Metric | Result |
-|--------|--------|
-| Full Jest | **137 passed / 653 tests** (exits without `--forceExit`, 2026-08-31 Momos pass 3) |
-| Skipped tests | **0** |
-| a11y contrast | PASS |
-| a11y touch targets | PASS |
-| i18n parity | PASS (898 keys × 11) |
-| Mutation core | **16/16 killed** |
-
-New / extended adversarial tests this engagement:  
-- `__tests__/settingsStore.downloadWifiOnly.test.ts`  
-- durableDownload: seal-pending resume + cancel-not-Ready  
-- `__tests__/anchorLimitedWatch.durable.test.ts`  
-- `storageCheck` fail-closed (throw + missing API)  
-- download honesty: style-only Ready rejected; frozen-tile stall; cancel settles seal; cancel-after-seal keeps Ready; completing UI @ 99% before Ready  
-
----
-
-## Auth / API checklist (OWASP-shaped)
-
-| Check | Result |
-|-------|--------|
-| BOLA/IDOR | N/A — no multi-user API |
-| Broken auth | N/A — no accounts |
-| Mass assignment | Local settings Zod-ish parsers; Wi‑Fi boolean now strict |
-| Resource consumption | Pack size validation + storage check (fail-closed on API miss) |
-| SSRF | Depth WMS allowlisted endpoints only; Overpass fixed hosts |
-| Injection | SQLite parameterized; WMS layer regex allowlist |
-| Sensitive flows | Download exclusivity + confirm on cellular / depth enable |
+- Skipped / `.todo` / `expect(true)` tautologies: **none found**  
+- Mutation (`npm run mutate:core`): **16/16 killed**  
+- New adversarial tests this pass: 416 probe rejection, App UA boot contract, i18n static-key scan, `common.cancel` presence  
+- Coverage (honest): statements 61.38%, branches 54.63%, lines 64.11% — UI-heavy residual, not “100% by stubbing”
 
 ---
 
 ## Open Questions
 
-1. Product choice: limited watch still arms after explicit confirm; chrome stays LIMITED until background + notifications + battery exemption + BG task are healthy.  
-2. Native MapLibre WMS visual render on device (pixels) — still not automated as a framebuffer screenshot; live GetMap PNG probes + DepthOverlay mount URL allowlist tests + Maestro `map.depthChip` visibility cover the contract (chip presence, not pixel colour). Offline pack seamark/base tiles are exercised by download start (OpenSeaMap HTTPS) but not per-tile checksum in Maestro.  
-3. ~~ConfirmSheet unmount with a queued second confirm~~ — **FIXED**: `cancelAllPending()` drains visible + queue; ConfirmSheet unmount / backdrop / `dismissAll` onClose use it; ScreenLockCoordinator drains before `dismissAll` so lock cannot resurface a queued dialog (`__tests__/confirmStore.test.ts`, `__tests__/ScreenLockCoordinator.test.tsx`).  
-4. ~~Should `useOnlineLayersAllowed` require `isInternetReachable === true`?~~ — **FIXED**: gate uses `isEffectivelyOnline` (connected **and** reachable). Honest weakness: Android false-negative reachability can hide optional depth until NetInfo recovers — preferred over WMS on captive portals.
+1. **Production upload pending (operator):** Local PHP templates + Play mirrors are fixed and packed at `/tmp/seacheck-legal-deploy/seacheck-legal-deploy.tar.gz` via `website/scripts/pack_seacheck_legal_deploy.sh`. Live `nextcloud.software-by-design.de` still served CARTO as of 2026-09-04 until FTP/SFTP upload + deletion of stale `*.html` twins. Verify with the curl gates printed by the pack script.  
+2. Should OSM tile usage volume / caching policy get a written ops budget before marketing pushes mass downloads?  
+3. Is Maestro on `SeaCheck_Maestro_API_33` still the required gate for download cancel/kill before any Play upload of this tip?
+
+---
+
+## Verdict for the mean auditor
+
+Ship the functional/store story **after** confirming hosted terms match the fixed HTML. Do **not** claim certified navigation. Do **not** claim “perfect coverage” — claim **16/16 core mutants dead** and **689 passing honesty tests**, which is what actually matters for this product’s stakes.

@@ -81,7 +81,7 @@ describe('offlinePackStore.hydrate', () => {
     resetDownloadMapHostForTests();
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
-    await AsyncStorage.setItem('seacheck.chart.basemapId', 'openseamap-osm-v1');
+    await AsyncStorage.setItem('seacheck.chart.basemapId', 'osm-standard-v1');
     getPacks.mockReset();
     addListener.mockReset();
     addListener.mockResolvedValue(undefined);

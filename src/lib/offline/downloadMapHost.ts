@@ -12,6 +12,7 @@ export type DownloadMapController = {
 let styleReady = false;
 let styleUri: string | null = null;
 let controller: DownloadMapController | null = null;
+let frameRendered = false;
 let styleWaiters: Array<(ready: boolean) => void> = [];
 let controllerWaiters: Array<(ready: boolean) => void> = [];
 /** Bumped when the visible download map unmounts — stale native callbacks are ignored. */
@@ -22,26 +23,35 @@ const STYLE_WAIT_MS = isTestEnv ? 250 : 25_000;
 const CONTROLLER_WAIT_MS = isTestEnv ? 250 : 20_000;
 const FRAME_WAIT_MS = isTestEnv ? 0 : 4_000;
 
-function notifyStyleWaiters(ready: boolean): void {
-  const waiters = styleWaiters;
-  styleWaiters = [];
-  waiters.forEach((resolve) => resolve(ready));
+function isFullyReady(expectedStyleUri?: string): boolean {
+  if (!styleReady || controller == null || !frameRendered) return false;
+  if (expectedStyleUri != null && styleUri !== expectedStyleUri) return false;
+  return true;
 }
 
-function notifyControllerWaiters(ready: boolean): void {
-  const waiters = controllerWaiters;
+function notifyReadyWaiters(ready: boolean): void {
+  const style = styleWaiters;
+  const ctrl = controllerWaiters;
+  styleWaiters = [];
   controllerWaiters = [];
-  waiters.forEach((resolve) => resolve(ready));
+  style.forEach((resolve) => resolve(ready));
+  ctrl.forEach((resolve) => resolve(ready));
 }
 
 export function resetDownloadMapHostForTests(): void {
   styleReady = false;
   styleUri = null;
   controller = null;
+  frameRendered = false;
   downloadMapGeneration = 0;
-  // Resolve pending waits immediately so Jest does not leak 20–25s timers.
-  notifyStyleWaiters(false);
-  notifyControllerWaiters(false);
+  notifyReadyWaiters(false);
+}
+
+/** Clear stale callbacks before a new exclusive download session. */
+export function resetDownloadMapSession(): void {
+  invalidateDownloadMapGeneration();
+  frameRendered = false;
+  styleUri = null;
 }
 
 export function getDownloadMapGeneration(): number {
@@ -52,9 +62,9 @@ export function getDownloadMapGeneration(): number {
 export function invalidateDownloadMapGeneration(): number {
   downloadMapGeneration += 1;
   styleReady = false;
+  frameRendered = false;
   controller = null;
-  notifyStyleWaiters(false);
-  notifyControllerWaiters(false);
+  notifyReadyWaiters(false);
   return downloadMapGeneration;
 }
 
@@ -62,37 +72,56 @@ export function markDownloadMapStyleLoaded(uri: string, generation = downloadMap
   if (generation !== downloadMapGeneration) return;
   styleUri = uri;
   styleReady = true;
-  notifyStyleWaiters(true);
+  if (frameRendered) {
+    notifyReadyWaiters(true);
+  }
+}
+
+export function markDownloadMapFrameRendered(generation = downloadMapGeneration): void {
+  if (generation !== downloadMapGeneration) return;
+  frameRendered = true;
+  if (styleReady && controller != null) {
+    notifyReadyWaiters(true);
+  }
 }
 
 export function markDownloadMapStyleFailed(uri: string, generation = downloadMapGeneration): void {
   if (generation !== downloadMapGeneration) return;
   if (styleUri === uri) {
     styleReady = false;
+    frameRendered = false;
   }
-  notifyStyleWaiters(false);
+  notifyReadyWaiters(false);
 }
 
 export function registerDownloadMapController(next: DownloadMapController | null): void {
   controller = next;
-  notifyControllerWaiters(next != null);
+  if (next != null && styleReady && frameRendered) {
+    notifyReadyWaiters(true);
+  } else if (next == null) {
+    notifyReadyWaiters(false);
+  }
 }
 
 export function isDownloadMapReady(): boolean {
-  return styleReady && controller != null;
+  return isFullyReady();
+}
+
+export function isDownloadMapStyleLoaded(expectedStyleUri: string): boolean {
+  return isFullyReady(expectedStyleUri);
 }
 
 export async function waitForDownloadMapReady(
   expectedStyleUri: string,
   timeoutMs = STYLE_WAIT_MS,
 ): Promise<boolean> {
-  if (styleReady && styleUri === expectedStyleUri && controller != null) return true;
+  if (isFullyReady(expectedStyleUri)) return true;
 
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
       styleWaiters = styleWaiters.filter((w) => w !== onReady);
       controllerWaiters = controllerWaiters.filter((w) => w !== onReady);
-      resolve(styleReady && styleUri === expectedStyleUri && controller != null);
+      resolve(isFullyReady(expectedStyleUri));
     }, timeoutMs);
 
     const onReady = (ready: boolean) => {
@@ -103,7 +132,7 @@ export async function waitForDownloadMapReady(
         resolve(false);
         return;
       }
-      if (styleReady && styleUri === expectedStyleUri && controller != null) {
+      if (isFullyReady(expectedStyleUri)) {
         clearTimeout(timer);
         styleWaiters = styleWaiters.filter((w) => w !== onReady);
         controllerWaiters = controllerWaiters.filter((w) => w !== onReady);
