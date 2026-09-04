@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 import { useFormFactor } from '../hooks/useFormFactor';
@@ -15,7 +16,14 @@ import { t } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
 import { useKeyboardAwareScroll } from './keyboardAware';
 
+/** Headerless tab roots own the status-bar strip; nested stack headers must not. */
 const TAB_SCREEN_EDGES: Edge[] = ['top', 'left', 'right'];
+const UNDER_HEADER_EDGES: Edge[] = ['left', 'right'];
+
+function useScreenEdges(): Edge[] {
+  const headerHeight = useHeaderHeight();
+  return headerHeight > 0 ? UNDER_HEADER_EDGES : TAB_SCREEN_EDGES;
+}
 
 type ScreenProps = PropsWithChildren<{
   testID?: string;
@@ -41,6 +49,7 @@ export function Screen({
   children,
 }: ScreenProps) {
   const { colors, spacing } = useTheme();
+  const edges = useScreenEdges();
   const { formFactor } = useFormFactor();
   const contentMaxWidth = formFactor === 'expanded' ? 1200 : formFactor === 'medium' ? 960 : undefined;
   const basePad = spacing.xl;
@@ -81,7 +90,7 @@ export function Screen({
 
   if (loading && !children) {
     return (
-      <SafeAreaView edges={TAB_SCREEN_EDGES} testID={testID} style={[styles.safe, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={edges} testID={testID} style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} accessibilityLabel={t('common.loading')} />
         </View>
@@ -91,7 +100,7 @@ export function Screen({
 
   if (!scroll) {
     return (
-      <SafeAreaView edges={TAB_SCREEN_EDGES} testID={testID} style={[styles.safe, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={edges} testID={testID} style={[styles.safe, { backgroundColor: colors.background }]}>
         <View
           style={[
             styles.staticBody,
@@ -113,7 +122,7 @@ export function Screen({
   }
 
   return (
-    <SafeAreaView edges={TAB_SCREEN_EDGES} testID={testID} style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={edges} testID={testID} style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
         ref={assignScrollRef}
         keyboardShouldPersistTaps={scrollProps.keyboardShouldPersistTaps}
