@@ -1,19 +1,20 @@
-# SeaCheck — Risk & Coverage Inventory (Momos 2026-09-04)
+# SeaCheck — Risk & Coverage Inventory (Momos 2026-09-06)
 
-**App:** `nextcloud-dev/mobile/seacheck` (SeaCheck Mobile v0.1.3)  
-**Environment:** Native Node/Jest (no `docker-compose.yml` for this app)  
-**Auditor:** Momos
+**App:** `nextcloud-dev/mobile/seacheck` (SeaCheck Mobile **v0.1.5**)  
+**Environment:** Native Node/Jest (no `docker-compose.yml` for this app). Maestro on `emulator-5562`, Metro `:8092`.  
+**Auditor:** Momos  
+**Code is source of truth** — docs below match code verified this date.
 
 ## Purpose (verified against code)
 
-Offline-first maritime navigation companion: OpenStreetMap base tiles + OpenSeaMap seamarks, optional online GEBCO/track depth WMS, GPS instruments, passage planning, tracks, anchor / XTE / arrival / MOB, Mayday clipboard. **Not** a certified chart plotter. **No server accounts** — device-local SQLite + AsyncStorage only.
+Offline-first maritime navigation companion: OpenStreetMap base + OpenSeaMap seamarks, optional online depth WMS, GPS instruments, passage planning, tracks, anchor / XTE / arrival / MOB, Mayday clipboard. **Not** ECDIS. **No server accounts** — device-local SQLite + AsyncStorage only.
 
 ## Actors & stakes
 
 | Actor | Stakes if wrong |
 |-------|-----------------|
-| Skipper underway | Blank “ready” charts, unofficial depths trusted, missed anchor drag, false XTE, MOB delay |
-| Dockside prep | Downloads burn cellular / fail silently / corrupt packs / probe fail-open |
+| Skipper underway | Blank “ready” charts, false/missed anchor alarm, wrong follow/keep-awake, MOB delay |
+| Dockside prep | Downloads hang / burn cellular / lie Ready / corrupt packs |
 | Auditor / store review | License/privacy/attribution mismatches, missing i18n on safety dialogs |
 
 ## Auth / API surface
@@ -22,72 +23,101 @@ Offline-first maritime navigation companion: OpenStreetMap base tiles + OpenSeaM
 |------|---------|
 | Multi-user auth | **None** |
 | App HTTP APIs | **None** |
-| External HTTPS | `tile.openstreetmap.org`, `tiles.openseamap.org` (seamark), `geoserver.openseamap.org` / `depth.openseamap.org` (WMS), Overpass mirrors, publisher legal HTTPS |
-| Secrets in app | None for maps; Android keystore is build-time only |
+| Deep link handlers | `scheme: seacheck` in config; **no** `Linking` handlers in `src/` |
+| External HTTPS | `tile.openstreetmap.org`, `tiles.openseamap.org`, depth WMS hosts (allowlisted), Overpass mirrors, publisher legal HTTPS |
+| Local integrity | AsyncStorage + SQLite; `patchSettings` boolean-coerced (enums still `??`) |
 
-OWASP API BOLA/IDOR: **N/A**. Residual: local integrity, download honesty, alarm fail-closed, third-party HTTPS, OSM User-Agent policy.
+OWASP API BOLA/IDOR: **N/A**. Residual = local integrity, download honesty, alarm fail-closed.
 
-## Critical invariants (code-derived)
+## Invariants (I1–I20)
 
-1. At most **one** chart download exclusive session (`downloadCoordinator`).  
-2. Wi‑Fi-only setting enforced in store + hydrate reattach, fail-closed when NetInfo unknown/throws.  
-3. Ready requires durable OfflineManager pack (sweep alone is not Ready).  
-4. Cancel must not resurrect a seal-in-progress pack as Ready.  
-5. Kill mid-sweep / mid-seal must resume or fail honestly.  
-6. Depth overlay: opt-in, confirm-on-enable, online-only, never in pack style.  
-7. Offline pack index mutations serialized; stale native callbacks ignored via session tokens.  
-8. Anchor drag must not fire on untrusted accuracy / first fix after GPS gap.  
-9. MOB remains reachable under screen lock.  
-10. Chart style on disk matches live basemap IDs; basemap migration invalidates old caches.  
-11. At most one active passage; activate clears others.  
-12. **MapLibre tile User-Agent registered before first map paint** (OSM policy).  
-13. **Tile reachability probe accepts only HTTP 200/206 with non-placeholder base bodies.**  
-14. Android: at most one primary MapLibre GL surface (nav / download / embed / offline host).  
-15. Every static `t('…')` key exists in all 11 locales.
+| ID | Invariant | Coverage |
+|----|-----------|----------|
+| I1 | Not ECDIS | Product copy / legal |
+| I2 | Offline packs usable when Ready | Unit + Maestro |
+| I3 | One exclusive download session | Unit + mutation |
+| I4 | Wi‑Fi-only: store gate; NetInfo **throw → cellular confirm** (not silent allow); cancel denies | Unit + mutation |
+| I5 | Ready only after durable OfflineManager seal | Unit + Maestro |
+| I6 | Cancel mid-seal must not invent Ready | Unit + Maestro cancel |
+| I7 | Kill mid-download: resume or fail honestly | Maestro kill |
+| I8 | Pack index mutations serialized; stale tokens ignored | Unit + mutation |
+| I9 | Depth: opt-in, confirm, online, allowlisted hosts | Unit |
+| I10 | Anchor drag needs trusted accuracy / no first-fix-after-gap | Unit + mutation |
+| I11 | MOB reachable under screen lock | Coordinator tests (sparse E2E) |
+| I12 | Chart style IDs match basemap; migration invalidates | Unit |
+| I13 | At most one active passage | Partial |
+| I14 | Tile User-Agent before first map paint | Unit / App module load |
+| I15 | Tile probe: 200/206 + non-placeholder | Unit + mutation-adjacent |
+| I16 | One primary Android MapLibre GL surface | Policy + layout tests |
+| I17 | Safety booleans hydrate strictly (incl. **followMode**) | Unit + mutation **this pass** |
+| I18 | Mayday: no invented fresh fix; MMSI 9 digits; newline sanitize at build | Unit + mutation |
+| I19 | Confirm queue fail-closes on unmount / lock | Unit |
+| I20 | Static i18n keys in all 11 locales | `i18n:parity` |
 
 ## Workflow inventory (severity)
 
 | Workflow | Critical risks | Coverage status |
 |----------|----------------|-----------------|
-| Downloads / offline packs | Lock, Wi‑Fi, probe (416/placeholder), migration, durable seal, cancel/seal race | Strong unit + mutation + Maestro cancel/kill (prior) |
-| Chart tiles / basemap | Wrong URL (empty OpenSeaMap `/tile/`), missing UA, placeholder bytes | Unit + live probe history; UA boot contract **this pass** |
-| Android GL exclusivity | Dual Map → blank raster; download preview vs nav | `chartMapGlPolicy` + schematic custom preview **this pass** |
-| Depth overlay | Confirm, allowlist, online gate | Unit + live HTTP probe; native pixels gap |
-| Settings hydrate | Boolean honesty | Covered |
-| Overpass / seamarks | Offline skip, lat/lon privacy | NetInfo timeout fail-closed |
-| Confirm queue | Unmount cancel | Visible dialog fail-closes |
-| i18n | Missing keys on safety UI | Parity + static scan **this pass** |
-| Legal / attribution | Stale CARTO in HTML terms | Fixed **this pass**; hosted redeploy open Q |
-| Anchor / alarms | Accuracy fail-open | Strong unit + mutation |
-| Map / MOB | Lock vs MOB | Sparse UI tests |
-| Passage / tracks | Active flags | Partial |
+| Downloads / offline packs | Lock, Wi‑Fi confirm-on-throw, NetInfo **timeout**, probe, durable seal, cancel/seal | Strong unit + **20** mutations + Maestro cancel/kill **OK this pass** |
+| Settings / nav hydrate | Boolean honesty, anchor alarm revive, mass patch | **Fixed + tests this pass** |
+| Chart tiles / basemap | UA, placeholder bytes | Unit |
+| Android GL exclusivity | Dual Map blank raster | Policy + schematic hosts |
+| Depth overlay | Confirm, allowlist, online gate | Unit; native pixels gap |
+| Overpass | Offline skip | NetInfo timeout fail-closed |
+| Confirm queue | Unmount / lock cancel | Unit |
+| BootGate | Optional pack hydrate + always seal spinner | **Open** Medium |
+| ErrorBoundary Retry | No store recovery | **Open** Medium |
+| i18n | Missing keys | 901 × 11 PASS |
+| Anchor / alarms | Accuracy + hydrate integrity | Unit + mutation |
+| Map / MOB | Lock vs MOB | Sparse UI |
+| Passage / tracks | Active flags; allowRouteEdits hydrate | Partial + hydrate fix |
 
 ## Shared-state / concurrency candidates
 
-- `downloadCoordinator` + GL teardown window  
+- `downloadCoordinator` + GL teardown  
 - `offlinePackStore` `withIndexMutation` vs hydrate  
 - `seamarkIndexQueue` serial drain  
-- FG alarm pipeline vs `trackBackgroundTask`  
+- FG alarm pipeline vs background track  
 - Dual writers on `seacheck.navigation.v1`  
-- Map focus vs embed claim vs deferred offline host (1-frame yield by design)  
-- `confirmStore` queue if host unmounts mid-dialog  
+- Map focus vs embed claim vs deferred offline host  
+- `confirmStore` queue on host unmount  
 
 ## External dependency failure modes
 
-| Dependency | Failure mode |
-|------------|--------------|
-| tile.openstreetmap.org | Timeout/5xx/placeholder UA → download blocked; blank chart if UA missing |
-| tiles.openseamap.org/seamark | Seamark-specific errors; empty overlay PNG OK in water with no marks |
-| geoserver / depth WMS | Soft blank overlay when online gate open |
-| Overpass | Soft-fail lookup / index drop after retries |
-| MapLibre ambient cache | Recently viewed only — Ready sealed via OfflineManager |
-| NetInfo | Wi‑Fi policy confirm on throw; depth fail-closed until sample |
+| Dependency | Failure mode (code behavior) |
+|------------|------------------------------|
+| tile.openstreetmap.org | Timeout/5xx/placeholder → download blocked |
+| tiles.openseamap.org/seamark | Seamark-specific; empty PNG OK in open water |
+| Depth WMS | Soft blank when gate closed / error |
+| Overpass | Soft-fail after retries; skip when offline |
+| NetInfo | Download: **4s timeout → offline**; Wi‑Fi policy throw → **confirm**; depth/online overlays fail-closed on unknown |
+| MapLibre ambient cache | Not a Ready seal |
 
-## Existing suite (this audit tip)
+## API / Auth checklist (adapted — no server API)
 
-- **Full Jest:** 144 suites / 689 tests green  
-- Skipped tests: **none**  
-- Mutation (`npm run mutate:core`): 16/16 killed  
-- a11y contrast + touch: PASS  
-- i18n parity: 899 × 11 PASS  
-- Coverage (honest): statements 61.38% / branches 54.63% / lines 64.11%  
+| OWASP-style item | Verdict |
+|------------------|---------|
+| BOLA/IDOR | N/A (no objects over network) |
+| Broken auth | N/A (device-local) |
+| Property-level auth | Local: `patchSettings` boolean coerce; enums still soft |
+| Resource consumption | Tile budget mutation; download exclusivity |
+| Function-level auth | N/A |
+| Business flow abuse | Download spam blocked by coordinator |
+| SSRF | Depth hosts allowlisted; no user URL fetch |
+| Misconfig | Production variant excludes expo-dev-client plugin |
+| Injection | Mayday sanitize; Overpass numeric; SQLite parameterized |
+| Inventory | Routes = local screens only; scheme unused |
+| Session/CSRF | N/A |
+| Schema validation | Persist sanitize helpers; residual enum looseness |
+
+## Existing suite (executed 2026-09-06)
+
+| Gate | Number |
+|------|--------|
+| Jest | **151** suites / **708** tests EXIT 0 |
+| Skipped | **0** |
+| mutate:core | **20/20** killed |
+| Coverage | statements 61.69% / branches 54.89% / lines 64.44% |
+| a11y contrast + touch | PASS |
+| i18n | 901 × 11 PASS |
+| Maestro cancel + kill | OK on emulator-5562 |

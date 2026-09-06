@@ -103,15 +103,16 @@ async function persist(state: NavigationState) {
 function sanitizeAnchorAlarm(raw: unknown): AnchorAlarmState | null {
   if (!raw || typeof raw !== 'object') return null;
   const a = raw as Partial<AnchorAlarmState>;
-  if (!a.active) return null;
+  // Only a real boolean `true` arms the alarm — truthy strings like "false" must not revive it.
+  if (typeof a.active !== 'boolean' || a.active !== true) return null;
   if (!isValidCoordinate(a.latitude ?? NaN, a.longitude ?? NaN)) return null;
   return {
     active: true,
     latitude: a.latitude!,
     longitude: a.longitude!,
     radiusNm: Math.max(0.01, Number(a.radiusNm) || 0.05),
-    triggered: Boolean(a.triggered),
-    armedLimited: Boolean(a.armedLimited),
+    triggered: typeof a.triggered === 'boolean' ? a.triggered : false,
+    armedLimited: typeof a.armedLimited === 'boolean' ? a.armedLimited : false,
   };
 }
 

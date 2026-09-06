@@ -24,7 +24,7 @@ tags:
     optional: true
 - extendedWaitUntil:
     visible:
-      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay"
+      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay|downloads\\.globalSessionChrome"
     timeout: 180000
 - assertNotVisible:
     id: "downloads.statusBanner.ready"

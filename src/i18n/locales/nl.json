@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Het downloaden is gestart",
     "customStartedBody": "Keer terug naar Downloads om de voortgang te bekijken. Blijf wifi gebruiken tot het klaar is.",
+    "mapSessionHint": "De livekaart pauzeert terwijl SeaCheck tegels opslaat. Open Downloads om de voortgang te volgen of te annuleren.",
+    "mapSessionOpenHint": "Toont downloadvoortgang en annuleerknoppen",
     "statusSummaryActiveTitle": "Kaartpakket downloaden",
     "statusSummaryActive": "Downloaden van %{name} — %{percent}% voltooid",
     "statusSummaryActiveInitializing": "%{name} voorbereiden — kaartengine laadt tegels",

@@ -191,7 +191,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
             CRUISE_PASSAGE_DEFAULTS.mapShowDepthOverlay,
           ),
           anchorRadiusNm: normalizeAnchorRadiusNm(parsed.anchorRadiusNm),
-          followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode,
+          followMode: parsePersistedBoolean(parsed.followMode, CRUISE_PASSAGE_DEFAULTS.followMode),
           keepAwakeUnderway: parsePersistedBoolean(
             parsed.keepAwakeUnderway,
             CRUISE_PASSAGE_DEFAULTS.keepAwakeUnderway,
@@ -241,7 +241,36 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   patchSettings: async (patch) => {
-    set(patch);
+    const next: Partial<PersistPayload> = { ...patch };
+    const boolKeys = [
+      'onboardingCompleted',
+      'batteryGuidanceAcknowledged',
+      'downloadHintDismissed',
+      'passagePlanningGuideDismissed',
+      'mapCourseUp',
+      'mapShowCourseVector',
+      'mapShowPassageRouteLines',
+      'mapShowRecordingDistance',
+      'mapShowXte',
+      'mapShowLeeway',
+      'mapShowDepthOverlay',
+      'followMode',
+      'keepAwakeUnderway',
+      'gpsSmoothPosition',
+      'backgroundTrackRecording',
+      'alarmSoundEnabled',
+      'alarmHapticEnabled',
+      'legAdvanceAuto',
+      'downloadWifiOnly',
+      'gloveMode',
+    ] as const;
+    const current = get();
+    for (const key of boolKeys) {
+      if (Object.prototype.hasOwnProperty.call(next, key)) {
+        next[key] = parsePersistedBoolean(next[key], current[key]);
+      }
+    }
+    set(next);
     await persist(get());
   },
 

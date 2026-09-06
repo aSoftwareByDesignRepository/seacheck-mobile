@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Download startede",
     "customStartedBody": "Vend tilbage til Downloads for at se fremskridt. Bliv på Wi-Fi, indtil du er færdig.",
+    "mapSessionHint": "Det levende kort sættes på pause, mens SeaCheck gemmer fliser. Åbn Downloads for at følge fremskridt eller annullere.",
+    "mapSessionOpenHint": "Viser downloadfremskridt og annuller-kontroller",
     "statusSummaryActiveTitle": "Downloader diagrampakke",
     "statusSummaryActive": "Downloader %{name} — %{percent}% fuldført",
     "statusSummaryActiveInitializing": "Forbereder %{name} — diagrammotoren indlæser fliser",

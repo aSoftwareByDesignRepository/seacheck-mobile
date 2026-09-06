@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Pobieranie rozpoczęte",
     "customStartedBody": "Wróć do Pobrane, aby zobaczyć postęp. Pozostań w Wi-Fi, aż do zakończenia.",
+    "mapSessionHint": "Żywa mapa jest wstrzymana, gdy SeaCheck zapisuje kafelki. Otwórz Pobieranie, aby śledzić postęp lub anulować.",
+    "mapSessionOpenHint": "Pokazuje postęp pobierania i przyciski anulowania",
     "statusSummaryActiveTitle": "Pobieram pakiet wykresów",
     "statusSummaryActive": "Pobieranie %{name} — %{percent}% zostało ukończone",
     "statusSummaryActiveInitializing": "Przygotowanie %{name} — silnik wykresów ładuje kafelki",

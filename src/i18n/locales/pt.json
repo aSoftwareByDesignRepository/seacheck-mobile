@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Transferência iniciada",
     "customStartedBody": "Voltar aos Downloads para ver o progresso. Fique no Wi-Fi até estar completo.",
+    "mapSessionHint": "O mapa ao vivo pausa enquanto o SeaCheck grava mosaicos. Abra Transferências para ver o progresso ou cancelar.",
+    "mapSessionOpenHint": "Mostra o progresso da transferência e controlos de cancelamento",
     "statusSummaryActiveTitle": "Baixando pacote de gráficos",
     "statusSummaryActive": "Baixando %{name} — %{percent}% completo",
     "statusSummaryActiveInitializing": "Preparar o %{name} — o motor gráfico está a carregar peças",

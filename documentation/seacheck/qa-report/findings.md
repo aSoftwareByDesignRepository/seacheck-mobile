@@ -1,28 +1,33 @@
 # SeaCheck QA Findings — Momos Audit
 
-**Product:** SeaCheck Mobile (`seacheck-mobile` 0.1.3)  
-**Audit date:** 2026-09-04 (UTC) — Momos pass (basemap / GL / i18n / tile probe honesty)  
-**Auditor:** Momos (hostile QA / red-team)  
+**Product:** SeaCheck Mobile (`seacheck-mobile` **0.1.5**, `versionCode` 5)  
+**Audit date:** 2026-09-06 (UTC)  
+**Auditor:** Momos (hostile QA / red-team / test architect)  
 **Environment:** Native Jest on developer host — **no** Docker Compose for this app  
-**Scope:** `nextcloud-dev/mobile/seacheck` only (standalone Expo client; no multi-user API)
+**Scope:** `nextcloud-dev/mobile/seacheck` only (standalone Expo client; **no** multi-user API)
+
+Companion files: `risk-coverage-inventory.md`, `test-execution-log.md`.
 
 ---
 
 ## Executive Summary
 
-**Fit for a store / functional auditor today: yes — with residual Low gaps below.**  
-**Fit for ECDIS / SOLAS / “certified plotter” claims: no** — product truth, not a bug.
+**This system is not production-ready as a certified navigation product — and it never claimed to be ECDIS.** For a **store / functional auditor** of an offline chart companion: **conditionally yes after this pass**, with the residuals listed under Open and Low below.
 
-This pass did **not** dig up a Critical BOLA or auth hole (there is still **no** multi-user auth surface). It **did** find and kill honesty bugs that would have embarrassed you in front of a mean auditor:
+What this engagement actually found and killed (not softened):
 
-| Severity | Open after this engagement | Fixed this engagement |
-|----------|----------------------------|------------------------|
-| Critical | **0** | — |
-| High | **0** | OSM User-Agent registered only after first paint; tile probe treated HTTP **416** as success (seamark fail-open) |
-| Medium | **0** | Stale CARTO claims in published terms HTML; `common.cancel` missing from all locales |
-| Low | Native MapLibre framebuffer pixels not Maestro-covered; overall line coverage ~64% (UI-heavy); multi-emulator adb fleet still needs serial isolation | GL policy + schematic download previews; i18n static-key contract |
+| Severity | Open after this engagement | Fixed this engagement (red → green) |
+|----------|----------------------------|-------------------------------------|
+| Critical | **0** | Corrupt AsyncStorage could **revive an anchor alarm** and mark it **triggered** via truthy strings (`Boolean("false") === true`) |
+| High | **0** open code bugs; **1** intentional product residual called out below | `followMode` hydrate left a **truthy string** in settings state; `assertNetworkForDownload` could **hang forever** on stuck NetInfo; `patchSettings` accepted non-boolean garbage for safety toggles |
+| Medium | BootGate optional offline hydrate can seal UI with empty packs (warning strip); ErrorBoundary Retry does not reset stores; Wi‑Fi NetInfo **throw** still offers cellular **confirm** (not silent allow) | `allowRouteEdits` hydrate used `!== false` (type-honest fix) |
+| Low | Native MapLibre framebuffer pixels not Maestro-asserted; overall line coverage ~64%; hosted legal pages may lag repo HTML | Doc version / inventory drift corrected in these files |
 
-**Proof (executed this pass):** Jest **144 suites / 689 tests** EXIT 0; typecheck EXIT 0; i18n **899 × 11** PASS; a11y contrast + touch PASS; mutate:core **16/16 killed**; coverage statements **61.38%** / lines **64.11%** (honest, not gamed). Raw output: `test-execution-log.md`.
+**Fit for a real client or auditor today?**  
+- **Store / privacy / functional:** yes, with residuals documented — Jest **151 / 708**, mutate:core **20/20**, Maestro cancel + kill **OK**, a11y + i18n green.  
+- **ECDIS / SOLAS / “certified plotter”:** **no** — product truth (I1), not a missed unit test.
+
+Lead finding before fixes: **anchor-alarm hydrate could invent a live, already-triggered alarm from corrupted storage.** That is the kind of bug that ends up on someone’s desk with the company name attached. It is fixed and mutation-locked.
 
 ---
 
@@ -34,222 +39,320 @@ This pass did **not** dig up a Critical BOLA or auth hole (there is still **no**
 
 | Actor | If wrong… |
 |-------|-----------|
-| Skipper underway | Blank “ready” charts, missed anchor drag, delayed MOB, unofficial depths trusted as truth |
-| Dockside prep | Downloads burn cellular / lie Ready / wipe packs without notice |
-| Store / privacy auditor | Attribution lies, privacy hosts wrong, missing translation keys in confirm dialogs |
+| Skipper underway | Blank “ready” charts, false/missed anchor alarm, camera/keep-awake wrong, delayed MOB |
+| Dockside prep | Downloads hang, burn cellular, or lie Ready |
+| Store / privacy auditor | Attribution lies, missing i18n on safety dialogs |
 
-**Invariants attacked this pass (subset of full inventory):**
+**Invariants under attack (subset — full list in inventory):**
 
-1. Chart tiles that reach MapLibre must identify SeaCheck (OSM User-Agent) **before** the first map paint.  
-2. Download preflight must not green-light tile CDNs on empty / Range-failure responses.  
-3. At most one exclusive Android MapLibre GL owner (nav / download / embed / offline host).  
-4. Every static `t('…')` key exists in all 11 locales; confirm cancel uses a real string.  
-5. Public legal HTML must not attribute map data to providers the app no longer uses.
+1. Safety-relevant booleans hydrate only as real booleans (`parsePersistedBoolean` / strict typeof).  
+2. Anchor alarm must not revive or false-trigger from corrupt JSON.  
+3. At most one exclusive chart download; Ready only after durable seal.  
+4. Download NetInfo must fail closed on disconnect **and** on hung NetInfo.  
+5. Wi‑Fi-only: never silent-allow when NetInfo throws (confirm is allowed).  
+6. Depth WMS allowlisted + online-gated; Mayday never invents a fresh fix.  
+7. MapLibre User-Agent before first paint; tile probe not fail-open on placeholder/416.
 
 ---
 
 ## Critical
 
-*None open. No multi-user API → OWASP BOLA/IDOR N/A for this package.*
+### [CRITICAL] [FIXED] Corrupt storage revived anchor alarm and set `triggered` from string `"false"`
+
+**What is wrong (in plain words):**  
+When the phone restored the “anchor watch” setting from disk, the code treated any truthy value as “alarm is on,” and used JavaScript’s `Boolean(...)` on the “already ringing” flag. The string `"false"` is truthy in JavaScript, so a corrupted save could turn the alarm **on** and mark it **already ringing**.
+
+**Where exactly:**  
+- File: `src/store/navigationStore.ts`, function `sanitizeAnchorAlarm` (was ~lines 103–116)  
+- Workflow: app start → `hydrate()` → anchor alarm state restored  
+
+**How to reproduce it (copy-paste steps):**  
+```bash
+cd nextcloud-dev/mobile/seacheck
+# Before fix (or with mutant anchor-alarm-truthy-active):
+npx jest --coverage=false __tests__/anchorAlarmHydrate.test.ts
+```
+Observed before fix:
+- `active: "false"` → alarm object with `active: true`  
+- `triggered: "false"` → `triggered: true` (false alarm)
+
+**What should happen instead:**  
+Only a real boolean `active === true` may restore an alarm. Non-boolean `triggered` / `armedLimited` must become `false`, never `Boolean("false")`.
+
+**Why this matters:**  
+A skipper can get a phantom “you are dragging” alarm after an upgrade or storage glitch — or miss the meaning of a real alarm because the state machine is already “triggered.”
+
+**Exact fix instructions:**  
+1. Open `src/store/navigationStore.ts`.  
+2. In `sanitizeAnchorAlarm`, replace `if (!a.active) return null` with  
+   `if (typeof a.active !== 'boolean' || a.active !== true) return null`.  
+3. Replace `triggered: Boolean(a.triggered)` with  
+   `triggered: typeof a.triggered === 'boolean' ? a.triggered : false` (same for `armedLimited`).  
+4. Run `__tests__/anchorAlarmHydrate.test.ts` — must be green.
+
+**Proof this is fixed:**  
+- Tests: `__tests__/anchorAlarmHydrate.test.ts` › revive / triggered cases  
+- Mutations killed: `anchor-alarm-truthy-active`, `anchor-triggered-Boolean-coerce`  
+- Red→green logged in `test-execution-log.md` (2026-09-06)
 
 ---
 
 ## High
 
-### [HIGH] [FIXED] OSM User-Agent registered only inside `useEffect` — cold-start tile race
+### [HIGH] [FIXED] `followMode` hydrate skipped `parsePersistedBoolean`
 
 **What is wrong (in plain words):**  
-The app told OpenStreetMap who it is only *after* React finished the first paint. MapLibre can request tiles in that first frame with a generic OkHttp User-Agent. OSM then returns a solid `#aad3df` placeholder that looks exactly like “map broken.”
+Almost every important on/off setting was restored with a strict “must be a real true/false” helper. **Follow ship on map** was not. Corrupt values like the string `"false"` or the number `1` were written straight into memory. A string is “truthy,” so the map kept following and keep-awake could stay on even when the stored intent was garbage.
 
 **Where exactly:**  
-- File: `App.tsx` (was only `useEffect(() => configureChartTileHttp(), [])`)  
-- File: `src/lib/map/configureChartTileHttp.ts`  
-- Workflow: cold launch → Map tab → raster base tiles  
+- File: `src/store/settingsStore.ts`, hydrate `set({...})` — was  
+  `followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode`  
+- Workflow: settings hydrate → Map follow / keep-awake  
 
 **How to reproduce it (copy-paste steps):**  
 ```bash
 cd nextcloud-dev/mobile/seacheck
-# Contract before fix: configureChartTileHttp only inside useEffect
-grep -n 'configureChartTileHttp' App.tsx
-# Observed: call only inside useEffect — first paint can fetch without UA
+npx jest --coverage=false __tests__/followModeHydrate.test.ts
 ```
-Adversarial device observation (prior session): blank ocean background until reload after UA landed.
+Before fix: `followMode` state was literally `"false"` (string) or `1` (number).
 
 **What should happen instead:**  
-`configureChartTileHttp()` must run at module load **before** `RootNavigator` mounts any Map.
+`followMode: parsePersistedBoolean(parsed.followMode, CRUISE_PASSAGE_DEFAULTS.followMode)` so state is always a real boolean (corrupt → cruise default `true`).
 
 **Why this matters:**  
-A skipper who trusts “charts are online” gets a blank blue chart. That is a navigation honesty failure, not a cosmetic flake.
+Broken follow/keep-awake behavior underway burns battery and moves the camera when the skipper thinks they turned follow off (or after corrupt migration).
 
 **Exact fix instructions:**  
-1. Open `App.tsx`.  
-2. Call `configureChartTileHttp()` at module scope (before `export default function App`).  
-3. Keep the idempotent call inside `useEffect` as a safety net.  
-4. Run `__tests__/configureChartTileHttp.test.ts` › `App tile User-Agent boot contract`.
+1. Open `src/store/settingsStore.ts`.  
+2. Change the `followMode` hydrate line to use `parsePersistedBoolean` like neighboring booleans.  
+3. Run `__tests__/followModeHydrate.test.ts` and `__tests__/settingsStore.booleanHydrate.test.ts`.
 
 **Proof this is fixed:**  
-- `__tests__/configureChartTileHttp.test.ts` › registers configureChartTileHttp at module scope before export default  
-- Red contract before (no module-scope call) → green after (2026-09-04 log)
+- Tests above + mutation `followMode-loose-hydrate` killed  
+- Red→green in `test-execution-log.md`
 
 ---
 
-### [HIGH] [FIXED] Tile probe treated HTTP 416 as “tiles work” (seamark fail-open)
+### [HIGH] [FIXED] `patchSettings` mass-assigned non-boolean garbage into safety toggles
 
 **What is wrong (in plain words):**  
-The download preflight accepted HTTP **416 Range Not Satisfiable** as success. For seamark tiles it did not even read the body. A CDN that hates `Range` headers (or returns empty 416s) could green-light a download that then fails or packs empty overlays.
+Any caller of `patchSettings` could pass a partial settings object and it was applied as-is. TypeScript helps at compile time, but at runtime a bad call could set `alarmSoundEnabled: "false"` (string). That string is truthy in `if (alarmSoundEnabled)` checks inconsistently, and it would be persisted back to disk.
 
 **Where exactly:**  
-- File: `src/lib/network/chartTileReachability.ts` — `isProbeResponseOk`  
-- Workflow: Downloads → Start pack → preflight probe  
+- File: `src/store/settingsStore.ts`, `patchSettings`  
+- Endpoint / workflow: Settings toggles → `patchSettings({ ... })`
 
 **How to reproduce it (copy-paste steps):**  
 ```bash
-cd nextcloud-dev/mobile/seacheck
-npx jest __tests__/chartTileReachability.test.ts -t '416 on seamark' --ci
-# Before fix: Received promise resolved instead of rejected
+npx jest --coverage=false -t 'patchSettings rejects non-boolean' __tests__/settingsStore.booleanHydrate.test.ts
 ```
+Before fix: `alarmSoundEnabled` became the string `"false"`.
 
 **What should happen instead:**  
-Only **200** and **206** count as reachable. 416 is a hard failure for that URL.
+Every known boolean key in the patch must run through `parsePersistedBoolean` against the current value (garbage → keep current).
 
 **Why this matters:**  
-Preflight is the last honesty gate before burning Wi‑Fi time and lying about “charts available.” Fail-open here is inexcusable.
+Alarms, Wi‑Fi-only downloads, and onboarding flags are safety / policy controls. They must not become non-booleans in memory or on disk.
 
 **Exact fix instructions:**  
-1. In `isProbeResponseOk`, return `status === 200 || status === 206` only.  
-2. Keep placeholder-byte rejection for base tiles.  
-3. Re-run the 416 tests — must reject.
+1. In `patchSettings`, loop the boolean keys and coerce with `parsePersistedBoolean(next[key], current[key])` before `set(next)`.  
+2. Re-run the boolean hydrate suite.
 
 **Proof this is fixed:**  
-- `__tests__/chartTileReachability.test.ts` › rejects HTTP 416…  
-- `__tests__/chartTileReachability.test.ts` › rejects 416 on seamark…  
-- Red → green 2026-09-04
+- `__tests__/settingsStore.booleanHydrate.test.ts` › `patchSettings rejects non-boolean alarmSoundEnabled`
+
+---
+
+### [HIGH] [FIXED] Download NetInfo gate could hang forever
+
+**What is wrong (in plain words):**  
+Before starting a chart download, the app asked the OS “are we online?” with no time limit. If that call never came back, the download button sat forever with no clear failure.
+
+**Where exactly:**  
+- File: `src/lib/network/downloadNetwork.ts`, `assertNetworkForDownload`  
+- Workflow: Downloads → start pack / custom download  
+
+**How to reproduce it (copy-paste steps):**  
+```bash
+npx jest --coverage=false -t 'NetInfo.fetch never resolves' __tests__/downloadNetwork.test.ts
+```
+Before fix: promise never settled. After fix: rejects with the offline download error after ~4s.
+
+**What should happen instead:**  
+Use `fetchNetInfoState()` (4s timeout). On timeout or null → treat as offline and throw `downloads.errorOffline`.
+
+**Why this matters:**  
+Dockside prep looks “stuck”; users retry, force-kill, or leave half sessions — the exact class of download honesty bugs this app already fights elsewhere.
+
+**Exact fix instructions:**  
+1. Import `fetchNetInfoState` from `connectivity.ts`.  
+2. Replace raw `NetInfo.fetch()` with `fetchNetInfoState()`.  
+3. `if (!state || state.isConnected === false) throw ...`.
+
+**Proof this is fixed:**  
+- `__tests__/downloadNetwork.test.ts` › timeout fail-closed  
+- Mutations: `download-offline-allowed`, `download-netinfo-timeout-fail-open` killed  
 
 ---
 
 ## Medium
 
-### [MEDIUM] [FIXED] Published terms HTML still credited CARTO after basemap migration
+### [MEDIUM] [OPEN] BootGate always leaves the spinner after `finally { setReady(true) }`
 
 **What is wrong (in plain words):**  
-In-app attribution and markdown terms correctly say OpenStreetMap + OpenSeaMap. The **HTML** terms pages users open from Settings still said map data comes from CARTO and linked `carto.com/attributions`.
+After boot tasks finish (or fail), the splash/spinner always ends. Offline pack hydrate is optional: the UI can appear with a dismissible warning while packs are empty or wrong.
 
 **Where exactly:**  
-- `docs/play-store/publish/en/terms-seacheck-mobile.html`  
-- `docs/play-store/publish/de/nutzungsbedingungen-seacheck-mobile.html`  
-- Code truth: `src/lib/settings/chartBaseStyle.ts` → `tile.openstreetmap.org` + `tiles.openseamap.org/seamark`
+- File: `src/shell/BootGate.tsx` (optional boot tasks + `finally { setReady(true) }`)  
+- Workflow: cold start  
 
-**How to reproduce it:**  
-```bash
-grep -n CARTO docs/play-store/publish/en/terms-seacheck-mobile.html
-# Before: lines claiming CARTO volunteers + carto.com link
-```
+**How to reproduce it (copy-paste steps):**  
+Force offline hydrate failure in a unit/integration harness (or break AsyncStorage for pack index) and launch — UI seals; warning strip appears.
 
 **What should happen instead:**  
-Legal HTML matches the live basemap providers.
+Product choice: either hard-block map “Ready” claims until pack hydrate succeeds, or keep current UX but never show pack Ready badges when hydrate failed (already mostly true if index empty). Document the honesty contract in UI copy if keeping dismissible warning.
 
 **Why this matters:**  
-Store / privacy auditors compare Settings → Terms to the network hosts. A dead provider in the terms is a documentation lie.
+A hurried skipper can dismiss the strip and assume charts are present.
 
 **Exact fix instructions:**  
-Remove CARTO from the notice paragraph and attribution list in EN + DE HTML (done this pass). Re-deploy publish copies if the hosted Nextcloud pages mirror these files.
+1. Decide product policy with owners.  
+2. If hard-fail: remove offline hydrate from `OPTIONAL_BOOT_TASKS` and surface `bootError`.  
+3. If soft-fail: add an explicit non-dismissible “charts not loaded” until hydrate retry succeeds.  
+4. Add a unit test that asserts the chosen contract.
 
 **Proof this is fixed:**  
-```bash
-grep -R CARTO docs/play-store/publish/*/terms*.html docs/play-store/publish/*/nutzungsbedingungen*.html || echo 'clean'
-```
+- Not fixed this pass — see Open Questions.
 
 ---
 
-### [MEDIUM] [FIXED] Missing `common.cancel` in all 11 locales
+### [MEDIUM] [OPEN] ErrorBoundary Retry only clears React error state
 
 **What is wrong (in plain words):**  
-Depth-overlay confirm used `t('common.cancel')` but catalogs only had `common.dismiss`. Users saw a raw key / missing translation on a safety dialog.
+After a crash screen, Retry remounts children but does not reset download sessions, confirm queues, or corrupt store flags.
 
 **Where exactly:**  
-- `src/lib/settings/depthOverlayEnableConfirm.ts`  
-- `src/i18n/locales/*.json` `common` block  
+- File: `src/shell/ErrorBoundary.tsx` (reset handler)  
+- Workflow: crash → Retry  
 
-**How to reproduce it:**  
-```bash
-node -e "const e=require('./src/i18n/locales/en.json'); console.log(e.common.cancel)"
-# Before: undefined
-```
+**How to reproduce it (copy-paste steps):**  
+Throw inside a map child after a half-failed download; tap Retry — UI returns without draining coordinator.
 
 **What should happen instead:**  
-`common.cancel` present and non-empty in every supported locale.
+Retry should call a documented recovery: cancel exclusive download session, `cancelAllPendingConfirms`, clear transient UI error flags.
+
+**Why this matters:**  
+Stuck “downloading” chrome or confirm ghosts after a crash confuse the user and can block the next download (I3).
 
 **Exact fix instructions:**  
-Add `cancel` next to `dismiss` in all 11 locale files (done). Extend `localeParity.test.ts` to scan static `t('…')` keys against English (done).
+1. Wire Retry to `downloadCoordinator` end + confirm cancel-all.  
+2. Add a test that spies those calls on reset.  
 
 **Proof this is fixed:**  
-- `src/i18n/__tests__/localeParity.test.ts` › provides common.cancel…  
-- › includes every static t("…") key…  
-- `npm run i18n:parity` → 899 keys × 11 locales PASS
+- Not fixed this pass.
 
 ---
 
-## Low / residual gaps
+### [MEDIUM] [FIXED] `allowRouteEdits` hydrate used `!== false`
 
-| Gap | Why still open | Severity |
-|-----|----------------|----------|
-| Native MapLibre framebuffer / WMS pixels not asserted in Maestro | Needs device framebuffer capture tooling | Low |
-| Jest line coverage ~64% | UI shells dominate uncovered lines; core safety mutants all killed | Low (not Critical) |
-| Rapid Map↔Downloads tab switch can flash ocean placeholder while GL yields | By design for Android single-GL; schematic fallback covers pack preview | Low |
-| Hosted Nextcloud terms URLs may lag local `docs/play-store/publish/*` until redeploy | Ops follow-up | Low |
-| No multi-emulator isolation in human adb sessions | Documented; Maestro runner isolates | Low |
+**What is wrong (in plain words):**  
+Route-edit lock restored with “anything except the boolean false means unlocked,” which disagrees with the strict boolean helper used elsewhere.
 
----
+**Where exactly:**  
+- File: `src/store/passageMapPlanningStore.ts` hydrate  
 
-## Auth / API checklist (mandatory)
+**How to reproduce it:**  
+`npx jest --coverage=false __tests__/allowRouteEditsHydrate.test.ts`
 
-| OWASP-style item | Result |
-|------------------|--------|
-| BOLA / IDOR | **N/A** — no user accounts / object APIs |
-| Broken authentication | **N/A** — device-local app |
-| Mass assignment / property auth | **N/A** |
-| Resource consumption | Tile budget + pack size gates unit-tested; no remote API pagination |
-| Function-level auth | **N/A** |
-| Business-flow abuse | Download coordinator single-flight + Wi‑Fi gate covered |
-| SSRF | No user-controlled fetch URLs; depth WMS allowlisted; Overpass hosts fixed |
-| Security misconfiguration | Dev client only; no production debug API in app |
-| Injection | SQLite parameterized; Overpass QL uses numeric lat/lon interpolation only |
-| Inventory / stale endpoints | No app HTTP server |
-| Session / JWT | **N/A** |
-| Schema validation | Local stores + confirm gates |
+**What should happen instead:**  
+`parsePersistedBoolean(parsed.allowRouteEdits, true)`.
 
-Residual sensitive surface: vessel MMSI / Mayday clipboard / Overpass lat-lon privacy (documented; NetInfo timeout fail-closed for skip gate — prior pass).
+**Why this matters:**  
+Lower stakes than alarms, but the same class of type corruption. Consistency prevents the next boolean from being “the one we forgot.”
+
+**Exact fix instructions:**  
+Use `parsePersistedBoolean` as above.
+
+**Proof this is fixed:**  
+- `__tests__/allowRouteEditsHydrate.test.ts` green  
 
 ---
 
-## Documentation-vs-code mismatches
+### [MEDIUM] [DOCUMENTATION] Inventory claimed Wi‑Fi NetInfo throw is “fail-closed”
 
-| Doc | Code | Status |
-|-----|------|--------|
-| QA `risk-coverage-inventory.md` still listed `t1/t2.openseamap.org` basemap | `chartBaseStyle.ts` → `tile.openstreetmap.org` | **Updated this pass** |
-| HTML terms CARTO | OSM + OpenSeaMap only | **Fixed this pass** |
-| Markdown terms / privacy | Already OSM-correct | OK |
-| In-app `MAP_ATTRIBUTION` | OSM + OpenSeaMap | OK |
+**What is wrong (in plain words):**  
+Old inventory text said Wi‑Fi policy fail-closes when NetInfo throws. Code offers a **cellular confirm** dialog instead (user can proceed). That is not silent allow — but it is not hard fail-closed either.
+
+**Where exactly:**  
+- Doc: prior `risk-coverage-inventory.md`  
+- Code: `src/lib/network/downloadPolicy.ts` catch → `cellularConfirm()`  
+
+**What should happen instead:**  
+Docs must say: throw → confirm; only explicit cancel denies. Silent `{ ok: true }` on catch is mutated and killed.
+
+**Why this matters:**  
+Auditors reading stale docs will accuse the team of lying about fail-closed policy.
+
+**Exact fix instructions:**  
+Inventory rewritten in this engagement (`risk-coverage-inventory.md`).
+
+**Proof this is fixed:**  
+- Doc rewrite; mutation `download-wifi-netinfo-fail-open` still killed  
 
 ---
 
-## Test suite quality
+## Low
 
-- Skipped / `.todo` / `expect(true)` tautologies: **none found**  
-- Mutation (`npm run mutate:core`): **16/16 killed**  
-- New adversarial tests this pass: 416 probe rejection, App UA boot contract, i18n static-key scan, `common.cancel` presence  
-- Coverage (honest): statements 61.38%, branches 54.63%, lines 64.11% — UI-heavy residual, not “100% by stubbing”
+### [LOW] [OPEN] Native map pixels / WMS framebuffer not asserted in Maestro
+
+Maestro cancel/kill prove Ready honesty and session chrome, not “pixels painted.” Residual acceptance risk for visual blank-ocean regressions.
+
+### [LOW] [OPEN] Overall coverage ~64% lines
+
+Honest number from Jest coverage run — UI-heavy surfaces dominate the gap. Safety core is mutation-gated, not coverage-chased.
+
+### [LOW] [OPEN] Vessel profile fields persist raw text; Mayday sanitizes at clipboard build only
+
+CRLF in vessel name is stripped when building Mayday (`maydayMessage.ts`) but still stored. Low injection risk on a single-user device.
+
+### [LOW] [OPEN] Hosted legal HTML may still lag repo `docs/play-store/publish/`
+
+Ops redeploy question — local HTML fixed in prior passes.
+
+---
+
+## Documentation-vs-Code Mismatches (this pass)
+
+| Claim | Reality |
+|-------|---------|
+| Findings / inventory said **v0.1.3** | Code is **0.1.5** / versionCode **5** |
+| “Settings hydrate boolean honesty Covered” | Was **false** for `followMode` until this pass |
+| “Mass assignment N/A” | Local `patchSettings` existed; now boolean-coerced |
+| Wi‑Fi NetInfo throw “fail-closed” | Confirm path, not hard deny |
+
+---
+
+## Test Suite Quality Itself
+
+| Gate | Result (2026-09-06) |
+|------|---------------------|
+| Jest | **151 suites / 708 tests** EXIT 0 |
+| Typecheck | EXIT 0 |
+| mutate:core | **20 killed / 0 survived** |
+| a11y contrast + touch | PASS |
+| i18n parity | **901 keys × 11 locales** PASS |
+| Coverage | statements **61.69%**, branches **54.89%**, lines **64.44%** |
+| Maestro cancel | OK (`emulator-5562`) |
+| Maestro kill | OK (`emulator-5562`) |
+| Skipped tests | **none** left silent |
+
+New adversarial suites: `anchorAlarmHydrate`, `followModeHydrate`, `allowRouteEditsHydrate`, extended `settingsStore.booleanHydrate`, `downloadNetwork` timeout.
 
 ---
 
 ## Open Questions
 
-1. **Production upload pending (operator):** Local PHP templates + Play mirrors are fixed and packed at `/tmp/seacheck-legal-deploy/seacheck-legal-deploy.tar.gz` via `website/scripts/pack_seacheck_legal_deploy.sh`. Live `nextcloud.software-by-design.de` still served CARTO as of 2026-09-04 until FTP/SFTP upload + deletion of stale `*.html` twins. Verify with the curl gates printed by the pack script.  
-2. Should OSM tile usage volume / caching policy get a written ops budget before marketing pushes mass downloads?  
-3. Is Maestro on `SeaCheck_Maestro_API_33` still the required gate for download cancel/kill before any Play upload of this tip?
-
----
-
-## Verdict for the mean auditor
-
-Ship the functional/store story **after** confirming hosted terms match the fixed HTML. Do **not** claim certified navigation. Do **not** claim “perfect coverage” — claim **16/16 core mutants dead** and **689 passing honesty tests**, which is what actually matters for this product’s stakes.
+1. Should BootGate **hard-fail** when offline pack hydrate fails, or is a dismissible warning the accepted product contract?  
+2. On ErrorBoundary Retry, which stores/sessions must reset (download coordinator only, or navigation/confirm too)?  
+3. Have hosted legal URLs been redeployed so CARTO claims cannot reappear for store reviewers?  
+4. Are settings enums (`sogUnit`, `coordFormat`, …) intended to gain allowlist hydrate like booleans, or is `?? default` enough forever?

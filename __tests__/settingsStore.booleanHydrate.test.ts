@@ -50,4 +50,20 @@ describe('settingsStore hydrate — safety-relevant booleans', () => {
     expect(useSettingsStore.getState().alarmHapticEnabled).toBe(false);
     expect(useSettingsStore.getState().onboardingCompleted).toBe(true);
   });
+
+  it('rejects corrupt followMode string — never leaves a truthy non-boolean in state', async () => {
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify({ followMode: 'false' }));
+    await useSettingsStore.getState().hydrate();
+    expect(typeof useSettingsStore.getState().followMode).toBe('boolean');
+    expect(useSettingsStore.getState().followMode).toBe(true);
+  });
+
+  it('patchSettings rejects non-boolean alarmSoundEnabled (cannot silence via garbage)', async () => {
+    useSettingsStore.setState({ hydrated: true, alarmSoundEnabled: true });
+    await useSettingsStore.getState().patchSettings({
+      alarmSoundEnabled: 'false' as unknown as boolean,
+    });
+    expect(useSettingsStore.getState().alarmSoundEnabled).toBe(true);
+    expect(typeof useSettingsStore.getState().alarmSoundEnabled).toBe('boolean');
+  });
 });

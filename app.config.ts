@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'SeaCheck',
   slug: 'seacheck',
-  version: '0.1.3',
+  version: '0.1.5',
   orientation: 'default',
   scheme: 'seacheck',
   userInterfaceStyle: 'automatic',
@@ -53,7 +53,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // Resize window when IME opens so Screen ScrollViews can keep notes visible.
     softwareKeyboardLayoutMode: 'resize',
     package: 'de.softwarebydesign.seacheck',
-    versionCode: 3,
+    versionCode: 5,
     adaptiveIcon: {
       backgroundColor: '#0b1622',
       foregroundImage: './assets/android-icon-foreground.png',

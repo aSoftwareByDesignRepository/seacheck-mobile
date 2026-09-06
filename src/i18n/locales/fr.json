@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Téléchargement commencé",
     "customStartedBody": "Revenez aux téléchargements pour suivre la progression. Restez connecté au Wi‑Fi jusqu’à la fin.",
+    "mapSessionHint": "La carte live se met en pause pendant que SeaCheck enregistre les tuiles. Ouvrez Téléchargements pour suivre la progression ou annuler.",
+    "mapSessionOpenHint": "Affiche la progression du téléchargement et les commandes d’annulation",
     "statusSummaryActiveTitle": "Téléchargement du pack de cartes",
     "statusSummaryActive": "Téléchargement de %{name} — %{percent}% terminé",
     "statusSummaryActiveInitializing": "Préparation de %{name} — le moteur de graphiques charge les tuiles",

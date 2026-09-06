@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
 import { enqueuePersist } from '../lib/persist/asyncPersistQueue';
+import { parsePersistedBoolean } from '../lib/settings/parsePersistedBoolean';
 
 const STORAGE_KEY = 'seacheck.passageMapPlanning.v1';
 
@@ -42,7 +43,7 @@ export const usePassageMapPlanningStore = create<PassageMapPlanningState>((set, 
         set({
           passageId: typeof parsed.passageId === 'string' ? parsed.passageId : null,
           revision: Math.max(0, Number(parsed.revision) || 0),
-          allowRouteEdits: parsed.allowRouteEdits !== false,
+          allowRouteEdits: parsePersistedBoolean(parsed.allowRouteEdits, true),
           guideDismissedForSession: false,
         });
       } catch (error) {

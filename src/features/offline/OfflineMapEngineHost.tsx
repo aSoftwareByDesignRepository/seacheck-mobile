@@ -14,6 +14,7 @@ import {
   type OfflineEngineViewport,
 } from '../../lib/offline/offlineMapEngineHost';
 import { shouldMountOfflineMapEngineHost } from '../../lib/map/chartMapGlPolicy';
+import { HIDDEN_MAP_ENGINE_SIZE_PX } from '../../lib/map/hiddenMapEngineLayout';
 import { subscribeEmbeddedChartMapActivity } from '../../lib/map/embeddedChartMapRegistry';
 import { subscribeMapScreenFocus } from '../../lib/map/mapScreenFocus';
 import { subscribeDownloadCoordinatorActivity } from '../../lib/offline/downloadCoordinator';
@@ -199,11 +200,12 @@ const styles = StyleSheet.create({
   /**
    * Must stay in the viewport — Android skips GL rendering for off-screen maps,
    * which stalls OfflineManager tile enumeration when the Map tab is not visible.
+   * Keep this a small corner host (never fullscreen): TextureView ignores opacity.
    */
   host: {
     position: 'absolute',
-    width: 256,
-    height: 256,
+    width: HIDDEN_MAP_ENGINE_SIZE_PX,
+    height: HIDDEN_MAP_ENGINE_SIZE_PX,
     overflow: 'hidden',
     left: 0,
     bottom: 0,
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   map: {
-    width: 256,
-    height: 256,
+    width: HIDDEN_MAP_ENGINE_SIZE_PX,
+    height: HIDDEN_MAP_ENGINE_SIZE_PX,
   },
 });

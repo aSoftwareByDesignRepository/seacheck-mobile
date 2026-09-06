@@ -1,0 +1,3 @@
+• Fixed a crash after fresh install / onboarding ("Something went wrong")
+• Chart download no longer blacks out other tabs on Android
+• Clearer download progress and cancel while saving offline packs

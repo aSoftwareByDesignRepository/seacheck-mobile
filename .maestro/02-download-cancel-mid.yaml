@@ -24,10 +24,10 @@ tags:
 - tapOn:
     id: "confirm.proceed"
     optional: true
-# Active download affordance (banner and/or per-pack cancel).
+# Active download affordance (banner, per-pack cancel, or global chrome on other tabs).
 - extendedWaitUntil:
     visible:
-      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay"
+      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay|downloads\\.globalSessionChrome"
     timeout: 180000
 - assertNotVisible:
     id: "downloads.statusBanner.ready"
@@ -37,9 +37,12 @@ tags:
 - tapOn:
     id: "downloads.cancel.kiel-bay"
     optional: true
+- tapOn:
+    id: "downloads.globalSessionChrome.cancel"
+    optional: true
 - extendedWaitUntil:
     notVisible:
-      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay"
+      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay|downloads\\.globalSessionChrome"
     timeout: 90000
 - extendedWaitUntil:
     notVisible:

@@ -17,7 +17,7 @@ const testCmd = [
   'npx',
   'jest',
   '--runInBand',
-  '--testPathPattern=gpsFilter|fixQuality|processLocationAlarms|connectivity|downloadNetwork|downloadPolicy|downloadCoordinator|beginDownloadSession|offlinePackIndex|regionPacks|maydayMessage|copyMaydayClipboard|parsePersistedBoolean',
+  '--testPathPattern=gpsFilter|fixQuality|processLocationAlarms|connectivity|downloadNetwork|downloadPolicy|downloadCoordinator|beginDownloadSession|offlinePackIndex|regionPacks|maydayMessage|copyMaydayClipboard|parsePersistedBoolean|settingsStore.booleanHydrate|followModeHydrate|anchorAlarmHydrate|allowRouteEditsHydrate',
 ];
 
 const mutations = [
@@ -63,9 +63,17 @@ const mutations = [
     name: 'download-offline-allowed',
     file: 'src/lib/network/downloadNetwork.ts',
     search:
-      '  if (state.isConnected === false) {\n    throw new Error(t(\'downloads.errorOffline\'));\n  }',
+      '  if (!state || state.isConnected === false) {\n    throw new Error(t(\'downloads.errorOffline\'));\n  }',
     replace:
-      '  if (false && state.isConnected === false) {\n    throw new Error(t(\'downloads.errorOffline\')); /* mutated */\n  }',
+      '  if (false && (!state || state.isConnected === false)) {\n    throw new Error(t(\'downloads.errorOffline\')); /* mutated */\n  }',
+  },
+  {
+    name: 'download-netinfo-timeout-fail-open',
+    file: 'src/lib/network/downloadNetwork.ts',
+    search:
+      '  if (!state || state.isConnected === false) {\n    throw new Error(t(\'downloads.errorOffline\'));\n  }',
+    replace:
+      '  if (state && state.isConnected === false) {\n    throw new Error(t(\'downloads.errorOffline\')); /* mutated: ignore NetInfo timeout/null */\n  }',
   },
   {
     name: 'download-wifi-netinfo-fail-open',
@@ -132,6 +140,30 @@ const mutations = [
     file: 'src/lib/settings/parsePersistedBoolean.ts',
     search: '  return typeof value === \'boolean\' ? value : fallback;',
     replace: '  return value != null ? Boolean(value) : fallback; /* mutated */',
+  },
+  {
+    name: 'followMode-loose-hydrate',
+    file: 'src/store/settingsStore.ts',
+    search:
+      '          followMode: parsePersistedBoolean(parsed.followMode, CRUISE_PASSAGE_DEFAULTS.followMode),',
+    replace:
+      '          followMode: parsed.followMode ?? CRUISE_PASSAGE_DEFAULTS.followMode, /* mutated */',
+  },
+  {
+    name: 'anchor-alarm-truthy-active',
+    file: 'src/store/navigationStore.ts',
+    search:
+      '  if (typeof a.active !== \'boolean\' || a.active !== true) return null;',
+    replace:
+      '  if (!a.active) return null; /* mutated: truthy strings revive alarm */',
+  },
+  {
+    name: 'anchor-triggered-Boolean-coerce',
+    file: 'src/store/navigationStore.ts',
+    search:
+      '    triggered: typeof a.triggered === \'boolean\' ? a.triggered : false,',
+    replace:
+      '    triggered: Boolean(a.triggered), /* mutated */',
   },
   {
     name: 'online-ops-unknown-ok',

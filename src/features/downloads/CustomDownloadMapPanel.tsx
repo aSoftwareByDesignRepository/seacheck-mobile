@@ -7,6 +7,7 @@ import { ensureDownloadAllowed } from '../../lib/network/downloadPolicy';
 import { runLockedChartDownloadPreflight } from '../../lib/offline/downloadPreflight';
 import { reportDownloadFailureFromError } from '../../lib/offline/reportDownloadFailure';
 import { reportDownloadOutcome } from '../../lib/offline/reportDownloadOutcome';
+import { waitForDownloadSessionKickoff } from '../../lib/offline/waitForDownloadSessionKickoff';
 import { CUSTOM_DOWNLOAD_CORNER_COUNT } from '../../lib/map/customDownloadCorners';
 import { boundsCenter, boundsDimensionsNm, validateDownloadBounds } from '../../lib/map/bounds';
 import { formatDistanceNm } from '../../lib/geo/units';
@@ -111,9 +112,28 @@ export function CustomDownloadMapPanel() {
         packName.trim() ||
         t('downloads.customDefaultName', { lat: center.latitude.toFixed(2), lon: center.longitude.toFixed(2) });
       await runLockedChartDownloadPreflight(regionId, ensureChartStyle, center);
-      await startCustomDownload(name, bounds, minZoom, maxZoom, regionId);
+
+      // Hand UI back as soon as the exclusive session starts — never block the Map tab
+      // on the full tile sweep (minutes), which left users on a blank chart placeholder.
+      const downloadPromise = startCustomDownload(name, bounds, minZoom, maxZoom, regionId);
+      const kickoff = await waitForDownloadSessionKickoff(regionId, downloadPromise);
+
       cancelSelecting();
-      reportDownloadOutcome(regionId, { showInfo, showError });
+      if (kickoff === 'finished') {
+        reportDownloadOutcome(regionId, { showInfo, showError });
+      } else {
+        showInfo(t('downloads.customStartedBody'));
+        void downloadPromise
+          .then(() => {
+            reportDownloadOutcome(regionId, { showInfo, showError });
+          })
+          .catch((err) => {
+            const current = useOfflinePackStore.getState().regions[regionId];
+            if (current?.state !== 'error') {
+              reportDownloadFailureFromError(regionId, err, 'async');
+            }
+          });
+      }
       navigation.navigate('Downloads');
     } catch (err) {
       useOfflinePackStore.getState().releasePreflightDownloadLock(regionId);

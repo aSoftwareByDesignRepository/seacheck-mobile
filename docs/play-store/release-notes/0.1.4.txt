@@ -1,0 +1,14 @@
+<en-US>
+Fix: chart downloads no longer black out the whole app (including other tabs) while navigation is open.
+
+• Download map host stays under the UI and is capped to a tiny corner
+• Progress + cancel stay visible on every tab during a download
+• Custom map downloads hand off to Downloads as soon as the session starts
+</en-US>
+<de-DE>
+Fix: Karten-Downloads schwärzen die App nicht mehr (auch nicht andere Tabs) bei laufender Navigation.
+
+• Download-Kartenhost unter der UI und auf eine kleine Ecke begrenzt
+• Fortschritt + Abbrechen während des Downloads auf jedem Tab sichtbar
+• Eigene Kartenflächen wechseln zu Downloads, sobald die Session startet
+</de-DE>

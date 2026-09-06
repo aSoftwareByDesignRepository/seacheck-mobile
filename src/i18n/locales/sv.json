@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Nedladdningen startade",
     "customStartedBody": "Gå tillbaka till Nedladdningar för att se framstegen. Håll dig på Wi-Fi tills du är klar.",
+    "mapSessionHint": "Livekartan pausar medan SeaCheck sparar brickor. Öppna Nedladdningar för att se förloppet eller avbryta.",
+    "mapSessionOpenHint": "Visar nedladdningsförlopp och avbryt-kontroller",
     "statusSummaryActiveTitle": "Laddar ner diagrampaket",
     "statusSummaryActive": "Nedladdning av %{name} — %{percent}% klar",
     "statusSummaryActiveInitializing": "Förbereder %{name} — diagrammotorn laddar brickor",

@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Descarga iniciada",
     "customStartedBody": "Regrese a Descargas para ver el progreso. Permanece conectado a Wi‑Fi hasta que se complete.",
+    "mapSessionHint": "El mapa en vivo se pausa mientras SeaCheck guarda mosaicos. Abre Descargas para ver el progreso o cancelar.",
+    "mapSessionOpenHint": "Muestra el progreso de descarga y los controles de cancelación",
     "statusSummaryActiveTitle": "Descargando paquete de gráficos",
     "statusSummaryActive": "Descargando %{name} — %{percent}% completa",
     "statusSummaryActiveInitializing": "Preparando %{name}: el motor de gráficos está cargando mosaicos",

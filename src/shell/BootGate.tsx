@@ -211,6 +211,8 @@ export function BootGate({ children }: PropsWithChildren) {
 
   return (
     <View style={styles.root}>
+      {/* Underlay: MapLibre TextureViews must never sit above the navigator. */}
+      <OfflineMapBootstrap />
       {bootWarnings.length > 0 && !warnDismissed ? (
         <View
           style={[
@@ -219,6 +221,8 @@ export function BootGate({ children }: PropsWithChildren) {
               backgroundColor: colors.warningBg,
               borderColor: colors.warningBorder,
               paddingTop: insets.top + spacing.sm,
+              zIndex: 30,
+              elevation: 30,
             },
           ]}
           accessibilityRole="alert"
@@ -240,15 +244,16 @@ export function BootGate({ children }: PropsWithChildren) {
           </Pressable>
         </View>
       ) : null}
-      <View style={styles.content}>{children}</View>
-      <OfflineMapBootstrap />
+      <View style={[styles.content, { backgroundColor: colors.background }]} collapsable={false}>
+        {children}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { flex: 1 },
+  content: { flex: 1, zIndex: 1, elevation: 1 },
   boot: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   bootTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
   bootText: { fontSize: 15, lineHeight: 22, textAlign: 'center' },

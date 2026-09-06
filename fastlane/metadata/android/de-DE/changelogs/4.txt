@@ -1,0 +1,1 @@
+Fix: Karten-Downloads schwärzen die App nicht mehr bei laufender Navigation. Fortschritt und Abbrechen bleiben auf jedem Tab sichtbar; Download-GL-Host bleibt unter der UI.

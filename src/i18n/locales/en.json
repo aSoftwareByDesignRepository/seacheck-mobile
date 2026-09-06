@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Download started",
     "customStartedBody": "Return to Downloads to watch progress. Stay on Wi‑Fi until complete.",
+    "mapSessionHint": "The live chart pauses while SeaCheck saves tiles. Open Downloads to watch progress or cancel.",
+    "mapSessionOpenHint": "Shows download progress and cancel controls",
     "statusSummaryActiveTitle": "Downloading chart pack",
     "statusSummaryActive": "Downloading %{name} — %{percent}% complete",
     "statusSummaryActiveInitializing": "Preparing %{name} — chart engine is loading tiles",

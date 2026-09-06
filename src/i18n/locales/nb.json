@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Nedlasting startet",
     "customStartedBody": "Gå tilbake til Nedlastinger for å se fremdriften. Hold deg på Wi-Fi til du er ferdig.",
+    "mapSessionHint": "Det levende kartet pauses mens SeaCheck lagrer fliser. Åpne Nedlastinger for å følge fremdriften eller avbryte.",
+    "mapSessionOpenHint": "Viser nedlastingsfremdrift og avbryt-kontroller",
     "statusSummaryActiveTitle": "Laster ned kartpakke",
     "statusSummaryActive": "Nedlasting av %{name} — %{percent}% fullført",
     "statusSummaryActiveInitializing": "Forbereder %{name} — kartmotoren laster fliser",

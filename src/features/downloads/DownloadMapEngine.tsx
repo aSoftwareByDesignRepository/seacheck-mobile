@@ -14,12 +14,14 @@ import {
 } from '../../lib/offline/downloadMapHost';
 import { syncOfflineMapEngineFromDownloadMap } from '../../lib/offline/offlineMapEngineHost';
 import { resolveOfflineEngineCamera } from '../../lib/offline/resolveOfflineEngineCamera';
+import { HIDDEN_MAP_ENGINE_SIZE_PX } from '../../lib/map/hiddenMapEngineLayout';
 import { getRegionPack } from '../../map/regionPacks';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 
 /**
- * Visible chart map used while a pack download runs. Android needs a real on-screen
- * MapLibre instance to fetch and persist tiles into the ambient cache reliably.
+ * On-screen MapLibre instance used while a pack download runs. Android needs a real
+ * in-viewport MapLibre surface to fetch and persist tiles into the ambient cache.
+ * Sized to HIDDEN_MAP_ENGINE_SIZE_PX by DownloadMapSessionHost (never fullscreen).
  */
 export function DownloadMapEngine() {
   const chartStyleUri = useOfflinePackStore((s) => s.chartStyleUri);
@@ -115,6 +117,10 @@ export function DownloadMapEngine() {
         style={styles.map}
         mapStyle={chartStyleUri}
         androidView={Platform.OS === 'android' ? 'texture' : undefined}
+        attribution={false}
+        logo={false}
+        compass={false}
+        scaleBar={false}
         onDidFinishLoadingStyle={onStyleReady}
         onDidFinishLoadingMap={onStyleReady}
         onDidFinishRenderingFrameFully={onFrameReady}
@@ -132,10 +138,12 @@ export function DownloadMapEngine() {
 
 const styles = StyleSheet.create({
   host: {
-    flex: 1,
-    borderRadius: 0,
+    width: HIDDEN_MAP_ENGINE_SIZE_PX,
+    height: HIDDEN_MAP_ENGINE_SIZE_PX,
     overflow: 'hidden',
-    marginTop: 0,
   },
-  map: { flex: 1 },
+  map: {
+    width: HIDDEN_MAP_ENGINE_SIZE_PX,
+    height: HIDDEN_MAP_ENGINE_SIZE_PX,
+  },
 });

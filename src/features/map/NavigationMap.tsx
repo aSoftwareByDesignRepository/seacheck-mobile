@@ -27,6 +27,7 @@ import { subscribeMapScreenFocus } from '../../lib/map/mapScreenFocus';
 import { subscribeDownloadCoordinatorActivity } from '../../lib/offline/downloadCoordinator';
 import { useMapCameraFollow } from '../../hooks/useMapCameraFollow';
 import { CustomDownloadMapPanel } from '../downloads/CustomDownloadMapPanel';
+import { ChartDownloadSessionPlaceholder } from '../downloads/ChartDownloadSessionPlaceholder';
 import { CustomDownloadCornerSheet } from '../downloads/CustomDownloadCornerSheet';
 import { nearestDownloadCorner, boundsFromPoints } from '../../lib/map/customDownloadCorners';
 import { PassageMapPlanningPanel } from '../passage/PassageMapPlanningPanel';
@@ -765,18 +766,7 @@ export function NavigationMap() {
       <Text style={{ color: colors.textMuted }}>{t('boot.loading')}</Text>
     </View>
   ) : exclusiveChartDownload ? (
-    <View
-      style={[styles.map, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.sm }]}
-      accessibilityRole="summary"
-      accessibilityLabel={t('downloads.statusSummaryActiveTitle')}
-    >
-      <Text style={{ color: colors.text, fontWeight: '700', fontSize: 16, textAlign: 'center' }}>
-        {t('downloads.statusSummaryActiveTitle')}
-      </Text>
-      <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: 'center' }}>
-        {t('downloads.statusSummaryActiveHint')}
-      </Text>
-    </View>
+    <ChartDownloadSessionPlaceholder onOpenDownloads={() => navigation.navigate('Downloads')} />
   ) : chartStyleUri && navigationChartAllowed ? (
     <View style={styles.mapHost} pointerEvents={screenLocked ? 'none' : 'box-none'} collapsable={false}>
       <View style={styles.mapClip} collapsable={false}>

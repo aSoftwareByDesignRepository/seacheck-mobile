@@ -31,6 +31,16 @@ describe('assertNetworkForDownload', () => {
     await expect(assertNetworkForDownload()).rejects.toThrow(/internet/i);
   });
 
+  it('blocks when NetInfo.fetch never resolves (timeout fail-closed)', async () => {
+    jest.useFakeTimers();
+    fetch.mockImplementation(() => new Promise(() => {}));
+    const assertion = assertNetworkForDownload();
+    const expectReject = expect(assertion).rejects.toThrow(/internet/i);
+    await jest.advanceTimersByTimeAsync(4_000);
+    await expectReject;
+    jest.useRealTimers();
+  });
+
   it('allows connected network when reachability probe failed', async () => {
     fetch.mockResolvedValue({ isConnected: true, isInternetReachable: false });
     await expect(assertNetworkForDownload()).resolves.toBeUndefined();

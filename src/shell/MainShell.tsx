@@ -1,7 +1,9 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
+import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { GlobalDownloadSessionChrome } from '../features/downloads/GlobalDownloadSessionChrome';
 import { ScreenLockOverlay } from '../features/map/ScreenLockOverlay';
 import { ScreenLockCoordinator } from '../features/map/ScreenLockCoordinator';
 import { AdaptiveTabBar } from '../navigation/AdaptiveTabBar';
@@ -26,6 +28,11 @@ import { useTheme } from '../theme/ThemeContext';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
+/**
+ * Active root tab — tracked via Tab.Navigator `screenListeners.state`.
+ * Do NOT call `useNavigationState` here: MainShell *hosts* the navigator and is
+ * not inside it (throws "Couldn't get the navigation state").
+ */
 export function MainShell() {
   const { colors, isDark } = useTheme();
   useResumeBackgroundSync();
@@ -38,16 +45,30 @@ export function MainShell() {
   const screenLocked = useNavigationStore((s) => s.screenLocked);
   const setScreenLocked = useNavigationStore((s) => s.setScreenLocked);
   const { useRail, tabBarPosition } = resolveShellTabBarLayout(formFactor, isLandscape);
+  const [activeTab, setActiveTab] = useState<keyof RootTabParamList>('Map');
+  // Downloads already has the full status banner — avoid stacking a second one.
+  const showGlobalDownloadChrome = activeTab !== 'Downloads';
+
+  const onTabNavigatorState = useCallback(
+    (e: { data: { state?: { index: number; routes: { name: string }[] } } }) => {
+      const navState = e.data.state;
+      if (!navState?.routes?.length) return;
+      const route = navState.routes[navState.index];
+      if (route?.name) setActiveTab(route.name as keyof RootTabParamList);
+    },
+    [],
+  );
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <ScreenLockCoordinator />
       <Tab.Navigator
         tabBar={(props) => <AdaptiveTabBar {...props} variant={useRail ? 'rail' : 'bottom'} />}
+        screenListeners={{ state: onTabNavigatorState }}
         screenOptions={{
           headerShown: false,
-          sceneStyle: styles.scene,
+          sceneStyle: [styles.scene, { backgroundColor: colors.background }],
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
           tabBarPosition,
@@ -88,6 +109,7 @@ export function MainShell() {
         <Tab.Screen name="Settings" component={SettingsStack} options={{ title: t('tabs.settings'), tabBarButtonTestID: 'tab.settings' }} />
       </Tab.Navigator>
       <TabOverflowMenu />
+      {showGlobalDownloadChrome ? <GlobalDownloadSessionChrome /> : null}
       {screenLocked ? (
         <ScreenLockOverlay visible={screenLocked} onUnlock={() => void setScreenLocked(false)} />
       ) : null}

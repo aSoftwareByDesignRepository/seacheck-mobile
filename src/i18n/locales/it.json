@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Download avviato",
     "customStartedBody": "Torna a Download per osservare i progressi. Rimani connesso al Wi‑Fi fino al completamento.",
+    "mapSessionHint": "La carta live si mette in pausa mentre SeaCheck salva le tessere. Apri Download per seguire l’avanzamento o annullare.",
+    "mapSessionOpenHint": "Mostra l’avanzamento del download e i controlli di annullamento",
     "statusSummaryActiveTitle": "Download del pacchetto cartografico",
     "statusSummaryActive": "Download del %{name} — %{percent}% completato",
     "statusSummaryActiveInitializing": "Preparazione %{name}: il motore grafico sta caricando i riquadri",

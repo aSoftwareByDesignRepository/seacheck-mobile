@@ -46,7 +46,7 @@ function httpsGetPng(urlStr: string): Promise<{ status: number; ctype: string; b
         method: 'GET',
         headers: {
           Accept: 'image/png,image/*;q=0.8,*/*;q=0.5',
-          'User-Agent': 'SeaCheck-MomosProbe/0.1.3 (+https://software-by-design.de)',
+          'User-Agent': 'SeaCheck-MomosProbe/0.1.4 (+https://software-by-design.de)',
         },
         timeout: 15_000,
       },

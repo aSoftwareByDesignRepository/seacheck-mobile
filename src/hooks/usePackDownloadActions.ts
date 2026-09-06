@@ -4,6 +4,7 @@ import { ensureDownloadAllowed } from '../lib/network/downloadPolicy';
 import { runLockedChartDownloadPreflight } from '../lib/offline/downloadPreflight';
 import { reportDownloadFailureFromError } from '../lib/offline/reportDownloadFailure';
 import { reportDownloadOutcome } from '../lib/offline/reportDownloadOutcome';
+import { waitForDownloadSessionKickoff } from '../lib/offline/waitForDownloadSessionKickoff';
 import { isPackDownloadActive } from '../features/downloads/packDownloadPresentation';
 import { t } from '../i18n';
 import { useFeedbackStore } from '../store/feedbackStore';
@@ -60,14 +61,30 @@ export function usePackDownloadActions() {
       try {
         await runLockedChartDownloadPreflight(regionId, ensureChartStyle);
         const latest = useOfflinePackStore.getState().regions[regionId];
-        if (latest?.custom || latest?.state === 'error') {
-          await retryDownload(regionId);
-        } else {
-          await startDownload(regionId);
+        // Hand UI back as soon as the exclusive session starts — never block the
+        // Downloads screen for the full tile sweep (Maestro cancel + user cancel).
+        const downloadPromise =
+          latest?.custom || latest?.state === 'error'
+            ? retryDownload(regionId)
+            : startDownload(regionId);
+        const kickoff = await waitForDownloadSessionKickoff(regionId, downloadPromise);
+        if (kickoff === 'finished') {
+          const next = useOfflinePackStore.getState().regions[regionId];
+          reportDownloadOutcome(regionId, { showInfo, showError });
+          return next?.state === 'ready' && !next?.error;
         }
-        const next = useOfflinePackStore.getState().regions[regionId];
-        reportDownloadOutcome(regionId, { showInfo, showError });
-        return next?.state === 'ready' && !next?.error;
+        showInfo(t('downloads.downloadStarted'));
+        void downloadPromise
+          .then(() => {
+            reportDownloadOutcome(regionId, { showInfo, showError });
+          })
+          .catch((err) => {
+            const current = useOfflinePackStore.getState().regions[regionId];
+            if (current?.state !== 'error') {
+              reportDownloadFailureFromError(regionId, err, 'async');
+            }
+          });
+        return false;
       } catch (err) {
         useOfflinePackStore.getState().releasePreflightDownloadLock(regionId);
         const current = useOfflinePackStore.getState().regions[regionId];

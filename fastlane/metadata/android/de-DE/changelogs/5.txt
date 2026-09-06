@@ -1,0 +1,3 @@
+• Crash nach Neuinstallation / Onboarding behoben („Etwas ist schiefgelaufen“)
+• Kartendownload verdunkelt andere Tabs auf Android nicht mehr
+• Klarerer Download-Fortschritt und Abbrechen beim Speichern von Offline-Karten

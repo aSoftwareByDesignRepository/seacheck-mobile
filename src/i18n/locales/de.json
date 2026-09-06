@@ -622,6 +622,8 @@
     },
     "customStartedTitle": "Download gestartet",
     "customStartedBody": "Unter Downloads Fortschritt prüfen. Bis zum Ende WLAN nutzen.",
+    "mapSessionHint": "Die Live-Karte pausiert, während SeaCheck Kacheln speichert. Unter Downloads Fortschritt prüfen oder abbrechen.",
+    "mapSessionOpenHint": "Zeigt Download-Fortschritt und Abbrechen",
     "statusSummaryActiveTitle": "Kartenpaket wird geladen",
     "statusSummaryActive": "Lädt %{name} — %{percent} % abgeschlossen",
     "statusSummaryActiveInitializing": "%{name} wird vorbereitet — Kartenmodul lädt Kacheln",

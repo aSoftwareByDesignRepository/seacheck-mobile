@@ -1,0 +1,1 @@
+Fix: chart downloads no longer black out the whole app while navigation is open. Progress and cancel stay visible on every tab; download GL host stays under the UI.

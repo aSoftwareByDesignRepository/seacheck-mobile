@@ -38,8 +38,9 @@ export function shouldMountEmbeddedChartMap(): boolean {
 }
 
 /**
- * Fullscreen download map during post-download GL teardown must not overlay NavigationMap
+ * Download map during post-download GL teardown must not remount over NavigationMap
  * when the user returns to the Map tab — that leaves vectors on a blank raster surface.
+ * (Host is a small corner TextureView; policy still applies for exclusive GL ownership.)
  */
 export function shouldMountDownloadMapSession(
   regionId: string,
