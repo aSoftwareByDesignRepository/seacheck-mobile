@@ -50,6 +50,19 @@ describe('SeaCheck store listing contract', () => {
     expect(existsSync(join(playRoot, 'assets/play-icon-512.png'))).toBe(true);
   });
 
+  it('ships fastlane metadata title + feature graphic for en-US and de-DE', () => {
+    for (const loc of ['en-US', 'de-DE']) {
+      const title = readFileSync(join(appRoot, `fastlane/metadata/android/${loc}/title.txt`), 'utf8').trim();
+      expect(title).toBe('SeaCheck');
+      expect(
+        existsSync(join(appRoot, `fastlane/metadata/android/${loc}/images/featureGraphic/featureGraphic.png`)),
+      ).toBe(true);
+      expect(existsSync(join(appRoot, `fastlane/metadata/android/${loc}/images/phoneScreenshots/1.png`))).toBe(
+        true,
+      );
+    }
+  });
+
   it('ships at least six phone screenshot placeholders', () => {
     const names = [
       'phone-01-map.png',

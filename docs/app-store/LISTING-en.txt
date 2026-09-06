@@ -1,6 +1,6 @@
 === APP STORE CONNECT — ENGLISH (U.S.) ===
 Bundle ID: de.softwarebydesign.seacheck
-Version: 0.1.3
+Version: 0.1.5
 Category: Navigation (primary). Secondary: Utilities if offered.
 
 --- Name (max 30) ---
@@ -23,7 +23,7 @@ Who it is for
 • Skippers who download OpenSeaMap regions on Wi‑Fi for offline use underway
 
 What you need
-• An Android or iPhone device with GPS
+• An Android or iPhone / iPad with GPS
 • Optional: Wi‑Fi to download offline chart packs
 • No sign-up, no Nextcloud server, no license key
 
@@ -34,7 +34,7 @@ What the app does
 • Optional online depth overlay (GEBCO WMS — online only)
 • Anchor, arrival, and off-course alarms
 • Track recording
-• English and German UI
+• English and German UI (plus additional EU languages)
 
 Important — not for primary navigation
 Aid to navigation only. Maps use OpenSeaMap / OpenStreetMap volunteer data and may be outdated. Always carry official, corrected nautical charts.
@@ -47,11 +47,9 @@ Privacy
 Publisher: Software by Design GbR, Schleswig, Germany · info@software-by-design.de
 
 --- What's New (this version) ---
-• Offline coastal charts (OpenSeaMap seamarks + base map)
-• GPS instruments, passage planning, anchor & arrival alarms
-• Track recording and GPX export
-• Navigation disclaimer — not a replacement for official charts
-• No ads, no analytics
+• Fixed a crash after fresh install / onboarding
+• Chart download no longer blacks out other tabs on Android
+• Clearer download progress and cancel while saving offline packs
 
 --- Support URL ---
 https://software-by-design.de

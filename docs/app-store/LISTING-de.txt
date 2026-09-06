@@ -1,6 +1,6 @@
 === APP STORE CONNECT — DEUTSCH ===
 Bundle-ID: de.softwarebydesign.seacheck
-Version: 0.1.3
+Version: 0.1.5
 Kategorie: Navigation (primär). Sekundär: Dienstprogramme, falls angeboten.
 
 --- Name (max 30) ---
@@ -23,7 +23,7 @@ Für wen
 • Skipper, die OpenSeaMap-Regionen im WLAN für die Fahrt offline laden
 
 Was Sie brauchen
-• Android- oder iPhone-Gerät mit GPS
+• Android- oder iPhone-/iPad-Gerät mit GPS
 • Optional: WLAN für Offline-Kartenpakete
 • Keine Anmeldung, kein Nextcloud-Server, kein Lizenzschlüssel
 
@@ -34,7 +34,7 @@ Funktionen
 • Optionales Online-Tiefen-Overlay (GEBCO WMS — nur online)
 • Anker-, Ankunfts- und Abweichungsalarme
 • Track-Aufzeichnung
-• Deutsch- und Englisch-Oberfläche
+• Deutsch- und Englisch-Oberfläche (weitere EU-Sprachen)
 
 Wichtig — nicht für die Hauptnavigation
 Nur Navigationshilfe. Karten aus OpenSeaMap/OpenStreetMap-Freiwilligendaten können veraltet sein. Immer amtliche, berichtigte Seekarten mitführen.
@@ -47,11 +47,9 @@ Datenschutz
 Herausgeber: Software by Design GbR, Schleswig · info@software-by-design.de
 
 --- Neu in dieser Version ---
-• Offline-Küstenkarten (OpenSeaMap-Seezeichen + Basiskarte)
-• GPS-Instrumente, Törnplanung, Anker- und Ankunftsalarme
-• Track-Aufzeichnung und GPX-Export
-• Navigationshinweis — kein Ersatz für amtliche Karten
-• Keine Werbung, keine Analyse-SDKs
+• Absturz nach Neuinstallation / Onboarding behoben
+• Kartendownload verdunkelt andere Tabs auf Android nicht mehr
+• Klarerer Download-Fortschritt und Abbrechen bei Offline-Paketen
 
 --- Support-URL ---
 https://software-by-design.de

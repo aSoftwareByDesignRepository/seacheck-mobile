@@ -36,6 +36,7 @@
     "play:preflight": "bash scripts/play-preflight.sh",
     "play:graphics": "python3 scripts/generate-feature-graphic.py && python3 scripts/export-play-icon.py",
     "play:screenshots": "python3 scripts/generate-play-screenshots.py",
+    "appstore:screenshots": "python3 scripts/generate-app-store-screenshot.py",
     "sync:legal-html": "bash scripts/sync-legal-html.sh",
     "sync:regions": "node scripts/sync-planning-regions.mjs",
     "icons": "node scripts/generate-app-icons.mjs",

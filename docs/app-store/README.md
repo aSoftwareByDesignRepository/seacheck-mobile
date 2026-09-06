@@ -7,9 +7,29 @@ Paste into **Apps → SeaCheck → Distribution → App Store**. Primary languag
 | [LISTING-en.txt](./LISTING-en.txt) | English localization |
 | [LISTING-de.txt](./LISTING-de.txt) | German localization |
 | [REVIEW-NOTES.txt](./REVIEW-NOTES.txt) | App Review Information → Notes |
+| [APP-PRIVACY.txt](./APP-PRIVACY.txt) | App Privacy questionnaire answers |
+| [GRAPHICS.md](./GRAPHICS.md) | Screenshot sizes + shot map |
 
-Screenshots: iPhone 6.5″ and iPad 13″ — capture per [../play-store/SCREENSHOT-CAPTURE.md](../play-store/SCREENSHOT-CAPTURE.md). Upload map shot first.
+## Screenshots
 
-iOS build: `SEACHECK_APP_VARIANT=production eas build --platform ios --profile production`
+Generate framed assets (iPhone 6.5″ + iPad 13″):
 
-**Background location:** required for anchor watch and track recording when the screen is off. Explain in review notes (see REVIEW-NOTES.txt).
+```bash
+cd mobile/seacheck
+npm run play:screenshots
+npm run appstore:screenshots
+```
+
+Upload `docs/app-store/assets/iphone-65-*.png` and `ipad-13-*.png`. Put the **map** shot first.
+
+Prefer replacing placeholders with live Simulator captures under `docs/app-store/assets/captures/` (see GRAPHICS.md).
+
+## Build
+
+```bash
+SEACHECK_APP_VARIANT=production eas build --platform ios --profile production
+```
+
+**Background location:** required for anchor watch and track recording when the screen is off. Explained in REVIEW-NOTES.txt and onboarding.
+
+**Encryption:** `ITSAppUsesNonExemptEncryption` / `usesNonExemptEncryption: false` in `app.config.ts`.

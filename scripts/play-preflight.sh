@@ -43,6 +43,10 @@ required=(
   docs/app-store/LISTING-de.txt
   docs/app-store/REVIEW-NOTES.txt
   docs/app-store/GRAPHICS.md
+  docs/app-store/APP-PRIVACY.txt
+  fastlane/metadata/android/en-US/title.txt
+  fastlane/metadata/android/de-DE/title.txt
+  fastlane/metadata/android/en-US/images/featureGraphic/featureGraphic.png
   keystore.properties.example
   ../../website/en/privacy-seacheck-mobile.html
   ../../website/en/terms-seacheck-mobile.html
@@ -61,6 +65,18 @@ for n in 01-map 02-disclaimer 03-passage 04-downloads 05-offline 06-about; do
   }
 done
 
+echo "==> App Store framed screenshots (min 6 iPhone 6.5″ + 6 iPad)"
+for n in 01 02 03 04 05 06; do
+  [[ -f "docs/app-store/assets/iphone-65-${n}.png" ]] || {
+    echo "Missing App Store shot: docs/app-store/assets/iphone-65-${n}.png (run: npm run appstore:screenshots)"
+    exit 1
+  }
+  [[ -f "docs/app-store/assets/ipad-13-${n}.png" ]] || {
+    echo "Missing App Store shot: docs/app-store/assets/ipad-13-${n}.png (run: npm run appstore:screenshots)"
+    exit 1
+  }
+done
+
 echo "==> Assets"
 [[ -f assets/icon.png ]] || { echo "Missing assets/icon.png"; exit 1; }
 
@@ -68,7 +84,15 @@ echo "==> Legal URLs (app)"
 grep -q 'privacy-seacheck-mobile' src/lib/legal/legalUrls.ts \
   || { echo "Update privacyPolicyUrl in src/lib/legal/legalUrls.ts"; exit 1; }
 
+echo "==> Listing version sync"
+PKG_VER="$(node -p "require('./package.json').version")"
+grep -q "Version: ${PKG_VER}" docs/app-store/LISTING-en.txt \
+  || { echo "docs/app-store/LISTING-en.txt Version must be ${PKG_VER}"; exit 1; }
+grep -q "version ${PKG_VER}" docs/app-store/REVIEW-NOTES.txt \
+  || { echo "docs/app-store/REVIEW-NOTES.txt must cite version ${PKG_VER}"; exit 1; }
+
 echo ""
 echo "OK — local preflight passed."
-echo "Next: deploy website/ (docs/play-store/PUBLISH-LEGAL.md), replace illustrative screenshots, then:"
+echo "Next: deploy website/ (docs/play-store/PUBLISH-LEGAL.md), replace illustrative screenshots with live captures when possible, then:"
 echo "  SEACHECK_APP_VARIANT=production EAS_BUILD_PROFILE=production EAS_PROJECT_ID=<uuid> eas build --platform android --profile production"
+echo "  SEACHECK_APP_VARIANT=production eas build --platform ios --profile production"

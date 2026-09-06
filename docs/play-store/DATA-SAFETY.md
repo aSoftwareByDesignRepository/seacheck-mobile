@@ -136,7 +136,7 @@ HTTPS for OpenSeaMap, optional depth WMS, and Overpass tile/API requests.
 
 ## Apple App Store Privacy Nutrition Labels (iOS)
 
-When you publish to App Store Connect, align labels with this table:
+Paste answers from **[../app-store/APP-PRIVACY.txt](../app-store/APP-PRIVACY.txt)** into App Store Connect → App Privacy.
 
 | Category | Detail |
 |----------|--------|

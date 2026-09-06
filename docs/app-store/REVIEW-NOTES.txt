@@ -10,15 +10,16 @@ Sign-in required: **No** (standalone app — no account).
 Open SeaCheck → complete onboarding (navigation disclaimer, optional location permissions) → Map tab (GPS on chart) → Downloads → download a region pack on Wi‑Fi → Passage tab → Settings → About (privacy policy, terms, OpenSeaMap attribution). There is no login, no in-app purchase, no App Tracking Transparency prompt, and no social features.
 
 2) Devices and OS tested before submit
-• Android emulator SeaCheck_Maestro_API_33 and/or physical device
-• iPhone / iPad (supportsTablet: true) when iOS build is submitted
-• Bundle: de.softwarebydesign.seacheck · version 0.1.3
+• iPhone (simulator and/or device) — primary App Store target
+• iPad (supportsTablet: true)
+• Android emulator SeaCheck_Maestro_API_33 and/or physical device (parity checks)
+• Bundle: de.softwarebydesign.seacheck · version 0.1.5 (versionCode / CFBundleVersion 5)
 
 3) What the app is
 SeaCheck is a standalone coastal navigation aid for small-boat sailors. It is **not** a certified chart plotter. Map data comes from OpenSeaMap/OpenStreetMap volunteers and may be outdated. The app stores passages, tracks, and settings **locally on the device** — Software by Design does not operate a central navigation cloud.
 
 4) Background location (iOS)
-We request **Always** / background location only so anchor-drag alarms and track recording continue when the screen is off at sea. Users can deny background location and still use the map while the app is open. This is explained during onboarding.
+We request **Always** / background location only so anchor-drag alarms and track recording continue when the screen is off at sea. Users can deny background location and still use the map while the app is open. This is explained during onboarding. Purpose strings are customer-facing (anchor alarms / tracks), not generic.
 
 5) External services (when online)
 • OpenSeaMap tile servers (base map + seamarks)
@@ -28,6 +29,9 @@ No Firebase, ads, analytics SDKs, or payment processor.
 
 6) Health / sensors
 We do **not** use the barometer or declare HealthKit features. Location is used for maritime navigation only.
+
+7) App Privacy questionnaire
+See docs/app-store/APP-PRIVACY.txt (Precise Location + optional vessel fields; no tracking; no ATT).
 
 Support: info@software-by-design.de
 Privacy: https://nextcloud.software-by-design.de/en/privacy-seacheck-mobile.html

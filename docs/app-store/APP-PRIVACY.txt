@@ -1,0 +1,45 @@
+# App Store Connect — App Privacy (SeaCheck)
+
+Bundle ID: `de.softwarebydesign.seacheck`
+
+Matches the privacy policy:
+https://nextcloud.software-by-design.de/en/privacy-seacheck-mobile.html
+https://nextcloud.software-by-design.de/de/datenschutz-seacheck-mobile.html
+
+Framing: SeaCheck is a **standalone** coastal navigation aid. Passages, tracks, and settings stay **on the device**. Software by Design does **not** operate a navigation cloud. When online, the app contacts third-party map services (OpenSeaMap tiles, optional depth WMS, optional Overpass lookup).
+
+---
+
+## Declare these types
+
+| Type | Why |
+|------|-----|
+| **Location → Precise Location** | GPS for chart position, instruments, alarms, and track recording (including optional background / “Always” for anchor watch with screen off). |
+| **Location → Coarse Location** | Same GPS pipeline (declare if Connect offers Approximate separately). |
+| **Contact Info → Name** | Optional vessel name entered in Settings → Vessel. |
+| **Other User Content → Other User Content** | Optional call sign, MMSI, home port; waypoints / passages / tracks stored on device (not sent to SBD). |
+
+Do **not** declare: Email, Phone, Physical Address, Contacts, Photos, Health, Purchases, Advertising Data, Device ID / IDFA, Product Interaction analytics, Crash Data (no third-party crash SDK), Sensitive Info, User ID (no accounts).
+
+---
+
+## Per declared type
+
+| Question | Answer |
+|----------|--------|
+| Purpose | **App Functionality** only. Uncheck Analytics, Advertising, Product Personalization, Other. |
+| Linked to the user’s identity | **No** (no account; vessel fields are optional local labels) |
+| Used for Tracking | **No** |
+
+**Third parties:** Map tile / optional Overpass requests reveal map areas or a tapped coordinate to those operators — not continuous GPS trail sharing, not sold, not used for advertising by SeaCheck. Documented in the privacy policy.
+
+---
+
+## Tracking / ATT
+
+| Question | Answer |
+|----------|--------|
+| Used for tracking users? | **No** |
+| App Tracking Transparency | Not required. Do not add an ATT prompt. |
+
+No analytics or advertising SDKs. No data sold. No sharing with data brokers.
