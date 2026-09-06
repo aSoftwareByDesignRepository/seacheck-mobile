@@ -30,20 +30,20 @@ Export as `docs/play-store/assets/feature-graphic-1024x500.png` when done.
 
 ## Screenshot shot list (recommended 6)
 
-Capture on **phone** emulator (1080×2400) or physical device, **light theme**, **English** UI, **production build** (no dev client overlay):
+Capture on **phone** emulator or physical device, **light theme**, **English** UI, **production build** (no dev client overlay). Filenames match `docs/play-store/assets/screenshots/`:
 
-| # | Screen | What to show |
-|---|--------|----------------|
-| 1 | Onboarding disclaimer | Navigation notice + OpenSeaMap/OSM links |
-| 2 | Map | Kiel area, boat position, instruments |
-| 3 | Passage | Active passage or waypoint list |
-| 4 | Downloads | Kieler Bucht pack + “Ready for offline use” |
-| 5 | Map (offline) | Airplane mode banner or offline chart in use |
-| 6 | Settings → About | Disclaimer, attribution, privacy link |
+| # | File | Screen | What to show |
+|---|------|--------|----------------|
+| 1 | `phone-01-map.png` | Map | Coastal area, instruments, controls |
+| 2 | `phone-02-disclaimer.png` | Onboarding disclaimer | Navigation notice + OpenSeaMap/OSM links |
+| 3 | `phone-03-passage.png` | Passage | Active passage or empty-state |
+| 4 | `phone-04-downloads.png` | Downloads | Region packs + download CTA |
+| 5 | `phone-05-offline.png` | Map (offline) | Airplane mode / offline banner |
+| 6 | `phone-06-about.png` | Settings → About | Disclaimer, attribution, privacy link |
 
-**Tip:** `adb exec-out screencap -p > screenshot.png` or Android Studio Device Manager.
+**Automated:** `bash scripts/capture-play-screenshots.sh` (see [SCREENSHOT-CAPTURE.md](./SCREENSHOT-CAPTURE.md)).
 
-Also capture **German** screenshots for `de-DE` listing (optional but recommended).
+Also capture **German** screenshots for `de-DE` listing (optional but recommended — currently en-US UI copied into both locales).
 
 ---
 

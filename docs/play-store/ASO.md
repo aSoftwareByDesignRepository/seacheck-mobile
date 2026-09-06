@@ -53,5 +53,5 @@ Honest negatives: no account, no ads, no analytics, not official charts, volunte
 
 - First screenshots: **Disclaimer** → **Map with GPS** → **Downloads ready**  
 - Feature graphic + 512 icon: `npm run play:graphics`  
-- Phone placeholders: `npm run play:screenshots` (replace with live captures before final submit — [SCREENSHOT-CAPTURE.md](./SCREENSHOT-CAPTURE.md))  
+- Phone screenshots: live capture via `bash scripts/capture-play-screenshots.sh` (see [SCREENSHOT-CAPTURE.md](./SCREENSHOT-CAPTURE.md)); fallback placeholders: `npm run play:screenshots`  
 - Privacy URL must match [PUBLISH-LEGAL.md](./PUBLISH-LEGAL.md)

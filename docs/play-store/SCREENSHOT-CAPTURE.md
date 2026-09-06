@@ -4,50 +4,58 @@ Target: **2–8 phone screenshots** (9:16), plus **512×512 icon** and **1024×5
 
 ## Prerequisites
 
-- **Production** build (no Expo dev client overlay): `SEACHECK_APP_VARIANT=production` + release APK/AAB  
+- **Production** build (no Expo dev client overlay): release APK/AAB  
 - English UI for default listing; capture German set for **de-DE** when possible  
-- Grant location on emulator/device for map shots  
+- Emulator/device with enough free space for the APK  
 
-## Recommended shots (matches [GRAPHICS.md](./GRAPHICS.md))
+## Recommended shots (matches [GRAPHICS.md](./GRAPHICS.md) / `phone-0N-*.png`)
 
-| # | Screen | What to show |
-|---|--------|----------------|
-| 1 | Onboarding disclaimer | Navigation notice + OpenSeaMap/OSM links |
-| 2 | Map | Coastal area, boat position, instruments |
-| 3 | Passage | Active passage or waypoint list |
-| 4 | Downloads | Kiel Bay pack + “Ready for offline use” |
-| 5 | Map (offline) | Offline banner or airplane mode |
-| 6 | Settings → About | Disclaimer, attribution, privacy link |
+| # | File | Screen | What to show |
+|---|------|--------|----------------|
+| 1 | `phone-01-map.png` | Map | Coastal area, instruments, controls |
+| 2 | `phone-02-disclaimer.png` | Onboarding disclaimer | Navigation notice + OpenSeaMap/OSM links |
+| 3 | `phone-03-passage.png` | Passage | Active passage or empty-state with New passage |
+| 4 | `phone-04-downloads.png` | Downloads | Region packs + Download / Ready |
+| 5 | `phone-05-offline.png` | Map (offline) | Offline banner or airplane mode |
+| 6 | `phone-06-about.png` | Settings → About | Disclaimer, attribution, privacy link |
 
-## Emulator capture (Android)
+## Automated live capture (preferred)
+
+Installs the production APK, drives onboarding via uiautomator, writes 1080×1920 finals, and syncs fastlane `phoneScreenshots` for **en-US** and **de-DE**:
 
 ```bash
 cd mobile/seacheck
-# Dedicated AVD — do not fight other emulators:
-export SEACHECK_MAESTRO_DEVICE=emulator-5574
-bash scripts/dev-emulator.sh   # or your own SeaCheck_Maestro_API_33 instance
-
-# Production-ish build on device:
-SEACHECK_APP_VARIANT=production npx expo run:android --variant release
-
-adb -s $SEACHECK_MAESTRO_DEVICE exec-out screencap -p > docs/play-store/assets/screenshots/phone-01.png
+export SEACHECK_MAESTRO_DEVICE=emulator-5562   # your AVD serial
+export SEACHECK_RELEASE_APK=~/Downloads/apk-releases/seacheck-0.1.5-release.apk
+bash scripts/capture-play-screenshots.sh
+npm run appstore:screenshots   # framed iPhone 6.5″ / 6.9″ + iPad 13″
 ```
 
-Crop to 9:16 if needed. Remove debug banners.
+Outputs:
 
-## Placeholders until live capture
+- `docs/play-store/assets/screenshots/phone-0N-*.png` (store-ready)
+- `docs/play-store/assets/screenshots/_raw-live/` (device resolution; gitignored)
+- `fastlane/metadata/android/{en-US,de-DE}/images/phoneScreenshots/1.png`…`6.png`
+
+## Manual emulator capture
+
+```bash
+adb -s "$SEACHECK_MAESTRO_DEVICE" exec-out screencap -p > docs/play-store/assets/screenshots/_raw.png
+```
+
+Crop/normalize to 1080×1920 (9:16). Remove debug banners.
+
+## Placeholder generator (fallback only)
 
 ```bash
 npm run play:screenshots
 ```
 
-Generates illustrative PNGs in `docs/play-store/assets/screenshots/`. **Replace before production submit** — Play reviewers and sailors expect real UI.
+Illustrative PNGs only — **prefer live capture before production submit**.
 
 ## Before upload
 
-- [ ] No debug banner / Metro overlay  
+- [ ] Live UI (not placeholders), no Metro / debug overlay  
 - [ ] Disclaimer visible in at least one shot  
 - [ ] Privacy URL in About matches live `privacy-seacheck-mobile.html`  
 - [ ] Do not reuse AZC / DutyCheck / BudgetCheck art ([GRAPHICS.md](./GRAPHICS.md))
-
-Save finals to `docs/play-store/assets/screenshots/` and pick 2–8 in Play Console.

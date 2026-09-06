@@ -57,10 +57,10 @@ for f in "${required[@]}"; do
   [[ -f "$f" ]] || { echo "Missing: $f"; exit 1; }
 done
 
-echo "==> Screenshot placeholders (min 6)"
+echo "==> Phone screenshots (min 6 live or generated)"
 for n in 01-map 02-disclaimer 03-passage 04-downloads 05-offline 06-about; do
   [[ -f "docs/play-store/assets/screenshots/phone-${n}.png" ]] || {
-    echo "Missing screenshot: docs/play-store/assets/screenshots/phone-${n}.png (run: npm run play:screenshots)"
+    echo "Missing screenshot: docs/play-store/assets/screenshots/phone-${n}.png (run: bash scripts/capture-play-screenshots.sh)"
     exit 1
   }
 done
@@ -93,6 +93,6 @@ grep -q "version ${PKG_VER}" docs/app-store/REVIEW-NOTES.txt \
 
 echo ""
 echo "OK — local preflight passed."
-echo "Next: deploy website/ (docs/play-store/PUBLISH-LEGAL.md), replace illustrative screenshots with live captures when possible, then:"
+echo "Next: deploy website/ (docs/play-store/PUBLISH-LEGAL.md), then:"
 echo "  SEACHECK_APP_VARIANT=production EAS_BUILD_PROFILE=production EAS_PROJECT_ID=<uuid> eas build --platform android --profile production"
 echo "  SEACHECK_APP_VARIANT=production eas build --platform ios --profile production"
