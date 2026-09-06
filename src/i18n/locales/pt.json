@@ -65,7 +65,8 @@
     "partialWarningTracks": "Não foi possível carregar as faixas.",
     "partialWarningNavigation": "O estado de navegação não pôde ser restaurado.",
     "partialWarningLocale": "Não foi possível carregar a preferência da linguagem.",
-    "partialWarningMultiple": "Alguns dados não puderam ser carregados: %{items}. Reinicie o aplicativo após a fixação de armazenamento ou conectividade."
+    "partialWarningMultiple": "Alguns dados não puderam ser carregados: %{items}. Reinicie o aplicativo após a fixação de armazenamento ou conectividade.",
+    "retryCharts": "Recarregar cartas"
   },
   "permissions": {
     "statusGranted": "Concedido",

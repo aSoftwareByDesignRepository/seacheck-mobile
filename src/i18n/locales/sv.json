@@ -65,7 +65,8 @@
     "partialWarningTracks": "Spår kunde inte laddas.",
     "partialWarningNavigation": "Navigationsstatus kunde inte återställas.",
     "partialWarningLocale": "Språkinställningen kunde inte laddas.",
-    "partialWarningMultiple": "Vissa data kunde inte laddas: %{items}. Starta om appen efter att ha fixat lagring eller anslutning."
+    "partialWarningMultiple": "Vissa data kunde inte laddas: %{items}. Starta om appen efter att ha fixat lagring eller anslutning.",
+    "retryCharts": "Ladda om sjökort"
   },
   "permissions": {
     "statusGranted": "Beviljas",

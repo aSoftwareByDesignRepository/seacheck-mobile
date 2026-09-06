@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { t } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
+import { recoverAfterRenderCrash } from './recoverAfterRenderCrash';
 
 type Props = PropsWithChildren<{
   fallback?: ReactNode;
@@ -26,6 +27,7 @@ function ThemedErrorFallback({ onReset }: { onReset: () => void }) {
           accessibilityLabel={t('common.retry')}
           onPress={onReset}
           style={[styles.retry, { backgroundColor: colors.primary, minHeight: minTouch }]}
+          testID="errorBoundary.retry"
         >
           <Text style={[styles.retryText, { color: colors.primaryText }]}>{t('common.retry')}</Text>
         </Pressable>
@@ -47,7 +49,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private reset = () => {
-    this.setState({ error: null });
+    void recoverAfterRenderCrash()
+      .catch((error) => {
+        console.warn('[ErrorBoundary] recovery failed', error);
+      })
+      .finally(() => {
+        this.setState({ error: null });
+      });
   };
 
   render() {

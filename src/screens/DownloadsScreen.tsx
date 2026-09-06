@@ -92,7 +92,6 @@ function PackGroupList({
     <>
       {visible.map((pack, index) => {
         const status = regions[pack.id] ?? { regionId: pack.id, state: 'idle', percentage: 0, packId: null, error: null };
-        const downloadActive = isPackDownloadActive(pack.id, status, activeDownloadRegionId);
 
         return (
           <RegionPackCard
@@ -108,7 +107,7 @@ function PackGroupList({
             suppressActiveProgress={suppressActiveProgress}
             onDownload={() => onDownload(pack.id)}
             onDelete={() => onDelete(pack.id, t(pack.nameKey as 'downloads.packs.kielBay.name'))}
-            onCancel={downloadActive ? () => onCancel(pack.id) : undefined}
+            onCancel={() => onCancel(pack.id)}
             busy={packBusy(pack.id)}
             onSelect={() => onSelect(pack.id)}
           />
@@ -458,23 +457,33 @@ export function DownloadsScreen() {
   const detailPane = selectedPack ? <PackPreviewPanel pack={selectedPack} /> : null;
 
   return (
-    <Screen testID="screen.downloads" title={t('downloads.title')} subtitle={t('downloads.subtitle')} scrollRef={scrollRef}>
-      <DownloadsStatusBanner
-        regions={regions}
-        activeDownloadRegionId={activeDownloadRegionId}
-        downloadMapTeardownRegionId={downloadMapTeardownRegionId}
-        hydrated={hydrated}
-        basemapMigrationNotice={basemapMigrationNotice}
-        onDismissBasemapNotice={() => void dismissBasemapMigrationNotice()}
-        onCancelActive={
-          activeDownloadRegionId ? () => void handleCancel(activeDownloadRegionId) : undefined
-        }
-        cancelBusy={actionBusyId === activeDownloadRegionId}
-        onRetryFailed={(regionId) => void handleDownload(regionId)}
-        retryBusyId={actionBusyId}
-      />
-      <OfflineChartsGuide />
-      <MasterDetailLayout master={listPane} detail={useStackedLayout ? null : detailPane} requireDetail={!useStackedLayout} />
+    <Screen testID="screen.downloads" title={t('downloads.title')} subtitle={t('downloads.subtitle')} scroll={false}>
+      {/* Sticky above the list so Cancel stays visible while scrolling packs (granny-proof). */}
+      <View testID="downloads.stickyStatus">
+        <DownloadsStatusBanner
+          regions={regions}
+          activeDownloadRegionId={activeDownloadRegionId}
+          downloadMapTeardownRegionId={downloadMapTeardownRegionId}
+          hydrated={hydrated}
+          basemapMigrationNotice={basemapMigrationNotice}
+          onDismissBasemapNotice={() => void dismissBasemapMigrationNotice()}
+          onCancelActive={
+            activeDownloadRegionId ? () => void handleCancel(activeDownloadRegionId) : undefined
+          }
+          cancelBusy={actionBusyId === activeDownloadRegionId}
+          onRetryFailed={(regionId) => void handleDownload(regionId)}
+          retryBusyId={actionBusyId}
+        />
+      </View>
+      <ScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: spacing.xl }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <OfflineChartsGuide />
+        <MasterDetailLayout master={listPane} detail={useStackedLayout ? null : detailPane} requireDetail={!useStackedLayout} />
+      </ScrollView>
     </Screen>
   );
 }

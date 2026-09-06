@@ -46,8 +46,8 @@ export function MainShell() {
   const setScreenLocked = useNavigationStore((s) => s.setScreenLocked);
   const { useRail, tabBarPosition } = resolveShellTabBarLayout(formFactor, isLandscape);
   const [activeTab, setActiveTab] = useState<keyof RootTabParamList>('Map');
-  // Downloads already has the full status banner — avoid stacking a second one.
-  const showGlobalDownloadChrome = activeTab !== 'Downloads';
+  /** Global cancel must stay reachable on every tab (including Downloads). */
+  const showGlobalDownloadChrome = Boolean(activeTab);
 
   const onTabNavigatorState = useCallback(
     (e: { data: { state?: { index: number; routes: { name: string }[] } } }) => {

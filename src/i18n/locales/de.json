@@ -65,7 +65,8 @@
     "partialWarningTracks": "Tracks konnten nicht geladen werden.",
     "partialWarningNavigation": "Navigationszustand konnte nicht wiederhergestellt werden.",
     "partialWarningLocale": "Spracheinstellung konnte nicht geladen werden.",
-    "partialWarningMultiple": "Einige Daten konnten nicht geladen werden: %{items}. App nach Speicher- oder Verbindungsproblemen neu starten."
+    "partialWarningMultiple": "Einige Daten konnten nicht geladen werden: %{items}. App nach Speicher- oder Verbindungsproblemen neu starten.",
+    "retryCharts": "Karten neu laden"
   },
   "permissions": {
     "statusGranted": "Erlaubt",

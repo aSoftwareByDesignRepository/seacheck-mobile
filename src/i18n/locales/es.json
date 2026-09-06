@@ -65,7 +65,8 @@
     "partialWarningTracks": "No se pudieron cargar las pistas.",
     "partialWarningNavigation": "No se pudo restaurar el estado de navegación.",
     "partialWarningLocale": "No se pudo cargar la preferencia de idioma.",
-    "partialWarningMultiple": "No se pudieron cargar algunos datos: %{items}. Reinicie la aplicación después de arreglar el almacenamiento o la conectividad."
+    "partialWarningMultiple": "No se pudieron cargar algunos datos: %{items}. Reinicie la aplicación después de arreglar el almacenamiento o la conectividad.",
+    "retryCharts": "Recargar cartas"
   },
   "permissions": {
     "statusGranted": "Otorgada",

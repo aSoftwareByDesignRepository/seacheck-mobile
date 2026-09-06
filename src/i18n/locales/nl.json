@@ -65,7 +65,8 @@
     "partialWarningTracks": "Tracks konden niet worden geladen.",
     "partialWarningNavigation": "De navigatiestatus kan niet worden hersteld.",
     "partialWarningLocale": "Taalvoorkeur kan niet worden geladen.",
-    "partialWarningMultiple": "Sommige gegevens konden niet worden geladen: %{items}. Start de app opnieuw nadat u de opslag of connectiviteit heeft hersteld."
+    "partialWarningMultiple": "Sommige gegevens konden niet worden geladen: %{items}. Start de app opnieuw nadat u de opslag of connectiviteit heeft hersteld.",
+    "retryCharts": "Kaarten herladen"
   },
   "permissions": {
     "statusGranted": "Toegekend",

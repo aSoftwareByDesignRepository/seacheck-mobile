@@ -18,7 +18,14 @@ import { layoutContextKey, normalizeLayoutPreset, type LayoutContext } from '../
 import { enqueuePersist } from '../lib/persist/asyncPersistQueue';
 import { buildActivityProfileSettingsPatch, getActivityProfile, normalizeActivityProfileId } from '../settings/profiles';
 import { normalizeAnchorRadiusNm, normalizeCourseVectorMinutes, normalizeCourseVectorScale, normalizeFollowZoom } from '../lib/settings/mapSettings';
+import {
+  normalizeBearingReference,
+  normalizeCoordFormat,
+  normalizeDistanceUnit,
+  normalizeSogUnit,
+} from '../lib/settings/normalizeSettingsEnums';
 import { parsePersistedBoolean } from '../lib/settings/parsePersistedBoolean';
+import { sanitizeVesselField } from '../lib/emergency/maydayMessage';
 
 const STORAGE_KEY = 'seacheck.settings.v1';
 
@@ -124,6 +131,15 @@ async function persist(state: SettingsState) {
 
 const emptyVessel: VesselProfile = { name: '', callSign: '', mmsi: '', homePort: '' };
 
+function sanitizeVesselProfile(raw: Partial<VesselProfile> | undefined): VesselProfile {
+  return {
+    name: sanitizeVesselField(typeof raw?.name === 'string' ? raw.name : ''),
+    callSign: sanitizeVesselField(typeof raw?.callSign === 'string' ? raw.callSign : ''),
+    mmsi: sanitizeVesselField(typeof raw?.mmsi === 'string' ? raw.mmsi : '', 16),
+    homePort: sanitizeVesselField(typeof raw?.homePort === 'string' ? raw.homePort : ''),
+  };
+}
+
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   hydrated: false,
   onboardingCompleted: false,
@@ -170,10 +186,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           activityProfileId: normalizeActivityProfileId(parsed.activityProfileId),
           layoutPreset: legacyPreset,
           layoutOverrides,
-          sogUnit: parsed.sogUnit ?? CRUISE_PASSAGE_DEFAULTS.sogUnit,
-          distanceUnit: parsed.distanceUnit ?? CRUISE_PASSAGE_DEFAULTS.distanceUnit,
-          bearingReference: parsed.bearingReference ?? CRUISE_PASSAGE_DEFAULTS.bearingReference,
-          coordFormat: parsed.coordFormat ?? CRUISE_PASSAGE_DEFAULTS.coordFormat,
+          sogUnit: normalizeSogUnit(parsed.sogUnit),
+          distanceUnit: normalizeDistanceUnit(parsed.distanceUnit),
+          bearingReference: normalizeBearingReference(parsed.bearingReference),
+          coordFormat: normalizeCoordFormat(parsed.coordFormat),
           mapCourseUp: parsePersistedBoolean(parsed.mapCourseUp, CRUISE_PASSAGE_DEFAULTS.mapCourseUp),
           mapShowCourseVector: parsePersistedBoolean(
             parsed.mapShowCourseVector,
@@ -204,7 +220,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           alarmSoundEnabled: parsePersistedBoolean(parsed.alarmSoundEnabled, true),
           alarmHapticEnabled: parsePersistedBoolean(parsed.alarmHapticEnabled, true),
           legAdvanceAuto: parsePersistedBoolean(parsed.legAdvanceAuto, false),
-          vessel: { ...emptyVessel, ...(parsed.vessel ?? {}) },
+          vessel: sanitizeVesselProfile({ ...emptyVessel, ...(parsed.vessel ?? {}) }),
           downloadWifiOnly: parsePersistedBoolean(parsed.downloadWifiOnly, true),
           gloveMode: parsePersistedBoolean(parsed.gloveMode, false),
           panelSide: parsed.panelSide === 'port' || parsed.panelSide === 'starboard' ? parsed.panelSide : 'auto',
@@ -236,7 +252,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   updateVessel: async (patch) => {
-    set({ vessel: { ...get().vessel, ...patch } });
+    set({ vessel: sanitizeVesselProfile({ ...get().vessel, ...patch }) });
     await persist(get());
   },
 
@@ -269,6 +285,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       if (Object.prototype.hasOwnProperty.call(next, key)) {
         next[key] = parsePersistedBoolean(next[key], current[key]);
       }
+    }
+    if (Object.prototype.hasOwnProperty.call(next, 'sogUnit')) {
+      next.sogUnit = normalizeSogUnit(next.sogUnit, current.sogUnit);
+    }
+    if (Object.prototype.hasOwnProperty.call(next, 'distanceUnit')) {
+      next.distanceUnit = normalizeDistanceUnit(next.distanceUnit, current.distanceUnit);
+    }
+    if (Object.prototype.hasOwnProperty.call(next, 'bearingReference')) {
+      next.bearingReference = normalizeBearingReference(next.bearingReference, current.bearingReference);
+    }
+    if (Object.prototype.hasOwnProperty.call(next, 'coordFormat')) {
+      next.coordFormat = normalizeCoordFormat(next.coordFormat, current.coordFormat);
+    }
+    if (next.vessel) {
+      next.vessel = sanitizeVesselProfile({ ...current.vessel, ...next.vessel });
     }
     set(next);
     await persist(get());

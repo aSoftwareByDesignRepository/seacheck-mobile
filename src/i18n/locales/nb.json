@@ -65,7 +65,8 @@
     "partialWarningTracks": "Spor kunne ikke lastes.",
     "partialWarningNavigation": "Navigasjonstilstanden kunne ikke gjenopprettes.",
     "partialWarningLocale": "Språkpreferanse kunne ikke lastes inn.",
-    "partialWarningMultiple": "Noen data kunne ikke lastes: %{items}. Start appen på nytt etter å ha fikset lagring eller tilkobling."
+    "partialWarningMultiple": "Noen data kunne ikke lastes: %{items}. Start appen på nytt etter å ha fikset lagring eller tilkobling.",
+    "retryCharts": "Last inn kart på nytt"
   },
   "permissions": {
     "statusGranted": "Gitt",

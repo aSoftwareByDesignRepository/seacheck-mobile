@@ -24,10 +24,10 @@ tags:
 - tapOn:
     id: "confirm.proceed"
     optional: true
-# Active download affordance (banner, per-pack cancel, or global chrome on other tabs).
+# Wait until a real Cancel control is on screen (not only the hidden map host).
 - extendedWaitUntil:
     visible:
-      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay|downloads\\.globalSessionChrome"
+      id: "downloads\\.statusBanner\\.cancel|downloads\\.cancel\\.kiel-bay|downloads\\.globalSessionChrome\\.cancel"
     timeout: 180000
 - assertNotVisible:
     id: "downloads.statusBanner.ready"
@@ -42,7 +42,7 @@ tags:
     optional: true
 - extendedWaitUntil:
     notVisible:
-      id: "downloads\\.statusBanner\\.active|downloads\\.cancel\\.kiel-bay|downloads\\.globalSessionChrome"
+      id: "downloads\\.statusBanner\\.active|downloads\\.statusBanner\\.cancel|downloads\\.cancel\\.kiel-bay|downloads\\.globalSessionChrome"
     timeout: 90000
 - extendedWaitUntil:
     notVisible:

@@ -65,7 +65,8 @@
     "partialWarningTracks": "Spor kunne ikke indlæses.",
     "partialWarningNavigation": "Navigationstilstanden kunne ikke gendannes.",
     "partialWarningLocale": "Sprogpræference kunne ikke indlæses.",
-    "partialWarningMultiple": "Nogle data kunne ikke indlæses: %{items}. Genstart appen efter at have rettet opbevaring eller forbindelse."
+    "partialWarningMultiple": "Nogle data kunne ikke indlæses: %{items}. Genstart appen efter at have rettet opbevaring eller forbindelse.",
+    "retryCharts": "Genindlæs kort"
   },
   "permissions": {
     "statusGranted": "Indrømmet",

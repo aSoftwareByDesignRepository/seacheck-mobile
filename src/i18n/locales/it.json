@@ -65,7 +65,8 @@
     "partialWarningTracks": "Impossibile caricare le tracce.",
     "partialWarningNavigation": "Impossibile ripristinare lo stato di navigazione.",
     "partialWarningLocale": "Impossibile caricare la preferenza della lingua.",
-    "partialWarningMultiple": "Impossibile caricare alcuni dati: %{items}. Riavvia l'app dopo aver corretto lo spazio di archiviazione o la connettività."
+    "partialWarningMultiple": "Impossibile caricare alcuni dati: %{items}. Riavvia l'app dopo aver corretto lo spazio di archiviazione o la connettività.",
+    "retryCharts": "Ricarica carte"
   },
   "permissions": {
     "statusGranted": "Concesso",

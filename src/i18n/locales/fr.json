@@ -65,7 +65,8 @@
     "partialWarningTracks": "Les pistes n'ont pas pu être chargées.",
     "partialWarningNavigation": "L'état de navigation n'a pas pu être restauré.",
     "partialWarningLocale": "La préférence de langue n'a pas pu être chargée.",
-    "partialWarningMultiple": "Certaines données n'ont pas pu être chargées : %{items}. Redémarrez l'application après avoir réparé le stockage ou la connectivité."
+    "partialWarningMultiple": "Certaines données n'ont pas pu être chargées : %{items}. Redémarrez l'application après avoir réparé le stockage ou la connectivité.",
+    "retryCharts": "Recharger les cartes"
   },
   "permissions": {
     "statusGranted": "Accordé",

@@ -17,7 +17,7 @@ const testCmd = [
   'npx',
   'jest',
   '--runInBand',
-  '--testPathPattern=gpsFilter|fixQuality|processLocationAlarms|connectivity|downloadNetwork|downloadPolicy|downloadCoordinator|beginDownloadSession|offlinePackIndex|regionPacks|maydayMessage|copyMaydayClipboard|parsePersistedBoolean|settingsStore.booleanHydrate|followModeHydrate|anchorAlarmHydrate|allowRouteEditsHydrate',
+  '--testPathPattern=gpsFilter|fixQuality|processLocationAlarms|connectivity|downloadNetwork|downloadPolicy|downloadCoordinator|beginDownloadSession|offlinePackIndex|regionPacks|maydayMessage|copyMaydayClipboard|parsePersistedBoolean|settingsStore.booleanHydrate|followModeHydrate|anchorAlarmHydrate|allowRouteEditsHydrate|bootWarningPolicy|recoverAfterRenderCrash|normalizeSettingsEnums|settingsStore.vesselEnumIntegrity',
 ];
 
 const mutations = [
@@ -172,6 +172,20 @@ const mutations = [
       'export function isEffectivelyOnline(state: Pick<NetInfoState, \'isConnected\' | \'isInternetReachable\'>): boolean {\n  return state.isConnected === true && state.isInternetReachable === true;\n}',
     replace:
       'export function isEffectivelyOnline(state: Pick<NetInfoState, \'isConnected\' | \'isInternetReachable\'>): boolean {\n  return state.isConnected === true; /* mutated: ignore reachability */\n}',
+  },
+  {
+    name: 'boot-offline-dismissible',
+    file: 'src/shell/bootWarningPolicy.ts',
+    search:
+      "export function canDismissBootWarnings(warnings: readonly string[]): boolean {\n  return warnings.length > 0 && !bootWarningsIncludeCritical(warnings);\n}",
+    replace:
+      "export function canDismissBootWarnings(warnings: readonly string[]): boolean {\n  return warnings.length > 0; /* mutated: offline dismissible */\n}",
+  },
+  {
+    name: 'crash-recovery-skips-confirm-drain',
+    file: 'src/shell/recoverAfterRenderCrash.ts',
+    search: '  cancelAllPendingConfirms();\n',
+    replace: '  /* mutated: skip confirm drain */\n',
   },
 ];
 

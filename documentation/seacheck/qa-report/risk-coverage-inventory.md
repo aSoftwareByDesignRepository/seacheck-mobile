@@ -65,9 +65,9 @@ OWASP API BOLA/IDOR: **N/A**. Residual = local integrity, download honesty, alar
 | Depth overlay | Confirm, allowlist, online gate | Unit; native pixels gap |
 | Overpass | Offline skip | NetInfo timeout fail-closed |
 | Confirm queue | Unmount / lock cancel | Unit |
-| BootGate | Optional pack hydrate + always seal spinner | **Open** Medium |
-| ErrorBoundary Retry | No store recovery | **Open** Medium |
-| i18n | Missing keys | 901 × 11 PASS |
+| BootGate | Offline warning non-dismissible + Reload charts | **Fixed** this closure |
+| ErrorBoundary Retry | recoverAfterRenderCrash | **Fixed** this closure |
+| i18n | Missing keys | 902 × 11 PASS |
 | Anchor / alarms | Accuracy + hydrate integrity | Unit + mutation |
 | Map / MOB | Lock vs MOB | Sparse UI |
 | Passage / tracks | Active flags; allowRouteEdits hydrate | Partial + hydrate fix |
@@ -114,10 +114,10 @@ OWASP API BOLA/IDOR: **N/A**. Residual = local integrity, download honesty, alar
 
 | Gate | Number |
 |------|--------|
-| Jest | **151** suites / **708** tests EXIT 0 |
+| Jest | **155** suites / **717** tests EXIT 0 |
 | Skipped | **0** |
-| mutate:core | **20/20** killed |
+| mutate:core | **22/22** killed |
 | Coverage | statements 61.69% / branches 54.89% / lines 64.44% |
 | a11y contrast + touch | PASS |
-| i18n | 901 × 11 PASS |
+| i18n | 902 × 11 PASS |
 | Maestro cancel + kill | OK on emulator-5562 |

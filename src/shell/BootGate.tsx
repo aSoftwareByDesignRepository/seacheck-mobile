@@ -12,6 +12,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import { useTrackStore } from '../store/trackStore';
 import { useWaypointStore } from '../store/waypointStore';
 import { useTheme } from '../theme/ThemeContext';
+import { bootWarningsIncludeCritical, canDismissBootWarnings } from './bootWarningPolicy';
 import { OfflineMapBootstrap } from './OfflineMapBootstrap';
 
 const OPTIONAL_BOOT_TASKS = new Set(['offline']);
@@ -164,6 +165,7 @@ export function BootGate({ children }: PropsWithChildren) {
   const boot = useCallback(async () => {
     setBootError(false);
     setReady(false);
+    setWarnDismissed(false);
     try {
       const warnings = await runStartupHydrate();
       setBootWarnings(warnings);
@@ -209,11 +211,14 @@ export function BootGate({ children }: PropsWithChildren) {
     );
   }
 
+  const showWarning = bootWarnings.length > 0 && (bootWarningsIncludeCritical(bootWarnings) || !warnDismissed);
+  const allowDismiss = canDismissBootWarnings(bootWarnings);
+
   return (
     <View style={styles.root}>
       {/* Underlay: MapLibre TextureViews must never sit above the navigator. */}
       <OfflineMapBootstrap />
-      {bootWarnings.length > 0 && !warnDismissed ? (
+      {showWarning ? (
         <View
           style={[
             styles.warnStrip,
@@ -226,22 +231,46 @@ export function BootGate({ children }: PropsWithChildren) {
             },
           ]}
           accessibilityRole="alert"
-          accessibilityLiveRegion="polite"
+          accessibilityLiveRegion="assertive"
+          testID="boot.partialWarning"
         >
-          <Text style={[styles.warnText, { color: colors.warningText, flex: 1 }]}>{bootWarningMessage(bootWarnings)}</Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('common.dismiss')}
-            accessibilityHint={t('boot.partialWarningDismissHint')}
-            onPress={() => setWarnDismissed(true)}
-            hitSlop={8}
-            style={[styles.warnDismiss, { minHeight: minTouch, minWidth: minTouch, borderColor: colors.warningBorder }]}
-            testID="boot.partialWarning.dismiss"
-          >
-            <Text style={[styles.warnDismissText, { color: colors.warningText }]} accessibilityElementsHidden importantForAccessibility="no">
-              ×
-            </Text>
-          </Pressable>
+          <View style={styles.warnBody}>
+            <Text style={[styles.warnText, { color: colors.warningText }]}>{bootWarningMessage(bootWarnings)}</Text>
+            {bootWarningsIncludeCritical(bootWarnings) ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('boot.retryCharts')}
+                onPress={() => void boot()}
+                hitSlop={8}
+                style={[
+                  styles.warnRetry,
+                  {
+                    minHeight: minTouch,
+                    borderColor: colors.warningBorder,
+                    backgroundColor: colors.background,
+                  },
+                ]}
+                testID="boot.partialWarning.retry"
+              >
+                <Text style={[styles.warnRetryText, { color: colors.warningText }]}>{t('boot.retryCharts')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {allowDismiss ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('common.dismiss')}
+              accessibilityHint={t('boot.partialWarningDismissHint')}
+              onPress={() => setWarnDismissed(true)}
+              hitSlop={8}
+              style={[styles.warnDismiss, { minHeight: minTouch, minWidth: minTouch, borderColor: colors.warningBorder }]}
+              testID="boot.partialWarning.dismiss"
+            >
+              <Text style={[styles.warnDismissText, { color: colors.warningText }]} accessibilityElementsHidden importantForAccessibility="no">
+                ×
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
       <View style={[styles.content, { backgroundColor: colors.background }]} collapsable={false}>
@@ -259,8 +288,30 @@ const styles = StyleSheet.create({
   bootText: { fontSize: 15, lineHeight: 22, textAlign: 'center' },
   retryBtn: { marginTop: 8, borderRadius: 12, paddingHorizontal: 24, justifyContent: 'center' },
   retryText: { fontSize: 16, fontWeight: '700' },
-  warnStrip: { borderBottomWidth: 1, paddingHorizontal: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  warnText: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
-  warnDismiss: { borderLeftWidth: 1, marginVertical: -10, paddingHorizontal: 14, justifyContent: 'center', alignItems: 'center' },
+  warnStrip: {
+    borderBottomWidth: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  warnBody: { flex: 1, gap: 8 },
+  warnText: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  warnRetry: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+  },
+  warnRetryText: { fontSize: 15, fontWeight: '700' },
+  warnDismiss: {
+    borderLeftWidth: 1,
+    marginVertical: -10,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   warnDismissText: { fontSize: 22, fontWeight: '300', lineHeight: 24 },
 });

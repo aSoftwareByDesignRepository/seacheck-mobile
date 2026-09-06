@@ -58,14 +58,15 @@
     "failedTitle": "SeaCheck could not start",
     "failedBody": "Something went wrong while loading your data. Check storage space and try again.",
     "partialWarning": "Some data could not be loaded. Charts and alarms may be limited until you restart the app.",
-    "partialWarningDismissHint": "Hides this startup notice for this session",
-    "partialWarningOffline": "Offline charts could not be loaded. Download packs again while on Wi‑Fi.",
+    "partialWarningDismissHint": "Hides this notice for now (chart problems stay visible until fixed)",
+    "partialWarningOffline": "Offline charts did not load. Tap Reload charts, or download packs on Wi‑Fi.",
     "partialWarningWaypoints": "Waypoints could not be loaded.",
     "partialWarningPassages": "Passages could not be loaded.",
     "partialWarningTracks": "Tracks could not be loaded.",
     "partialWarningNavigation": "Navigation state could not be restored.",
     "partialWarningLocale": "Language preference could not be loaded.",
-    "partialWarningMultiple": "Some data could not be loaded: %{items}. Restart the app after fixing storage or connectivity."
+    "partialWarningMultiple": "Some data could not be loaded: %{items}. Restart the app after fixing storage or connectivity.",
+    "retryCharts": "Reload charts"
   },
   "permissions": {
     "statusGranted": "Granted",

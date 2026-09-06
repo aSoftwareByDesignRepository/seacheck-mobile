@@ -65,7 +65,8 @@
     "partialWarningTracks": "Nie udało się wczytać utworów.",
     "partialWarningNavigation": "Nie można przywrócić stanu nawigacji.",
     "partialWarningLocale": "Nie można wczytać preferencji językowych.",
-    "partialWarningMultiple": "Nie można załadować niektórych danych: %{items}. Uruchom ponownie aplikację po naprawieniu pamięci lub łączności."
+    "partialWarningMultiple": "Nie można załadować niektórych danych: %{items}. Uruchom ponownie aplikację po naprawieniu pamięci lub łączności.",
+    "retryCharts": "Załaduj mapy ponownie"
   },
   "permissions": {
     "statusGranted": "Nadany",

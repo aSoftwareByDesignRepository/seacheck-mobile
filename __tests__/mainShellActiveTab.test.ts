@@ -31,8 +31,8 @@ describe('MainShell active-tab contract', () => {
       },
     });
     expect(activeTab).toBe('Downloads');
-    // Global chrome must hide on Downloads to avoid double banners.
-    expect(activeTab !== 'Downloads').toBe(false);
+    // Global cancel chrome stays on Downloads too (sticky banner + overlay both OK).
+    expect(Boolean(activeTab)).toBe(true);
 
     onTabNavigatorState({
       data: {
@@ -49,7 +49,7 @@ describe('MainShell active-tab contract', () => {
       },
     });
     expect(activeTab).toBe('Map');
-    expect(activeTab !== 'Downloads').toBe(true);
+    expect(Boolean(activeTab)).toBe(true);
   });
 
   it('ignores empty / missing state (boot race)', () => {

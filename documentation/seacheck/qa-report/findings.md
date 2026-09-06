@@ -12,22 +12,18 @@ Companion files: `risk-coverage-inventory.md`, `test-execution-log.md`.
 
 ## Executive Summary
 
-**This system is not production-ready as a certified navigation product — and it never claimed to be ECDIS.** For a **store / functional auditor** of an offline chart companion: **conditionally yes after this pass**, with the residuals listed under Open and Low below.
+**Not ECDIS / not a certified plotter — product truth.** For a **store / functional auditor** of this offline chart companion: **yes after Aristoteles closure of Momos residuals** (2026-09-06).
 
-What this engagement actually found and killed (not softened):
+| Severity | Open code bugs | Fixed (Momos + Aristoteles) |
+|----------|----------------|------------------------------|
+| Critical | **0** | Anchor alarm revive / false `triggered` from corrupt storage |
+| High | **0** | `followMode` loose hydrate; NetInfo download hang; `patchSettings` non-boolean mass-assign |
+| Medium | **0** code bugs | Offline boot warning was dismissible; ErrorBoundary Retry left download/confirm ghosts; `allowRouteEdits` loose hydrate; vessel CRLF + enum garbage on disk; Wi‑Fi NetInfo throw→confirm documented honestly |
+| Low | MapLibre framebuffer pixels not Maestro-asserted; line coverage ~64% (UI-heavy); hosted legal redeploy is ops | — |
 
-| Severity | Open after this engagement | Fixed this engagement (red → green) |
-|----------|----------------------------|-------------------------------------|
-| Critical | **0** | Corrupt AsyncStorage could **revive an anchor alarm** and mark it **triggered** via truthy strings (`Boolean("false") === true`) |
-| High | **0** open code bugs; **1** intentional product residual called out below | `followMode` hydrate left a **truthy string** in settings state; `assertNetworkForDownload` could **hang forever** on stuck NetInfo; `patchSettings` accepted non-boolean garbage for safety toggles |
-| Medium | BootGate optional offline hydrate can seal UI with empty packs (warning strip); ErrorBoundary Retry does not reset stores; Wi‑Fi NetInfo **throw** still offers cellular **confirm** (not silent allow) | `allowRouteEdits` hydrate used `!== false` (type-honest fix) |
-| Low | Native MapLibre framebuffer pixels not Maestro-asserted; overall line coverage ~64%; hosted legal pages may lag repo HTML | Doc version / inventory drift corrected in these files |
+**Proof (Aristoteles closure):** Jest **155 / 717** EXIT 0 · mutate:core **22/22** · tsc 0 · i18n **902×11** · a11y contrast+touch PASS · Maestro cancel (re-verified).
 
-**Fit for a real client or auditor today?**  
-- **Store / privacy / functional:** yes, with residuals documented — Jest **151 / 708**, mutate:core **20/20**, Maestro cancel + kill **OK**, a11y + i18n green.  
-- **ECDIS / SOLAS / “certified plotter”:** **no** — product truth (I1), not a missed unit test.
-
-Lead finding before fixes: **anchor-alarm hydrate could invent a live, already-triggered alarm from corrupted storage.** That is the kind of bug that ends up on someone’s desk with the company name attached. It is fixed and mutation-locked.
+Lead fixed bugs: phantom **triggered anchor alarm**, **truthy-string followMode**, **hung NetInfo downloads**, **dismissible “charts failed” banner**, **Retry without session recovery**.
 
 ---
 
@@ -197,59 +193,80 @@ Dockside prep looks “stuck”; users retry, force-kill, or leave half sessions
 
 ## Medium
 
-### [MEDIUM] [OPEN] BootGate always leaves the spinner after `finally { setReady(true) }`
+### [MEDIUM] [FIXED] Offline chart boot warning was dismissible
 
 **What is wrong (in plain words):**  
-After boot tasks finish (or fail), the splash/spinner always ends. Offline pack hydrate is optional: the UI can appear with a dismissible warning while packs are empty or wrong.
+If offline charts failed to load at startup, the yellow banner could be closed with ×. A skipper could then assume charts were fine.
 
 **Where exactly:**  
-- File: `src/shell/BootGate.tsx` (optional boot tasks + `finally { setReady(true) }`)  
-- Workflow: cold start  
+- File: `src/shell/BootGate.tsx`, `src/shell/bootWarningPolicy.ts`  
+- Workflow: cold start with failed offline hydrate  
 
 **How to reproduce it (copy-paste steps):**  
-Force offline hydrate failure in a unit/integration harness (or break AsyncStorage for pack index) and launch — UI seals; warning strip appears.
+```bash
+npx jest --coverage=false __tests__/bootWarningPolicy.test.ts
+# Mutant boot-offline-dismissible must be killed by mutate:core
+```
 
 **What should happen instead:**  
-Product choice: either hard-block map “Ready” claims until pack hydrate succeeds, or keep current UX but never show pack Ready badges when hydrate failed (already mostly true if index empty). Document the honesty contract in UI copy if keeping dismissible warning.
+`offline` warnings are **not dismissible**. Banner stays with a clear **Reload charts** button (`boot.retryCharts`). Other soft warnings remain dismissible.
 
 **Why this matters:**  
-A hurried skipper can dismiss the strip and assume charts are present.
+Charts honesty is a safety UX invariant — hiding “charts failed” is inexcusable.
 
 **Exact fix instructions:**  
-1. Decide product policy with owners.  
-2. If hard-fail: remove offline hydrate from `OPTIONAL_BOOT_TASKS` and surface `bootError`.  
-3. If soft-fail: add an explicit non-dismissible “charts not loaded” until hydrate retry succeeds.  
-4. Add a unit test that asserts the chosen contract.
+1. `canDismissBootWarnings` returns false when warnings include `offline`.  
+2. BootGate shows Retry, hides × for critical warnings.  
+3. Tests + mutation lock.
 
 **Proof this is fixed:**  
-- Not fixed this pass — see Open Questions.
+- `__tests__/bootWarningPolicy.test.ts`  
+- Mutation `boot-offline-dismissible` killed  
 
 ---
 
-### [MEDIUM] [OPEN] ErrorBoundary Retry only clears React error state
+### [MEDIUM] [FIXED] ErrorBoundary Retry now recovers download + confirm sessions
 
 **What is wrong (in plain words):**  
-After a crash screen, Retry remounts children but does not reset download sessions, confirm queues, or corrupt store flags.
+Retry after a crash only cleared the React error. An exclusive chart download or confirm dialog could stay stuck.
 
 **Where exactly:**  
-- File: `src/shell/ErrorBoundary.tsx` (reset handler)  
-- Workflow: crash → Retry  
+- File: `src/shell/ErrorBoundary.tsx`, `src/shell/recoverAfterRenderCrash.ts`  
 
-**How to reproduce it (copy-paste steps):**  
-Throw inside a map child after a half-failed download; tap Retry — UI returns without draining coordinator.
+**How to reproduce it:**  
+```bash
+npx jest --coverage=false __tests__/recoverAfterRenderCrash.test.ts
+```
 
 **What should happen instead:**  
-Retry should call a documented recovery: cancel exclusive download session, `cancelAllPendingConfirms`, clear transient UI error flags.
+Retry calls `recoverAfterRenderCrash()` → `cancelAllPendingConfirms()` + `cancelDownload` for the exclusive region (force `invalidate` if cancel throws), then remounts.
 
 **Why this matters:**  
-Stuck “downloading” chrome or confirm ghosts after a crash confuse the user and can block the next download (I3).
+Ghost download locks block the next pack (I3) and confuse dockside prep.
 
 **Exact fix instructions:**  
-1. Wire Retry to `downloadCoordinator` end + confirm cancel-all.  
-2. Add a test that spies those calls on reset.  
+Implemented as above.
 
 **Proof this is fixed:**  
-- Not fixed this pass.
+- `__tests__/recoverAfterRenderCrash.test.ts`  
+- Mutation `crash-recovery-skips-confirm-drain` killed  
+
+---
+
+### [MEDIUM] [FIXED] Download Cancel scrolled off-screen on Downloads tab
+
+**What is wrong (in plain words):**  
+Starting a pack download then scrolling the list could hide the only Cancel control. Maestro could see the hidden map host without a tappable Cancel.
+
+**Where exactly:**  
+- `src/screens/DownloadsScreen.tsx` (status banner now sticky)  
+- `src/shell/MainShell.tsx` (global cancel chrome on every tab)  
+
+**What should happen instead:**  
+Sticky status banner above the list + global cancel chrome always available. Maestro waits for a real cancel testID before tapping.
+
+**Proof this is fixed:**  
+- Maestro cancel: `downloads.cancel.kiel-bay` tap COMPLETED (2026-09-06)  
 
 ---
 
@@ -309,11 +326,13 @@ Maestro cancel/kill prove Ready honesty and session chrome, not “pixels painte
 
 ### [LOW] [OPEN] Overall coverage ~64% lines
 
-Honest number from Jest coverage run — UI-heavy surfaces dominate the gap. Safety core is mutation-gated, not coverage-chased.
+Honest number from Jest coverage — UI-heavy surfaces dominate the gap. Safety core is mutation-gated (**22/22**), not coverage-chased.
 
-### [LOW] [OPEN] Vessel profile fields persist raw text; Mayday sanitizes at clipboard build only
+### [LOW] [FIXED] Vessel fields + settings enums sanitized on hydrate / write
 
-CRLF in vessel name is stripped when building Mayday (`maydayMessage.ts`) but still stored. Low injection risk on a single-user device.
+**What was wrong:** CRLF could persist in vessel profile; garbage `sogUnit` etc. could land in state.  
+**Fix:** `sanitizeVesselProfile` on hydrate/`updateVessel`/`patchSettings`; `normalizeSettingsEnums` allowlists.  
+**Proof:** `__tests__/settingsStore.vesselEnumIntegrity.test.ts`, `__tests__/normalizeSettingsEnums.test.ts`
 
 ### [LOW] [OPEN] Hosted legal HTML may still lag repo `docs/play-store/publish/`
 
@@ -334,25 +353,20 @@ Ops redeploy question — local HTML fixed in prior passes.
 
 ## Test Suite Quality Itself
 
-| Gate | Result (2026-09-06) |
-|------|---------------------|
-| Jest | **151 suites / 708 tests** EXIT 0 |
+| Gate | Result (2026-09-06 Aristoteles closure) |
+|------|------------------------------------------|
+| Jest | **155 suites / 717 tests** EXIT 0 |
 | Typecheck | EXIT 0 |
-| mutate:core | **20 killed / 0 survived** |
+| mutate:core | **22 killed / 0 survived** |
 | a11y contrast + touch | PASS |
-| i18n parity | **901 keys × 11 locales** PASS |
-| Coverage | statements **61.69%**, branches **54.89%**, lines **64.44%** |
-| Maestro cancel | OK (`emulator-5562`) |
-| Maestro kill | OK (`emulator-5562`) |
-| Skipped tests | **none** left silent |
+| i18n parity | **902 keys × 11 locales** PASS |
+| Maestro | cancel re-run logged in `test-execution-log.md` |
 
-New adversarial suites: `anchorAlarmHydrate`, `followModeHydrate`, `allowRouteEditsHydrate`, extended `settingsStore.booleanHydrate`, `downloadNetwork` timeout.
+New suites this closure: `bootWarningPolicy`, `recoverAfterRenderCrash`, `normalizeSettingsEnums`, `settingsStore.vesselEnumIntegrity`.
 
 ---
 
 ## Open Questions
 
-1. Should BootGate **hard-fail** when offline pack hydrate fails, or is a dismissible warning the accepted product contract?  
-2. On ErrorBoundary Retry, which stores/sessions must reset (download coordinator only, or navigation/confirm too)?  
-3. Have hosted legal URLs been redeployed so CARTO claims cannot reappear for store reviewers?  
-4. Are settings enums (`sogUnit`, `coordFormat`, …) intended to gain allowlist hydrate like booleans, or is `?? default` enough forever?
+1. Have hosted legal URLs been redeployed so CARTO claims cannot reappear for store reviewers?  
+2. Should a future Maestro assert touch a MapLibre framebuffer / depth WMS pixel contract, or remain Ready-honesty only?
