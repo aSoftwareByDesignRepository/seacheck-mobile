@@ -64,9 +64,16 @@ SEACHECK_APP_VARIANT=production npx expo prebuild --platform android --clean
 npm run android:bundle
 ```
 
+`android:bundle` / `android:apk` / `android:release` run `scripts/play-android-prepare.sh` first:
+- R8 minify + resource shrinking + `proguard-android-optimize.txt`
+- Strip deprecated edge-to-edge `statusBarColor` / `navigationBarColor`
+- Patch RN `StatusBarModule` / edge Window APIs
+- Convert splash PNGs → WebP
+
 - [ ] Output: `android/app/build/outputs/bundle/release/app-release.aab`
-- [ ] `version` in `app.config.ts` is correct (e.g. `1.0.0` for first public release)
-- [ ] Bump `version` (and `android.versionCode` if not using EAS auto-increment) before each upload
+- [ ] `version` in `app.config.ts` is correct
+- [ ] Bump `version` and `android.versionCode` before each upload
+- [ ] After upload, confirm Play “edge-to-edge” / “R8 optimization” recommendations clear on the new release
 
 **EAS (cloud alternative):**
 

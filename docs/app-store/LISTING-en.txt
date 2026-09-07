@@ -1,6 +1,6 @@
 === APP STORE CONNECT — ENGLISH (U.S.) ===
 Bundle ID: de.softwarebydesign.seacheck
-Version: 0.1.5
+Version: 0.1.9
 Category: Navigation (primary). Secondary: Utilities if offered.
 
 --- Name (max 30) ---

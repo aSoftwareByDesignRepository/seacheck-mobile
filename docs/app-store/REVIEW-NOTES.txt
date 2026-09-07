@@ -13,7 +13,7 @@ Open SeaCheck → complete onboarding (navigation disclaimer, optional location 
 • iPhone (simulator and/or device) — primary App Store target
 • iPad (supportsTablet: true)
 • Android emulator SeaCheck_Maestro_API_33 and/or physical device (parity checks)
-• Bundle: de.softwarebydesign.seacheck · version 0.1.5 (versionCode / CFBundleVersion 5)
+• Bundle: de.softwarebydesign.seacheck · version 0.1.9 (versionCode / CFBundleVersion 9)
 
 3) What the app is
 SeaCheck is a standalone coastal navigation aid for small-boat sailors. It is **not** a certified chart plotter. Map data comes from OpenSeaMap/OpenStreetMap volunteers and may be outdated. The app stores passages, tracks, and settings **locally on the device** — Software by Design does not operate a central navigation cloud.

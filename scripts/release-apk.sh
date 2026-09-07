@@ -84,6 +84,9 @@ SEACHECK_APP_VARIANT=production NODE_ENV=production npx expo prebuild --platform
 echo "==> Node path + Gradle patches"
 SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh
 
+echo "==> Android 15 / Play Console prepare (R8, edge-to-edge, WebP splash, RN patch)"
+bash scripts/play-android-prepare.sh
+
 echo "==> Clean native build caches"
 npm run android:clean
 

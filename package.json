@@ -1,6 +1,6 @@
 {
   "name": "seacheck-mobile",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "main": "index.ts",
   "license": "AGPL-3.0-or-later",
   "engines": {
@@ -12,8 +12,9 @@
     "android": "bash scripts/run-android.sh",
     "android:clean": "bash scripts/android-clean.sh",
     "android:rebuild": "bash scripts/android-clean.sh && npm run android",
-    "android:release": "SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh && cd android && SEACHECK_APP_VARIANT=production NODE_ENV=production ./gradlew assembleRelease",
-    "android:bundle": "SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh && cd android && SEACHECK_APP_VARIANT=production NODE_ENV=production ./gradlew bundleRelease",
+    "android:release": "bash scripts/play-android-prepare.sh && SEACHECK_APP_VARIANT=production NODE_ENV=production bash scripts/ensure-android-local-properties.sh && cd android && SEACHECK_APP_VARIANT=production NODE_ENV=production ./gradlew assembleRelease",
+    "android:bundle": "bash scripts/android-bundle.sh",
+    "android:apk": "bash scripts/android-apk.sh",
     "android:dev": "CI=1 expo run:android --port 8092",
     "release:apk": "bash scripts/release-apk.sh",
     "ios": "expo run:ios --port 8092",
@@ -40,6 +41,7 @@
     "sync:legal-html": "bash scripts/sync-legal-html.sh",
     "sync:regions": "node scripts/sync-planning-regions.mjs",
     "icons": "node scripts/generate-app-icons.mjs",
+    "optimize:android-bitmaps": "node scripts/optimize-android-bitmaps.mjs",
     "postinstall": "node node_modules/@check/android15-play-compliance/scripts/patch-rn-edge-to-edge.cjs",
     "patch:rn-edge": "node node_modules/@check/android15-play-compliance/scripts/patch-rn-edge-to-edge.cjs"
   },
