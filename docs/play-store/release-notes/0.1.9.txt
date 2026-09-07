@@ -1,0 +1,24 @@
+<en-US>
+SeaCheck 0.1.9 for Google Play.
+
+• Passage planning: zoom stays where you left it when adding waypoints (no more jump back)
+• Fit route button to show the whole planned passage on demand
+• Chart downloads: other pack Download buttons no longer stay greyed out after the first pack
+• Boat follow pauses while you plan on the chart, so GPS does not fight your pan/zoom
+• Play quality: full R8 optimization, edge-to-edge cleanup, WebP splash assets
+• Stability fixes for offline pack download locking
+
+Navigation companion only — not a substitute for official charts and good seamanship.
+</en-US>
+<de-DE>
+SeaCheck 0.1.9 für Google Play.
+
+• Törnplanung: Zoom bleibt beim Setzen von Wegpunkten erhalten (kein Zurückspringen mehr)
+• „Route einpassen“, um die gesamte geplante Passage bei Bedarf anzuzeigen
+• Kartendownloads: Download-Buttons anderer Pakete bleiben nach dem ersten Paket nicht mehr ausgegraut
+• Boots-Verfolgung pausiert während der Planung auf der Karte, damit GPS Schwenken/Zoomen nicht stört
+• Play-Qualität: R8-Volloptimierung, Edge-to-Edge-Bereinigung, WebP-Splash
+• Stabilitätsverbesserungen bei Offline-Kartenpaket-Sperren
+
+Nur Navigationsbegleiter — kein Ersatz für offizielle Seekarten und seemännische Sorgfalt.
+</de-DE>

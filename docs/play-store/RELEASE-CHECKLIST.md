@@ -98,7 +98,7 @@ SEACHECK_APP_VARIANT=production EAS_BUILD_PROFILE=production EAS_PROJECT_ID=<uui
 - [ ] Package name: `de.softwarebydesign.seacheck`
 - [ ] **Internal testing** → upload AAB → install via Play
 - [ ] Fix pre-launch report issues
-- [ ] **Production** → paste [release-notes/0.1.3.txt](./release-notes/0.1.3.txt) (`<en-US>` / `<de-DE>`)
+- [ ] **Production** → paste [release-notes/0.1.9.txt](./release-notes/0.1.9.txt) (`<en-US>` / `<de-DE>`)
 - [ ] Submit for review
 
 ---

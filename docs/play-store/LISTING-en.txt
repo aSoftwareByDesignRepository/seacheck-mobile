@@ -3,7 +3,7 @@ Package name: de.softwarebydesign.seacheck
 Category (Store settings): Maps & Navigation
 Tags (optional): sailing · coastal · GPS · SOG · offline map
 Visibility: UNLISTED (share link only)
-Release notes v0.1.0: paste release-notes/0.1.0.txt into Play Console
+Release notes v0.1.9: paste release-notes/0.1.9.txt into Play Console
   (format: <en-US>…</en-US><de-DE>…</de-DE>, max 500 chars per locale)
 Copy each block into Play Console → Main store listing.
 Tone: personal project shared as-is — not a product launch.

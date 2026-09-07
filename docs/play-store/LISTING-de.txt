@@ -3,7 +3,7 @@ Paketname: de.softwarebydesign.seacheck
 Kategorie (Store-Einstellungen): Karten & Navigation
 Tags (optional): Segeln · Küste · GPS · SOG · Offline-Karte
 Sichtbarkeit: UNLISTED (nur per Link teilen)
-Versionshinweise v0.1.0: release-notes/0.1.0.txt in die Play Console einfügen
+Versionshinweise v0.1.9: release-notes/0.1.9.txt in die Play Console einfügen
   (Format: <en-US>…</en-US><de-DE>…</de-DE>, max. 500 Zeichen pro Sprache)
 Ton: persönliches Projekt, weitergegeben wie besehen — kein Produkt-Launch.
 
