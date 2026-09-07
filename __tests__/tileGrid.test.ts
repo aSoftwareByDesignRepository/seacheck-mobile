@@ -52,9 +52,10 @@ describe('tileGrid', () => {
     expect(sparseKeys.has(`${z}/${xMax}/${yMax}`)).toBe(true);
   });
 
-  it('estimateDownloadViewportStride underestimates coverage (overlap of 1)', () => {
+  it('estimateDownloadViewportStride underestimates coverage and caps at MAX_SAFE_DOWNLOAD_STRIDE', () => {
     expect(estimateDownloadViewportStride(256, 256)).toEqual({ strideX: 1, strideY: 1 });
-    expect(estimateDownloadViewportStride(768, 512)).toEqual({ strideX: 2, strideY: 1 });
-    expect(estimateDownloadViewportStride(1080, 900)).toEqual({ strideX: 3, strideY: 2 });
+    // Production integrity: no hopping — large viewports still stride 1.
+    expect(estimateDownloadViewportStride(768, 512)).toEqual({ strideX: 1, strideY: 1 });
+    expect(estimateDownloadViewportStride(1080, 900)).toEqual({ strideX: 1, strideY: 1 });
   });
 });

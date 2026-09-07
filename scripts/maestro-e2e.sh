@@ -186,9 +186,14 @@ case "$FLOW_ARG" in
     RELEASE_MODE=1
     FLOWS=("$APP_ROOT/.maestro/04-download-seal-ready.yaml")
     ;;
+  release-seal-de|05)
+    RELEASE_MODE=1
+    APP_LOCALE=de-DE
+    FLOWS=("$APP_ROOT/.maestro/05-download-seal-ready-de.yaml")
+    ;;
   onboarding) FLOWS=("$APP_ROOT/.maestro/01-onboarding-skip.yaml") ;;
   probe) FLOWS=("$APP_ROOT/.maestro/00-probe-launch.yaml") ;;
-  *) die "Unknown flow '$FLOW_ARG' (all|cancel|kill|release-cancel|release-kill|release-seal|onboarding|probe)" ;;
+  *) die "Unknown flow '$FLOW_ARG' (all|cancel|kill|release-cancel|release-kill|release-seal|release-seal-de|onboarding|probe)" ;;
 esac
 
 log "device=$DEVICE metro=$METRO_PORT release=$RELEASE_MODE flows=${FLOWS[*]}"
@@ -240,6 +245,14 @@ prepare_fresh_app() {
     adb -s "$DEVICE" shell pm clear "$APP_ID" >/dev/null
   fi
   grant_runtime_permissions
+  if [[ -n "${APP_LOCALE:-}" ]]; then
+    log "set app + system locales → $APP_LOCALE"
+    # expo-localization follows system locales on many API levels; set both.
+    adb -s "$DEVICE" shell settings put system system_locales "$APP_LOCALE" >/dev/null 2>&1 || true
+    adb -s "$DEVICE" shell cmd locale set-app-locales "$APP_ID" --locales "$APP_LOCALE" >/dev/null 2>&1 || true
+    # Soft-restart so getLocales() picks up the change before Maestro launch.
+    adb -s "$DEVICE" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
+  fi
 }
 
 wait_for_release_ui() {

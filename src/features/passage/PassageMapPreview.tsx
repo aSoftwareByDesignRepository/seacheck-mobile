@@ -12,6 +12,11 @@ import type { WaypointRow } from '../../lib/db/database';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { EmbeddedChartMap } from '../map/EmbeddedChartMap';
+import {
+  MAP_PASSAGE_LINE,
+  MAP_PASSAGE_STROKE,
+  MAP_PASSAGE_WAYPOINT,
+} from '../../lib/map/mapChartColors';
 
 type Props = {
   waypoints: WaypointRow[];
@@ -81,7 +86,7 @@ export function PassageMapPreview({ waypoints, tall = false }: Props) {
           id="passage-preview-line"
           type="line"
           filter={['==', ['get', 'kind'], 'planning-leg']}
-          paint={{ 'line-color': '#0073ad', 'line-width': 3, 'line-opacity': 0.9 }}
+          paint={{ 'line-color': MAP_PASSAGE_LINE, 'line-width': 3, 'line-opacity': 0.9 }}
         />
         <Layer
           id="passage-preview-wp"
@@ -89,9 +94,9 @@ export function PassageMapPreview({ waypoints, tall = false }: Props) {
           filter={['==', ['get', 'kind'], 'planning-wp']}
           paint={{
             'circle-radius': 7,
-            'circle-color': '#e65100',
+            'circle-color': MAP_PASSAGE_WAYPOINT,
             'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff',
+            'circle-stroke-color': MAP_PASSAGE_STROKE,
           }}
         />
       </GeoJSONSource>

@@ -1,3 +1,4 @@
+import { isNativePackOpBusy } from './nativePackMutex';
 import { promiseWithTimeout, TimeoutError } from '../async/promiseWithTimeout';
 import { ensureMapLibreNetworkForDownload } from '../network/mapLibreNetworkGate';
 import { downloadMapPostTeardownMs } from './downloadMapConstants';
@@ -59,6 +60,7 @@ class DownloadCoordinator {
   preflightLock(regionId: string): boolean {
     // Never start preflight while a prior session still owns the TextureView for teardown.
     if (this.teardownRegionId != null) return false;
+    if (isNativePackOpBusy()) return false;
     if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;
     if (this.activeRegionId === regionId && !this.preflightOnly) return false;
     this.activeRegionId = regionId;
@@ -80,6 +82,8 @@ class DownloadCoordinator {
   tryBegin(regionId: string): number | null {
     // Block all starts until GL teardown finishes — dual TextureView is a hard crash class.
     if (this.teardownRegionId != null) return null;
+    // Native create/delete still in flight — never overlap a new createPack.
+    if (isNativePackOpBusy()) return null;
     if (this.activeRegionId != null && this.activeRegionId !== regionId) return null;
     if (this.activeRegionId === regionId && !this.preflightOnly) return null;
     this.activeRegionId = regionId;

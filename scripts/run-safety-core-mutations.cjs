@@ -95,9 +95,9 @@ const mutations = [
     name: 'download-parallel-allowed',
     file: 'src/lib/offline/downloadCoordinator.ts',
     search:
-      '  tryBegin(regionId: string): number | null {\n    // Block all starts until GL teardown finishes — dual TextureView is a hard crash class.\n    if (this.teardownRegionId != null) return null;\n    if (this.activeRegionId != null && this.activeRegionId !== regionId) return null;\n    if (this.activeRegionId === regionId && !this.preflightOnly) return null;',
+      '  tryBegin(regionId: string): number | null {\n    // Block all starts until GL teardown finishes — dual TextureView is a hard crash class.\n    if (this.teardownRegionId != null) return null;\n    // Native create/delete still in flight — never overlap a new createPack.\n    if (isNativePackOpBusy()) return null;\n    if (this.activeRegionId != null && this.activeRegionId !== regionId) return null;\n    if (this.activeRegionId === regionId && !this.preflightOnly) return null;',
     replace:
-      '  tryBegin(regionId: string): number | null {\n    // Block all starts until GL teardown finishes — dual TextureView is a hard crash class.\n    if (false && this.teardownRegionId != null) return null;\n    if (false && this.activeRegionId != null && this.activeRegionId !== regionId) return null;\n    if (false && this.activeRegionId === regionId && !this.preflightOnly) return null;',
+      '  tryBegin(regionId: string): number | null {\n    // Block all starts until GL teardown finishes — dual TextureView is a hard crash class.\n    if (false && this.teardownRegionId != null) return null;\n    // Native create/delete still in flight — never overlap a new createPack.\n    if (false && isNativePackOpBusy()) return null;\n    if (false && this.activeRegionId != null && this.activeRegionId !== regionId) return null;\n    if (false && this.activeRegionId === regionId && !this.preflightOnly) return null;',
   },
   {
     name: 'download-restore-during-teardown',

@@ -17,7 +17,7 @@ import {
   offlineEngineViewportFromBounds,
 } from './offlineMapEngineHost';
 import { isVisibleDownloadMapSlot, waitForVisibleDownloadMapSlot } from './downloadMapSlot';
-import { enumerateTileViewports, estimateDownloadViewportStride } from './tileGrid';
+import { enumerateTileViewports, estimateDownloadViewportStride, type TileViewport } from './tileGrid';
 
 export type TileSweepProgress = {
   completed: number;
@@ -31,16 +31,26 @@ export type TileCacheSweepOptions = {
   minZoom: number;
   maxZoom: number;
   startIndex?: number;
+  /** Persisted hop count from a prior session — must match the current plan to resume. */
+  persistedTotal?: number | null;
   isCancelled: () => boolean;
   onProgress: (progress: TileSweepProgress) => void;
 };
 
 /**
- * Extra dwell after `waitForFrame` so ambient cache can flush the painted tiles.
- * Frame-ready already proves the GL surface painted — 450ms was overly conservative
- * (~2–3 min of pure idle on kiel-bay). 250ms keeps a safety margin without holes.
+ * Bump when the hop plan formula changes (stride cap, map-size estimate, etc.).
+ * Mismatched versions force a full re-sweep so resume never seals on a stale plan.
  */
-const SETTLE_MS = process.env.NODE_ENV === 'test' ? 0 : 250;
+export const TILE_SWEEP_PLAN_VERSION = 3;
+
+/**
+ * Extra dwell after confirmed paint frames so ambient cache can flush tiles.
+ * Two post-jump frames already prove GL painted; 150ms covers network write-back
+ * without the old 250–450ms idle tax per hop.
+ */
+const SETTLE_MS = process.env.NODE_ENV === 'test' ? 0 : 150;
+/** Full paint frames required after each camera hop before counting progress. */
+const FRAMES_PER_HOP = 2;
 const VISIBLE_SLOT_WAIT_MS = process.env.NODE_ENV === 'test' ? 250 : 45_000;
 /** Floor for map-slot size when estimating how many tiles one camera hop paints. */
 const DOWNLOAD_MAP_MIN_PX = 180;
@@ -49,7 +59,7 @@ const DOWNLOAD_MAP_MIN_PX = 180;
  * Camera hops can skip neighbour tiles when the visible download map is large enough
  * to paint them in one frame. Tests keep stride 1 so every tile is still centred.
  */
-function resolveSweepStride(): { strideX: number; strideY: number } {
+export function resolveSweepStride(): { strideX: number; strideY: number } {
   if (process.env.NODE_ENV === 'test') {
     return { strideX: 1, strideY: 1 };
   }
@@ -58,6 +68,41 @@ function resolveSweepStride(): { strideX: number; strideY: number } {
   const mapWidth = Math.max(DOWNLOAD_MAP_MIN_PX, width);
   const mapHeight = Math.max(DOWNLOAD_MAP_MIN_PX, height * 0.5);
   return estimateDownloadViewportStride(mapWidth, mapHeight);
+}
+
+/** Same viewport plan the sweep walks — progress UI and resume must use this, not dense stride-1. */
+export function planTileCacheViewports(
+  bounds: LngLatBounds,
+  minZoom: number,
+  maxZoom: number,
+): TileViewport[] {
+  return enumerateTileViewports(bounds, minZoom, maxZoom, resolveSweepStride());
+}
+
+/**
+ * Clamp resume index to the current plan. If the persisted total disagrees with the
+ * live plan (dense vs sparse, orientation, formula bump), restart from 0 — never
+ * clamp a dense progress count into a shorter plan (that would skip hops / false Ready).
+ *
+ * Incomplete resumes without {@link TILE_SWEEP_PLAN_VERSION} always restart (legacy
+ * dense totals are unsafe against a stride plan).
+ */
+export function resolveSweepStartIndex(
+  requestedStart: number,
+  plannedTotal: number,
+  persistedTotal?: number | null,
+  persistedPlanVersion?: number | null,
+): number {
+  if (plannedTotal <= 0) return 0;
+  const start = Math.max(0, Math.floor(requestedStart));
+  if (start === 0) return 0;
+  if (persistedPlanVersion !== TILE_SWEEP_PLAN_VERSION) {
+    return 0;
+  }
+  if (persistedTotal != null && persistedTotal !== plannedTotal) {
+    return 0;
+  }
+  return Math.min(start, plannedTotal);
 }
 
 function buildProgress(completed: number, total: number): TileSweepProgress {
@@ -91,14 +136,17 @@ async function acquireLiveController(chartStyleUri: string): Promise<DownloadMap
  * Zoom-level-only center jumps are NOT enough — Android will not permanently keep
  * tiles that were never rendered.
  *
- * Controllers are re-acquired per tile so a Map↔Downloads remount cannot advance
- * progress on a dead camera (false Ready with holes).
+ * Controllers are reused while the generation stays live; remount / generation bump
+ * forces re-acquire and retries the same hop (never advance on a dead camera).
  */
 export async function runTileCacheSweep(options: TileCacheSweepOptions): Promise<TileSweepProgress> {
-  const stride = resolveSweepStride();
-  const viewports = enumerateTileViewports(options.bounds, options.minZoom, options.maxZoom, stride);
+  const viewports = planTileCacheViewports(options.bounds, options.minZoom, options.maxZoom);
   const total = viewports.length;
+  // Store already normalized resume via resolveSweepStartIndex; here only clamp + total mismatch.
   let completed = Math.min(Math.max(0, options.startIndex ?? 0), total);
+  if (options.persistedTotal != null && options.persistedTotal !== total) {
+    completed = 0;
+  }
 
   options.onProgress(buildProgress(completed, total));
 
@@ -112,20 +160,27 @@ export async function runTileCacheSweep(options: TileCacheSweepOptions): Promise
     await yieldToUi();
   }
 
+  let live: DownloadMapController | null = null;
+  let generation = getDownloadMapGeneration();
+
   for (let index = completed; index < total; ) {
     if (options.isCancelled()) break;
 
-    const controller = await acquireLiveController(options.chartStyleUri);
-    const generation = getDownloadMapGeneration();
+    if (!live || !isLiveDownloadMapController(live) || getDownloadMapGeneration() !== generation) {
+      live = await acquireLiveController(options.chartStyleUri);
+      generation = getDownloadMapGeneration();
+    }
+
     ensureMapLibreNetworkForDownload();
     const tile = viewports[index]!;
-    await controller.showTile(tile.center, tile.zoom);
+    await live.showTile(tile.center, tile.zoom);
     await yieldToUi();
-    await controller.waitForFrame();
+    await live.waitForFrame(FRAMES_PER_HOP);
     await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
 
     // Remount / generation bump mid-tile — do not count progress; retry same index.
-    if (getDownloadMapGeneration() !== generation || !isLiveDownloadMapController(controller)) {
+    if (getDownloadMapGeneration() !== generation || !isLiveDownloadMapController(live)) {
+      live = null;
       continue;
     }
 
@@ -147,7 +202,7 @@ export async function runTileCacheSweep(options: TileCacheSweepOptions): Promise
   ensureMapLibreNetworkForDownload();
   await sealController.fitBounds(options.bounds, options.minZoom);
   await yieldToUi();
-  await sealController.waitForFrame();
+  await sealController.waitForFrame(FRAMES_PER_HOP);
   await yieldToUi();
   await new Promise((resolve) => setTimeout(resolve, tileSweepFinalSettleMs()));
 

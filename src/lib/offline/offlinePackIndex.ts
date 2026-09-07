@@ -15,6 +15,8 @@ export type PersistedIndexEntry = {
   cacheBacked?: boolean;
   sweepCompleted?: number;
   sweepTotal?: number;
+  /** Must match TILE_SWEEP_PLAN_VERSION to resume; otherwise re-sweep from 0. */
+  sweepPlanVersion?: number;
 };
 
 export type PersistedIndex = Record<string, PersistedIndexEntry>;
@@ -98,6 +100,11 @@ export function sanitizePersistedIndex(raw: unknown): PersistedIndex {
         ? undefined
         : isFiniteNumber(row.sweepTotal)
           ? Math.max(0, Math.round(row.sweepTotal))
+          : undefined,
+      sweepPlanVersion: awaitingRedownload
+        ? undefined
+        : isFiniteNumber(row.sweepPlanVersion)
+          ? Math.max(0, Math.round(row.sweepPlanVersion))
           : undefined,
     };
   }

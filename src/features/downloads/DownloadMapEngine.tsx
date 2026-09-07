@@ -107,14 +107,23 @@ export function DownloadMapEngine({
       generation,
       showTile: controller.showTile,
       fitBounds: controller.fitBounds,
-      waitForFrame: async () => {
+      waitForFrame: async (minFrames = 1) => {
         if (generation !== getDownloadMapGeneration()) return;
+        const needed = Math.max(1, Math.floor(minFrames));
+        let seen = 0;
         await new Promise<void>((resolve) => {
-          const timer = setTimeout(resolve, 3_500);
-          frameWaitersRef.current.push(() => {
-            clearTimeout(timer);
+          const timer = setTimeout(() => {
+            frameWaitersRef.current = frameWaitersRef.current.filter((w) => w !== onFrame);
             resolve();
-          });
+          }, 3_500);
+          const onFrame = () => {
+            seen += 1;
+            if (seen < needed) return;
+            clearTimeout(timer);
+            frameWaitersRef.current = frameWaitersRef.current.filter((w) => w !== onFrame);
+            resolve();
+          };
+          frameWaitersRef.current.push(onFrame);
         });
       },
     };
@@ -144,11 +153,11 @@ export function DownloadMapEngine({
 
   if (!active || !chartStyleUri || !startViewport) return null;
 
+  /** Notify each registered hop waiter once per paint; multi-frame waiters self-remove. */
   const flushFrameWaiters = () => {
     if (generation !== getDownloadMapGeneration()) return;
-    const waiters = frameWaitersRef.current;
-    frameWaitersRef.current = [];
-    waiters.forEach((resolve) => resolve());
+    const waiters = [...frameWaitersRef.current];
+    waiters.forEach((onFrame) => onFrame());
   };
 
   const confirmFrame = () => {

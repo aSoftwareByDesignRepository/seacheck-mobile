@@ -1,19 +1,26 @@
 import type { Feature, FeatureCollection } from 'geojson';
 
 import {
+  MAP_CUSTOM_CORNER,
+  MAP_CUSTOM_CORNER_STROKE,
+  MAP_CUSTOM_FILL,
+  MAP_CUSTOM_LINE,
+  MAP_CUSTOM_PREVIEW_FILL,
+} from './mapChartColors';
+import {
   boundsFromPoints,
   CUSTOM_DOWNLOAD_CORNER_COUNT,
   type DownloadCorner,
 } from './customDownloadCorners';
 
-/** High-contrast palette — readable on water (#b8d4e8) and land tiles. */
+/** High-contrast palette — readable on water and land tiles ({@link mapChartColors}). */
 export const CUSTOM_DOWNLOAD_OVERLAY_COLORS = {
-  corner: '#c62828',
+  corner: MAP_CUSTOM_CORNER,
   cornerSelected: '#8b0000',
-  cornerStroke: '#ffffff',
-  fill: '#e65100',
-  line: '#c62828',
-  previewFill: '#e65100',
+  cornerStroke: MAP_CUSTOM_CORNER_STROKE,
+  fill: MAP_CUSTOM_FILL,
+  line: MAP_CUSTOM_LINE,
+  previewFill: MAP_CUSTOM_PREVIEW_FILL,
   previewLine: '#bf360c',
 } as const;
 

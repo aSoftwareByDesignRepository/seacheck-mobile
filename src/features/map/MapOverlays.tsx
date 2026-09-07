@@ -13,6 +13,27 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { isFixStale, useLocationStore } from '../../services/locationService';
 import { useTrackStore } from '../../store/trackStore';
 import { mobWaypointsOnMap } from '../../lib/map/mapVisibleWaypoints';
+import {
+  MAP_ANCHOR_CENTER,
+  MAP_ANCHORAGE,
+  MAP_BOAT_OUTLINE,
+  MAP_DIM_LINE,
+  MAP_GENERIC_MARK,
+  MAP_HARBOUR,
+  MAP_HAZARD,
+  MAP_MARK,
+  MAP_MOB,
+  MAP_PASSAGE_LINE,
+  MAP_RECORDED_TRACK,
+  MAP_ROUTE_CASING,
+  MAP_ROUTE_LINE,
+  MAP_STROKE_SHORT,
+  MAP_TEXT_DARK,
+  MAP_TRACK_LINE,
+  MAP_WAYPOINT_IDLE,
+  MAP_WAYPOINT_NEXT,
+  MAP_XTE_LINE,
+} from '../../lib/map/mapChartColors';
 
 function circlePolygon(center: LonLat, radiusNm: number, steps = 64): Polygon {
   const coords: [number, number][] = [];
@@ -134,7 +155,7 @@ export function MapOverlays({ planningMode = false, planningSelectedWaypointId =
           id="seacheck-goto-line"
           type="line"
           filter={['==', ['get', 'kind'], 'goto-line']}
-          paint={{ 'line-color': '#0073ad', 'line-width': 3, 'line-opacity': 0.85, 'line-dasharray': [2, 1.5] }}
+          paint={{ 'line-color': MAP_PASSAGE_LINE, 'line-width': 3, 'line-opacity': 0.85, 'line-dasharray': [2, 1.5] }}
         />
         <Layer
           id="seacheck-goto-label"
@@ -143,8 +164,8 @@ export function MapOverlays({ planningMode = false, planningSelectedWaypointId =
           style={{
             textField: ['get', 'label'],
             textSize: 13,
-            textColor: '#003d5c',
-            textHaloColor: '#ffffff',
+            textColor: MAP_TEXT_DARK,
+            textHaloColor: MAP_BOAT_OUTLINE,
             textHaloWidth: 2,
           }}
         />
@@ -153,7 +174,7 @@ export function MapOverlays({ planningMode = false, planningSelectedWaypointId =
           type="fill"
           filter={['==', ['get', 'kind'], 'anchor']}
           paint={{
-            'fill-color': ['case', ['get', 'triggered'], '#ba1b1b', '#0d7a4a'],
+            'fill-color': ['case', ['get', 'triggered'], MAP_MOB, MAP_ANCHOR_CENTER],
             'fill-opacity': 0.12,
           }}
         />
@@ -162,7 +183,7 @@ export function MapOverlays({ planningMode = false, planningSelectedWaypointId =
           type="line"
           filter={['==', ['get', 'kind'], 'anchor']}
           paint={{
-            'line-color': ['case', ['get', 'triggered'], '#ba1b1b', '#0d7a4a'],
+            'line-color': ['case', ['get', 'triggered'], MAP_MOB, MAP_ANCHOR_CENTER],
             'line-width': 2,
             'line-opacity': 0.9,
           }}
@@ -173,9 +194,9 @@ export function MapOverlays({ planningMode = false, planningSelectedWaypointId =
           filter={['in', ['get', 'kind'], ['literal', ['goto', 'mob', 'anchor-center']]]}
           paint={{
             'circle-radius': 8,
-            'circle-color': ['match', ['get', 'kind'], 'mob', '#ba1b1b', 'anchor-center', '#0d7a4a', '#0073ad'],
+            'circle-color': ['match', ['get', 'kind'], 'mob', MAP_MOB, 'anchor-center', MAP_ANCHOR_CENTER, MAP_HARBOUR],
             'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff',
+            'circle-stroke-color': MAP_BOAT_OUTLINE,
           }}
         />
       </GeoJSONSource>
@@ -246,7 +267,7 @@ function PassagePlanningOverlay({
           id="seacheck-passage-planning-line"
           type="line"
           filter={['==', ['get', 'kind'], 'planning-leg']}
-          paint={{ 'line-color': '#e65100', 'line-width': 3, 'line-opacity': 0.95, 'line-dasharray': [2, 1.5] }}
+          paint={{ 'line-color': MAP_XTE_LINE, 'line-width': 3, 'line-opacity': 0.95, 'line-dasharray': [2, 1.5] }}
         />
       ) : null}
       <Layer
@@ -255,9 +276,9 @@ function PassagePlanningOverlay({
         filter={['==', ['get', 'kind'], 'planning-wp']}
         paint={{
           'circle-radius': ['case', ['get', 'selected'], 10, 7],
-          'circle-color': ['case', ['get', 'selected'], '#0073ad', '#e65100'],
+          'circle-color': ['case', ['get', 'selected'], MAP_PASSAGE_LINE, MAP_MARK],
           'circle-stroke-width': ['case', ['get', 'selected'], 3, 2],
-          'circle-stroke-color': '#fff',
+          'circle-stroke-color': MAP_STROKE_SHORT,
         }}
       />
     </GeoJSONSource>
@@ -300,14 +321,14 @@ function PassageOverlay({
         id="seacheck-passage-line-completed"
         type="line"
         filter={['all', ['==', ['get', 'kind'], 'passage-leg'], ['==', ['get', 'phase'], 'completed']]}
-        paint={{ 'line-color': '#64748b', 'line-width': 2, 'line-opacity': 0.35 }}
+        paint={{ 'line-color': MAP_DIM_LINE, 'line-width': 2, 'line-opacity': 0.35 }}
       />
       <Layer
         id="seacheck-passage-line-upcoming"
         type="line"
         filter={['all', ['==', ['get', 'kind'], 'passage-leg'], ['==', ['get', 'phase'], 'upcoming']]}
         paint={{
-          'line-color': '#7eb8d4',
+          'line-color': MAP_WAYPOINT_IDLE,
           'line-width': 2.5,
           'line-opacity': 0.55,
         }}
@@ -317,14 +338,14 @@ function PassageOverlay({
         type="line"
         filter={['all', ['==', ['get', 'kind'], 'passage-leg'], ['==', ['get', 'phase'], 'active']]}
         layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-        paint={{ 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.95 }}
+        paint={{ 'line-color': MAP_ROUTE_CASING, 'line-width': 7, 'line-opacity': 0.95 }}
       />
       <Layer
         id="seacheck-passage-line-active"
         type="line"
         filter={['all', ['==', ['get', 'kind'], 'passage-leg'], ['==', ['get', 'phase'], 'active']]}
         layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-        paint={{ 'line-color': '#0073ad', 'line-width': 5, 'line-opacity': 1 }}
+        paint={{ 'line-color': MAP_PASSAGE_LINE, 'line-width': 5, 'line-opacity': 1 }}
       />
       <Layer
         id="seacheck-passage-wp-passed"
@@ -332,9 +353,9 @@ function PassageOverlay({
         filter={['all', ['==', ['get', 'kind'], 'passage-wp'], ['==', ['get', 'phase'], 'passed']]}
         paint={{
           'circle-radius': 4,
-          'circle-color': '#64748b',
+          'circle-color': MAP_DIM_LINE,
           'circle-stroke-width': 1.5,
-          'circle-stroke-color': '#fff',
+          'circle-stroke-color': MAP_STROKE_SHORT,
           'circle-opacity': 0.6,
         }}
       />
@@ -344,9 +365,9 @@ function PassageOverlay({
         filter={['all', ['==', ['get', 'kind'], 'passage-wp'], ['==', ['get', 'phase'], 'upcoming']]}
         paint={{
           'circle-radius': ['case', ['get', 'isNext'], 9, 5],
-          'circle-color': ['case', ['get', 'isNext'], '#0073ad', '#7eb8d4'],
+          'circle-color': ['case', ['get', 'isNext'], MAP_WAYPOINT_NEXT, MAP_WAYPOINT_IDLE],
           'circle-stroke-width': ['case', ['get', 'isNext'], 3, 2],
-          'circle-stroke-color': '#fff',
+          'circle-stroke-color': MAP_STROKE_SHORT,
         }}
       />
     </GeoJSONSource>
@@ -429,12 +450,12 @@ export function navInfoToTarget(
 }
 
 const WP_COLORS: Record<string, string> = {
-  harbour: '#0073ad',
-  anchorage: '#0d7a4a',
-  mark: '#e65100',
-  hazard: '#ba1b1b',
-  mob: '#ba1b1b',
-  generic: '#486581',
+  harbour: MAP_HARBOUR,
+  anchorage: MAP_ANCHORAGE,
+  mark: MAP_MARK,
+  hazard: MAP_HAZARD,
+  mob: MAP_MOB,
+  generic: MAP_GENERIC_MARK,
 };
 
 function WaypointsOverlay() {
@@ -472,7 +493,7 @@ function WaypointsOverlay() {
             WP_COLORS.generic,
           ],
           'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
+          'circle-stroke-color': MAP_BOAT_OUTLINE,
           'circle-opacity': 0.95,
         }}
       />
@@ -508,7 +529,7 @@ function SavedTrackOverlay() {
         id="seacheck-saved-track-line"
         type="line"
         filter={['==', ['get', 'kind'], 'saved-track']}
-        paint={{ 'line-color': '#00838f', 'line-width': 4, 'line-opacity': 0.85 }}
+        paint={{ 'line-color': MAP_TRACK_LINE, 'line-width': 4, 'line-opacity': 0.85 }}
       />
     </GeoJSONSource>
   );
@@ -542,7 +563,7 @@ function TrackTrailOverlay() {
         id="seacheck-track-trail-line"
         type="line"
         filter={['==', ['get', 'kind'], 'track-trail']}
-        paint={{ 'line-color': '#7b1fa2', 'line-width': 3, 'line-opacity': 0.75 }}
+        paint={{ 'line-color': MAP_RECORDED_TRACK, 'line-width': 3, 'line-opacity': 0.75 }}
       />
     </GeoJSONSource>
   );

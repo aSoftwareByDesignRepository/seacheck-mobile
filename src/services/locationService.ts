@@ -72,11 +72,38 @@ let lastAcceptedFix: LocationFix | null = null;
 let smoothState: GpsSmoothState | null = null;
 let activeWatchProfile: ForegroundGpsProfile | null = null;
 
+/** Serializes all GPS filter writers (watch, seed, background) — no interleaved COG/accept. */
+let gpsWriteQueue: Array<() => void> = [];
+let gpsWriteFlushing = false;
+
+function enqueueGpsMutation(fn: () => void): void {
+  gpsWriteQueue.push(fn);
+  if (gpsWriteFlushing) return;
+  gpsWriteFlushing = true;
+  try {
+    while (gpsWriteQueue.length > 0) {
+      const job = gpsWriteQueue.shift()!;
+      job();
+    }
+  } finally {
+    gpsWriteFlushing = false;
+  }
+}
+
+export function resetGpsWriteQueueForTests(): void {
+  gpsWriteQueue = [];
+  gpsWriteFlushing = false;
+  lastAcceptedFix = null;
+  smoothState = null;
+}
+
 function handleWatchLocation(loc: Location.LocationObject, set: (partial: Partial<LocationStore>) => void): void {
-  const { useSettingsStore } = require('../store/settingsStore') as typeof import('../store/settingsStore');
-  const smoothEnabled = useSettingsStore.getState().gpsSmoothPosition;
-  const processed = enrichAndStore(mapLocation(loc), smoothEnabled);
-  applyProcessedToStore(processed, set);
+  enqueueGpsMutation(() => {
+    const { useSettingsStore } = require('../store/settingsStore') as typeof import('../store/settingsStore');
+    const smoothEnabled = useSettingsStore.getState().gpsSmoothPosition;
+    const processed = enrichAndStore(mapLocation(loc), smoothEnabled);
+    applyProcessedToStore(processed, set);
+  });
 }
 
 async function attachWatchSubscription(
@@ -189,11 +216,15 @@ function applyProcessedToStore(processed: ProcessedFix | null, set: (partial: Pa
 }
 
 export function applyBackgroundLocationFix(loc: Location.LocationObject): LocationFix | null {
-  const { useSettingsStore } = require('../store/settingsStore') as typeof import('../store/settingsStore');
-  const smoothEnabled = useSettingsStore.getState().gpsSmoothPosition;
-  const processed = enrichAndStore(mapLocation(loc), smoothEnabled);
-  applyProcessedToStore(processed, (partial) => useLocationStore.setState(partial));
-  return processed?.fix ?? null;
+  let result: LocationFix | null = null;
+  enqueueGpsMutation(() => {
+    const { useSettingsStore } = require('../store/settingsStore') as typeof import('../store/settingsStore');
+    const smoothEnabled = useSettingsStore.getState().gpsSmoothPosition;
+    const processed = enrichAndStore(mapLocation(loc), smoothEnabled);
+    applyProcessedToStore(processed, (partial) => useLocationStore.setState(partial));
+    result = processed?.fix ?? null;
+  });
+  return result;
 }
 
 function snapshotToStorePartial(snapshot: LocationPermissionSnapshot): Pick<

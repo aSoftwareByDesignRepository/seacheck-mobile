@@ -21,6 +21,12 @@ export type EnumerateTileViewportsOptions = {
 /** OSM/MapLibre raster tiles are 256 CSS pixels at integer zoom. */
 export const DOWNLOAD_TILE_SIZE_PX = 256;
 
+/**
+ * Hard cap on hop stride. Production uses 1 (centre every tile) so seamark overlays
+ * cannot be skipped. Values > 1 are only for experiments — never ship uncapped.
+ */
+export const MAX_SAFE_DOWNLOAD_STRIDE = 1;
+
 function tileCenterLonLat(z: number, x: number, y: number): [number, number] {
   const n = 2 ** z;
   const lon = ((x + 0.5) / n) * 360 - 180;
@@ -40,7 +46,7 @@ function latToTileY(lat: number, zoom: number): number {
 
 /**
  * How far apart camera centres can be while still painting every tile once.
- * Underestimates coverage (overlap of 1 tile) so we never skip edge tiles on small phones.
+ * Underestimates coverage (overlap of 1 tile) and caps at {@link MAX_SAFE_DOWNLOAD_STRIDE}.
  */
 export function estimateDownloadViewportStride(
   mapWidthPx: number,
@@ -52,8 +58,8 @@ export function estimateDownloadViewportStride(
   const tilesX = Math.max(1, Math.floor(safeW / tileSizePx));
   const tilesY = Math.max(1, Math.floor(safeH / tileSizePx));
   return {
-    strideX: Math.max(1, tilesX - 1),
-    strideY: Math.max(1, tilesY - 1),
+    strideX: Math.min(MAX_SAFE_DOWNLOAD_STRIDE, Math.max(1, tilesX - 1)),
+    strideY: Math.min(MAX_SAFE_DOWNLOAD_STRIDE, Math.max(1, tilesY - 1)),
   };
 }
 

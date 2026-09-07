@@ -1,0 +1,76 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - downloads
+  - honesty
+  - seal
+  - release
+  - locale-de
+---
+# German Ready banner after Kiel Bay seal (ICU plural / locale copy proof).
+# Harness pm-clears then sets de-DE *before* launch — do NOT clearState here
+# (that would wipe per-app locales and leave English copy).
+- launchApp:
+    appId: "de.softwarebydesign.seacheck"
+    clearState: false
+- runFlow: 01-onboarding-skip.yaml
+- runFlow: 01a-warm-map.yaml
+- runFlow: 01b-open-downloads.yaml
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "downloads.download.kiel-bay"
+    direction: DOWN
+    timeout: 60000
+    visibilityPercentage: 40
+    centerElement: true
+- tapOn:
+    id: "downloads.download.kiel-bay"
+- extendedWaitUntil:
+    visible:
+      id: "confirm.proceed"
+    timeout: 15000
+    optional: true
+- tapOn:
+    id: "confirm.proceed"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "map.downloadSession"
+    timeout: 180000
+- assertNotVisible:
+    id: "downloadFailure.dismiss"
+- extendedWaitUntil:
+    notVisible:
+      id: "map.downloadSession"
+    timeout: 1200000
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- runFlow: 01b-open-downloads.yaml
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- assertNotVisible:
+    id: "downloads.statusBanner.failed"
+- extendedWaitUntil:
+    notVisible:
+      id: "downloadFailure.dismiss"
+    timeout: 15000
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "downloads.pack.kiel-bay.durable"
+    direction: DOWN
+    timeout: 120000
+- assertVisible:
+    id: "downloads.pack.kiel-bay.durable"
+- assertVisible:
+    id: "downloads.delete.kiel-bay"
+- assertVisible:
+    id: "downloads.statusBanner.ready"
+# German Ready copy — must not show English plural / raw i18n keys.
+- assertVisible: "1 Kartenpaket offline bereit"
+- assertNotVisible: "1 chart pack ready offline"
+- takeScreenshot: download-seal-ready-de

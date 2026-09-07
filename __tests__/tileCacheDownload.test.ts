@@ -1,7 +1,9 @@
 import {
   cacheBackedPackId,
   isCacheBackedPackId,
+  resolveSweepStartIndex,
   runTileCacheSweep,
+  TILE_SWEEP_PLAN_VERSION,
 } from '../src/lib/offline/tileCacheDownload';
 import { resetDownloadMapHostForTests, registerDownloadMapController } from '../src/lib/offline/downloadMapHost';
 import { resetDownloadMapSlotForTests, setDownloadMapMapClaim } from '../src/lib/offline/downloadMapSlot';
@@ -21,6 +23,15 @@ describe('tileCacheDownload', () => {
     expect(cacheBackedPackId('kiel-bay')).toBe('cache:kiel-bay');
     expect(isCacheBackedPackId('cache:kiel-bay')).toBe(true);
     expect(isCacheBackedPackId('native-pack-id')).toBe(false);
+  });
+
+  it('restarts sweep when persisted total does not match the live plan', () => {
+    expect(resolveSweepStartIndex(200, 54, 249)).toBe(0);
+    expect(resolveSweepStartIndex(20, 54, 54)).toBe(0); // legacy: no plan version
+    expect(resolveSweepStartIndex(200, 54, 54, TILE_SWEEP_PLAN_VERSION)).toBe(54);
+    expect(resolveSweepStartIndex(10, 54, 54, 1)).toBe(0);
+    expect(resolveSweepStartIndex(10, 54, 54, TILE_SWEEP_PLAN_VERSION)).toBe(10);
+    expect(resolveSweepStartIndex(0, 54, 249)).toBe(0);
   });
 
   it('reports progress while sweeping every tile viewport', async () => {
@@ -117,5 +128,31 @@ describe('tileCacheDownload', () => {
 
     expect(result.percentage).toBe(100);
     expect(showTile.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('requests two paint frames per hop for integrity', async () => {
+    const { markDownloadMapStyleLoaded, markDownloadMapFrameRendered } = require('../src/lib/offline/downloadMapHost') as {
+      markDownloadMapStyleLoaded: (uri: string) => void;
+      markDownloadMapFrameRendered: () => void;
+    };
+    markDownloadMapStyleLoaded('file:///style.json');
+    markDownloadMapFrameRendered();
+    const waitForFrame = jest.fn(async () => {});
+    registerDownloadMapController({
+      showTile: jest.fn(async () => {}),
+      fitBounds: jest.fn(async () => {}),
+      waitForFrame,
+    });
+
+    await runTileCacheSweep({
+      chartStyleUri: 'file:///style.json',
+      bounds: [10.05, 54.22, 10.06, 54.23],
+      minZoom: 10,
+      maxZoom: 10,
+      isCancelled: () => false,
+      onProgress: () => {},
+    });
+
+    expect(waitForFrame.mock.calls.some((args) => args[0] === 2)).toBe(true);
   });
 });

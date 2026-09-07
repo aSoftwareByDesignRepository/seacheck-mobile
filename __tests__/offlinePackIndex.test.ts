@@ -67,4 +67,22 @@ describe('sanitizePersistedIndex', () => {
     expect(index.custom_ok?.minZoom).toBe(10);
     expect(index.custom_ok?.maxZoom).toBe(14);
   });
+
+  it('keeps sweep resume fields including plan version', () => {
+    const index = sanitizePersistedIndex({
+      'kiel-bay': {
+        packId: 'cache:kiel-bay',
+        cacheBacked: true,
+        sweepCompleted: 12,
+        sweepTotal: 54,
+        sweepPlanVersion: 2,
+      },
+    });
+    expect(index['kiel-bay']).toMatchObject({
+      sweepCompleted: 12,
+      sweepTotal: 54,
+      sweepPlanVersion: 2,
+      cacheBacked: true,
+    });
+  });
 });

@@ -9,7 +9,12 @@ export type DownloadMapController = {
   /** Jump to a single tile center/zoom so that tile (+ style overlays) actually render. */
   showTile: (center: [number, number], zoom: number) => Promise<void>;
   fitBounds: (bounds: LngLatBounds, zoom: number) => Promise<void>;
-  waitForFrame: () => Promise<void>;
+  /**
+   * Wait until at least `minFrames` full paint events after registration.
+   * Production `DownloadMapEngine` counts real MapLibre frames; the camera-only
+   * fallback sleeps a fixed budget so callers never hang without a surface.
+   */
+  waitForFrame: (minFrames?: number) => Promise<void>;
   /** Generation at register time — sweep ignores controllers from dead map instances. */
   generation?: number;
 };
@@ -253,21 +258,21 @@ export function createDownloadMapController(cameraRef: RefObject<CameraRef | nul
     showTile: async (center, zoom) => {
       if (generation !== downloadMapGeneration) return;
       cameraRef.current?.jumpTo({ center, zoom });
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // No fixed dwell — callers wait on real paint frames via waitForFrame.
     },
     fitBounds: async (bounds, zoom) => {
       if (generation !== downloadMapGeneration) return;
       cameraRef.current?.fitBounds(bounds, {
         padding: { top: 8, right: 8, bottom: 8, left: 8 },
       });
-      await new Promise((resolve) => setTimeout(resolve, 50));
       const center = boundsCenter(bounds);
       cameraRef.current?.jumpTo({ center: [center.longitude, center.latitude], zoom });
-      await new Promise((resolve) => setTimeout(resolve, 50));
     },
-    waitForFrame: async () => {
+    waitForFrame: async (minFrames = 1) => {
       if (generation !== downloadMapGeneration) return;
-      await new Promise((resolve) => setTimeout(resolve, FRAME_WAIT_MS));
+      const frames = Math.max(1, Math.floor(minFrames));
+      // Fallback when Engine does not wrap this controller: budget scales with frames.
+      await new Promise((resolve) => setTimeout(resolve, FRAME_WAIT_MS * frames));
     },
   };
 }

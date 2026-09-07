@@ -46,10 +46,13 @@ import {
   isCacheBackedPackId,
   isNativeOfflinePackId,
   isRedownloadPlaceholderPackId,
+  planTileCacheViewports,
   redownloadPlaceholderPackId,
+  resolveSweepStartIndex,
   runTileCacheSweep,
+  TILE_SWEEP_PLAN_VERSION,
 } from '../lib/offline/tileCacheDownload';
-import { enumerateTileViewports } from '../lib/offline/tileGrid';
+import { pauseAndDeleteNativePack } from '../lib/offline/nativePackRecovery';
 import { downloadMapLingerMs, tileSweepFinalSettleMs } from '../lib/offline/downloadMapConstants';
 import {
   endDownloadMapSessionOwnership,
@@ -382,11 +385,7 @@ function buildRecoveredRegionsFromIndex(
 
 async function removeNativePack(packId: string | null | undefined) {
   if (!isNativeOfflinePackId(packId)) return;
-  try {
-    await OfflineManager.deletePack(packId);
-  } catch {
-    /* may already be gone */
-  }
+  await pauseAndDeleteNativePack(packId);
 }
 
 /** Drop stale native packs for a region (e.g. after a watchdog failure left JS state empty). */
@@ -693,6 +692,7 @@ function createCacheDownloadSession(
           if (entry) {
             entry.sweepCompleted = undefined;
             entry.sweepTotal = undefined;
+            entry.sweepPlanVersion = undefined;
             entry.cacheBacked = undefined;
           }
         });
@@ -745,6 +745,7 @@ function createCacheDownloadSession(
         cacheBacked: true,
         sweepCompleted: completed,
         sweepTotal: total,
+        sweepPlanVersion: TILE_SWEEP_PLAN_VERSION,
         seamarksIndexed: index[ctx.regionId]?.seamarksIndexed,
       };
     });
@@ -768,6 +769,7 @@ function createCacheDownloadSession(
         cacheBacked: undefined,
         sweepCompleted: undefined,
         sweepTotal: undefined,
+        sweepPlanVersion: undefined,
         seamarksIndexed: index[ctx.regionId]?.seamarksIndexed,
       };
     });
@@ -841,17 +843,23 @@ function createCacheDownloadSession(
     await markReady();
   };
 
-  const runSweep = async (startIndex = 0) => {
+  const runSweep = async (startIndex = 0, persistedTotal?: number | null, persistedPlanVersion?: number | null) => {
     rememberDownloadSessionPhase(ctx.regionId, 'sweep');
     await yieldToUi();
     if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
-    const sweepLeadMs = process.env.NODE_ENV === 'test' ? 0 : 400;
+    const sweepLeadMs = process.env.NODE_ENV === 'test' ? 0 : 200;
     await new Promise((resolve) => setTimeout(resolve, sweepLeadMs));
     if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
 
-    // Progress totals are per-tile viewports (base+overlays displayed), not zoom levels.
-    const totalViewports = enumerateTileViewports(ctx.bounds, ctx.minZoom, ctx.maxZoom).length;
-    await persistSweepProgress(startIndex, Math.max(1, totalViewports));
+    // Progress totals must match the live hop plan (stride-aware), never dense stride-1.
+    const plannedTotal = planTileCacheViewports(ctx.bounds, ctx.minZoom, ctx.maxZoom).length;
+    const resumeAt = resolveSweepStartIndex(
+      startIndex,
+      plannedTotal,
+      persistedTotal,
+      persistedPlanVersion,
+    );
+    await persistSweepProgress(resumeAt, Math.max(1, plannedTotal));
     if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
 
     try {
@@ -860,7 +868,8 @@ function createCacheDownloadSession(
         bounds: ctx.bounds,
         minZoom: ctx.minZoom,
         maxZoom: ctx.maxZoom,
-        startIndex,
+        startIndex: resumeAt,
+        persistedTotal: plannedTotal,
         isCancelled: () => downloadCoordinator.isStale(ctx.regionId, ctx.session),
         onProgress: (progress) => {
           if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
@@ -936,7 +945,7 @@ async function reattachCacheDownload(
       },
     },
   }));
-  void runSweep(startIndex).catch((error) => {
+  void runSweep(startIndex, entry.sweepTotal, entry.sweepPlanVersion).catch((error) => {
     if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
     showDownloadSessionFailure(ctx.regionId, error, 'sweep');
   });
@@ -1150,6 +1159,7 @@ async function finalizeReadyDownload(
       cacheBacked: extra?.cacheBacked === true ? true : undefined,
       sweepCompleted: undefined,
       sweepTotal: undefined,
+      sweepPlanVersion: undefined,
     };
   });
 

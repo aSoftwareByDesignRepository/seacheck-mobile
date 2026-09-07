@@ -1,15 +1,15 @@
-# Android Maestro end-state screenshots
+# Screenshots manifest — Atlas Round 7
 
-Generated: 2026-09-07T17:41:41+02:00  
-Device: `emulator-5602` (`SeaCheck_Atlas_R4_API_33`) — dedicated, no theft  
-APK: `0.1.6` (`lastUpdateTime=2026-09-07 17:32:06`) — Round 4 UI + sweep stride
+**APK (local artifact, not in git):** `artifacts/seacheck-0.1.8-release.apk`  
+(`versionName=0.1.8`, `versionCode=8`; rebuilt 2026-09-07 for ship)  
+**Device:** `SeaCheck_Atlas_R4_API_33` / `emulator-5602`  
+**Date:** 2026-09-07
 
-| Shot | Fresh? | Proof |
-|------|--------|-------|
-| `download-seal-ready.png` | Yes (17:35) | Seal EXIT 0; durable + Ready + Delete |
-| `locale-en-ready-plural.png` | Yes (17:36) | `1 chart pack ready offline` |
-| `locale-de-downloads-ready.png` | Yes (17:37) | `1 Kartenpaket offline bereit` |
-| `download-cancel-minimal.png` | Yes (17:40) | Cancel EXIT 0; session gone |
-| `download-kill-mid-release.png` | Yes (17:41) | Kill EXIT 0; no Ready/durable |
+| File | Feature / proof |
+|------|-----------------|
+| `atlas-r7-download-cancel-minimal.png` | Cancel mid-download EXIT 0 |
+| `atlas-r7-download-kill-mid-release.png` | Kill mid-download EXIT 0 |
+| `atlas-r7-download-seal-ready.png` | EN seal Ready EXIT 0 |
+| `atlas-r7-download-seal-ready-de.png` | DE Ready `1 Kartenpaket offline bereit` EXIT 0 |
 
-Artifact: `../artifacts/seacheck-0.1.6-atlas-r4.apk`
+Maestro logs: `/tmp/atlas-sc-r7-*.log`

@@ -11,6 +11,7 @@ import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { EmbeddedChartMap } from '../map/EmbeddedChartMap';
 import { BoundsAreaSchematic } from './BoundsAreaSchematic';
+import { MAP_REGION_FILL, MAP_REGION_FILL_ALPHA, MAP_REGION_LINE } from '../../lib/map/mapChartColors';
 
 type Props = {
   pack: RegionPackDefinition;
@@ -67,8 +68,8 @@ export function RegionPackMapPreview({ pack }: Props) {
             ]}
             bounds={pack.bounds}
             height={MAP_EMBED_PREVIEW_HEIGHT}
-            fillColor="#0073ad33"
-            lineColor="#0073ad"
+            fillColor={MAP_REGION_FILL_ALPHA}
+            lineColor={MAP_REGION_LINE}
             backgroundColor={colors.surface}
             borderColor={colors.border}
             testID="downloads.packPreview.schematic"
@@ -99,8 +100,8 @@ export function RegionPackMapPreview({ pack }: Props) {
       placeholder={placeholder}
     >
       <GeoJSONSource id={`pack-preview-${pack.id}`} data={geojson}>
-        <Layer id={`pack-preview-fill-${pack.id}`} type="fill" paint={{ 'fill-color': '#0073ad', 'fill-opacity': 0.18 }} />
-        <Layer id={`pack-preview-line-${pack.id}`} type="line" paint={{ 'line-color': '#0073ad', 'line-width': 3 }} />
+        <Layer id={`pack-preview-fill-${pack.id}`} type="fill" paint={{ 'fill-color': MAP_REGION_FILL, 'fill-opacity': 0.18 }} />
+        <Layer id={`pack-preview-line-${pack.id}`} type="line" paint={{ 'line-color': MAP_REGION_LINE, 'line-width': 3 }} />
       </GeoJSONSource>
     </EmbeddedChartMap>
   );

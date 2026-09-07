@@ -13,6 +13,7 @@ import { offlinePackMapStyleUri, ensureOfflinePackStyleReachable } from '../../m
 import { startDownloadStallWatchdog } from './downloadStallWatchdog';
 import { recreateOfflinePack } from './nativePackRecovery';
 import { pollNativePackStatus } from './nativePackStatus';
+import { withNativePackOp } from './nativePackMutex';
 import {
   ensureOfflineMapEngineReadyForDownload,
   offlineEngineViewportFromBounds,
@@ -209,7 +210,7 @@ export async function sealDurableOfflinePack(args: SealDurableOfflinePackArgs): 
   };
 
   ensureMapLibreNetworkForDownload();
-  const pack = await OfflineManager.createPack(createOptions, onProgress, onError);
+  const pack = await withNativePackOp(() => OfflineManager.createPack(createOptions, onProgress, onError));
   if (createError) throw createError;
   if (!pack?.id) {
     throw new Error('NATIVE_PACK_CREATE_FAILED');

@@ -5,6 +5,10 @@ import { t } from '../i18n';
 import { publishBackgroundLocationRunning } from '../lib/geo/backgroundLocationHealth';
 import { backgroundNavigationOptions } from '../lib/geo/gpsLocationOptions';
 import {
+  MAP_NOTIFICATION_DANGER,
+  MAP_NOTIFICATION_PRIMARY,
+} from '../lib/map/mapChartColors';
+import {
   isAnchorMonitoringNeeded,
   isBackgroundTrackNeeded,
   isGoToMonitoringNeeded,
@@ -39,7 +43,7 @@ function safetyMonitoringOptions(): Location.LocationTaskOptions {
     ...backgroundNavigationOptions({
       notificationTitle: t('location.backgroundSafetyTitle'),
       notificationBody: t('location.backgroundSafetyBody'),
-      notificationColor: '#0073ad',
+      notificationColor: MAP_NOTIFICATION_PRIMARY,
       killServiceOnDestroy: false,
     }),
     timeInterval: 3_000,
@@ -52,7 +56,7 @@ function mobMonitoringOptions(): Location.LocationTaskOptions {
     ...backgroundNavigationOptions({
       notificationTitle: t('location.backgroundMobTitle'),
       notificationBody: t('location.backgroundMobBody'),
-      notificationColor: '#c62828',
+      notificationColor: MAP_NOTIFICATION_DANGER,
       killServiceOnDestroy: false,
     }),
     timeInterval: 3_000,
@@ -65,7 +69,7 @@ function trackRecordingOptions(): Location.LocationTaskOptions {
     ...backgroundNavigationOptions({
       notificationTitle: t('tracks.backgroundNotificationTitle'),
       notificationBody: t('tracks.backgroundNotificationBody'),
-      notificationColor: '#0073ad',
+      notificationColor: MAP_NOTIFICATION_PRIMARY,
       killServiceOnDestroy: false,
     }),
     timeInterval: 10_000,

@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 
 import { useSettingsStore } from '../store/settingsStore';
 import { resolveThemeIsDark, resolveThemePalette } from '../lib/theme/resolveThemeAppearance';
+import { BRAND } from './brandColors';
 
 export type ThemeMode = 'system' | 'light' | 'dark' | 'redNight' | 'highContrast';
 
@@ -32,16 +33,16 @@ const palettes: Record<'light' | 'dark' | 'redNight' | 'highContrast', ThemeColo
     border: '#d9e2ec',
     text: '#102a43',
     textMuted: '#486581',
-    primary: '#0073ad',
-    primaryText: '#ffffff',
+    primary: BRAND.primary,
+    primaryText: BRAND.onPrimary,
     successBg: '#e6f4ed',
-    success: '#0d7a4a',
+    success: BRAND.success,
     warningBg: '#fff4e6',
     warningBorder: '#f0c987',
     warningText: '#8a4b08',
     dangerBg: '#fde8e8',
     dangerBorder: '#f5c2c2',
-    danger: '#ba1b1b',
+    danger: BRAND.dangerStrong,
   },
   dark: {
     background: '#0b1622',

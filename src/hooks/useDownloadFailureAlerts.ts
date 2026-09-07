@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { isPackDownloadActive } from '../features/downloads/packDownloadPresentation';
+import { t } from '../i18n';
 import { reportDownloadFailure } from '../lib/offline/reportDownloadFailure';
 import { useOfflinePackStore } from '../store/offlinePackStore';
 
@@ -66,7 +67,7 @@ export function useDownloadFailureAlerts() {
 
         void reportDownloadFailure({
           regionId,
-          message: status.error?.trim() || 'Download failed',
+          message: status.error?.trim() || t('downloads.statusError'),
           source: 'async',
         });
       }

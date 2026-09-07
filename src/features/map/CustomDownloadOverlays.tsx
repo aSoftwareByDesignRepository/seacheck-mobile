@@ -7,6 +7,7 @@ import {
   CUSTOM_DOWNLOAD_OVERLAY_COLORS,
   customDownloadOverlaySourceKey,
 } from '../../lib/map/customDownloadOverlay';
+import { MAP_BOAT_OUTLINE } from '../../lib/map/mapChartColors';
 import { useCustomDownloadStore } from '../../store/customDownloadStore';
 
 function CornerBadge({ index, selected }: { index: number; selected: boolean }) {
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.12 }],
   },
   badgeText: {
-    color: '#ffffff',
+    color: MAP_BOAT_OUTLINE,
     fontSize: 16,
     fontWeight: '800',
     lineHeight: 20,

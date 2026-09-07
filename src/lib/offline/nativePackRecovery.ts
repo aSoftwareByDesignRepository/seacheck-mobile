@@ -14,13 +14,40 @@ import { pollNativePackStatus } from './nativePackStatus';
 import { getDownloadTiming } from './downloadTiming';
 import { ensureOfflineMapEngineReadyForDownload, offlineEngineViewportFromBounds } from './offlineMapEngineHost';
 import { warmupOfflineEngine } from './warmupOfflineEngine';
+import { withNativePackOp } from './nativePackMutex';
 
 async function removeNativePack(packId: string): Promise<void> {
-  try {
-    await OfflineManager.deletePack(packId);
-  } catch {
-    /* may already be gone */
-  }
+  await withNativePackOp(async () => {
+    try {
+      await OfflineManager.deletePack(packId);
+    } catch {
+      /* may already be gone */
+    }
+  });
+}
+
+/** Pause (best effort) then delete — cancel must not race an active createPack download. */
+export async function pauseAndDeleteNativePack(packId: string): Promise<void> {
+  await withNativePackOp(async () => {
+    try {
+      const packs = await OfflineManager.getPacks();
+      const pack = packs.find((p) => p.id === packId);
+      if (pack) {
+        try {
+          await pack.pause();
+        } catch {
+          /* may already be inactive */
+        }
+      }
+    } catch {
+      /* getPacks failed — still attempt delete */
+    }
+    try {
+      await OfflineManager.deletePack(packId);
+    } catch {
+      /* may already be gone */
+    }
+  });
 }
 
 /**
@@ -61,7 +88,7 @@ export async function recreateOfflinePack(
   if (isSessionActive?.() === false) return null;
 
   ensureMapLibreNetworkForDownload();
-  const pack = await OfflineManager.createPack(options, onProgress, onError);
+  const pack = await withNativePackOp(() => OfflineManager.createPack(options, onProgress, onError));
   if (!pack?.id) return null;
 
   try {

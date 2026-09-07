@@ -7,6 +7,7 @@ import {
   isNativeOfflinePackId,
   redownloadPlaceholderPackId,
 } from './tileCacheDownload';
+import { withNativePackOp } from './nativePackMutex';
 import type { PersistedIndex } from './offlinePackIndex';
 
 const BASEMAP_ID_KEY = 'seacheck.chart.basemapId';
@@ -34,11 +35,13 @@ async function clearAmbientChartCache(): Promise<void> {
 async function deleteIndexedNativePacks(index: PersistedIndex): Promise<void> {
   for (const entry of Object.values(index)) {
     if (!isNativeOfflinePackId(entry.packId)) continue;
-    try {
-      await OfflineManager.deletePack(entry.packId);
-    } catch {
-      /* pack may already be gone */
-    }
+    await withNativePackOp(async () => {
+      try {
+        await OfflineManager.deletePack(entry.packId);
+      } catch {
+        /* pack may already be gone */
+      }
+    });
   }
 
   try {
@@ -46,11 +49,13 @@ async function deleteIndexedNativePacks(index: PersistedIndex): Promise<void> {
     for (const pack of nativePacks) {
       const regionId = typeof pack.metadata?.regionId === 'string' ? pack.metadata.regionId : null;
       if (regionId && index[regionId]) {
-        try {
-          await OfflineManager.deletePack(pack.id);
-        } catch {
-          /* best effort */
-        }
+        await withNativePackOp(async () => {
+          try {
+            await OfflineManager.deletePack(pack.id);
+          } catch {
+            /* best effort */
+          }
+        });
       }
     }
   } catch (error) {
