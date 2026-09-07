@@ -996,6 +996,8 @@
     "mapPlanningEmpty": "Noch keine Wegpunkte — Karte gedrückt halten für den ersten.",
     "mapPlanningReadyHint": "Karte gedrückt halten für weitere Wegpunkte. Wegpunkt antippen zum Bearbeiten.",
     "mapPlanningDone": "Fertig",
+    "mapPlanningFitRoute": "Route einpassen",
+    "mapPlanningFitRouteHint": "Gesamte geplante Route auf der Karte anzeigen",
     "mapPlanningStop": "Planung beenden",
     "mapPlanningPaused": "Passageplanung pausiert für Kartendownload",
     "mapPlanningSwitchTitle": "Passage auf der Karte wechseln?",

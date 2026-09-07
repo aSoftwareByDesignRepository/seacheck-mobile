@@ -199,6 +199,7 @@ export function RegionPackCard({
             variant="secondary"
             onPress={onSelect}
             disabled={busy && !downloadActive}
+            accessibilityHint={busy && !downloadActive ? t('downloads.errorDownloadBusy') : undefined}
             fullWidth={false}
             style={downloadsStyles.actionBtn}
             testID={`downloads.preview.${pack.id}`}
@@ -210,6 +211,7 @@ export function RegionPackCard({
             variant="danger"
             onPress={onDelete}
             disabled={busy}
+            accessibilityHint={busy ? t('downloads.errorDownloadBusy') : undefined}
             fullWidth={false}
             style={downloadsStyles.actionBtn}
             testID={`downloads.delete.${pack.id}`}
@@ -243,6 +245,7 @@ export function RegionPackCard({
               label={downloadLabel}
               onPress={onDownload}
               disabled={busy}
+              accessibilityHint={busy ? t('downloads.errorDownloadBusy') : undefined}
               fullWidth={false}
               style={downloadsStyles.actionBtn}
               testID={`downloads.download.${pack.id}`}
@@ -252,6 +255,7 @@ export function RegionPackCard({
               variant="danger"
               onPress={onDelete}
               disabled={busy}
+              accessibilityHint={busy ? t('downloads.errorDownloadBusy') : undefined}
               fullWidth={false}
               style={downloadsStyles.actionBtn}
               testID={`downloads.delete.${pack.id}`}
@@ -262,6 +266,7 @@ export function RegionPackCard({
             label={downloadLabel}
             onPress={onDownload}
             disabled={busy}
+            accessibilityHint={busy ? t('downloads.errorDownloadBusy') : undefined}
             fullWidth={false}
             style={downloadsStyles.actionBtn}
             testID={`downloads.download.${pack.id}`}

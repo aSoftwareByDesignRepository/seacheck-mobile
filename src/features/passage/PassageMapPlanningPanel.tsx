@@ -169,6 +169,17 @@ export function PassageMapPlanningPanel() {
         {hintText}
       </Text>
 
+      {wpCount >= 1 ? (
+        <Button
+          label={t('passage.mapPlanningFitRoute')}
+          variant="secondary"
+          onPress={() => usePassageMapPlanningStore.getState().requestFitRoute()}
+          accessibilityHint={t('passage.mapPlanningFitRouteHint')}
+          testID="passage.mapPlanning.fitRoute"
+          style={{ minHeight: minTouch }}
+        />
+      ) : null}
+
       {readOnlyPlanning ? (
         <Button
           label={t('passage.mapPlanningUnlock')}

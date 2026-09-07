@@ -996,6 +996,8 @@
     "mapPlanningEmpty": "No waypoints yet — press and hold the chart to place the first one.",
     "mapPlanningReadyHint": "Hold the chart to add more waypoints. Tap any waypoint to edit.",
     "mapPlanningDone": "Done",
+    "mapPlanningFitRoute": "Fit route",
+    "mapPlanningFitRouteHint": "Show the whole planned route on the chart",
     "mapPlanningStop": "Stop planning",
     "mapPlanningPaused": "Passage planning paused for chart download",
     "mapPlanningSwitchTitle": "Switch passage on chart?",

@@ -115,10 +115,10 @@ export function CustomDownloadSection({
       reportDownloadFailureFromError(regionId, err, 'preflight');
     } finally {
       setBusy(false);
-      const store = useOfflinePackStore.getState();
-      const stillDownloading =
-        store.activeDownloadRegionId != null || store.downloadMapTeardownRegionId != null;
-      if (!stillDownloading) onActionBusyChange?.(null);
+      // Always clear shared kickoff busy. Exclusive concurrency is owned by
+      // activeDownloadRegionId / teardown — leaving actionBusyId set after
+      // kickoff greys every other pack forever (same class as Kiel sticky busy).
+      onActionBusyChange?.(null);
     }
   }
 

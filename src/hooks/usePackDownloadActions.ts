@@ -5,11 +5,13 @@ import { runLockedChartDownloadPreflight } from '../lib/offline/downloadPrefligh
 import { reportDownloadFailureFromError } from '../lib/offline/reportDownloadFailure';
 import { reportDownloadOutcome } from '../lib/offline/reportDownloadOutcome';
 import { waitForDownloadSessionKickoff } from '../lib/offline/waitForDownloadSessionKickoff';
-import { isPackDownloadActive } from '../features/downloads/packDownloadPresentation';
+import { isPackActionBusy } from '../features/downloads/packDownloadPresentation';
 import { navigateToMapForChartDownload } from '../navigation/rootNavigation';
 import { t } from '../i18n';
 import { useFeedbackStore } from '../store/feedbackStore';
 import { useOfflinePackStore } from '../store/offlinePackStore';
+
+export type PackDownloadKickoffResult = 'ready' | 'started' | 'failed';
 
 /** Shared download / cancel handlers for region packs (Downloads screen + passage suggestions). */
 export function usePackDownloadActions() {
@@ -28,34 +30,38 @@ export function usePackDownloadActions() {
   const downloadLocksOtherPacks = activeDownloadRegionId != null || downloadMapTeardownRegionId != null;
 
   const packBusy = useCallback(
-    (packId: string) => {
-      if (!hydrated) return true;
-      if (isPackDownloadActive(packId, regions[packId] ?? { state: 'idle' }, activeDownloadRegionId)) return false;
-      return downloadLocksOtherPacks || (actionBusyId != null && actionBusyId !== packId);
-    },
-    [hydrated, activeDownloadRegionId, downloadLocksOtherPacks, actionBusyId, regions],
+    (packId: string) =>
+      isPackActionBusy({
+        packId,
+        hydrated,
+        status: regions[packId] ?? { state: 'idle' },
+        activeDownloadRegionId,
+        downloadMapTeardownRegionId,
+        actionBusyId,
+      }),
+    [hydrated, activeDownloadRegionId, downloadMapTeardownRegionId, actionBusyId, regions],
   );
 
   const handleDownload = useCallback(
-    async (regionId: string) => {
+    async (regionId: string): Promise<PackDownloadKickoffResult> => {
       if (!hydrated) {
         showError(t('common.loading'));
-        return false;
+        return 'failed';
       }
       if (activeDownloadRegionId != null || downloadMapTeardownRegionId != null) {
         showError(t('downloads.errorDownloadBusy'));
-        return false;
+        return 'failed';
       }
       const status = regions[regionId];
       if (status?.state === 'downloading' || activeDownloadRegionId === regionId) {
         showInfo(t('downloads.downloadAlreadyActive'));
-        return false;
+        return 'failed';
       }
       const allowed = await ensureDownloadAllowed();
       if (!allowed.ok) {
         if (allowed.reason === 'offline') showError(t('downloads.errorOffline'));
         else showInfo(t('downloads.cellularCancelledBody'));
-        return false;
+        return 'failed';
       }
       setActionBusyId(regionId);
       useOfflinePackStore.getState().resetDownloadErrorForRetry(regionId);
@@ -72,7 +78,7 @@ export function usePackDownloadActions() {
         if (kickoff === 'finished') {
           const next = useOfflinePackStore.getState().regions[regionId];
           reportDownloadOutcome(regionId, { showInfo, showError });
-          return next?.state === 'ready' && !next?.error;
+          return next?.state === 'ready' && !next?.error ? 'ready' : 'failed';
         }
         showInfo(t('downloads.downloadStarted'));
         // Map tab owns the visible tile sweep — navigate there so Android can persist tiles.
@@ -87,22 +93,19 @@ export function usePackDownloadActions() {
               reportDownloadFailureFromError(regionId, err, 'async');
             }
           });
-        return false;
+        return 'started';
       } catch (err) {
         useOfflinePackStore.getState().releasePreflightDownloadLock(regionId);
         const current = useOfflinePackStore.getState().regions[regionId];
         if (current?.state !== 'error') {
           reportDownloadFailureFromError(regionId, err, 'preflight');
         }
-        return false;
+        return 'failed';
       } finally {
-        const next = useOfflinePackStore.getState().regions[regionId];
-        const stillActive = isPackDownloadActive(
-          regionId,
-          next ?? { state: 'idle' },
-          useOfflinePackStore.getState().activeDownloadRegionId,
-        );
-        if (!stillActive) setActionBusyId(null);
+        // Always clear local kickoff busy. Exclusive concurrency is owned by
+        // activeDownloadRegionId / teardown — leaving actionBusyId set after
+        // kickoff greys out every other pack forever (sticky Kiel-bay bug).
+        setActionBusyId(null);
       }
     },
     [
@@ -141,13 +144,22 @@ export function usePackDownloadActions() {
       let ready = 0;
       let failed = 0;
       for (const regionId of pending) {
-        const ok = await handleDownload(regionId);
-        const state = useOfflinePackStore.getState().regions[regionId]?.state;
-        // Only count packs that actually finished Ready — never treat in-flight
-        // "downloading" as success for the passage toast.
-        if (state === 'ready') ready += 1;
-        else if (state === 'error' || !ok) failed += 1;
-        else break;
+        const result = await handleDownload(regionId);
+        if (result === 'ready') {
+          ready += 1;
+          continue;
+        }
+        if (result === 'started') {
+          // One exclusive GL session at a time — stop the queue; remaining packs stay pending.
+          break;
+        }
+        failed += 1;
+        if (
+          useOfflinePackStore.getState().activeDownloadRegionId != null ||
+          useOfflinePackStore.getState().downloadMapTeardownRegionId != null
+        ) {
+          break;
+        }
       }
       return { started: pending.length, ready, failed };
     },
@@ -166,3 +178,4 @@ export function usePackDownloadActions() {
     setActionBusyId,
   };
 }
+

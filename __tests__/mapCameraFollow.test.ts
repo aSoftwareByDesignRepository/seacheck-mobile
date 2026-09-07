@@ -4,6 +4,7 @@ import {
   cameraFollowDuration,
   evaluateCameraFollow,
   resolveMapInitialCenter,
+  shouldEnableMapCameraFollow,
   shouldPauseFollowOnRegionChange,
 } from '../src/lib/map/mapCameraFollow';
 import { KIEL_CENTER } from '../src/map/constants';
@@ -28,6 +29,22 @@ describe('mapCameraFollow', () => {
     expect(shouldPauseFollowOnRegionChange(true, true)).toBe(true);
     expect(shouldPauseFollowOnRegionChange(false, true)).toBe(false);
     expect(shouldPauseFollowOnRegionChange(true, false)).toBe(false);
+  });
+
+  it('disables boat follow during passage planning and custom area pick', () => {
+    const base = {
+      followActive: true,
+      followMode: true,
+      hasBoatFix: true,
+      passageMapPlanning: false,
+      customSelecting: false,
+      instrumentsOnlyBlocksChart: false,
+    };
+    expect(shouldEnableMapCameraFollow(base)).toBe(true);
+    expect(shouldEnableMapCameraFollow({ ...base, passageMapPlanning: true })).toBe(false);
+    expect(shouldEnableMapCameraFollow({ ...base, customSelecting: true })).toBe(false);
+    expect(shouldEnableMapCameraFollow({ ...base, instrumentsOnlyBlocksChart: true })).toBe(false);
+    expect(shouldEnableMapCameraFollow({ ...base, followActive: false })).toBe(false);
   });
 
   it('centres immediately on first follow after map is ready', () => {

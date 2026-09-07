@@ -148,6 +148,8 @@ class DownloadCoordinator {
   restoreActive(regionId: string): boolean {
     // Never remount a second GL owner while teardown still holds the TextureView.
     if (this.teardownRegionId != null) return false;
+    // Never race hydrate resume against createPack/deletePack/pause.
+    if (isNativePackOpBusy()) return false;
     if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;
     this.activeRegionId = regionId;
     this.preflightOnly = false;

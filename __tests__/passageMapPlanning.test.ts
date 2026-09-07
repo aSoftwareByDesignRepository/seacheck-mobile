@@ -53,6 +53,20 @@ describe('passageMapPlanningStore', () => {
     expect(usePassageMapPlanningStore.getState().allowRouteEdits).toBe(false);
   });
 
+  it('requestFitRoute bumps ephemeral fit id without touching revision', () => {
+    usePassageMapPlanningStore.getState().requestFitRoute();
+    expect(usePassageMapPlanningStore.getState().fitRouteRequestId).toBe(0);
+
+    usePassageMapPlanningStore.getState().startPlanning('pass-1');
+    usePassageMapPlanningStore.getState().bumpRevision();
+    expect(usePassageMapPlanningStore.getState().revision).toBe(1);
+
+    usePassageMapPlanningStore.getState().requestFitRoute();
+    usePassageMapPlanningStore.getState().requestFitRoute();
+    expect(usePassageMapPlanningStore.getState().fitRouteRequestId).toBe(2);
+    expect(usePassageMapPlanningStore.getState().revision).toBe(1);
+  });
+
   it('resets guide dismissal when a new planning session starts', () => {
     usePassageMapPlanningStore.getState().startPlanning('pass-1');
     usePassageMapPlanningStore.getState().dismissGuideForSession();

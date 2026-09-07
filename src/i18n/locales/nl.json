@@ -996,6 +996,8 @@
     "mapPlanningEmpty": "Nog geen waypoints: houd de kaart ingedrukt om de eerste te plaatsen.",
     "mapPlanningReadyHint": "Houd de kaart ingedrukt om meer waypoints toe te voegen. Tik op een waypoint om te bewerken.",
     "mapPlanningDone": "Klaar",
+    "mapPlanningFitRoute": "Route passend maken",
+    "mapPlanningFitRouteHint": "Toon de hele geplande route op de kaart",
     "mapPlanningStop": "Houd op met plannen",
     "mapPlanningPaused": "Passageplanning onderbroken voor kaartdownload",
     "mapPlanningSwitchTitle": "Doorgang op de kaart wijzigen?",

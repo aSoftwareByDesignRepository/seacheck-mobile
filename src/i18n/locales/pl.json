@@ -996,6 +996,8 @@
     "mapPlanningEmpty": "Nie ma jeszcze punktów orientacyjnych — naciśnij i przytrzymaj mapę, aby umieścić pierwszy.",
     "mapPlanningReadyHint": "Przytrzymaj mapę, aby dodać więcej punktów orientacyjnych. Kliknij dowolny punkt trasy, aby go edytować.",
     "mapPlanningDone": "Gotowe",
+    "mapPlanningFitRoute": "Dopasuj trasę",
+    "mapPlanningFitRouteHint": "Pokaż całą zaplanowaną trasę na mapie",
     "mapPlanningStop": "Przestań planować",
     "mapPlanningPaused": "Planowanie przejazdu zostało wstrzymane w celu pobrania mapy",
     "mapPlanningSwitchTitle": "Przełączyć fragment na wykresie?",

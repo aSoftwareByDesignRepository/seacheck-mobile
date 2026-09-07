@@ -996,6 +996,8 @@
     "mapPlanningEmpty": "Ingen veipunkter ennå - trykk og hold kartet for å plassere det første.",
     "mapPlanningReadyHint": "Hold kartet for å legge til flere veipunkter. Trykk på et veipunkt for å redigere.",
     "mapPlanningDone": "Ferdig",
+    "mapPlanningFitRoute": "Tilpass rute",
+    "mapPlanningFitRouteHint": "Vis hele den planlagte ruten på kartet",
     "mapPlanningStop": "Slutt å planlegge",
     "mapPlanningPaused": "Passasjeplanlegging satt på pause for nedlasting av kart",
     "mapPlanningSwitchTitle": "Bytte passasje på kartet?",

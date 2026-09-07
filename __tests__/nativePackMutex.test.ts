@@ -42,4 +42,20 @@ describe('nativePackMutex', () => {
     expect(isNativePackOpBusy()).toBe(false);
     expect(downloadCoordinator.tryBegin('kiel-bay')).toBe(1);
   });
+
+  it('restoreActive refuses while a native pack op is in flight', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const op = withNativePackOp(async () => {
+      await gate;
+    });
+    await Promise.resolve();
+    expect(isNativePackOpBusy()).toBe(true);
+    expect(downloadCoordinator.restoreActive('kiel-bay')).toBe(false);
+    release();
+    await op;
+    expect(downloadCoordinator.restoreActive('kiel-bay')).toBe(true);
+  });
 });

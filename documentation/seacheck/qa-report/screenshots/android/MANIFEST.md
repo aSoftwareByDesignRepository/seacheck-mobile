@@ -1,15 +1,10 @@
-# Screenshots manifest — Atlas Round 7
+# SeaCheck Android screenshots — Atlas Round 8
 
-**APK (local artifact, not in git):** `artifacts/seacheck-0.1.8-release.apk`  
-(`versionName=0.1.8`, `versionCode=8`; rebuilt 2026-09-07 for ship)  
-**Device:** `SeaCheck_Atlas_R4_API_33` / `emulator-5602`  
-**Date:** 2026-09-07
+| File | Flow | Proven this session |
+|------|------|---------------------|
+| `atlas-r8-download-cancel-minimal.png` | Maestro `02a` release-cancel | 🟢 EXIT 0 · Pixel_3 · 2026-09-07 ~20:06 |
+| `atlas-r8-download-kill-mid-release.png` | Maestro `03a` release-kill | 🟢 EXIT 0 · Pixel_3 · 2026-09-07 ~20:08 |
+| `atlas-r8-download-seal-ready.png` | Maestro `04` release-seal EN | 🟢 EXIT 0 · Pixel_3 · 2026-09-07 ~20:13 |
+| DE seal Ready | Maestro `05` | ❌ NOT VERIFIED this session — see ATLAS-master-verdict.md |
 
-| File | Feature / proof |
-|------|-----------------|
-| `atlas-r7-download-cancel-minimal.png` | Cancel mid-download EXIT 0 |
-| `atlas-r7-download-kill-mid-release.png` | Kill mid-download EXIT 0 |
-| `atlas-r7-download-seal-ready.png` | EN seal Ready EXIT 0 |
-| `atlas-r7-download-seal-ready-de.png` | DE Ready `1 Kartenpaket offline bereit` EXIT 0 |
-
-Maestro logs: `/tmp/atlas-sc-r7-*.log`
+Device note: dedicated `SeaCheck_*` AVDs crashed on boot this session (qemu disappear). E2E used locked `Pixel_3_API_33` / `emulator-5606` with APK `0.1.8` vc8 (`seacheck-0.1.8-atlas-r8.apk`).

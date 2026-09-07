@@ -996,6 +996,8 @@
     "mapPlanningEmpty": "Ancora nessun waypoint: tieni premuta la mappa per posizionare il primo.",
     "mapPlanningReadyHint": "Tieni la mappa per aggiungere altri waypoint. Tocca qualsiasi punto di passaggio da modificare.",
     "mapPlanningDone": "Fatto",
+    "mapPlanningFitRoute": "Adatta rotta",
+    "mapPlanningFitRouteHint": "Mostra l'intera rotta pianificata sulla carta",
     "mapPlanningStop": "Smettila di pianificare",
     "mapPlanningPaused": "Pianificazione del passaggio sospesa per il download della carta",
     "mapPlanningSwitchTitle": "Cambiare passaggio sulla carta?",

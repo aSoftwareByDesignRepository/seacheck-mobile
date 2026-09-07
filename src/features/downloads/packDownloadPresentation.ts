@@ -47,6 +47,29 @@ export function isPackDownloadActive(
   return activeDownloadRegionId === regionId && status.state !== 'ready';
 }
 
+/**
+ * Whether a pack's Download / Delete / Retry controls should appear busy.
+ *
+ * Exclusive store locks (`activeDownloadRegionId` / teardown) gate other packs for the
+ * whole session. Local `actionBusyId` is only the short kickoff/preflight window and
+ * must never outlive those locks — otherwise every other pack stays grey forever.
+ */
+export function isPackActionBusy(input: {
+  packId: string;
+  hydrated: boolean;
+  status: Pick<RegionPackStatus, 'state'>;
+  activeDownloadRegionId: string | null;
+  downloadMapTeardownRegionId: string | null;
+  actionBusyId: string | null;
+}): boolean {
+  if (!input.hydrated) return true;
+  if (isPackDownloadActive(input.packId, input.status, input.activeDownloadRegionId)) return false;
+  const downloadLocksOtherPacks =
+    input.activeDownloadRegionId != null || input.downloadMapTeardownRegionId != null;
+  return downloadLocksOtherPacks || (input.actionBusyId != null && input.actionBusyId !== input.packId);
+}
+
+
 /** Visible download map should stay mounted while tiles download or finalize.
  *  All other MapLibre surfaces must suspend during this window (Android GL crash guard). */
 export function isDownloadMapSessionActive(

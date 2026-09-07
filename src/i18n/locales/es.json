@@ -996,6 +996,8 @@
     "mapPlanningEmpty": "Aún no hay puntos de ruta: mantén presionada la carta para colocar el primero.",
     "mapPlanningReadyHint": "Mantenga presionada la carta para agregar más puntos de referencia. Toque cualquier punto de referencia para editarlo.",
     "mapPlanningDone": "Hecho",
+    "mapPlanningFitRoute": "Ajustar ruta",
+    "mapPlanningFitRouteHint": "Mostrar toda la ruta planificada en la carta",
     "mapPlanningStop": "Deja de planificar",
     "mapPlanningPaused": "Planificación de pasajes en pausa para descarga de gráficos",
     "mapPlanningSwitchTitle": "¿Cambiar pasaje en el gráfico?",

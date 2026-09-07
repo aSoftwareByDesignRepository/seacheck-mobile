@@ -996,6 +996,8 @@
     "mapPlanningEmpty": "Inga waypoints ännu – tryck och håll ned sjökortet för att placera den första.",
     "mapPlanningReadyHint": "Håll i sjökortet för att lägga till fler waypoints. Tryck på valfri waypoint för att redigera.",
     "mapPlanningDone": "Klar",
+    "mapPlanningFitRoute": "Anpassa rutt",
+    "mapPlanningFitRouteHint": "Visa hela den planerade rutten på sjökortet",
     "mapPlanningStop": "Sluta planera",
     "mapPlanningPaused": "Passageplanering pausad för nedladdning av sjökort",
     "mapPlanningSwitchTitle": "Byta passage på sjökortet?",

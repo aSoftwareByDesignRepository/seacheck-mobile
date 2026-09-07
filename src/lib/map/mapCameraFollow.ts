@@ -21,6 +21,20 @@ export function resolveMapInitialCenter(
   return fallback;
 }
 
+/** Follow the boat only when the chart is in navigation mode — not planning or area pick. */
+export function shouldEnableMapCameraFollow(input: {
+  followActive: boolean;
+  followMode: boolean;
+  hasBoatFix: boolean;
+  passageMapPlanning: boolean;
+  customSelecting: boolean;
+  instrumentsOnlyBlocksChart: boolean;
+}): boolean {
+  if (input.passageMapPlanning || input.customSelecting) return false;
+  if (input.instrumentsOnlyBlocksChart) return false;
+  return input.followActive && input.followMode && input.hasBoatFix;
+}
+
 /** Follow mode should only pause when the user moves the chart — not on programmatic camera updates. */
 export function shouldPauseFollowOnRegionChange(userInteraction: boolean, followMode: boolean): boolean {
   return followMode && userInteraction;

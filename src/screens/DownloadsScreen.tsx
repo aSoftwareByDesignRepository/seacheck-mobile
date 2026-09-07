@@ -255,8 +255,8 @@ export function DownloadsScreen() {
   }
 
   function handlePackDownload(packId: string) {
-    void handleDownload(packId).then((ok) => {
-      if (ok) selectPack(packId);
+    void handleDownload(packId).then((result) => {
+      if (result === 'ready') selectPack(packId);
     });
   }
 

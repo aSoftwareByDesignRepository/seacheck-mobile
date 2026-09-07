@@ -66,7 +66,17 @@ import { resolveBoatHeadingDeg } from '../../lib/geo/cog';
 import { isValidCoordinate } from '../../lib/geo/fixQuality';
 import { distanceNm } from '../../lib/geo/navigation';
 import { mapTappableWaypoints } from '../../lib/map/mapVisibleWaypoints';
-import { resolveMapInitialCenter, shouldPauseFollowOnRegionChange } from '../../lib/map/mapCameraFollow';
+import { resolveMapInitialCenter, shouldEnableMapCameraFollow, shouldPauseFollowOnRegionChange } from '../../lib/map/mapCameraFollow';
+import {
+  createPlanningCameraSession,
+  markPlanningCameraFitted,
+  markPlanningCameraUserAdjusted,
+  shouldApplyPlanningFit,
+  shouldMarkPlanningUserAdjusted,
+  shouldRequestPlanningAutoFit,
+  syncPlanningCameraSession,
+  type PlanningCameraSession,
+} from '../../lib/map/passagePlanningCamera';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useWaypointStore } from '../../store/waypointStore';
 import { useTheme } from '../../theme/ThemeContext';
@@ -154,6 +164,7 @@ export function NavigationMap() {
   const planningPassageId = usePassageMapPlanningStore((s) => s.passageId);
   const planningRevision = usePassageMapPlanningStore((s) => s.revision);
   const allowRouteEdits = usePassageMapPlanningStore((s) => s.allowRouteEdits);
+  const fitRouteRequestId = usePassageMapPlanningStore((s) => s.fitRouteRequestId);
   const passageMapPlanning = planningPassageId != null;
   const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
   const activePassageId = usePassageStore((s) => s.activePassageId);
@@ -169,7 +180,12 @@ export function NavigationMap() {
   const switchLayoutOnMob = useMobLayoutSwitch();
   const surface = useMapSurfaceMode();
   const showRecenter =
-    followMode && !followActive && !screenLocked && (!isInstrumentsOnlyLayout || showChartInInstrumentsOnly);
+    followMode &&
+    !followActive &&
+    !screenLocked &&
+    !passageMapPlanning &&
+    !customSelecting &&
+    (!isInstrumentsOnlyLayout || showChartInInstrumentsOnly);
   /** Ashore / planning / download area pick — no lock, anchor, or MOB on the chart edge. */
   const showSideActions =
     !screenLocked && !mobTarget && !passageMapPlanning && !customSelecting;
@@ -217,7 +233,8 @@ export function NavigationMap() {
   const [planningSelectedWaypointId, setPlanningSelectedWaypointId] = useState<string | null>(null);
   const [planningOpenEditOnTap, setPlanningOpenEditOnTap] = useState(false);
   const suppressNextPressRef = useRef(false);
-  const planningCameraFitRef = useRef<{ passageId: string; revision: number } | null>(null);
+  const planningCameraSessionRef = useRef<PlanningCameraSession>(createPlanningCameraSession());
+  const lastHandledFitRouteRequestRef = useRef(0);
   const customCameraFitSigRef = useRef('');
   const addingPlanningWaypointRef = useRef(false);
   const isOffline = useIsDeviceDisconnected();
@@ -389,8 +406,14 @@ export function NavigationMap() {
   }, [planningPassageId]);
 
   useEffect(() => {
+    // Planning owns the chart viewport — never re-arm GPS follow from settings
+    // while a passage is being edited on the map.
+    if (passageMapPlanning) {
+      setFollowActive(false);
+      return;
+    }
     setFollowActive(followMode);
-  }, [followMode]);
+  }, [followMode, passageMapPlanning]);
 
   const handleAddPlanningWaypoint = useCallback(
     async (lat: number, lon: number) => {
@@ -467,30 +490,111 @@ export function NavigationMap() {
     cameraRef.current?.fitBounds(bounds, { padding, duration: 300 });
   }, [customSelecting, customCorners, mapStyleLoaded, mapZoom]);
 
-  useEffect(() => {
-    if (!planningPassageId) {
-      planningCameraFitRef.current = null;
-      return;
-    }
-    const lastFit = planningCameraFitRef.current;
-    if (
-      !mapStyleLoaded ||
-      (lastFit?.passageId === planningPassageId && lastFit.revision === planningRevision)
-    ) {
-      return;
-    }
-    void usePassageStore.getState().getPassageDetail(planningPassageId).then((detail) => {
-      planningCameraFitRef.current = { passageId: planningPassageId, revision: planningRevision };
-      if (!detail || detail.waypoints.length === 0) return;
-      const bounds = boundsFromWaypoints(detail.waypoints);
+  const fitPlanningPassageCamera = useCallback(
+    async (options: { force: boolean; passageId: string; generation: number }) => {
+      const detail = await usePassageStore.getState().getPassageDetail(options.passageId);
+      const session = planningCameraSessionRef.current;
+      const waypointCount = detail?.waypoints.length ?? 0;
+      if (
+        !shouldApplyPlanningFit({
+          requestPassageId: options.passageId,
+          currentPassageId: session.passageId,
+          requestGeneration: options.generation,
+          currentGeneration: session.generation,
+          userAdjustedCamera: session.userAdjustedCamera,
+          waypointCount,
+          force: options.force,
+        })
+      ) {
+        // Claim the one-shot when auto-fit has nothing to frame yet (0–1 WPs),
+        // so later waypoint adds never re-trigger a zoom snap.
+        if (
+          !options.force &&
+          session.passageId === options.passageId &&
+          session.generation === options.generation &&
+          waypointCount < 2
+        ) {
+          planningCameraSessionRef.current = markPlanningCameraFitted(session);
+        }
+        return;
+      }
+      const bounds = boundsFromWaypoints(detail!.waypoints);
       if (!bounds) return;
+      if (
+        !shouldApplyPlanningFit({
+          requestPassageId: options.passageId,
+          currentPassageId: planningCameraSessionRef.current.passageId,
+          requestGeneration: options.generation,
+          currentGeneration: planningCameraSessionRef.current.generation,
+          userAdjustedCamera: planningCameraSessionRef.current.userAdjustedCamera,
+          waypointCount,
+          force: options.force,
+        })
+      ) {
+        return;
+      }
       setFollowActive(false);
       cameraRef.current?.fitBounds(bounds, {
         padding: { top: 96, right: 48, bottom: PASSAGE_PLANNING_PANEL_CONTENT_MAX, left: 48 },
         duration: 400,
       });
+      planningCameraSessionRef.current = markPlanningCameraFitted(planningCameraSessionRef.current);
+    },
+    [],
+  );
+
+  // One-shot auto-fit when entering planning (or when the style becomes ready).
+  // Intentionally does NOT depend on planningRevision — WP mutations must preserve zoom.
+  useEffect(() => {
+    planningCameraSessionRef.current = syncPlanningCameraSession(
+      planningCameraSessionRef.current,
+      planningPassageId,
+    );
+    // Style unload / Map remount resets the camera — allow another one-shot fit.
+    if (!mapStyleLoaded && planningPassageId) {
+      const s = planningCameraSessionRef.current;
+      if (s.hasFitted || s.userAdjustedCamera) {
+        planningCameraSessionRef.current = {
+          ...s,
+          hasFitted: false,
+          userAdjustedCamera: false,
+          generation: s.generation + 1,
+        };
+      }
+      return;
+    }
+    const session = planningCameraSessionRef.current;
+    if (
+      !shouldRequestPlanningAutoFit({
+        passageId: planningPassageId,
+        mapStyleLoaded,
+        hasFitted: session.hasFitted,
+        userAdjustedCamera: session.userAdjustedCamera,
+      })
+    ) {
+      return;
+    }
+    // Claim immediately so Strict Mode / concurrent effects cannot double-request.
+    planningCameraSessionRef.current = markPlanningCameraFitted(session);
+    void fitPlanningPassageCamera({
+      force: false,
+      passageId: planningPassageId!,
+      generation: session.generation,
     });
-  }, [planningPassageId, planningRevision, mapStyleLoaded]);
+  }, [planningPassageId, mapStyleLoaded, fitPlanningPassageCamera]);
+
+  // Explicit "Fit route" from the planning panel.
+  useEffect(() => {
+    if (!planningPassageId || fitRouteRequestId === 0) return;
+    if (fitRouteRequestId === lastHandledFitRouteRequestRef.current) return;
+    lastHandledFitRouteRequestRef.current = fitRouteRequestId;
+    const session = planningCameraSessionRef.current;
+    void fitPlanningPassageCamera({
+      force: true,
+      passageId: planningPassageId,
+      generation: session.generation,
+    });
+  }, [fitRouteRequestId, planningPassageId, fitPlanningPassageCamera]);
 
   useEffect(() => {
     setMapStyleLoaded(false);
@@ -523,11 +627,14 @@ export function NavigationMap() {
 
   useMapCameraFollow({
     cameraRef,
-    enabled:
-      followActive &&
-      followMode &&
-      Boolean(boatFix) &&
-      (!isInstrumentsOnlyLayout || showChartInInstrumentsOnly),
+    enabled: shouldEnableMapCameraFollow({
+      followActive,
+      followMode,
+      hasBoatFix: Boolean(boatFix),
+      passageMapPlanning,
+      customSelecting,
+      instrumentsOnlyBlocksChart: isInstrumentsOnlyLayout && !showChartInInstrumentsOnly,
+    }),
     mapReady: mapStyleLoaded,
     courseUp: mapCourseUp,
     followZoom: mapFollowZoom,
@@ -815,6 +922,11 @@ export function NavigationMap() {
       onRegionWillChange={(e) => {
         if (shouldPauseFollowOnRegionChange(e.nativeEvent.userInteraction, followMode)) {
           setFollowActive(false);
+        }
+        if (shouldMarkPlanningUserAdjusted(passageMapPlanning, e.nativeEvent.userInteraction)) {
+          planningCameraSessionRef.current = markPlanningCameraUserAdjusted(
+            planningCameraSessionRef.current,
+          );
         }
       }}
       onRegionIsChanging={(e) => {

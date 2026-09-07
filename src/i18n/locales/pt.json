@@ -996,6 +996,8 @@
     "mapPlanningEmpty": "Ainda sem pointpoints — pressione e segure o gráfico para colocar o primeiro.",
     "mapPlanningReadyHint": "Segure o gráfico para adicionar mais pontos de vista. Toque em qualquer ponto para editar.",
     "mapPlanningDone": "Feito",
+    "mapPlanningFitRoute": "Ajustar rota",
+    "mapPlanningFitRouteHint": "Mostrar toda a rota planeada no mapa",
     "mapPlanningStop": "Parar o planeamento",
     "mapPlanningPaused": "Planeamento da passagem para download do gráfico",
     "mapPlanningSwitchTitle": "Mudar a passagem no gráfico?",

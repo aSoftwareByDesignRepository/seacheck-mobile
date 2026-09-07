@@ -103,9 +103,9 @@ const mutations = [
     name: 'download-restore-during-teardown',
     file: 'src/lib/offline/downloadCoordinator.ts',
     search:
-      '  restoreActive(regionId: string): boolean {\n    // Never remount a second GL owner while teardown still holds the TextureView.\n    if (this.teardownRegionId != null) return false;\n    if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;',
+      '  restoreActive(regionId: string): boolean {\n    // Never remount a second GL owner while teardown still holds the TextureView.\n    if (this.teardownRegionId != null) return false;\n    // Never race hydrate resume against createPack/deletePack/pause.\n    if (isNativePackOpBusy()) return false;\n    if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;',
     replace:
-      '  restoreActive(regionId: string): boolean {\n    // Never remount a second GL owner while teardown still holds the TextureView.\n    if (false && this.teardownRegionId != null) return false;\n    if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;',
+      '  restoreActive(regionId: string): boolean {\n    // Never remount a second GL owner while teardown still holds the TextureView.\n    if (false && this.teardownRegionId != null) return false;\n    // Never race hydrate resume against createPack/deletePack/pause.\n    if (false && isNativePackOpBusy()) return false;\n    if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;',
   },
   {
     name: 'download-style-only-complete-as-ready',

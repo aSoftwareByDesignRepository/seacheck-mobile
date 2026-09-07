@@ -2,6 +2,7 @@ import {
   countFailedPacks,
   countReadyPacks,
   isDownloadMapSessionActive,
+  isPackActionBusy,
   isPackDownloadActive,
   listFailedPacks,
   packHasDownloadFailure,
@@ -16,6 +17,81 @@ describe('packDownloadPresentation', () => {
     expect(isPackDownloadActive('kiel-bay', { state: 'downloading' }, null)).toBe(true);
     expect(isPackDownloadActive('kiel-bay', { state: 'idle' }, 'other')).toBe(false);
     expect(isPackDownloadActive('kiel-bay', { state: 'ready' }, 'kiel-bay')).toBe(false);
+  });
+
+  it('does not leave other packs busy after kickoff when actionBusyId is cleared', () => {
+    // Regression: sticky actionBusyId after Kiel Bay kickoff greys every other Download button.
+    expect(
+      isPackActionBusy({
+        packId: 'lubeck-bay',
+        hydrated: true,
+        status: { state: 'idle' },
+        activeDownloadRegionId: null,
+        downloadMapTeardownRegionId: null,
+        actionBusyId: null,
+      }),
+    ).toBe(false);
+  });
+
+  it('keeps other packs busy only while exclusive store locks are held', () => {
+    expect(
+      isPackActionBusy({
+        packId: 'lubeck-bay',
+        hydrated: true,
+        status: { state: 'idle' },
+        activeDownloadRegionId: 'kiel-bay',
+        downloadMapTeardownRegionId: null,
+        actionBusyId: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isPackActionBusy({
+        packId: 'lubeck-bay',
+        hydrated: true,
+        status: { state: 'idle' },
+        activeDownloadRegionId: null,
+        downloadMapTeardownRegionId: 'kiel-bay',
+        actionBusyId: null,
+      }),
+    ).toBe(true);
+  });
+
+  it('uses actionBusyId only as a short kickoff lock for other packs', () => {
+    expect(
+      isPackActionBusy({
+        packId: 'kiel-bay',
+        hydrated: true,
+        status: { state: 'idle' },
+        activeDownloadRegionId: null,
+        downloadMapTeardownRegionId: null,
+        actionBusyId: 'kiel-bay',
+      }),
+    ).toBe(false);
+
+    expect(
+      isPackActionBusy({
+        packId: 'lubeck-bay',
+        hydrated: true,
+        status: { state: 'idle' },
+        activeDownloadRegionId: null,
+        downloadMapTeardownRegionId: null,
+        actionBusyId: 'kiel-bay',
+      }),
+    ).toBe(true);
+  });
+
+  it('never greys the active downloading pack via actionBusyId', () => {
+    expect(
+      isPackActionBusy({
+        packId: 'kiel-bay',
+        hydrated: true,
+        status: { state: 'downloading' },
+        activeDownloadRegionId: 'kiel-bay',
+        downloadMapTeardownRegionId: null,
+        actionBusyId: 'kiel-bay',
+      }),
+    ).toBe(false);
   });
 
   it('keeps the download map visible while finalizing a ready pack', () => {

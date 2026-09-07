@@ -996,6 +996,8 @@
     "mapPlanningEmpty": "Ingen waypoints endnu - tryk og hold kortet nede for at placere det første.",
     "mapPlanningReadyHint": "Hold kortet nede for at tilføje flere waypoints. Tryk på et hvilket som helst waypoint for at redigere.",
     "mapPlanningDone": "Færdig",
+    "mapPlanningFitRoute": "Tilpas rute",
+    "mapPlanningFitRouteHint": "Vis hele den planlagte rute på kortet",
     "mapPlanningStop": "Stop planlægningen",
     "mapPlanningPaused": "Passageplanlægning sat på pause for at downloade kort",
     "mapPlanningSwitchTitle": "Skift passage på kortet?",

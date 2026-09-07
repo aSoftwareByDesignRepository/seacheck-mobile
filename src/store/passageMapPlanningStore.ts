@@ -15,11 +15,18 @@ type PersistPayload = {
 
 type PassageMapPlanningState = PersistPayload & {
   hydrated: boolean;
+  /**
+   * Ephemeral counter — NavigationMap fits the route when this bumps.
+   * Not persisted; waypoint revisions must not auto-fit the camera.
+   */
+  fitRouteRequestId: number;
   /** Passage currently being built or edited on the chart. */
   hydrate: () => Promise<void>;
   startPlanning: (passageId: string, options?: { allowRouteEdits?: boolean }) => void;
   stopPlanning: () => void;
   bumpRevision: () => void;
+  /** Explicit "show whole route" — does not bump revision. */
+  requestFitRoute: () => void;
   unlockRouteEdits: () => void;
   dismissGuideForSession: () => void;
 };
@@ -34,6 +41,7 @@ export const usePassageMapPlanningStore = create<PassageMapPlanningState>((set, 
   revision: 0,
   allowRouteEdits: true,
   guideDismissedForSession: false,
+  fitRouteRequestId: 0,
 
   hydrate: async () => {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -75,6 +83,11 @@ export const usePassageMapPlanningStore = create<PassageMapPlanningState>((set, 
     });
   },
 
+  requestFitRoute: () => {
+    if (!get().passageId) return;
+    set({ fitRouteRequestId: get().fitRouteRequestId + 1 });
+  },
+
   unlockRouteEdits: () => {
     set({ allowRouteEdits: true });
     void persist({
@@ -104,5 +117,6 @@ export function resetPassageMapPlanningStoreForTests(): void {
     revision: 0,
     allowRouteEdits: true,
     guideDismissedForSession: false,
+    fitRouteRequestId: 0,
   });
 }
