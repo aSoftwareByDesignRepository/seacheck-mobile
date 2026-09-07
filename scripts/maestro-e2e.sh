@@ -2,14 +2,17 @@
 # Run SeaCheck Maestro E2E (download honesty) on a device/emulator.
 #
 # Usage:
-#   bash scripts/maestro-e2e.sh                  # all flows
+#   bash scripts/maestro-e2e.sh                  # all flows (dev-client + Metro)
 #   bash scripts/maestro-e2e.sh cancel           # 02-download-cancel-mid
 #   bash scripts/maestro-e2e.sh kill             # 03-download-kill-mid
+#   bash scripts/maestro-e2e.sh release-cancel   # 02a on installed release APK (no Metro)
+#   bash scripts/maestro-e2e.sh release-kill     # 03a on installed release APK (no Metro)
+#   bash scripts/maestro-e2e.sh release-seal     # 04 seal Ready on release APK (no Metro; long)
 #   SEACHECK_MAESTRO_DEVICE=emulator-5556 bash scripts/maestro-e2e.sh
 #
 # Env:
 #   SEACHECK_MAESTRO_DEVICE  adb serial (must hold lock; default: acquire SeaCheck_Maestro_API_33)
-#   SEACHECK_METRO_PORT      Metro port (default 8092)
+#   SEACHECK_METRO_PORT      Metro port (default 8092; unused for release-*)
 #   SEACHECK_MAESTRO_CLEAR   1 = pm clear before run (default 1)
 #   SEACHECK_MAESTRO_DISABLE_RIVALS  1 = pm disable-user other softwarebydesign apps
 #                                    for the run (default 1; re-enabled on exit)
@@ -161,6 +164,7 @@ export SEACHECK_MAESTRO_DEVICE="$DEVICE"
 [[ -n "$DEVICE" ]] || die "No adb device. Run: bash .cursor/scripts/emulator-lock.sh status"
 
 FLOW_ARG="${1:-all}"
+RELEASE_MODE=0
 case "$FLOW_ARG" in
   all)
     FLOWS=(
@@ -170,19 +174,32 @@ case "$FLOW_ARG" in
     ;;
   cancel) FLOWS=("$APP_ROOT/.maestro/02-download-cancel-mid.yaml") ;;
   kill) FLOWS=("$APP_ROOT/.maestro/03-download-kill-mid.yaml") ;;
+  release-cancel|02a)
+    RELEASE_MODE=1
+    FLOWS=("$APP_ROOT/.maestro/02a-download-cancel-minimal.yaml")
+    ;;
+  release-kill|03a)
+    RELEASE_MODE=1
+    FLOWS=("$APP_ROOT/.maestro/03a-download-kill-mid-release.yaml")
+    ;;
+  release-seal|04)
+    RELEASE_MODE=1
+    FLOWS=("$APP_ROOT/.maestro/04-download-seal-ready.yaml")
+    ;;
   onboarding) FLOWS=("$APP_ROOT/.maestro/01-onboarding-skip.yaml") ;;
   probe) FLOWS=("$APP_ROOT/.maestro/00-probe-launch.yaml") ;;
-  *) die "Unknown flow '$FLOW_ARG' (all|cancel|kill|onboarding|probe)" ;;
+  *) die "Unknown flow '$FLOW_ARG' (all|cancel|kill|release-cancel|release-kill|release-seal|onboarding|probe)" ;;
 esac
 
-log "device=$DEVICE metro=$METRO_PORT flows=${FLOWS[*]}"
+log "device=$DEVICE metro=$METRO_PORT release=$RELEASE_MODE flows=${FLOWS[*]}"
 
-if ! curl -sf -o /dev/null "http://127.0.0.1:${METRO_PORT}/status"; then
-  die "Metro not running on :${METRO_PORT}. Start with: npx expo start --port ${METRO_PORT} --dev-client"
+if [[ "$RELEASE_MODE" != "1" ]]; then
+  if ! curl -sf -o /dev/null "http://127.0.0.1:${METRO_PORT}/status"; then
+    die "Metro not running on :${METRO_PORT}. Start with: npx expo start --port ${METRO_PORT} --dev-client"
+  fi
+  # Emulator → host Metro (also works when 10.0.2.2 is firewalled).
+  adb -s "$DEVICE" reverse "tcp:${METRO_PORT}" "tcp:${METRO_PORT}" >/dev/null 2>&1 || true
 fi
-
-# Emulator → host Metro (also works when 10.0.2.2 is firewalled).
-adb -s "$DEVICE" reverse "tcp:${METRO_PORT}" "tcp:${METRO_PORT}" >/dev/null 2>&1 || true
 
 # Always restore rivals and release emulator lock on exit.
 trap 'enable_rival_apps || true; release_device_lock' EXIT
@@ -190,10 +207,14 @@ trap 'enable_rival_apps || true; release_device_lock' EXIT
 disable_rival_apps
 stop_rival_apps
 
-# Ensure debug app present.
+# Ensure app present (release flows need the release APK; debug flows prefer debug).
 if ! adb -s "$DEVICE" shell pm path "$APP_ID" >/dev/null 2>&1; then
-  APK="$APP_ROOT/android/app/build/outputs/apk/debug/app-debug.apk"
-  [[ -f "$APK" ]] || die "App not installed and no debug APK at $APK"
+  if [[ "$RELEASE_MODE" == "1" ]]; then
+    APK="$APP_ROOT/android/app/build/outputs/apk/release/app-release.apk"
+  else
+    APK="$APP_ROOT/android/app/build/outputs/apk/debug/app-debug.apk"
+  fi
+  [[ -f "$APK" ]] || die "App not installed and no APK at $APK"
   log "installing $APK"
   adb -s "$DEVICE" install -r "$APK"
 fi
@@ -219,6 +240,43 @@ prepare_fresh_app() {
     adb -s "$DEVICE" shell pm clear "$APP_ID" >/dev/null
   fi
   grant_runtime_permissions
+}
+
+wait_for_release_ui() {
+  log "release cold start"
+  adb -s "$DEVICE" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
+  stop_rival_apps
+  adb -s "$DEVICE" shell am start -W -n "${APP_ID}/.MainActivity" >/dev/null 2>&1 || true
+  # Give RN a beat before hammering uiautomator (especially under multi-emulator load).
+  sleep 3
+
+  local ready=0
+  local i
+  for i in $(seq 1 90); do
+    if ! adb -s "$DEVICE" get-state 2>/dev/null | grep -q device; then
+      die "device $DEVICE disconnected while waiting for release UI (iter $i)"
+    fi
+    local xml
+    xml="$(dump_ui || true)"
+    if printf '%s' "$xml" | grep -q "package=\"$APP_ID\"" && \
+       printf '%s' "$xml" | grep -Eq 'resource-id="(screen\.onboarding|screen\.map|tab\.map|tab\.downloads|tab\.more|onboarding\.|boot\.|offline\.mapBootstrap)"'; then
+      ready=1
+      log "release UI ready (iter $i)"
+      break
+    fi
+    if (( i % 15 == 0 )); then
+      log "re-launch MainActivity (iter $i)"
+      stop_rival_apps
+      adb -s "$DEVICE" shell am start -W -n "${APP_ID}/.MainActivity" >/dev/null 2>&1 || true
+      sleep 2
+    fi
+    sleep 2
+  done
+  if [[ "$ready" != "1" ]]; then
+    log "UI dump (timeout):"
+    dump_ui | tr '>' '>\n' | grep -E 'package=|text=|content-desc=|resource-id=' | head -80 || true
+    die "Timed out waiting for SeaCheck release UI on $DEVICE"
+  fi
 }
 
 wait_for_js_ui() {
@@ -282,11 +340,33 @@ run_maestro_flow() {
   flow_name="$(basename "$flow")"
   log "maestro flow: $flow_name"
   prepare_fresh_app
-  wait_for_js_ui
-  ensure_seacheck_foreground
+  if [[ "$RELEASE_MODE" == "1" ]]; then
+    wait_for_release_ui
+    stop_rival_apps
+  else
+    wait_for_js_ui
+    ensure_seacheck_foreground
+  fi
   set +e
-  maestro --device "$DEVICE" test "$flow"
-  local rc=$?
+  # Maestro 2.x selects Android devices via --udid (legacy --device is unreliable).
+  local rc=1
+  local attempt
+  for attempt in 1 2; do
+    if ! adb -s "$DEVICE" get-state 2>/dev/null | grep -q device; then
+      die "device $DEVICE not connected before maestro (attempt $attempt)"
+    fi
+    if [[ "$attempt" -eq 2 ]]; then
+      log "maestro retry with --reinstall-driver (attempt $attempt)"
+      MAESTRO_DRIVER_STARTUP_TIMEOUT="${MAESTRO_DRIVER_STARTUP_TIMEOUT:-180000}" \
+        maestro --platform android --udid "$DEVICE" test --reinstall-driver "$flow"
+    else
+      MAESTRO_DRIVER_STARTUP_TIMEOUT="${MAESTRO_DRIVER_STARTUP_TIMEOUT:-180000}" \
+        maestro --platform android --udid "$DEVICE" test "$flow"
+    fi
+    rc=$?
+    [[ "$rc" -eq 0 ]] && break
+    sleep 3
+  done
   set -e
   if [[ "$rc" -ne 0 ]]; then
     log "UI dump (maestro fail: $flow_name):"

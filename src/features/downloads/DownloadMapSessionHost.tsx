@@ -1,27 +1,29 @@
+import { useSyncExternalStore } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { shouldMountDownloadMapSession } from '../../lib/map/chartMapGlPolicy';
 import { HIDDEN_MAP_ENGINE_SIZE_PX } from '../../lib/map/hiddenMapEngineLayout';
+import {
+  resolveDownloadMapSlot,
+  subscribeDownloadMapSlot,
+} from '../../lib/offline/downloadMapSlot';
 import { DownloadMapEngine } from './DownloadMapEngine';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 
 /**
- * Keeps the tile-sweep map mounted whenever a cache-backed download runs — on any tab.
- * Android only renders MapLibre into the ambient tile cache when the map is in the
- * viewport; this host stays on-screen (near-transparent, fixed size) so sweeps work
- * after custom area picks on the Map tab, not only from the Downloads screen.
- *
- * Must stay a small corner host — a fullscreen TextureView ignores parent opacity on
- * Android and paints an opaque black/ocean layer over the entire app.
+ * Last-resort corner underlay while waiting for Map/Downloads to claim the sticky
+ * visible host. Tile sweep pauses until a visible slot is available — this host
+ * alone is not enough for permanent offline saves.
  */
 export function DownloadMapSessionHost() {
   const activeDownloadRegionId = useOfflinePackStore((s) => s.activeDownloadRegionId);
   const downloadMapTeardownRegionId = useOfflinePackStore((s) => s.downloadMapTeardownRegionId);
   const regions = useOfflinePackStore((s) => s.regions);
+  const slot = useSyncExternalStore(subscribeDownloadMapSlot, resolveDownloadMapSlot, resolveDownloadMapSlot);
 
   const sessionRegionId = activeDownloadRegionId ?? downloadMapTeardownRegionId;
   const status = sessionRegionId != null ? regions[sessionRegionId] : undefined;
-  const active =
+  const sessionActive =
     sessionRegionId != null &&
     shouldMountDownloadMapSession(
       sessionRegionId,
@@ -30,7 +32,8 @@ export function DownloadMapSessionHost() {
       downloadMapTeardownRegionId,
     );
 
-  if (!active) return null;
+  // Sticky Map/Downloads hosts own the GL surface — never mount a competing corner engine.
+  if (!sessionActive || slot !== 'corner') return null;
 
   return (
     <View
@@ -41,7 +44,7 @@ export function DownloadMapSessionHost() {
       importantForAccessibility="no-hide-descendants"
       testID="downloads.mapSessionHost"
     >
-      <DownloadMapEngine />
+      <DownloadMapEngine layout="corner" />
     </View>
   );
 }
@@ -53,7 +56,6 @@ const styles = StyleSheet.create({
     height: HIDDEN_MAP_ENGINE_SIZE_PX,
     maxWidth: HIDDEN_MAP_ENGINE_SIZE_PX,
     maxHeight: HIDDEN_MAP_ENGINE_SIZE_PX,
-    // Bottom-right — OfflineMapEngineHost uses bottom-left when mounted.
     right: 0,
     bottom: 0,
     overflow: 'hidden',

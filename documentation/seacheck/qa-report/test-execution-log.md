@@ -1,548 +1,182 @@
-# SeaCheck — Test Execution Log (Momos 2026-09-06)
+# SeaCheck — Test Execution Log (Momos re-attack)
 
-Raw command outputs from the Momos engagement. Times are UTC.
+**Host:** developer workstation · **App cwd:** `nextcloud-dev/mobile/seacheck`  
+**All timestamps UTC unless noted.**
 
-## 1. RED proof — followMode / anchor / route hydrates (before+after)
+---
 
-### 1a. Initial RED (followMode string/number) — 2026-09-06 ~17:33Z
-```
-FAIL __tests__/momosFollowMode.red.test.ts
-  Momos followMode hydrate attack
-    ✕ must not treat string "false" as follow ON (truthy string) (5 ms)
-    ✕ must not treat numeric 1 as a valid followMode boolean (1 ms)
+## 2026-09-06T21:06:44Z — Jest + coverage
 
-  ● Momos followMode hydrate attack › must not treat string "false" as follow ON (truthy string)
-
-    expect(received).toBe(expected) // Object.is equality
-
-    Expected: false
-    Received: "false"
-
-      16 |     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify({ followMode: 'false' }));
-      17 |     await useSettingsStore.getState().hydrate();
-    > 18 |     expect(useSettingsStore.getState().followMode).toBe(false);
-         |                                                    ^
-      19 |   });
-      20 |
-      21 |   it('must not treat numeric 1 as a valid followMode boolean', async () => {
-
-      at Object.toBe (__tests__/momosFollowMode.red.test.ts:18:52)
-      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
-      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
-
-  ● Momos followMode hydrate attack › must not treat numeric 1 as a valid followMode boolean
-
-    expect(received).toBe(expected) // Object.is equality
-
-    Expected: true
-    Received: 1
-
-      23 |     await useSettingsStore.getState().hydrate();
-      24 |     // Default cruise followMode is true — corrupt number must fall back to default, not coerce
-    > 25 |     expect(useSettingsStore.getState().followMode).toBe(true);
-         |                                                    ^
-      26 |     expect(typeof useSettingsStore.getState().followMode).toBe('boolean');
-      27 |   });
-      28 | });
-
-      at Object.toBe (__tests__/momosFollowMode.red.test.ts:25:52)
-      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
-      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
-
-Test Suites: 1 failed, 1 total
-Tests:       2 failed, 2 total
-Snapshots:   0 total
-Time:        0.799 s
-Ran all test suites matching /__tests__\/momosFollowMode.red.test.ts/i.
+```text
+Command: npm test -- --ci --coverage --coverageReporters=text-summary --coverageReporters=json-summary
+Initial result: 1 failed (offlinePackStore.durableDownload timeout 20s on pre-sweep wait)
+Coverage summary:
+  Statements : 62.14% ( 3889/6258 )
+  Branches   : 55.32% ( 2331/4213 )
+  Functions  : 63.79% ( 823/1290 )
+  Lines      : 64.92% ( 3520/5422 )
 ```
 
-### 1b. Combined RED (anchor + follow + route) — /tmp/momos-red3.log
-```
-    expect(received).toBe(expected) // Object.is equality
+## 2026-09-06T21:06:44Z — typecheck / a11y / i18n
 
-    Expected: false
-    Received: "false"
-
-      16 |     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify({ followMode: 'false' }));
-      17 |     await useSettingsStore.getState().hydrate();
-    > 18 |     expect(useSettingsStore.getState().followMode).toBe(false);
-         |                                                    ^
-      19 |   });
-      20 |
-      21 |   it('must not treat numeric 1 as a valid followMode boolean', async () => {
-
-      at Object.toBe (__tests__/momosFollowMode.red.test.ts:18:52)
-      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
-      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
-
-  ● Momos followMode hydrate attack › must not treat numeric 1 as a valid followMode boolean
-
-    expect(received).toBe(expected) // Object.is equality
-
-    Expected: true
-    Received: 1
-
-      23 |     await useSettingsStore.getState().hydrate();
-      24 |     // Default cruise followMode is true — corrupt number must fall back to default, not coerce
-    > 25 |     expect(useSettingsStore.getState().followMode).toBe(true);
-         |                                                    ^
-      26 |     expect(typeof useSettingsStore.getState().followMode).toBe('boolean');
-      27 |   });
-      28 | });
-
-      at Object.toBe (__tests__/momosFollowMode.red.test.ts:25:52)
-      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
-      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
-
-PASS __tests__/momosAllowRouteEdits.red.test.ts
-FAIL __tests__/momosAnchorAlarm.red.test.ts
-  ● Momos anchor alarm hydrate attack › must not revive an anchor alarm when active is string "false"
-
-    expect(received).toBeNull()
-
-    Received: {"active": true, "armedLimited": false, "latitude": 54.5, "longitude": 10.1, "radiusNm": 0.05, "triggered": false}
-
-      30 |     );
-      31 |     await useNavigationStore.getState().hydrate();
-    > 32 |     expect(useNavigationStore.getState().anchorAlarm).toBeNull();
-         |                                                       ^
-      33 |   });
-      34 |
-      35 |   it('must not treat triggered string "false" as true (false alarm)', async () => {
-
-      at Object.toBeNull (__tests__/momosAnchorAlarm.red.test.ts:32:55)
-      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
-      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
-
-  ● Momos anchor alarm hydrate attack › must not treat triggered string "false" as true (false alarm)
-
-    expect(received).toBe(expected) // Object.is equality
-
-    Expected: false
-    Received: true
-
-      49 |     const alarm = useNavigationStore.getState().anchorAlarm;
-      50 |     expect(alarm).not.toBeNull();
-    > 51 |     expect(alarm!.triggered).toBe(false);
-         |                              ^
-      52 |     expect(typeof alarm!.triggered).toBe('boolean');
-      53 |   });
-      54 | });
-
-      at Object.toBe (__tests__/momosAnchorAlarm.red.test.ts:51:30)
-      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
-      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
-
-Test Suites: 2 failed, 1 passed, 3 total
-Tests:       4 failed, 2 passed, 6 total
-Snapshots:   0 total
-Time:        0.808 s, estimated 1 s
-Ran all test suites matching /__tests__\/momosAnchorAlarm.red.test.ts|__tests__\/momosAllowRouteEdits.red.test.ts|__tests__\/momosFollowMode.red.test.ts/i.
+```text
+npm run typecheck          → EXIT 0
+npm run a11y:contrast      → PASS (all listed pairs)
+npm run a11y:touch         → Touch-target audit passed
+npm run i18n:parity        → PASS i18n parity (908 keys × 11 locales)
 ```
 
-### 1c. GREEN after fixes — hydrate suites
-```
-PASS __tests__/momosFollowMode.red.test.ts
-PASS __tests__/momosAnchorAlarm.red.test.ts
-PASS __tests__/momosAllowRouteEdits.red.test.ts
-PASS __tests__/passageMapPlanning.test.ts
-PASS __tests__/settingsStore.booleanHydrate.test.ts
+## 2026-09-06T21:07:28Z — mutate:core
 
-Test Suites: 5 passed, 5 total
-Tests:       20 passed, 20 total
-Snapshots:   0 total
-Time:        2.356 s
-Ran all test suites matching /__tests__\/momosFollowMode.red.test.ts|__tests__\/momosAnchorAlarm.red.test.ts|__tests__\/momosAllowRouteEdits.red.test.ts|__tests__\/settingsStore.booleanHydrate.test.ts|__tests__\/passageMapPlanning.test.ts/i.
-```
-
-## 2. Full Jest + typecheck — 2026-09-06T17:38:02Z
-```
-=== MOMOS EXECUTION 2026-09-06T17:38:02Z ===
---- typecheck ---
-TSC_EXIT:0
---- jest ---
-PASS __tests__/mapChromeLayout.test.ts
-...
-TSC_EXIT:0
-Test Suites: 151 passed, 151 total
-Tests:       707 passed, 707 total
-Time:        11.264 s
-JEST_EXIT:0
-```
-
-## 3. Mutation gauntlet #1 (19 mutants) — 2026-09-06T17:38:47Z
-```
-=== MUTATE 2026-09-06T17:38:47Z ===
-
-> seacheck-mobile@0.1.5 mutate:core
-> node scripts/run-safety-core-mutations.cjs
-
-SeaCheck safety/offline core mutations
+```text
+Command: npm run mutate:core
 Baseline: PASS
-Killed: gps-outlier-never-rejects
-Killed: gps-gap-keeps-stale-baseline
-Killed: safety-unknown-accuracy-ok
-Killed: anchor-drag-ignores-accuracy
-Killed: anchor-defer-gap-ignored
-Killed: download-offline-allowed
-Killed: download-wifi-netinfo-fail-open
-Killed: download-wifi-offline-as-cellular
-Killed: download-parallel-allowed
-Killed: stale-callback-accepted
-Killed: persist-index-accepts-arrays
-Killed: tile-budget-disabled
-Killed: mmsi-always-valid
-Killed: mayday-invents-fresh
-Killed: persist-bool-truthy-strings
-Killed: followMode-loose-hydrate
-Killed: anchor-alarm-truthy-active
-Killed: anchor-triggered-Boolean-coerce
-Killed: online-ops-unknown-ok
-
-Result: 19 killed, 0 survived of 19
-MUTATE_EXIT:0
-```
-
-## 4. a11y + i18n
-```
-PASS 13.65:1 (min 4.5) text on light bg
-PASS 14.64:1 (min 4.5) text on light card
-PASS 5.18:1 (min 4.5) white on light primary
-PASS 16.49:1 (min 4.5) text on dark bg
-PASS 14.08:1 (min 4.5) text on dark card
-PASS 7.36:1 (min 4.5) dark on dark primary
-PASS 21.00:1 (min 4.5) high contrast text
-PASS 19.56:1 (min 4.5) high contrast primary
-PASS 5.67:1 (min 3) muted text on light bg
-PASS 11.12:1 (min 3) muted text on dark bg
-PASS 6.44:1 (min 4.5) danger button light
-PASS 6.57:1 (min 4.5) danger button dark
-PASS 6.42:1 (min 4.5) danger button high contrast
-PASS 6.26:1 (min 4.5) warning text on light
-PASS 9.84:1 (min 4.5) text on red night bg
-PASS 5.42:1 (min 3) muted on red night bg
-PASS 5.90:1 (min 4.5) primary text on red night primary
-CONTRAST:0
-PASS src/ui/Button.tsx
-PASS src/ui/Screen.tsx
-PASS src/ui/GlobalFeedback.tsx
-PASS src/ui/BottomSheet.tsx
-PASS src/ui/ActionSheet.tsx
-PASS src/ui/SheetSection.tsx
-PASS src/screens/OnboardingScreen.tsx
-PASS src/ui/SettingsMenuRow.tsx
-PASS src/screens/settings/SettingsDisplayScreen.tsx
-PASS src/ui/PanelSidePicker.tsx
-PASS src/screens/settings/SettingsMapScreen.tsx
-PASS src/features/map/NavigationMap.tsx
-PASS src/features/map/MapInstruments.tsx
-PASS src/features/map/MapInstrumentDock.tsx
-PASS src/features/map/InstrumentDockFrame.tsx
-PASS src/features/map/InstrumentCoordsLine.tsx
-PASS src/features/map/MapActions.tsx
-PASS src/features/map/MapBottomPanelFrame.tsx
-PASS src/features/map/MapBottomDock.tsx
-PASS src/features/map/ScreenLockOverlay.tsx
-PASS src/features/map/GpsStatusStrip.tsx
-PASS src/features/map/MapTopAlertBanner.tsx
-PASS src/features/map/AnchorLimitedBanner.tsx
-PASS src/features/map/MapTopChrome.tsx
-PASS src/features/map/MobNavigateBackOverlay.tsx
-PASS src/features/map/MapPreviewTrackBanner.tsx
-PASS src/features/map/PassageInstrumentBlock.tsx
-PASS src/features/map/MapRecordingChip.tsx
-PASS src/navigation/AdaptiveTabBar.tsx
-PASS src/ui/CoordinateBlock.tsx
-PASS src/features/downloads/RegionPackMapPreview.tsx
-PASS src/features/downloads/CustomDownloadSection.tsx
-PASS src/features/downloads/CustomDownloadMapPanel.tsx
-PASS src/features/downloads/RegionPackCard.tsx
-PASS src/features/downloads/CollapsibleDownloadsSection.tsx
-PASS src/features/downloads/CustomPackCard.tsx
-PASS src/features/downloads/LegacyPackCard.tsx
-PASS src/screens/DownloadsScreen.tsx
-PASS src/screens/TracksScreen.tsx
-PASS src/features/tracks/TrackDetailPanel.tsx
-PASS src/ui/ToggleRow.tsx
-PASS src/features/passage/PassageListCard.tsx
-PASS src/features/passage/PassageDeactivateButton.tsx
-PASS src/screens/passage/PassageDetailScreen.tsx
-PASS src/features/passage/PassageMapPreviewPanel.tsx
-PASS src/features/passage/PassageCoverageCard.tsx
-PASS src/features/passage/PassagePackSuggestionRow.tsx
-PASS src/features/passage/PassageWaypointSection.tsx
-PASS src/features/passage/PassageMetaSection.tsx
-PASS src/features/passage/PassageMapPlanningPanel.tsx
-PASS src/features/passage/PassageMapPlanningGuideBanner.tsx
-PASS src/ui/FilterChip.tsx
-PASS src/ui/InstrumentCell.tsx
-Touch-target audit passed.
-TOUCH:0
-PASS i18n parity (901 keys × 11 locales)
-I18N:0
-```
-
-## 5. Coverage summary
-```
-=============================== Coverage summary ===============================
-Statements   : 61.69% ( 3781/6129 )
-Branches     : 54.89% ( 2259/4115 )
-Functions    : 62.85% ( 792/1260 )
-Lines        : 64.44% ( 3422/5310 )
-================================================================================
-
-```
-
-## 6. downloadNetwork timeout GREEN
-```
-PASS __tests__/downloadNetwork.test.ts
-  assertNetworkForDownload
-    ✓ allows connected network with unknown reachability (3 ms)
-    ✓ blocks when disconnected (2 ms)
-    ✓ blocks when NetInfo.fetch never resolves (timeout fail-closed) (4 ms)
-    ✓ allows connected network when reachability probe failed
-  assertChartDownloadNetworkReady
-    ✓ runs NetInfo and tile reachability checks
-    ✓ skips tile probe when offline
-
-Test Suites: 1 passed, 1 total
-Tests:       6 passed, 6 total
-Snapshots:   0 total
-Time:        0.929 s, estimated 1 s
-Ran all test suites matching /__tests__\/downloadNetwork.test.ts/i.
-```
-
-## 7. Final gates — 2026-09-06T17:43:10Z (708 tests, 20 mutations)
-```
-=== FINAL GATES 2026-09-06T17:43:10Z ===
-TSC:0
-PASS __tests__/offlinePackStore.durableDownload.test.ts (7.957 s)
-PASS __tests__/chartTileReachability.test.ts (9.098 s)
-
-Test Suites: 151 passed, 151 total
-Tests:       708 passed, 708 total
-Snapshots:   0 total
-Time:        9.695 s, estimated 13 s
-Ran all test suites.
-JEST:0
-
-> seacheck-mobile@0.1.5 mutate:core
-> node scripts/run-safety-core-mutations.cjs
-
-SeaCheck safety/offline core mutations
-Baseline: PASS
-Killed: gps-outlier-never-rejects
-Killed: gps-gap-keeps-stale-baseline
-Killed: safety-unknown-accuracy-ok
-Killed: anchor-drag-ignores-accuracy
-Killed: anchor-defer-gap-ignored
-Killed: download-offline-allowed
-Killed: download-netinfo-timeout-fail-open
-Killed: download-wifi-netinfo-fail-open
-Killed: download-wifi-offline-as-cellular
-Killed: download-parallel-allowed
-Killed: stale-callback-accepted
-Killed: persist-index-accepts-arrays
-Killed: tile-budget-disabled
-Killed: mmsi-always-valid
-Killed: mayday-invents-fresh
-Killed: persist-bool-truthy-strings
-Killed: followMode-loose-hydrate
-Killed: anchor-alarm-truthy-active
-Killed: anchor-triggered-Boolean-coerce
-Killed: online-ops-unknown-ok
-
-Result: 20 killed, 0 survived of 20
-MUT:0
-  Tap on id: tab.more... COMPLETED
-```
-
-## 8. Maestro cancel — emulator-5562
-```
-  Assert that id: tab.more.sheet is visible... COMPLETED
-  Tap on id: tab.downloads... COMPLETED
-  Assert that id: screen.downloads is visible... COMPLETED
-  Wait for animation to end within 30000 ms... COMPLETED
-Run 01b-open-downloads.yaml... COMPLETED
-Tap on (Optional) id: confirm.proceed... WARNED
-
-
- Warning: Element not found: Id matching regex: confirm.proceed
-Tap on (Optional) id: downloadFailure.dismiss... WARNED
-
-
- Warning: Element not found: Id matching regex: downloadFailure.dismiss
-Scrolling DOWN until id: downloads.download.kiel-bay is visible with speed 40, visibility percentage 100%, timeout 30000 ms, with centering disabled... COMPLETED
-Tap on id: downloads.download.kiel-bay... COMPLETED
-Tap on (Optional) id: confirm.proceed... WARNED
-
-
- Warning: Element not found: Id matching regex: confirm.proceed
-Assert that id: downloads\.statusBanner\.active|downloads\.cancel\.kiel-bay|downloads\.globalSessionChrome is visible... COMPLETED
-Assert that id: downloads.statusBanner.ready is not visible... COMPLETED
-Tap on (Optional) id: downloads.statusBanner.cancel... WARNED
-
-
- Warning: Element not found: Id matching regex: downloads.statusBanner.cancel
-Tap on (Optional) id: downloads.cancel.kiel-bay... COMPLETED
-Tap on (Optional) id: downloads.globalSessionChrome.cancel... WARNED
-
-
- Warning: Element not found: Id matching regex: downloads.globalSessionChrome.cancel
-Assert that id: downloads\.statusBanner\.active|downloads\.cancel\.kiel-bay|downloads\.globalSessionChrome is not visible... COMPLETED
-Assert that (Optional) id: downloads.statusBanner.completing is not visible... COMPLETED
-Tap on (Optional) id: downloadFailure.dismiss... WARNED
-
-
- Warning: Element not found: Id matching regex: downloadFailure.dismiss
-Assert that id: downloads.statusBanner.ready is not visible... COMPLETED
-Take screenshot download-cancel-mid... COMPLETED
-==> OK
-==> re-enabled rival packages
-```
-
-## 9. Maestro kill — emulator-5562
-```
-  Tap on (Optional) id: onboarding.disclaimer.continue... WARNED
-  Tap on (Optional) id: onboarding.location.skip... WARNED
-  Tap on (Optional) id: onboarding.battery.ack... WARNED
-  Tap on (Optional) id: onboarding.finish... WARNED
-  Tap on (Optional) "Allow"... WARNED
-  Tap on (Optional) "While using the app"... WARNED
-  Tap on (Optional) "Allow only while using the app"... WARNED
-  Assert that id: tab.map is visible... COMPLETED
-Run 01-onboarding-skip.yaml... COMPLETED
-Run 01b-open-downloads.yaml...
-  Tap on id: tab.more... COMPLETED
-  Assert that id: tab.more.sheet is visible... COMPLETED
-  Tap on id: tab.downloads... COMPLETED
-  Assert that id: screen.downloads is visible... COMPLETED
-  Wait for animation to end within 30000 ms... COMPLETED
-Run 01b-open-downloads.yaml... COMPLETED
-Wait for animation to end within 5000 ms... COMPLETED
-Tap on (Optional) id: downloadFailure.dismiss... WARNED
-
-
- Warning: Element not found: Id matching regex: downloadFailure.dismiss
-Assert that id: downloads.statusBanner.ready is not visible... COMPLETED
-Take screenshot download-kill-mid... COMPLETED
-==> OK
-==> re-enabled rival packages
-```
-
-## 10. Aristoteles residual closure — 2026-09-06T17:52:01Z
-```
-=== ARISTOTELES GATES 2026-09-06T17:52:01Z ===
-TSC:0
-PASS __tests__/offlinePackIndex.test.ts
-PASS src/i18n/__tests__/localeParity.test.ts
-PASS __tests__/recoverAfterRenderCrash.test.ts
-PASS __tests__/offlinePackStore.durableDownload.test.ts (7.118 s)
-PASS __tests__/offlinePackStore.hydrate.test.ts (7.258 s)
-PASS __tests__/chartTileReachability.test.ts (9.403 s)
-
-Test Suites: 155 passed, 155 total
-Tests:       717 passed, 717 total
-Snapshots:   0 total
-Time:        9.815 s, estimated 10 s
-Ran all test suites.
-JEST:0
-
-> seacheck-mobile@0.1.5 i18n:parity
-> node scripts/i18n-parity.mjs
-
-PASS i18n parity (902 keys × 11 locales)
-I18N:0
-PASS 6.42:1 (min 4.5) danger button high contrast
-PASS 6.26:1 (min 4.5) warning text on light
-PASS 9.84:1 (min 4.5) text on red night bg
-PASS 5.42:1 (min 3) muted on red night bg
-PASS 5.90:1 (min 4.5) primary text on red night primary
-CONTRAST:0
-PASS src/features/passage/PassagePackSuggestionRow.tsx
-PASS src/features/passage/PassageWaypointSection.tsx
-PASS src/features/passage/PassageMetaSection.tsx
-PASS src/features/passage/PassageMapPlanningPanel.tsx
-PASS src/features/passage/PassageMapPlanningGuideBanner.tsx
-PASS src/ui/FilterChip.tsx
-PASS src/ui/InstrumentCell.tsx
-Touch-target audit passed.
-TOUCH:0
-
-> seacheck-mobile@0.1.5 mutate:core
-> node scripts/run-safety-core-mutations.cjs
-
-SeaCheck safety/offline core mutations
-Baseline: PASS
-Killed: gps-outlier-never-rejects
-Killed: gps-gap-keeps-stale-baseline
-Killed: safety-unknown-accuracy-ok
-Killed: anchor-drag-ignores-accuracy
-Killed: anchor-defer-gap-ignored
-Killed: download-offline-allowed
-Killed: download-netinfo-timeout-fail-open
-Killed: download-wifi-netinfo-fail-open
-Killed: download-wifi-offline-as-cellular
-Killed: download-parallel-allowed
-Killed: stale-callback-accepted
-Killed: persist-index-accepts-arrays
-Killed: tile-budget-disabled
-Killed: mmsi-always-valid
-Killed: mayday-invents-fresh
-Killed: persist-bool-truthy-strings
-Killed: followMode-loose-hydrate
-Killed: anchor-alarm-truthy-active
-Killed: anchor-triggered-Boolean-coerce
-Killed: online-ops-unknown-ok
-Killed: boot-offline-dismissible
-Killed: crash-recovery-skips-confirm-drain
-
 Result: 22 killed, 0 survived of 22
-MUT:0
+EXIT 0
+(mutants include download-offline-allowed, download-netinfo-timeout-fail-open,
+ download-wifi-netinfo-fail-open, mayday-invents-fresh, followMode-loose-hydrate,
+ anchor-triggered-Boolean-coerce, boot-offline-dismissible, crash-recovery-skips-confirm-drain, …)
 ```
 
-## 11. Aristoteles residual closure + sticky cancel — Maestro cancel OK
+## 2026-09-06T21:08:31Z — durable timeout diagnosis
+
+```text
+offlinePackStore.durableDownload still timed out until:
+  - NODE_ENV=test shortened pre-sweep wait slices
+  - durableDownload.test mocks waitForDownloadMapReady → true
 ```
-timestamp: 2026-09-06T18:10:48Z
-Jest: 155/717 EXIT 0; mutate:core 22/22; Maestro cancel: downloads.cancel.kiel-bay tapped COMPLETED
-  Assert that id: tab.more.sheet is visible... COMPLETED
-  Tap on id: tab.downloads... COMPLETED
-  Assert that id: screen.downloads is visible... COMPLETED
-  Wait for animation to end within 30000 ms... COMPLETED
-Run 01b-open-downloads.yaml... COMPLETED
-Tap on (Optional) id: confirm.proceed... WARNED
 
+## 2026-09-06T21:09:19Z — durable + startDownload after harness fix
 
- Warning: Element not found: Id matching regex: confirm.proceed
-Tap on (Optional) id: downloadFailure.dismiss... WARNED
+```text
+npm test -- --ci --coverage=false \
+  __tests__/offlinePackStore.durableDownload.test.ts \
+  __tests__/offlinePackStore.startDownload.test.ts
+PASS 2 suites / 9 tests
+EXIT 0
+```
 
+## 2026-09-06T21:09:33Z — full Jest (final)
 
- Warning: Element not found: Id matching regex: downloadFailure.dismiss
-Scrolling DOWN until id: downloads.download.kiel-bay is visible with speed 40, visibility percentage 100%, timeout 30000 ms, with centering disabled... COMPLETED
-Tap on id: downloads.download.kiel-bay... COMPLETED
-Tap on (Optional) id: confirm.proceed... WARNED
+```text
+Command: npm test -- --ci --coverage=false
+Test Suites: 157 passed, 157 total
+Tests:       725 passed, 725 total
+Time:        9.296 s
+EXIT 0
+```
 
+## Device / Maestro (evening, local times ~22:29–23:03 +02)
 
- Warning: Element not found: Id matching regex: confirm.proceed
-Assert that id: downloads\.statusBanner\.cancel|downloads\.cancel\.kiel-bay|downloads\.globalSessionChrome\.cancel is visible... COMPLETED
-Assert that id: downloads.statusBanner.ready is not visible... COMPLETED
-Tap on (Optional) id: downloads.statusBanner.cancel... WARNED
+```text
+AVD: SeaCheck_Maestro_API_33 (emulator-5562) via emulator-lock
+APK: android/app/build/outputs/apk/release/app-release.apk (WIP rebuilds)
 
+maestro --device emulator-5562 test .maestro/02-download-cancel-mid.yaml
 
- Warning: Element not found: Id matching regex: downloads.statusBanner.cancel
-Tap on (Optional) id: downloads.cancel.kiel-bay... COMPLETED
-Tap on (Optional) id: downloads.globalSessionChrome.cancel... WARNED
+Observed failures (multiple attempts):
+  - Assert cancel visible → FAILED
+  - UI: "Chart download failed"
+  - Body: "Kieler Bucht (test) — Chart engine did not start…"
+    (and earlier: DOWNLOAD_MAP_NOT_VISIBLE before sticky Map ownership)
 
+Onboarding sticky CTA fix verified: onboarding.disclaimer.continue visible in UI dump
+after rebuild (was missing when CTA lived below fold inside ScrollView).
 
- Warning: Element not found: Id matching regex: downloads.globalSessionChrome.cancel
-Assert that id: downloads\.statusBanner\.active|downloads\.statusBanner\.cancel|downloads\.cancel\.kiel-bay|downloads\.globalSessionChrome is not visible... COMPLETED
-Assert that (Optional) id: downloads.statusBanner.completing is not visible... COMPLETED
-Tap on (Optional) id: downloadFailure.dismiss... WARNED
+Rival app focus hazard: mobilitycheck.terminal observed as mCurrentFocus mid-session —
+force-stop required before Maestro.
+```
 
+## 2026-09-07 (Aristoteles closure)
 
- Warning: Element not found: Id matching regex: downloadFailure.dismiss
-Assert that id: downloads.statusBanner.ready is not visible... COMPLETED
-Take screenshot download-cancel-mid... COMPLETED
-==> OK
-==> re-enabled rival packages
+```text
+Environment: no Docker Compose; native npm/Jest; AVD SeaCheck_Maestro_API_33 on emulator-5568
+
+npm run typecheck                         → EXIT 0
+npm run a11y:contrast + a11y:touch        → PASS
+npm run i18n:parity                       → PASS 908×11
+npm run mutate:core                       → 22 killed, 0 survived
+npx jest --coverage=false                 → 158 suites / 733 tests EXIT 0
+npm run android:release                   → BUILD SUCCESSFUL
+
+Maestro (release APK, rivals disabled, pm clear):
+  maestro --device emulator-5568 test .maestro/02a-download-cancel-minimal.yaml
+  → EXIT 0
+  Evidence: cancel chrome / map.downloadSession visible; tapped
+  downloads.globalSessionChrome.cancel; assertNotVisible Ready;
+  assertNotVisible downloadFailure.dismiss
+
+Earlier same-day failure modes before kickoff/Wi‑Fi fix:
+  - "Chart engine did not start" / DOWNLOAD_MAP_NOT_READY
+  - "Download session did not start in time" (second cellular confirm blocked tryBegin)
+```
+
+## Notes
+
+- Unit green ≠ device download green — device proof required for Critical closure.  
+- Prefer `.maestro/02a-download-cancel-minimal.yaml` for release cancel honesty (skips depth warm flake).  
+- Coverage JSON: `coverage/coverage-summary.json` (lines pct ~65).  
+- Kill-mid (03) still expects Expo dev-client deep link; not re-run on release APK this session.
+
+---
+
+## 2026-09-07 (Aristoteles final — I5 seal closed)
+
+```text
+Environment: no Docker; native npm/Jest; AVD SeaCheck_Maestro_API_33 on emulator-5568
+
+Red-team root cause (seal stall): OfflineManager.createPack style URL goes through
+Android HTTP stack → file:// and asset:// both log
+"Unable to parse resourceUrl" → pack stuck at 0% → initializing stall.
+
+Fix: ChartStyleLocalServer (loopback :18765) + offlinePackMapStyleUri() →
+http://127.0.0.1:18765/chart-style.json + network_security_config localhost cleartext only.
+Maestro 04 waits on map.downloadSession (not OR-notVisible gap).
+
+npm run typecheck / a11y:contrast / a11y:touch / i18n:parity → PASS (908×11)
+npm run mutate:core → 23 killed, 0 survived
+npx jest --coverage=false → 159 suites / 738 tests EXIT 0
+
+Maestro release APK (rivals disabled, pm clear):
+  bash scripts/maestro-e2e.sh release-cancel → EXIT 0
+  bash scripts/maestro-e2e.sh release-kill   → EXIT 0
+  bash scripts/maestro-e2e.sh release-seal   → EXIT 0
+    Evidence: downloads.pack.kiel-bay.durable + delete + statusBanner.ready
+
+APKs:
+  ~/Downloads/apk-releases/seacheck-0.1.5-release.apk (arm64 phone)
+  ~/Downloads/apk-releases/seacheck-0.1.5-release-arm64-x86_64.apk (emulator)
+```
+
+## 2026-09-07T09:15Z — Residual hardening re-proof (Aristoteles)
+
+```text
+Closed residual audit gaps:
+  - recreateOfflinePack primes GL with documents engineStyleUri (createPack keeps loopback HTTP)
+  - ensureOfflinePackStyleReachable() before createPack / recreate
+  - downloadCoordinator tryBegin/preflightLock blocked while teardownRegionId set
+  - Completing chrome uses primary wash (not success green) until Ready
+  - CustomPackCard durable testID; contrast checks for completing wash
+  - mutate:core download-parallel-allowed baseline updated for teardown guard
+
+Gates:
+  npm test -- --no-coverage          → 160 suites / 745 tests EXIT 0
+  npm run typecheck                  → EXIT 0
+  npm run mutate:core                → 23 killed / 0 survived
+  npm run a11y:contrast|a11y:touch|i18n:parity → PASS
+
+APK rebuild:
+  assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64
+  → ~/Downloads/apk-releases/seacheck-0.1.5-release-arm64-x86_64.apk (~71MB)
+  assembleRelease -PreactNativeArchitectures=arm64-v8a
+  → ~/Downloads/apk-releases/seacheck-0.1.5-release.apk (~41MB)
+
+Maestro on SeaCheck_Maestro_API_33 @ emulator-5588 (swiftshader; rivals disabled):
+  release-cancel → EXIT 0 (globalSessionChrome.cancel; no Ready)
+  release-seal   → EXIT 0 (downloads.pack.kiel-bay.durable + Ready + Delete)
+  release-kill   → EXIT 0 (no Ready / no durable after kill-mid)
+
+Note: SeaCheck is not Docker; Nextcloud stack is separate. Farm contention
+(SnackCheck/MaintenanceCheck Maestro + GPU) required swiftshader boot +
+adb disconnect of duplicate 127.0.0.1:5588 offline entry.
 ```

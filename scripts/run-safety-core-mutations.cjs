@@ -17,7 +17,7 @@ const testCmd = [
   'npx',
   'jest',
   '--runInBand',
-  '--testPathPattern=gpsFilter|fixQuality|processLocationAlarms|connectivity|downloadNetwork|downloadPolicy|downloadCoordinator|beginDownloadSession|offlinePackIndex|regionPacks|maydayMessage|copyMaydayClipboard|parsePersistedBoolean|settingsStore.booleanHydrate|followModeHydrate|anchorAlarmHydrate|allowRouteEditsHydrate|bootWarningPolicy|recoverAfterRenderCrash|normalizeSettingsEnums|settingsStore.vesselEnumIntegrity',
+  '--testPathPattern=gpsFilter|fixQuality|processLocationAlarms|connectivity|downloadNetwork|downloadPolicy|downloadCoordinator|beginDownloadSession|offlinePackIndex|regionPacks|maydayMessage|copyMaydayClipboard|parsePersistedBoolean|settingsStore.booleanHydrate|followModeHydrate|anchorAlarmHydrate|allowRouteEditsHydrate|bootWarningPolicy|recoverAfterRenderCrash|normalizeSettingsEnums|settingsStore.vesselEnumIntegrity|offlinePackStatus',
 ];
 
 const mutations = [
@@ -95,9 +95,23 @@ const mutations = [
     name: 'download-parallel-allowed',
     file: 'src/lib/offline/downloadCoordinator.ts',
     search:
-      '  tryBegin(regionId: string): number | null {\n    if (this.activeRegionId != null && this.activeRegionId !== regionId) return null;\n    if (this.activeRegionId === regionId && !this.preflightOnly) return null;',
+      '  tryBegin(regionId: string): number | null {\n    // Block all starts until GL teardown finishes — dual TextureView is a hard crash class.\n    if (this.teardownRegionId != null) return null;\n    if (this.activeRegionId != null && this.activeRegionId !== regionId) return null;\n    if (this.activeRegionId === regionId && !this.preflightOnly) return null;',
     replace:
-      '  tryBegin(regionId: string): number | null {\n    if (false && this.activeRegionId != null && this.activeRegionId !== regionId) return null;\n    if (false && this.activeRegionId === regionId && !this.preflightOnly) return null;',
+      '  tryBegin(regionId: string): number | null {\n    // Block all starts until GL teardown finishes — dual TextureView is a hard crash class.\n    if (false && this.teardownRegionId != null) return null;\n    if (false && this.activeRegionId != null && this.activeRegionId !== regionId) return null;\n    if (false && this.activeRegionId === regionId && !this.preflightOnly) return null;',
+  },
+  {
+    name: 'download-restore-during-teardown',
+    file: 'src/lib/offline/downloadCoordinator.ts',
+    search:
+      '  restoreActive(regionId: string): boolean {\n    // Never remount a second GL owner while teardown still holds the TextureView.\n    if (this.teardownRegionId != null) return false;\n    if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;',
+    replace:
+      '  restoreActive(regionId: string): boolean {\n    // Never remount a second GL owner while teardown still holds the TextureView.\n    if (false && this.teardownRegionId != null) return false;\n    if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;',
+  },
+  {
+    name: 'download-style-only-complete-as-ready',
+    file: 'src/store/offlinePackStore.ts',
+    search: '  if (status.requiredResourceCount <= 1) return false;',
+    replace: '  if (false && status.requiredResourceCount <= 1) return false; /* mutated */',
   },
   {
     name: 'stale-callback-accepted',

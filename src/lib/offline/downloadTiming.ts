@@ -4,11 +4,12 @@
  */
 export const PRODUCTION_DOWNLOAD_TIMING = {
   stallPollMs: 3_000,
-  zeroProgressTimeoutMs: 120_000,
-  initializingTimeoutMs: 180_000,
-  styleEngineTimeoutMs: 240_000,
-  partialStallTimeoutMs: 3 * 60_000,
-  resumeAtMs: [3_000, 8_000, 20_000, 45_000, 75_000, 105_000] as const,
+  // Cold OfflineManager createPack can sit at required=1 for minutes while tiles enumerate.
+  zeroProgressTimeoutMs: 240_000,
+  initializingTimeoutMs: 300_000,
+  styleEngineTimeoutMs: 300_000,
+  partialStallTimeoutMs: 5 * 60_000,
+  resumeAtMs: [5_000, 15_000, 40_000, 90_000, 150_000, 210_000] as const,
   recreateKickstartPolls: 12,
   recreateKickstartIntervalMs: 400,
 } as const;

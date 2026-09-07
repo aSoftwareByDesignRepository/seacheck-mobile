@@ -51,7 +51,8 @@
     "stepBattery": "Akku",
     "stepFinish": "Fertig",
     "stepCounter": "Schritt %{current} von %{total}",
-    "progress": "Einrichtung Schritt %{step} von %{total}"
+    "progress": "Einrichtung Schritt %{step} von %{total}",
+    "disclaimerScrollHint": "Scrollen Sie, um den gesamten Sicherheitshinweis zu lesen. Weiter bleibt unten sichtbar."
   },
   "boot": {
     "loading": "SeaCheck wird geladen…",
@@ -623,7 +624,7 @@
     },
     "customStartedTitle": "Download gestartet",
     "customStartedBody": "Unter Downloads Fortschritt prüfen. Bis zum Ende WLAN nutzen.",
-    "mapSessionHint": "Die Live-Karte pausiert, während SeaCheck Kacheln speichert. Unter Downloads Fortschritt prüfen oder abbrechen.",
+    "mapSessionHint": "Bleiben Sie im WLAN und auf dem Karte-Tab, bis das Speichern fertig ist.",
     "mapSessionOpenHint": "Zeigt Download-Fortschritt und Abbrechen",
     "statusSummaryActiveTitle": "Kartenpaket wird geladen",
     "statusSummaryActive": "Lädt %{name} — %{percent} % abgeschlossen",
@@ -633,7 +634,6 @@
     "statusSummaryCompleting": "%{name} wird fertiggestellt — Karten für Offline-Nutzung speichern",
     "statusSummaryCompletingHint": "Fast fertig — App kurz geöffnet lassen.",
     "statusCompleting": "Karten werden auf dem Gerät gespeichert…",
-    "statusSummaryReady": "%{count} Kartenpakete offline bereit",
     "statusSummaryReadyHint": "Karten und Seezeichen funktionieren ohne Mobilfunk in geladenen Gebieten.",
     "statusSummaryEmptyTitle": "Noch keine Offline-Pakete",
     "statusSummaryEmpty": "Kürzlich angesehene Karten werden automatisch zwischengespeichert, können aber lückenhaft sein. Vor dem Verlust des Empfangs unten ein Korridor-Paket laden.",
@@ -744,7 +744,15 @@
     },
     "basemapUpdatedTitle": "Kartengrundlage aktualisiert",
     "basemapUpdatedBody": "SeaCheck nutzt jetzt kostenlose OpenSeaMap-Küstenkarten (ohne API-Schlüssel). Früher heruntergeladene Pakete nutzten die alte Basis und wurden entfernt. Laden Sie Ihre Korridor-Pakete erneut per WLAN herunter, bevor Sie ablegen.",
-    "basemapUpdatedDismiss": "Verstanden"
+    "basemapUpdatedDismiss": "Verstanden",
+    "liveSweepTitle": "Kartkacheln werden gespeichert",
+    "liveSweepHint": "Kacheln und Seezeichen-Overlays müssen während des Downloads hier erscheinen — so werden sie offline gespeichert.",
+    "liveSweepA11y": "Live-Kartenansicht des Bereichs, der offline gespeichert wird",
+    "liveSweepDeferred": "Die Karte-Registerkarte zeigt die Live-Speicheransicht. Wechseln Sie jederzeit hierher, um abzubrechen oder den Fortschritt zu prüfen.",
+    "stayOnMapWhileSaving": "Bleiben Sie während des Speicherns auf Karte oder Downloads — sonst können Offline-Kacheln unvollständig sein.",
+    "statusSummaryCancelTeardown": "Kartensitzung für %{name} wird beendet…",
+    "statusSummaryReadyOne": "1 Kartenpaket offline bereit",
+    "statusSummaryReadyMany": "%{count} Kartenpakete offline bereit"
   },
   "waypoints": {
     "subtitle": "Gespeicherte Tonnen und Häfen",

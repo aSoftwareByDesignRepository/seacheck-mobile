@@ -51,7 +51,8 @@
     "stepBattery": "Batteri",
     "stepFinish": "Redo",
     "stepCounter": "Steg %{current} av %{total}",
-    "progress": "Onboarding steg %{step} av %{total}"
+    "progress": "Onboarding steg %{step} av %{total}",
+    "disclaimerScrollHint": "Scrolla för att läsa hela säkerhetsmeddelandet. Fortsätt syns kvar längst ner."
   },
   "boot": {
     "loading": "Laddar SeaCheck...",
@@ -623,7 +624,7 @@
     },
     "customStartedTitle": "Nedladdningen startade",
     "customStartedBody": "Gå tillbaka till Nedladdningar för att se framstegen. Håll dig på Wi-Fi tills du är klar.",
-    "mapSessionHint": "Livekartan pausar medan SeaCheck sparar brickor. Öppna Nedladdningar för att se förloppet eller avbryta.",
+    "mapSessionHint": "Stanna på Wi‑Fi och fliken Karta tills sparandet är klart.",
     "mapSessionOpenHint": "Visar nedladdningsförlopp och avbryt-kontroller",
     "statusSummaryActiveTitle": "Laddar ner diagrampaket",
     "statusSummaryActive": "Nedladdning av %{name} — %{percent}% klar",
@@ -633,7 +634,6 @@
     "statusSummaryCompleting": "Avslutar %{name} — sparar diagram för offlineanvändning",
     "statusSummaryCompletingHint": "Nästan klart – håll appen öppen ett ögonblick.",
     "statusCompleting": "Sparar diagram på din enhet...",
-    "statusSummaryReady": "%{count} sjökortspaket redo offline",
     "statusSummaryReadyHint": "Sjökort och sjömärken fungerar utan mobilsignal i nedladdade områden.",
     "statusSummaryEmptyTitle": "Inga offlinepaket ännu",
     "statusSummaryEmpty": "Senast visade diagram cachelagras automatiskt men kan ha luckor. Ladda ner ett korridorpaket nedan innan du tappar signalen.",
@@ -744,7 +744,15 @@
     },
     "basemapUpdatedTitle": "Kartbas uppdaterad",
     "basemapUpdatedBody": "SeaCheck använder nu gratis OpenSeaMap-kustkort (utan API-nyckel). Tidigare nedladdade paket använde den gamla basen och rensades. Ladda ner dina korridorpaket igen via Wi‑Fi innan du går till sjöss.",
-    "basemapUpdatedDismiss": "Jag förstår"
+    "basemapUpdatedDismiss": "Jag förstår",
+    "liveSweepTitle": "Sparar kartplattor",
+    "liveSweepHint": "Plattor och sjömärkes-overlays måste synas här under nedladdningen — så lagras de för offlinebruk.",
+    "liveSweepA11y": "Live-kartvy av området som sparas för offlinebruk",
+    "liveSweepDeferred": "Kartfliken visar live-sparvyn. Byt tillbaka hit när som helst för att avbryta eller kontrollera förloppet.",
+    "stayOnMapWhileSaving": "Stanna på Karta eller Nedladdningar medan sjökort sparas — annars kan offline-plattor bli ofullständiga.",
+    "statusSummaryCancelTeardown": "Stänger kartsessionen för %{name}…",
+    "statusSummaryReadyOne": "1 sjökortspaket redo offline",
+    "statusSummaryReadyMany": "%{count} sjökortspaket redo offline"
   },
   "waypoints": {
     "subtitle": "Sparade märken och hamnar",

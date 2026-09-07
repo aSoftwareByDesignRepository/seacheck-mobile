@@ -51,7 +51,8 @@
     "stepBattery": "Batería",
     "stepFinish": "Listo",
     "stepCounter": "Paso %{current} de %{total}",
-    "progress": "Paso de incorporación %{step} de %{total}"
+    "progress": "Paso de incorporación %{step} de %{total}",
+    "disclaimerScrollHint": "Desplázate para leer el aviso de seguridad completo. Continuar permanece visible abajo."
   },
   "boot": {
     "loading": "Cargando SeaCheck…",
@@ -623,7 +624,7 @@
     },
     "customStartedTitle": "Descarga iniciada",
     "customStartedBody": "Regrese a Descargas para ver el progreso. Permanece conectado a Wi‑Fi hasta que se complete.",
-    "mapSessionHint": "El mapa en vivo se pausa mientras SeaCheck guarda mosaicos. Abre Descargas para ver el progreso o cancelar.",
+    "mapSessionHint": "Mantén el Wi‑Fi y la pestaña Mapa hasta que termine de guardarse.",
     "mapSessionOpenHint": "Muestra el progreso de descarga y los controles de cancelación",
     "statusSummaryActiveTitle": "Descargando paquete de gráficos",
     "statusSummaryActive": "Descargando %{name} — %{percent}% completa",
@@ -633,7 +634,6 @@
     "statusSummaryCompleting": "Finalizando %{name}: guardar gráficos para uso sin conexión",
     "statusSummaryCompletingHint": "Casi listo: mantén la aplicación abierta por un momento.",
     "statusCompleting": "Guardando gráficos en su dispositivo...",
-    "statusSummaryReady": "%{count} paquetes de gráficos listos sin conexión",
     "statusSummaryReadyHint": "Las cartas y marcas náuticas funcionan sin señal móvil en las áreas descargadas.",
     "statusSummaryEmptyTitle": "Aún no hay paquetes sin conexión",
     "statusSummaryEmpty": "Los gráficos vistos recientemente se almacenan en caché automáticamente, pero pueden tener espacios en blanco. Descargue un paquete de corredor a continuación antes de perder la señal.",
@@ -744,7 +744,15 @@
     },
     "basemapUpdatedTitle": "Mapa base actualizado",
     "basemapUpdatedBody": "SeaCheck ahora usa cartas costeras gratuitas de OpenSeaMap (sin clave API). Los paquetes descargados antes usaban el mapa base antiguo y se eliminaron. Vuelve a descargar tus paquetes de corredor por Wi‑Fi antes de salir a mar.",
-    "basemapUpdatedDismiss": "Entendido"
+    "basemapUpdatedDismiss": "Entendido",
+    "liveSweepTitle": "Guardando baldosas de carta",
+    "liveSweepHint": "Las baldosas y las superposiciones de marcas náuticas deben aparecer aquí al descargar: así se guardan para uso sin conexión.",
+    "liveSweepA11y": "Vista en vivo de la zona que se guarda para uso sin conexión",
+    "liveSweepDeferred": "La pestaña Mapa muestra la vista de guardado en vivo. Vuelve aquí en cualquier momento para cancelar o ver el progreso.",
+    "stayOnMapWhileSaving": "Quédate en Mapa o Descargas mientras se guardan las cartas — si no, las baldosas offline pueden quedar incompletas.",
+    "statusSummaryCancelTeardown": "Cerrando la sesión de cartas de %{name}…",
+    "statusSummaryReadyOne": "1 paquete de gráficos listo sin conexión",
+    "statusSummaryReadyMany": "%{count} paquetes de gráficos listos sin conexión"
   },
   "waypoints": {
     "subtitle": "Marcas y puertos guardados",

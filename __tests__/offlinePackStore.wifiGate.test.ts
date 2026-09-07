@@ -11,6 +11,8 @@ import { useSettingsStore } from '../src/store/settingsStore';
 
 jest.mock('../src/map/chartStyle', () => ({
   ensureChartStyleFile: jest.fn(async () => 'file:///mock/map/chart-style.json'),
+  offlinePackMapStyleUri: jest.fn((uri: string) => uri),
+  ensureOfflinePackStyleReachable: jest.fn(async () => {}),
 }));
 
 jest.mock('../src/lib/seamarks/seamarkIndex', () => ({

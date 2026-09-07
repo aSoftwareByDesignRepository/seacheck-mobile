@@ -51,7 +51,8 @@
     "stepBattery": "Batteria",
     "stepFinish": "Pronti",
     "stepCounter": "Passaggio %{current} di %{total}",
-    "progress": "Passaggio di onboarding %{step} di %{total}"
+    "progress": "Passaggio di onboarding %{step} di %{total}",
+    "disclaimerScrollHint": "Scorri per leggere l’intero avviso di sicurezza. Continua resta visibile in basso."
   },
   "boot": {
     "loading": "Caricamento SeaCheck...",
@@ -623,7 +624,7 @@
     },
     "customStartedTitle": "Download avviato",
     "customStartedBody": "Torna a Download per osservare i progressi. Rimani connesso al Wi‑Fi fino al completamento.",
-    "mapSessionHint": "La carta live si mette in pausa mentre SeaCheck salva le tessere. Apri Download per seguire l’avanzamento o annullare.",
+    "mapSessionHint": "Resta sul Wi‑Fi e sulla scheda Mappa fino al termine del salvataggio.",
     "mapSessionOpenHint": "Mostra l’avanzamento del download e i controlli di annullamento",
     "statusSummaryActiveTitle": "Download del pacchetto cartografico",
     "statusSummaryActive": "Download del %{name} — %{percent}% completato",
@@ -633,7 +634,6 @@
     "statusSummaryCompleting": "Finitura %{name}: salvataggio dei grafici per l'utilizzo offline",
     "statusSummaryCompletingHint": "Quasi finito: tieni l'app aperta per un momento.",
     "statusCompleting": "Salvataggio delle carte sul tuo dispositivo…",
-    "statusSummaryReady": "%{count} pacchetti cartografici pronti offline",
     "statusSummaryReadyHint": "Le carte e i seamark funzionano senza segnale mobile nelle aree scaricate.",
     "statusSummaryEmptyTitle": "Nessun pacchetto offline ancora",
     "statusSummaryEmpty": "I grafici visualizzati di recente vengono memorizzati automaticamente nella cache ma potrebbero presentare lacune. Scarica un pacchetto corridoio qui sotto prima di perdere il segnale.",
@@ -744,7 +744,15 @@
     },
     "basemapUpdatedTitle": "Mappa di base aggiornata",
     "basemapUpdatedBody": "SeaCheck ora usa le carte costiere gratuite OpenSeaMap (senza chiave API). I pacchetti scaricati in precedenza usavano la vecchia base ed sono stati cancellati. Scarica di nuovo i pacchetti corridoio via Wi‑Fi prima di andare al largo.",
-    "basemapUpdatedDismiss": "Ho capito"
+    "basemapUpdatedDismiss": "Ho capito",
+    "liveSweepTitle": "Salvataggio tessere carta",
+    "liveSweepHint": "Tessere e overlay dei segnali marittimi devono apparire qui durante il download — così vengono salvati per l’uso offline.",
+    "liveSweepA11y": "Vista carta in tempo reale dell’area in salvataggio offline",
+    "liveSweepDeferred": "La scheda Mappa mostra la vista di salvataggio dal vivo. Torna qui in qualsiasi momento per annullare o controllare l’avanzamento.",
+    "stayOnMapWhileSaving": "Resta su Mappa o Download mentre le carte vengono salvate — altrimenti le tessere offline possono essere incomplete.",
+    "statusSummaryCancelTeardown": "Chiusura della sessione carte per %{name}…",
+    "statusSummaryReadyOne": "1 pacchetto cartografico pronto offline",
+    "statusSummaryReadyMany": "%{count} pacchetti cartografici pronti offline"
   },
   "waypoints": {
     "subtitle": "Segnali e porti salvati",

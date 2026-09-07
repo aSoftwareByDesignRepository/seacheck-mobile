@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 import { ensureDownloadAllowed } from '../../lib/network/downloadPolicy';
 import { runLockedChartDownloadPreflight } from '../../lib/offline/downloadPreflight';
@@ -13,7 +11,7 @@ import { boundsCenter, boundsDimensionsNm, validateDownloadBounds } from '../../
 import { formatDistanceNm } from '../../lib/geo/units';
 import { estimateDownloadKb, estimateTileCount, formatStorageSize } from '../../map/tileMath';
 import { t } from '../../i18n';
-import type { RootTabParamList } from '../../navigation/types';
+import { navigateToMapForChartDownload } from '../../navigation/rootNavigation';
 import { useCustomDownloadStore } from '../../store/customDownloadStore';
 import { useFeedbackStore } from '../../store/feedbackStore';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
@@ -26,7 +24,6 @@ import { CUSTOM_DOWNLOAD_PANEL_CONTENT_MAX } from '../map/mapChromeLayout';
 import { CustomDownloadAreaPreview } from './CustomDownloadAreaPreview';
 
 export function CustomDownloadMapPanel() {
-  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const { colors, spacing, minTouch } = useTheme();
   const corners = useCustomDownloadStore((s) => s.corners);
   const phase = useCustomDownloadStore((s) => s.phase);
@@ -134,7 +131,7 @@ export function CustomDownloadMapPanel() {
             }
           });
       }
-      navigation.navigate('Downloads');
+      navigateToMapForChartDownload();
     } catch (err) {
       useOfflinePackStore.getState().releasePreflightDownloadLock(regionId);
       reportDownloadFailureFromError(regionId, err, 'preflight');

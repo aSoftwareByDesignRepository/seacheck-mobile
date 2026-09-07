@@ -14,10 +14,12 @@ import {
   getOfflineMapEngineStyleReloadNonce,
   isOfflineMapEngineViewportPrimed,
 } from './offlineMapEngineHost';
-import { isDownloadMapReady } from './downloadMapHost';
+import { getDownloadMapHostDiagnostics, isDownloadMapReady } from './downloadMapHost';
 import { downloadCoordinator } from './downloadCoordinator';
 import { resolveOfflineEngineCamera } from './resolveOfflineEngineCamera';
 import { peekChartTileProbeDiagnostics } from '../network/chartTileReachability';
+import { isMapScreenFocused } from '../map/mapScreenFocus';
+import { resolveDownloadMapSlot } from './downloadMapSlot';
 
 export type DownloadFailureSource = 'async' | 'preflight' | 'hydrate' | 'manual';
 
@@ -77,6 +79,20 @@ export async function buildDownloadFailureReport(input: DownloadFailureInput): P
     line('mapEngineStyleLoaded', mapEngineStyleLoaded),
     line('mapEngineViewportPrimed', mapEngineViewportPrimed),
     line('downloadMapReady', isDownloadMapReady()),
+    line('mapScreenFocused', isMapScreenFocused()),
+    line('downloadMapSlot', resolveDownloadMapSlot()),
+    ...(() => {
+      const d = getDownloadMapHostDiagnostics();
+      return [
+        line('downloadMapGeneration', d.generation),
+        line('downloadMapStyleReady', d.styleReady),
+        line('downloadMapFrameRendered', d.frameRendered),
+        line('downloadMapHasController', d.hasController),
+        line('downloadMapEngineMountCount', d.engineMountCount),
+        line('downloadMapLastStyleGen', d.lastStyleMarkGeneration),
+        line('downloadMapLastFrameGen', d.lastFrameMarkGeneration),
+      ];
+    })(),
     line('mapEngineReloadNonce', store.chartStyleUri ? getOfflineMapEngineStyleReloadNonce() : null),
     '',
     'Bounds',

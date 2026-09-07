@@ -1,0 +1,80 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - downloads
+  - honesty
+  - kill-mid
+  - release
+---
+# Release APK: start Kiel, kill mid-flight, relaunch without Expo deep-link, assert no Ready lie.
+- launchApp:
+    appId: "de.softwarebydesign.seacheck"
+    clearState: true
+- runFlow: 01-onboarding-skip.yaml
+- runFlow: 01a-warm-map.yaml
+- runFlow: 01b-open-downloads.yaml
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "downloads.download.kiel-bay"
+    direction: DOWN
+    timeout: 60000
+    visibilityPercentage: 40
+    centerElement: true
+- tapOn:
+    id: "downloads.download.kiel-bay"
+- extendedWaitUntil:
+    visible:
+      id: "confirm.proceed"
+    timeout: 15000
+    optional: true
+- tapOn:
+    id: "confirm.proceed"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "downloads\\.statusBanner\\.cancel|downloads\\.cancel\\.kiel-bay|downloads\\.globalSessionChrome\\.cancel|map\\.downloadSession"
+    timeout: 180000
+- assertNotVisible:
+    id: "downloads.statusBanner.ready"
+- killApp
+- launchApp:
+    appId: "de.softwarebydesign.seacheck"
+    clearState: false
+    stopApp: false
+- runFlow: 01-onboarding-skip.yaml
+# After process death the app may resume exclusive Map download chrome (native pack still active).
+# Downloads is under More — never wait for tab.downloads on the primary bar.
+- extendedWaitUntil:
+    visible:
+      id: "tab\\.map|tab\\.more|map\\.downloadSession|screen\\.map"
+    timeout: 90000
+# Prefer explicit open from download chrome when present; otherwise More → Downloads.
+- tapOn:
+    id: "map.downloadSession.openDownloads"
+    optional: true
+- tapOn:
+    id: "tab.more"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "tab\\.more\\.sheet|tab\\.downloads|screen\\.downloads"
+    timeout: 30000
+    optional: true
+- tapOn:
+    id: "tab.downloads"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "screen\\.downloads|downloads\\.download\\.kiel-bay|downloads\\.statusBanner\\.failed|downloads\\.statusBanner\\.active|map\\.downloadSession"
+    timeout: 90000
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+# Honesty gate: process death mid-flight must never leave a Ready / durable seal lie.
+- assertNotVisible:
+    id: "downloads.statusBanner.ready"
+- assertNotVisible:
+    id: "downloads.pack.kiel-bay.durable"
+- takeScreenshot: download-kill-mid-release

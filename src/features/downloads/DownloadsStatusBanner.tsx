@@ -171,9 +171,9 @@ function ActiveDownloadBanner({
       ? t('downloads.statusSummaryActiveInitializing', { name })
       : t('downloads.statusSummaryActive', { name, percent: Math.round(percent) });
   const bannerColors = completing
-    ? { backgroundColor: colors.successBg, borderColor: colors.success }
+    ? { backgroundColor: colors.primary + '12', borderColor: colors.primary }
     : { backgroundColor: colors.warningBg, borderColor: colors.warningBorder };
-  const titleColor = completing ? colors.success : colors.warningText;
+  const titleColor = completing ? colors.primary : colors.warningText;
 
   return (
     <View
@@ -307,10 +307,16 @@ function ReadyBanner({
       style={[styles.banner, { backgroundColor: colors.successBg, borderColor: colors.success }]}
       testID="downloads.statusBanner.ready"
       accessibilityRole="summary"
-      accessibilityLabel={t('downloads.statusSummaryReady', { count: readyCount })}
+      accessibilityLabel={
+        readyCount === 1
+          ? t('downloads.statusSummaryReadyOne')
+          : t('downloads.statusSummaryReadyMany', { count: readyCount })
+      }
     >
       <Text style={[styles.title, { color: colors.success }]} accessibilityRole="header">
-        {t('downloads.statusSummaryReady', { count: readyCount })}
+        {readyCount === 1
+          ? t('downloads.statusSummaryReadyOne')
+          : t('downloads.statusSummaryReadyMany', { count: readyCount })}
       </Text>
       <Text style={[styles.hint, { color: colors.textMuted }]}>{t('downloads.statusSummaryReadyHint')}</Text>
     </View>

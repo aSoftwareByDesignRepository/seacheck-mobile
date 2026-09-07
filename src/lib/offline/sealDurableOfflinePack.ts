@@ -9,6 +9,7 @@ import {
 } from '@maplibre/maplibre-react-native';
 
 import { ensureMapLibreNetworkForDownload } from '../network/mapLibreNetworkGate';
+import { offlinePackMapStyleUri, ensureOfflinePackStyleReachable } from '../../map/chartStyle';
 import { startDownloadStallWatchdog } from './downloadStallWatchdog';
 import { recreateOfflinePack } from './nativePackRecovery';
 import { pollNativePackStatus } from './nativePackStatus';
@@ -137,6 +138,8 @@ async function waitUntilNativePackComplete(
           onProgress,
           onError,
           () => !args.isCancelled(),
+          // GL priming must use documents file:// — createOptions.mapStyle is loopback HTTP on Android.
+          args.chartStyleUri,
         );
         if (replacement?.id) {
           activePack = replacement;
@@ -175,8 +178,14 @@ export async function sealDurableOfflinePack(args: SealDurableOfflinePackArgs): 
     throw new Error('DOWNLOAD_CANCELLED');
   }
 
+  await ensureOfflinePackStyleReachable(args.chartStyleUri);
+  if (args.isCancelled()) {
+    throw new Error('DOWNLOAD_CANCELLED');
+  }
+
   const createOptions: OfflinePackCreateOptions = {
-    mapStyle: args.chartStyleUri,
+    // Android OfflineManager cannot load documents file:// styles (HTTP parse error).
+    mapStyle: offlinePackMapStyleUri(args.chartStyleUri),
     bounds: args.bounds,
     minZoom: args.minZoom,
     maxZoom: args.maxZoom,

@@ -51,7 +51,8 @@
     "stepBattery": "Batteri",
     "stepFinish": "Parat",
     "stepCounter": "Trin %{current} af %{total}",
-    "progress": "Onboarding trin %{step} af %{total}"
+    "progress": "Onboarding trin %{step} af %{total}",
+    "disclaimerScrollHint": "Rul for at læse hele sikkerhedsmeddelelsen. Fortsæt forbliver synlig forneden."
   },
   "boot": {
     "loading": "Indlæser SeaCheck...",
@@ -623,7 +624,7 @@
     },
     "customStartedTitle": "Download startede",
     "customStartedBody": "Vend tilbage til Downloads for at se fremskridt. Bliv på Wi-Fi, indtil du er færdig.",
-    "mapSessionHint": "Det levende kort sættes på pause, mens SeaCheck gemmer fliser. Åbn Downloads for at følge fremskridt eller annullere.",
+    "mapSessionHint": "Bliv på Wi‑Fi og fanen Kort, indtil lagringen er færdig.",
     "mapSessionOpenHint": "Viser downloadfremskridt og annuller-kontroller",
     "statusSummaryActiveTitle": "Downloader diagrampakke",
     "statusSummaryActive": "Downloader %{name} — %{percent}% fuldført",
@@ -633,7 +634,6 @@
     "statusSummaryCompleting": "Afslutter %{name} — gemmer diagrammer til offlinebrug",
     "statusSummaryCompletingHint": "Næsten færdig - hold appen åben et øjeblik.",
     "statusCompleting": "Gemmer diagrammer på din enhed...",
-    "statusSummaryReady": "%{count} diagrampakker klar offline",
     "statusSummaryReadyHint": "Søkort og sømærker fungerer uden mobilsignal i downloadede områder.",
     "statusSummaryEmptyTitle": "Ingen offline-pakker endnu",
     "statusSummaryEmpty": "Senest viste diagrammer cachelagres automatisk, men kan have huller. Download en korridorpakke nedenfor, før du mister signalet.",
@@ -744,7 +744,15 @@
     },
     "basemapUpdatedTitle": "Kortgrundlag opdateret",
     "basemapUpdatedBody": "SeaCheck bruger nu gratis OpenSeaMap-kystkort (uden API-nøgle). Tidligere downloadede pakker brugte det gamle grundlag og er blevet ryddet. Download dine korridorpakker igen via Wi‑Fi, før du sejler ud.",
-    "basemapUpdatedDismiss": "Forstået"
+    "basemapUpdatedDismiss": "Forstået",
+    "liveSweepTitle": "Gemmer kortfliser",
+    "liveSweepHint": "Fliser og sømærke-overlays skal vises her under download — sådan gemmes de til offline brug.",
+    "liveSweepA11y": "Live kortvisning af området, der gemmes til offline brug",
+    "liveSweepDeferred": "Kort-fanen viser live-gemmevisningen. Skift tilbage hertil når som helst for at annullere eller tjekke fremskridt.",
+    "stayOnMapWhileSaving": "Bliv på Kort eller Downloads, mens kort gemmes — ellers kan offline-fliser være ufuldstændige.",
+    "statusSummaryCancelTeardown": "Lukker kortsessionen for %{name}…",
+    "statusSummaryReadyOne": "1 diagrampakke klar offline",
+    "statusSummaryReadyMany": "%{count} diagrampakker klar offline"
   },
   "waypoints": {
     "subtitle": "Gemte mærker og havne",

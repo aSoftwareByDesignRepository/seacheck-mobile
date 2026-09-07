@@ -42,6 +42,10 @@ if (!check('danger button light', '#ffffff', '#ba1b1b', N)) fail++;
 if (!check('danger button dark', '#0b1622', '#ff6b6b', N)) fail++;
 if (!check('danger button high contrast', '#000000', '#ff4d4d', N)) fail++;
 if (!check('warning text on light', '#8a4b08', '#fff4e6', N)) fail++;
+// Completing chrome uses primary title on primary@12% over white (not success green).
+if (!check('completing title on light primary wash', '#0073ad', '#edf5f9', N)) fail++;
+if (!check('completing body on light primary wash', '#102a43', '#edf5f9', N)) fail++;
+if (!check('completing title on dark primary wash', '#4dabf7', '#102131', N)) fail++;
 if (!check('text on red night bg', '#ff9999', '#1a0000', N)) fail++;
 if (!check('muted on red night bg', '#cc6666', '#1a0000', M)) fail++;
 if (!check('primary text on red night primary', '#1a0000', '#ff4444', N)) fail++;

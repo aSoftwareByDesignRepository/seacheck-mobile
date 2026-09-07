@@ -2,6 +2,7 @@ import type { OfflinePack, OfflinePackStatus } from '@maplibre/maplibre-react-na
 import { OfflineManager } from '@maplibre/maplibre-react-native';
 
 import { downloadCoordinator } from '../src/lib/offline/downloadCoordinator';
+import { PRODUCTION_DOWNLOAD_TIMING } from '../src/lib/offline/downloadTiming';
 import { startDownloadStallWatchdog } from '../src/lib/offline/downloadStallWatchdog';
 import { recreateOfflinePack } from '../src/lib/offline/nativePackRecovery';
 
@@ -97,11 +98,12 @@ describe('startDownloadStallWatchdog', () => {
     const stop = startDownloadStallWatchdog('kiel-bay', session, pack, onStall, 'stalled');
 
     await Promise.resolve();
-    jest.advanceTimersByTime(125_000);
+    // Stay under initializingTimeoutMs while requiredResourceCount is still 1.
+    jest.advanceTimersByTime(PRODUCTION_DOWNLOAD_TIMING.initializingTimeoutMs - 15_000);
     await Promise.resolve();
     expect(onStall).not.toHaveBeenCalled();
 
-    jest.advanceTimersByTime(60_000);
+    jest.advanceTimersByTime(20_000);
     await Promise.resolve();
     expect(onStall).toHaveBeenCalledWith('stalled', expect.objectContaining({ requiredResourceCount: 1 }));
 
@@ -138,11 +140,11 @@ describe('startDownloadStallWatchdog', () => {
     );
 
     await Promise.resolve();
-    jest.advanceTimersByTime(185_000);
+    jest.advanceTimersByTime(PRODUCTION_DOWNLOAD_TIMING.styleEngineTimeoutMs - 15_000);
     await Promise.resolve();
     expect(onStall).not.toHaveBeenCalled();
 
-    jest.advanceTimersByTime(60_000);
+    jest.advanceTimersByTime(20_000);
     await Promise.resolve();
     expect(onStall).toHaveBeenCalledWith(
       'engine stalled',
@@ -227,7 +229,7 @@ describe('startDownloadStallWatchdog', () => {
     const onStall = jest.fn();
     const stop = startDownloadStallWatchdog('kiel-bay', session, pack, onStall, 'stalled');
 
-    await jest.advanceTimersByTimeAsync(3_500);
+    await jest.advanceTimersByTimeAsync(PRODUCTION_DOWNLOAD_TIMING.resumeAtMs[0]! + 3_500);
     expect(pack.resume).toHaveBeenCalled();
 
     stop();
@@ -265,7 +267,8 @@ describe('startDownloadStallWatchdog', () => {
       },
     );
 
-    await jest.advanceTimersByTimeAsync(22_000);
+    // RECREATE_AT includes resume index 2 → PRODUCTION resumeAtMs[2]
+    await jest.advanceTimersByTimeAsync(PRODUCTION_DOWNLOAD_TIMING.resumeAtMs[2]! + 5_000);
     expect(onRecreatePack).toHaveBeenCalledWith(pack);
 
     stop();
@@ -289,8 +292,7 @@ describe('startDownloadStallWatchdog', () => {
     const stop = startDownloadStallWatchdog('kiel-bay', session, pack, onStall, 'stalled');
 
     await jest.advanceTimersByTimeAsync(3_000);
-    // Production partialStallTimeoutMs = 3 minutes after last advance
-    await jest.advanceTimersByTimeAsync(3 * 60_000 + 5_000);
+    await jest.advanceTimersByTimeAsync(PRODUCTION_DOWNLOAD_TIMING.partialStallTimeoutMs + 5_000);
     expect(onStall).toHaveBeenCalledWith('stalled', expect.objectContaining({ percentage: 12 }));
 
     stop();
@@ -327,6 +329,7 @@ describe('recreateOfflinePack', () => {
     (OfflineManager.createPack as jest.Mock).mockReset();
     (OfflineManager.deletePack as jest.Mock).mockReset();
     (OfflineManager.addListener as jest.Mock).mockReset();
+    jest.clearAllMocks();
   });
 
   it('deletes the old pack and creates a fresh one', async () => {
@@ -366,5 +369,59 @@ describe('recreateOfflinePack', () => {
     expect(OfflineManager.deletePack).toHaveBeenCalledWith('pack-old');
     expect(OfflineManager.createPack).toHaveBeenCalled();
     expect(result?.id).toBe('pack-new');
+  });
+
+  it('primes GL with documents engineStyleUri while createPack keeps OfflineManager mapStyle', async () => {
+    const { warmupOfflineEngine } = require('../src/lib/offline/warmupOfflineEngine') as {
+      warmupOfflineEngine: jest.Mock;
+    };
+    const { ensureOfflineMapEngineReadyForDownload } = require('../src/lib/offline/offlineMapEngineHost') as {
+      ensureOfflineMapEngineReadyForDownload: jest.Mock;
+    };
+
+    const oldPack = {
+      id: 'pack-old',
+      pause: jest.fn(async () => {}),
+    } as unknown as OfflinePack;
+    const newPack = {
+      id: 'pack-new',
+      resume: jest.fn(async () => {}),
+      status: jest.fn(async () => ({
+        id: 'pack-new',
+        state: 'active',
+        percentage: 12,
+        completedResourceCount: 6,
+        completedResourceSize: 600,
+        completedTileCount: 4,
+        completedTileSize: 400,
+        requiredResourceCount: 48,
+      })),
+    } as unknown as OfflinePack;
+    (OfflineManager.createPack as jest.Mock).mockResolvedValue(newPack);
+
+    const createOptions = {
+      mapStyle: 'http://127.0.0.1:18765/chart-style.json',
+      bounds: [10, 54, 11, 55] as [number, number, number, number],
+      minZoom: 10,
+      maxZoom: 14,
+      metadata: { regionId: 'kiel-bay' },
+    };
+    const engineStyleUri = 'file:///docs/map/chart-style.json';
+
+    await recreateOfflinePack(oldPack, createOptions, jest.fn(), jest.fn(), undefined, engineStyleUri);
+
+    expect(warmupOfflineEngine).toHaveBeenCalledWith(
+      engineStyleUri,
+      expect.objectContaining({ requireFileSource: true }),
+    );
+    expect(ensureOfflineMapEngineReadyForDownload).toHaveBeenCalledWith(
+      engineStyleUri,
+      expect.anything(),
+    );
+    expect(OfflineManager.createPack).toHaveBeenCalledWith(
+      expect.objectContaining({ mapStyle: createOptions.mapStyle }),
+      expect.any(Function),
+      expect.any(Function),
+    );
   });
 });

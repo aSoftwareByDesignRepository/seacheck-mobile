@@ -9,10 +9,13 @@ import {
   resetDownloadMapHostForTests,
 } from '../src/lib/offline/downloadMapHost';
 import * as downloadMapHost from '../src/lib/offline/downloadMapHost';
+import { resetDownloadMapSlotForTests, setDownloadMapMapClaim } from '../src/lib/offline/downloadMapSlot';
 import { resetOfflinePackStoreForTests, useOfflinePackStore } from '../src/store/offlinePackStore';
 
 jest.mock('../src/map/chartStyle', () => ({
   ensureChartStyleFile: jest.fn(async () => 'file:///mock/map/chart-style.json'),
+  offlinePackMapStyleUri: jest.fn((uri: string) => uri),
+  ensureOfflinePackStyleReachable: jest.fn(async () => {}),
 }));
 
 jest.mock('../src/lib/seamarks/seamarkIndex', () => ({
@@ -49,6 +52,7 @@ function markDownloadMapReady() {
 
 async function startDownloadWithMapReady(regionId: string) {
   const controller = {
+    showTile: jest.fn(async () => {}),
     fitBounds: jest.fn(async () => {}),
     waitForFrame: jest.fn(async () => {}),
   };
@@ -69,6 +73,8 @@ describe('offlinePackStore coordinator teardown sync (production timing)', () =>
   beforeEach(async () => {
     resetSeamarkIndexQueueForTests();
     resetDownloadMapHostForTests();
+    resetDownloadMapSlotForTests();
+    setDownloadMapMapClaim(true);
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
     await AsyncStorage.setItem('seacheck.chart.basemapId', 'osm-standard-v1');
@@ -115,6 +121,7 @@ describe('offlinePackStore coordinator teardown sync (production timing)', () =>
 
     jest.spyOn(downloadMapHost, 'waitForDownloadMapReady').mockResolvedValue(true);
     jest.spyOn(downloadMapHost, 'waitForDownloadMapController').mockResolvedValue({
+      showTile: jest.fn(async () => {}),
       fitBounds: jest.fn(async () => {
         throw new Error('gl surface lost');
       }),

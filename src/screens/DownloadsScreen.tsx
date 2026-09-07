@@ -8,6 +8,7 @@ import { OfflineChartsGuide } from '../features/downloads/OfflineChartsGuide';
 import { CustomDownloadSection } from '../features/downloads/CustomDownloadSection';
 import { CustomPackCard } from '../features/downloads/CustomPackCard';
 import { DownloadsSectionCard } from '../features/downloads/DownloadsSectionCard';
+import { DownloadsLiveSweepPanel } from '../features/downloads/DownloadsLiveSweepPanel';
 import { DownloadsStatusBanner } from '../features/downloads/DownloadsStatusBanner';
 import { LegacyPackCard } from '../features/downloads/LegacyPackCard';
 import { RegionPackCard } from '../features/downloads/RegionPackCard';
@@ -481,6 +482,7 @@ export function DownloadsScreen() {
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         keyboardShouldPersistTaps="handled"
       >
+        <DownloadsLiveSweepPanel />
         <OfflineChartsGuide />
         <MasterDetailLayout master={listPane} detail={useStackedLayout ? null : detailPane} requireDetail={!useStackedLayout} />
       </ScrollView>

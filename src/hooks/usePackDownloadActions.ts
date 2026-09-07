@@ -6,6 +6,7 @@ import { reportDownloadFailureFromError } from '../lib/offline/reportDownloadFai
 import { reportDownloadOutcome } from '../lib/offline/reportDownloadOutcome';
 import { waitForDownloadSessionKickoff } from '../lib/offline/waitForDownloadSessionKickoff';
 import { isPackDownloadActive } from '../features/downloads/packDownloadPresentation';
+import { navigateToMapForChartDownload } from '../navigation/rootNavigation';
 import { t } from '../i18n';
 import { useFeedbackStore } from '../store/feedbackStore';
 import { useOfflinePackStore } from '../store/offlinePackStore';
@@ -74,6 +75,8 @@ export function usePackDownloadActions() {
           return next?.state === 'ready' && !next?.error;
         }
         showInfo(t('downloads.downloadStarted'));
+        // Map tab owns the visible tile sweep — navigate there so Android can persist tiles.
+        navigateToMapForChartDownload();
         void downloadPromise
           .then(() => {
             reportDownloadOutcome(regionId, { showInfo, showError });

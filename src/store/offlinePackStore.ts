@@ -7,7 +7,7 @@ import {
 } from '@maplibre/maplibre-react-native';
 import { create } from 'zustand';
 
-import { ensureChartStyleFile } from '../map/chartStyle';
+import { ensureChartStyleFile, offlinePackMapStyleUri } from '../map/chartStyle';
 import { getRegionPack, REGION_PACKS } from '../map/regionPacks';
 import { isLegacyRegionPackId } from '../map/legacyRegionPacks';
 import { validateRegionPack } from '../map/regionPackValidation';
@@ -49,8 +49,19 @@ import {
   redownloadPlaceholderPackId,
   runTileCacheSweep,
 } from '../lib/offline/tileCacheDownload';
+import { enumerateTileViewports } from '../lib/offline/tileGrid';
 import { downloadMapLingerMs, tileSweepFinalSettleMs } from '../lib/offline/downloadMapConstants';
-import { resetDownloadMapSession, waitForDownloadMapController } from '../lib/offline/downloadMapHost';
+import {
+  endDownloadMapSessionOwnership,
+  invalidateDownloadMapGeneration,
+  resetDownloadMapSession,
+  waitForDownloadMapController,
+  waitForDownloadMapReady,
+} from '../lib/offline/downloadMapHost';
+import { beginDownloadMapMapOwnership } from '../lib/offline/downloadMapSlot';
+import { navigateToMapForChartDownload } from '../navigation/rootNavigation';
+import { waitForMapScreenFocused } from '../lib/map/mapScreenFocus';
+
 import { isNativeDownloadKickstarted, isNativePackInitializing } from '../lib/offline/nativePackProgress';
 import { initializingNativePackStatus, pollNativePackStatus, readNativePackStatus, resolveNativePackStatus } from '../lib/offline/nativePackStatus';
 import type { OfflineEngineViewport } from '../lib/offline/offlineMapEngineHost';
@@ -786,6 +797,7 @@ function createCacheDownloadSession(
 
   const runSeal = async () => {
     rememberDownloadSessionPhase(ctx.regionId, 'seal');
+    if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
     set((state) => ({
       regions: {
         ...state.regions,
@@ -837,8 +849,9 @@ function createCacheDownloadSession(
     await new Promise((resolve) => setTimeout(resolve, sweepLeadMs));
     if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
 
-    const totalLevels = ctx.maxZoom - ctx.minZoom + 1;
-    await persistSweepProgress(startIndex, totalLevels);
+    // Progress totals are per-tile viewports (base+overlays displayed), not zoom levels.
+    const totalViewports = enumerateTileViewports(ctx.bounds, ctx.minZoom, ctx.maxZoom).length;
+    await persistSweepProgress(startIndex, Math.max(1, totalViewports));
     if (downloadCoordinator.isStale(ctx.regionId, ctx.session)) return;
 
     try {
@@ -901,6 +914,8 @@ async function reattachCacheDownload(
   set: (partial: Partial<OfflinePackStore> | ((state: OfflinePackStore) => Partial<OfflinePackStore>)) => void,
 ) {
   if (!downloadCoordinator.restoreActive(ctx.regionId)) return;
+  beginDownloadMapMapOwnership();
+  navigateToMapForChartDownload();
   const { runSweep } = createCacheDownloadSession(ctx, set);
   const startIndex = entry.sweepCompleted ?? 0;
   set((state) => ({
@@ -968,7 +983,7 @@ async function reattachNativeDownload(
         stallMessage: t('downloads.errorDownloadStalled'),
         mapEngineStallMessage: t('downloads.errorMapEngineStyle'),
         createOptions: {
-          mapStyle: ctx.chartStyleUri,
+          mapStyle: offlinePackMapStyleUri(ctx.chartStyleUri),
           bounds: ctx.bounds,
           minZoom: ctx.minZoom,
           maxZoom: ctx.maxZoom,
@@ -1335,6 +1350,12 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         if (!regionId || regions[regionId]?.packId) continue;
         const status = await readHydrateNativePackStatus(pack);
         if (!status) continue;
+        // Incomplete packs without an index row are cancel/createPack races — never re-adopt.
+        // Kill-mid resume goes through the indexed path above, not this orphan loop.
+        if (!isNativeDownloadComplete(status)) {
+          await removeNativePack(pack.id);
+          continue;
+        }
         const meta = pack.metadata ?? {};
         const legacy = isLegacyRegionPackId(regionId);
         regions[regionId] = {
@@ -1490,6 +1511,12 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
         set({ hydrated: true });
         return;
       }
+      // Keep coordinator ↔ store exclusivity aligned (ghost tryBegin / dual GL).
+      const exclusiveFail =
+        downloadCoordinator.getActiveRegionId() ?? downloadCoordinator.getTeardownRegionId();
+      if (exclusiveFail != null) {
+        downloadCoordinator.invalidate(exclusiveFail);
+      }
       try {
         const index = await loadIndex();
         set({
@@ -1497,8 +1524,7 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
           chartStyleUri,
           regions: buildRecoveredRegionsFromIndex(index, emptyRegions),
           customBoundsIndex: buildCustomBoundsIndex(index),
-          activeDownloadRegionId: null,
-          downloadMapTeardownRegionId: null,
+          ...syncActiveDownloadId(),
           basemapMigrationNotice: false,
         });
       } catch {
@@ -1507,20 +1533,23 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
           chartStyleUri,
           regions: emptyRegions,
           customBoundsIndex: {},
-          activeDownloadRegionId: null,
-          downloadMapTeardownRegionId: null,
+          ...syncActiveDownloadId(),
           basemapMigrationNotice: false,
         });
       }
     } finally {
       if (!get().hydrated) {
+        const exclusiveFinally =
+          downloadCoordinator.getActiveRegionId() ?? downloadCoordinator.getTeardownRegionId();
+        if (exclusiveFinally != null) {
+          downloadCoordinator.invalidate(exclusiveFinally);
+        }
         set({
           hydrated: true,
           chartStyleUri,
           regions: emptyRegions,
           customBoundsIndex: {},
-          activeDownloadRegionId: null,
-          downloadMapTeardownRegionId: null,
+          ...syncActiveDownloadId(),
           basemapMigrationNotice: false,
         });
       }
@@ -1585,25 +1614,27 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       }
 
       await assertStorageForBounds(packDef.bounds, packDef.minZoom, packDef.maxZoom);
-      await assertDownloadWifiPolicy();
-      await assertChartDownloadNetworkReady(
-        resolveChartTileProbeCenter(regionId, get().customBoundsIndex),
-      );
+      // UI/preflight already ran ensureDownloadAllowed + network probe. Re-asking Wi‑Fi
+      // here races Maestro and blocks tryBegin behind a second confirm (kickoff timeout).
+      if (!downloadCoordinator.hasPreflightLock(regionId)) {
+        await assertDownloadWifiPolicy();
+        await assertChartDownloadNetworkReady(
+          resolveChartTileProbeCenter(regionId, get().customBoundsIndex),
+        );
+      }
 
-      session = beginDownloadSession(regionId);
+      // Prefer the URI preflight already wrote — avoid a second slow ensure before kickoff.
+      const chartStyleUri = get().chartStyleUri ?? (await get().ensureChartStyle());
+      navigateToMapForChartDownload();
+
+      // Kick off the exclusive session BEFORE focus/ready waits so
+      // waitForDownloadSessionKickoff (45s) can resolve and Cancel chrome appears.
       resetDownloadMapSession();
-      resetOfflineMapEngineViewportPrimed();
-      await yieldToUi();
-      await yieldToUi();
-
+      session = beginDownloadSession(regionId);
+      beginDownloadMapMapOwnership();
       const previous = get().regions[regionId] ?? emptyStatus(regionId);
       const previousPackId = previous.state === 'ready' ? previous.packId : null;
       const previousWasReady = previous.state === 'ready';
-
-      if (previous.packId && previous.state !== 'ready') {
-        await removeNativePack(previous.packId);
-      }
-
       const packId = cacheBackedPackId(regionId);
       set({
         ...syncActiveDownloadId(),
@@ -1620,11 +1651,28 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
           },
         },
       });
+      resetOfflineMapEngineViewportPrimed();
+      await yieldToUi();
+
+      // Android TextureViews must be on the focused Map tab to paint.
+      {
+        const focusWaitMs = process.env.NODE_ENV === 'test' ? 50 : 15_000;
+        if (!(await waitForMapScreenFocused(focusWaitMs))) {
+          navigateToMapForChartDownload();
+          await waitForMapScreenFocused(focusWaitMs);
+        }
+      }
+      navigateToMapForChartDownload();
+      await yieldToUi();
+
+      if (previous.packId && previous.state !== 'ready') {
+        await removeNativePack(previous.packId);
+      }
 
       const ctx: DownloadSessionContext = {
         regionId,
         session,
-        chartStyleUri: '',
+        chartStyleUri,
         previousPackId,
         previousWasReady,
         restoreOnFailure: previousWasReady ? previous : undefined,
@@ -1635,10 +1683,28 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       const sessionHandlers = createCacheDownloadSession(ctx, set);
       markFailed = sessionHandlers.markFailed;
 
-      const chartStyleUri = await get().ensureChartStyle();
-      ctx.chartStyleUri = chartStyleUri;
-      await warmupOfflineEngine(chartStyleUri, { requireStyleLoaded: false, requireFileSource: true });
+      // Do not warmup the hidden offline GL host here — it competes with DownloadMapEngine
+      // for Android's single reliable TextureView and can prevent style/frame ready.
       ensureMapLibreNetworkForDownload();
+      navigateToMapForChartDownload();
+      const mapReadySliceMs = process.env.NODE_ENV === 'test' ? 20 : 5_000;
+      const mapReadyAttempts = process.env.NODE_ENV === 'test' ? 2 : 12;
+      let mapReady = false;
+      for (let i = 0; i < mapReadyAttempts; i++) {
+        await yieldToUi();
+        if (await waitForDownloadMapReady(chartStyleUri, mapReadySliceMs)) {
+          mapReady = true;
+          break;
+        }
+        // Force a GL remount between slices if style/frame never arrived.
+        invalidateDownloadMapGeneration();
+        navigateToMapForChartDownload();
+        beginDownloadMapMapOwnership();
+      }
+      if (!mapReady && process.env.NODE_ENV !== 'test') {
+        // Final short wait after last remount — acquireLiveController will throw if still cold.
+        await waitForDownloadMapReady(chartStyleUri, mapReadySliceMs);
+      }
 
       await sessionHandlers.runSweep();
     } catch (err) {
@@ -1666,21 +1732,19 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       }
 
       await assertStorageForBounds(bounds, minZoom, maxZoom);
-      await assertDownloadWifiPolicy();
-      await assertChartDownloadNetworkReady(boundsCenter(bounds));
-
-      session = beginDownloadSession(regionId);
-      resetDownloadMapSession();
-      resetOfflineMapEngineViewportPrimed();
-      await yieldToUi();
-      await yieldToUi();
-
-      const previous = get().regions[regionId] ?? emptyStatus(regionId);
-      const previousWasReady = previous.state === 'ready';
-      if (previous.packId && !previousWasReady) {
-        await removeNativePack(previous.packId);
+      if (!downloadCoordinator.hasPreflightLock(regionId)) {
+        await assertDownloadWifiPolicy();
+        await assertChartDownloadNetworkReady(boundsCenter(bounds));
       }
 
+      const chartStyleUri = get().chartStyleUri ?? (await get().ensureChartStyle());
+      navigateToMapForChartDownload();
+
+      resetDownloadMapSession();
+      session = beginDownloadSession(regionId);
+      beginDownloadMapMapOwnership();
+      const previous = get().regions[regionId] ?? emptyStatus(regionId);
+      const previousWasReady = previous.state === 'ready';
       const customMeta = { custom: true as const, displayName: name };
       const packId = cacheBackedPackId(regionId);
       set({
@@ -1700,11 +1764,27 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
           },
         },
       });
+      resetOfflineMapEngineViewportPrimed();
+      await yieldToUi();
+
+      {
+        const focusWaitMs = process.env.NODE_ENV === 'test' ? 50 : 15_000;
+        if (!(await waitForMapScreenFocused(focusWaitMs))) {
+          navigateToMapForChartDownload();
+          await waitForMapScreenFocused(focusWaitMs);
+        }
+      }
+      navigateToMapForChartDownload();
+      await yieldToUi();
+
+      if (previous.packId && !previousWasReady) {
+        await removeNativePack(previous.packId);
+      }
 
       const ctx: DownloadSessionContext = {
         regionId,
         session,
-        chartStyleUri: '',
+        chartStyleUri,
         previousPackId: previousWasReady ? previous.packId : null,
         previousWasReady,
         restoreOnFailure: previousWasReady ? previous : undefined,
@@ -1717,10 +1797,25 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
       const sessionHandlers = createCacheDownloadSession(ctx, set);
       markFailed = sessionHandlers.markFailed;
 
-      const chartStyleUri = await get().ensureChartStyle();
-      ctx.chartStyleUri = chartStyleUri;
-      await warmupOfflineEngine(chartStyleUri, { requireStyleLoaded: false, requireFileSource: true });
+      // Avoid hidden offline GL warmup — competes with DownloadMapEngine on Android.
       ensureMapLibreNetworkForDownload();
+      navigateToMapForChartDownload();
+      const mapReadySliceMs = process.env.NODE_ENV === 'test' ? 20 : 5_000;
+      const mapReadyAttempts = process.env.NODE_ENV === 'test' ? 2 : 12;
+      let mapReady = false;
+      for (let i = 0; i < mapReadyAttempts; i++) {
+        await yieldToUi();
+        if (await waitForDownloadMapReady(chartStyleUri, mapReadySliceMs)) {
+          mapReady = true;
+          break;
+        }
+        invalidateDownloadMapGeneration();
+        navigateToMapForChartDownload();
+        beginDownloadMapMapOwnership();
+      }
+      if (!mapReady && process.env.NODE_ENV !== 'test') {
+        await waitForDownloadMapReady(chartStyleUri, mapReadySliceMs);
+      }
 
       await sessionHandlers.runSweep();
     } catch (err) {
@@ -1766,9 +1861,21 @@ export const useOfflinePackStore = create<OfflinePackStore>((set, get) => ({
     if (!current || (current.state !== 'downloading' && !sessionActive)) return;
 
     downloadCoordinator.invalidate(regionId);
-    downloadCoordinator.cancelMapTeardown(regionId);
+    // invalidate() already begins map teardown — do not cancelMapTeardown (dual TextureView).
 
+    // Flip UI off downloading immediately. Native deletePack can hang while OfflineManager
+    // is mid-create; leaving state=downloading made Cancel look like a no-op (Maestro + users).
     const nextCustom = { ...get().customBoundsIndex };
+    set({
+      ...syncActiveDownloadId(),
+      regions: {
+        ...get().regions,
+        [regionId]: current.custom
+          ? { ...emptyStatus(regionId), custom: true, displayName: current.displayName }
+          : emptyStatus(regionId),
+      },
+    });
+
     const index = await loadIndex();
     const indexedPackId = index[regionId]?.packId ?? null;
     const uiPackId = current.packId;
@@ -2051,6 +2158,10 @@ function attachDownloadCoordinatorStoreSync(): () => void {
       next.downloadMapTeardownRegionId !== state.downloadMapTeardownRegionId
     ) {
       useOfflinePackStore.setState(next);
+    }
+    // Sticky GL host survives Map↔Downloads switches; clear only when the session is fully gone.
+    if (next.activeDownloadRegionId == null && next.downloadMapTeardownRegionId == null) {
+      endDownloadMapSessionOwnership();
     }
   });
 }

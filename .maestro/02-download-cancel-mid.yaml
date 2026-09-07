@@ -21,6 +21,11 @@ tags:
     timeout: 30000
 - tapOn:
     id: "downloads.download.kiel-bay"
+- extendedWaitUntil:
+    visible:
+      id: "confirm.proceed"
+    timeout: 15000
+    optional: true
 - tapOn:
     id: "confirm.proceed"
     optional: true

@@ -1,0 +1,78 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - downloads
+  - honesty
+  - seal
+  - release
+---
+# I5 device proof: Kiel Bay must reach durable Ready (non-cache pack).
+# Fail loudly if the session ends in a failure banner instead of Ready.
+#
+# Red-team: never wait on OR-notVisible(downloadsChrome|mapSession) — that passes in the
+# brief gap while exclusive UI moves from Downloads → Map. Wait for Map host specifically.
+- launchApp:
+    appId: "de.softwarebydesign.seacheck"
+    clearState: true
+- runFlow: 01-onboarding-skip.yaml
+- runFlow: 01a-warm-map.yaml
+- runFlow: 01b-open-downloads.yaml
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "downloads.download.kiel-bay"
+    direction: DOWN
+    timeout: 60000
+    visibilityPercentage: 40
+    centerElement: true
+- tapOn:
+    id: "downloads.download.kiel-bay"
+- extendedWaitUntil:
+    visible:
+      id: "confirm.proceed"
+    timeout: 15000
+    optional: true
+- tapOn:
+    id: "confirm.proceed"
+    optional: true
+# Exclusive TextureView host must appear (Android download honesty path).
+- extendedWaitUntil:
+    visible:
+      id: "map.downloadSession"
+    timeout: 180000
+- assertNotVisible:
+    id: "downloadFailure.dismiss"
+# Wait until the Map-hosted session ends (Ready, stall failure, or cancel).
+- extendedWaitUntil:
+    notVisible:
+      id: "map.downloadSession"
+    timeout: 1200000
+# Failure dialog blocks the tab bar — dismiss only to inspect Downloads state.
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- runFlow: 01b-open-downloads.yaml
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+# Stall / network failure must not be mistaken for seal success.
+- assertNotVisible:
+    id: "downloads.statusBanner.failed"
+- extendedWaitUntil:
+    notVisible:
+      id: "downloadFailure.dismiss"
+    timeout: 15000
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "downloads.pack.kiel-bay.durable"
+    direction: DOWN
+    timeout: 120000
+- assertVisible:
+    id: "downloads.pack.kiel-bay.durable"
+- assertVisible:
+    id: "downloads.delete.kiel-bay"
+- assertVisible:
+    id: "downloads.statusBanner.ready"
+- takeScreenshot: download-seal-ready

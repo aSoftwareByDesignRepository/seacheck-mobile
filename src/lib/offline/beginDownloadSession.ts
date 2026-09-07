@@ -3,18 +3,12 @@ import { downloadCoordinator } from './downloadCoordinator';
 
 /**
  * Transition preflight lock → active download session.
- * Cleans up a stale preflight lock when a prior attempt failed before tryBegin.
+ * tryBegin already promotes a same-region preflight lock atomically — do not
+ * release+retry (that opened a window for a second caller to steal the slot).
  */
 export function beginDownloadSession(regionId: string): number {
   const session = downloadCoordinator.tryBegin(regionId);
   if (session != null) return session;
-
-  if (downloadCoordinator.hasPreflightLock(regionId)) {
-    downloadCoordinator.releasePreflightLock(regionId);
-    const retry = downloadCoordinator.tryBegin(regionId);
-    if (retry != null) return retry;
-  }
-
   throw new Error(t('downloads.errorDownloadBusy'));
 }
 

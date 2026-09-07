@@ -27,7 +27,7 @@ import { subscribeMapScreenFocus } from '../../lib/map/mapScreenFocus';
 import { subscribeDownloadCoordinatorActivity } from '../../lib/offline/downloadCoordinator';
 import { useMapCameraFollow } from '../../hooks/useMapCameraFollow';
 import { CustomDownloadMapPanel } from '../downloads/CustomDownloadMapPanel';
-import { ChartDownloadSessionPlaceholder } from '../downloads/ChartDownloadSessionPlaceholder';
+import { VisibleDownloadMapPane } from '../downloads/VisibleDownloadMapPane';
 import { CustomDownloadCornerSheet } from '../downloads/CustomDownloadCornerSheet';
 import { nearestDownloadCorner, boundsFromPoints } from '../../lib/map/customDownloadCorners';
 import { PassageMapPlanningPanel } from '../passage/PassageMapPlanningPanel';
@@ -766,7 +766,7 @@ export function NavigationMap() {
       <Text style={{ color: colors.textMuted }}>{t('boot.loading')}</Text>
     </View>
   ) : exclusiveChartDownload ? (
-    <ChartDownloadSessionPlaceholder onOpenDownloads={() => navigation.navigate('Downloads')} />
+    <VisibleDownloadMapPane onOpenDownloads={() => navigation.navigate('Downloads')} />
   ) : chartStyleUri && navigationChartAllowed ? (
     <View style={styles.mapHost} pointerEvents={screenLocked ? 'none' : 'box-none'} collapsable={false}>
       <View style={styles.mapClip} collapsable={false}>
@@ -929,7 +929,9 @@ export function NavigationMap() {
   const mapPaneHost = (
     <View style={styles.mapPaneHost}>
       {mapNode}
-      {safetyChromePlacement === 'mapPane' ? (
+      {/* Never overlay safety FABs on the exclusive download TextureView — they clip
+          status chrome and block tile paint (seacheck-offline-downloads rule). */}
+      {safetyChromePlacement === 'mapPane' && !exclusiveChartDownload ? (
         <View pointerEvents="box-none" style={styles.mapOverlayLayer}>
           <MapChrome
             onMobDropped={switchLayoutOnMob}
@@ -969,7 +971,7 @@ export function NavigationMap() {
         <ResponsiveMapShell
           map={mapPaneHost}
           instrumentPanel={
-            effectiveSplit ? (
+            effectiveSplit && !exclusiveChartDownload ? (
               <MapInstrumentPanel fix={fix} onOpenPassage={openPassage} />
             ) : null
           }
@@ -1002,13 +1004,13 @@ export function NavigationMap() {
 
       {passageMapPlanning && !customSelecting && !mobTarget ? <PassageMapPlanningPanel /> : null}
 
-      {surface.showBottomDock && !effectiveSplit && (isMinimalLayout || (isInstrumentsOnlyLayout && showChartInInstrumentsOnly)) ? (
+      {surface.showBottomDock && !effectiveSplit && !exclusiveChartDownload && (isMinimalLayout || (isInstrumentsOnlyLayout && showChartInInstrumentsOnly)) ? (
         <MapBottomDock fix={fix} onOpenPassage={openPassage} />
       ) : null}
-      {surface.showBottomDock && !effectiveSplit && isMapForwardLayout ? (
+      {surface.showBottomDock && !effectiveSplit && !exclusiveChartDownload && isMapForwardLayout ? (
         <MapInstrumentDock fix={fix} onOpenPassage={openPassage} />
       ) : null}
-      {safetyChromePlacement === 'root' ? (
+      {safetyChromePlacement === 'root' && !exclusiveChartDownload ? (
         <MapChrome
           onMobDropped={switchLayoutOnMob}
           showAnchor={!(isInstrumentsOnlyLayout && !showChartInInstrumentsOnly)}

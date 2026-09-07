@@ -51,7 +51,8 @@
     "stepBattery": "Batteri",
     "stepFinish": "Klar",
     "stepCounter": "Trinn %{current} av %{total}",
-    "progress": "Onboarding trinn %{step} av %{total}"
+    "progress": "Onboarding trinn %{step} av %{total}",
+    "disclaimerScrollHint": "Rull for å lese hele sikkerhetsmerknaden. Fortsett forblir synlig nederst."
   },
   "boot": {
     "loading": "Laster inn SeaCheck...",
@@ -623,7 +624,7 @@
     },
     "customStartedTitle": "Nedlasting startet",
     "customStartedBody": "Gå tilbake til Nedlastinger for å se fremdriften. Hold deg på Wi-Fi til du er ferdig.",
-    "mapSessionHint": "Det levende kartet pauses mens SeaCheck lagrer fliser. Åpne Nedlastinger for å følge fremdriften eller avbryte.",
+    "mapSessionHint": "Bli på Wi‑Fi og fanen Kart til lagringen er ferdig.",
     "mapSessionOpenHint": "Viser nedlastingsfremdrift og avbryt-kontroller",
     "statusSummaryActiveTitle": "Laster ned kartpakke",
     "statusSummaryActive": "Nedlasting av %{name} — %{percent}% fullført",
@@ -633,7 +634,6 @@
     "statusSummaryCompleting": "Fullfører %{name} — lagring av diagrammer for offline bruk",
     "statusSummaryCompletingHint": "Nesten ferdig - hold appen åpen et øyeblikk.",
     "statusCompleting": "Lagrer diagrammer på enheten din …",
-    "statusSummaryReady": "%{count} kartpakker klare offline",
     "statusSummaryReadyHint": "Kart og sjømerker fungerer uten mobilsignal i nedlastede områder.",
     "statusSummaryEmptyTitle": "Ingen offline-pakker ennå",
     "statusSummaryEmpty": "Nylig viste diagrammer bufres automatisk, men kan ha hull. Last ned en korridorpakke nedenfor før du mister signalet.",
@@ -744,7 +744,15 @@
     },
     "basemapUpdatedTitle": "Kartgrunnlag oppdatert",
     "basemapUpdatedBody": "SeaCheck bruker nå gratis OpenSeaMap-kystkart (uten API-nøkkel). Tidligere nedlastede pakker brukte det gamle grunnlaget og ble slettet. Last ned korridorpakkene på nytt over Wi‑Fi før du går til sjøs.",
-    "basemapUpdatedDismiss": "Skjønner"
+    "basemapUpdatedDismiss": "Skjønner",
+    "liveSweepTitle": "Lagrer kartfliser",
+    "liveSweepHint": "Fliser og sjømerke-overlays må vises her under nedlasting — slik lagres de for offline bruk.",
+    "liveSweepA11y": "Live kartvisning av området som lagres for offline bruk",
+    "liveSweepDeferred": "Kart-fanen viser live-lagringsvisningen. Bytt tilbake hit når som helst for å avbryte eller sjekke fremdriften.",
+    "stayOnMapWhileSaving": "Bli på Kart eller Nedlastinger mens kart lagres — ellers kan offline-fliser være ufullstendige.",
+    "statusSummaryCancelTeardown": "Avslutter kartøkten for %{name}…",
+    "statusSummaryReadyOne": "1 kartpakke klar offline",
+    "statusSummaryReadyMany": "%{count} kartpakker klare offline"
   },
   "waypoints": {
     "subtitle": "Lagrede merker og havner",

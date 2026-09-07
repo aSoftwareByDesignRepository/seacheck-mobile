@@ -8,6 +8,7 @@ import {
 
 import { yieldToUi } from '../async/yieldToUi';
 import { ensureMapLibreNetworkForDownload } from '../network/mapLibreNetworkGate';
+import { ensureOfflinePackStyleReachable } from '../../map/chartStyle';
 import { isNativeDownloadKickstarted } from './nativePackProgress';
 import { pollNativePackStatus } from './nativePackStatus';
 import { getDownloadTiming } from './downloadTiming';
@@ -25,6 +26,9 @@ async function removeNativePack(packId: string): Promise<void> {
 /**
  * Delete a stuck pack and create a fresh one after the map engine is ready.
  * Used when enumeration never advances past the style-only resource count.
+ *
+ * @param engineStyleUri Documents/MapView style URI (file:// on Android). Must NOT be the
+ *   OfflineManager HTTP loopback URL — DownloadMapEngine readiness is keyed to file://.
  */
 export async function recreateOfflinePack(
   oldPack: OfflinePack,
@@ -32,6 +36,7 @@ export async function recreateOfflinePack(
   onProgress: OfflinePackProgressListener,
   onError: OfflinePackErrorListener,
   isSessionActive?: () => boolean,
+  engineStyleUri?: string,
 ): Promise<OfflinePack | null> {
   if (isSessionActive?.() === false) return null;
 
@@ -44,9 +49,15 @@ export async function recreateOfflinePack(
   await removeNativePack(oldPack.id);
   await yieldToUi();
 
-  await warmupOfflineEngine(options.mapStyle, { requireStyleLoaded: false, requireFileSource: true });
+  // Prime GL with the MapView style; createPack keeps options.mapStyle (loopback HTTP on Android).
+  const primeStyleUri = engineStyleUri ?? options.mapStyle;
+  await warmupOfflineEngine(primeStyleUri, { requireStyleLoaded: false, requireFileSource: true });
   const viewport = offlineEngineViewportFromBounds(options.bounds, options.minZoom ?? 10);
-  await ensureOfflineMapEngineReadyForDownload(options.mapStyle, viewport);
+  await ensureOfflineMapEngineReadyForDownload(primeStyleUri, viewport);
+  if (isSessionActive?.() === false) return null;
+
+  // Fail fast if Android loopback style server is down (same gate as initial createPack).
+  await ensureOfflinePackStyleReachable(primeStyleUri);
   if (isSessionActive?.() === false) return null;
 
   ensureMapLibreNetworkForDownload();

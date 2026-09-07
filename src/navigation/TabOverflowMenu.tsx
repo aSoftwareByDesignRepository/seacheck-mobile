@@ -8,6 +8,8 @@ import { SheetMenuRow } from '../ui/SheetSection';
 import { navigateToTab, tabLabel, TAB_ICONS } from './tabBarHelpers';
 import { resolveBottomTabLayout, type TabName } from './tabBarLayout';
 import { useTabOverflowStore } from './tabOverflowStore';
+import { useExclusiveChartDownloadSession } from '../hooks/useExclusiveChartDownloadSession';
+import { useFeedbackStore } from '../store/feedbackStore';
 
 /** Overflow tab destinations — rendered outside the tab bar so the sheet host stays stable. */
 export function TabOverflowMenu() {
@@ -15,6 +17,8 @@ export function TabOverflowMenu() {
   const setMenuOpen = useTabOverflowStore((s) => s.setMenuOpen);
   const tabBarProps = useTabOverflowStore((s) => s.tabBarProps);
   const { width } = useWindowDimensions();
+  const exclusiveChartDownload = useExclusiveChartDownloadSession();
+  const showInfo = useFeedbackStore((s) => s.showInfo);
 
   const overflow = useMemo(() => resolveBottomTabLayout(width).overflow, [width]);
 
@@ -34,6 +38,11 @@ export function TabOverflowMenu() {
   }
 
   function selectOverflowTab(name: TabName) {
+    if (exclusiveChartDownload && name !== 'Map' && name !== 'Downloads') {
+      showInfo(t('downloads.stayOnMapWhileSaving'));
+      closeMenu();
+      return;
+    }
     navigateToTab(name, state, navigation);
     closeMenu();
   }

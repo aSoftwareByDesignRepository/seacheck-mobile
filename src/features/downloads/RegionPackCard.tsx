@@ -110,7 +110,11 @@ export function RegionPackCard({
   return (
     <View
       style={containerStyle}
-      testID={`downloads.pack.${pack.id}`}
+      testID={
+        status.state === 'ready' && !status.cacheBacked && !packHasDownloadFailure(status)
+          ? `downloads.pack.${pack.id}.durable`
+          : `downloads.pack.${pack.id}`
+      }
       accessibilityLabel={a11yParts.join('. ')}
     >
       <View style={downloadsStyles.titleRow}>

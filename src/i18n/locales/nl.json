@@ -51,7 +51,8 @@
     "stepBattery": "Batterij",
     "stepFinish": "Klaar",
     "stepCounter": "Stap %{current} van %{total}",
-    "progress": "Onboardingstap %{step} van %{total}"
+    "progress": "Onboardingstap %{step} van %{total}",
+    "disclaimerScrollHint": "Scroll om de volledige veiligheidsmededeling te lezen. Doorgaan blijft onderaan zichtbaar."
   },
   "boot": {
     "loading": "SeaCheck laden…",
@@ -623,7 +624,7 @@
     },
     "customStartedTitle": "Het downloaden is gestart",
     "customStartedBody": "Keer terug naar Downloads om de voortgang te bekijken. Blijf wifi gebruiken tot het klaar is.",
-    "mapSessionHint": "De livekaart pauzeert terwijl SeaCheck tegels opslaat. Open Downloads om de voortgang te volgen of te annuleren.",
+    "mapSessionHint": "Blijf op Wi‑Fi en het tabblad Kaart tot het opslaan klaar is.",
     "mapSessionOpenHint": "Toont downloadvoortgang en annuleerknoppen",
     "statusSummaryActiveTitle": "Kaartpakket downloaden",
     "statusSummaryActive": "Downloaden van %{name} — %{percent}% voltooid",
@@ -633,7 +634,6 @@
     "statusSummaryCompleting": "Afwerking %{name} — grafieken opslaan voor offline gebruik",
     "statusSummaryCompletingHint": "Bijna klaar: houd de app even open.",
     "statusCompleting": "Grafieken opslaan op uw apparaat…",
-    "statusSummaryReady": "%{count} kaartpakketten offline klaar",
     "statusSummaryReadyHint": "Kaarten en zeemarkeringen werken zonder mobiel signaal in gedownloade gebieden.",
     "statusSummaryEmptyTitle": "Nog geen offline pakketten",
     "statusSummaryEmpty": "Recent bekeken grafieken worden automatisch in de cache opgeslagen, maar kunnen hiaten bevatten. Download hieronder een corridorpakket voordat u het signaal verliest.",
@@ -744,7 +744,15 @@
     },
     "basemapUpdatedTitle": "Kaartondergrond bijgewerkt",
     "basemapUpdatedBody": "SeaCheck gebruikt nu gratis OpenSeaMap-kustkaarten (zonder API-sleutel). Eerder gedownloade pakketten gebruikten de oude basis en zijn gewist. Download uw corridorpakketten opnieuw via wifi voordat u uitvaart.",
-    "basemapUpdatedDismiss": "Begrepen"
+    "basemapUpdatedDismiss": "Begrepen",
+    "liveSweepTitle": "Kaarttegels opslaan",
+    "liveSweepHint": "Tegels en betonning-overlays moeten hier zichtbaar zijn tijdens het downloaden — zo worden ze offline opgeslagen.",
+    "liveSweepA11y": "Live kaartweergave van het gebied dat offline wordt opgeslagen",
+    "liveSweepDeferred": "Het tabblad Kaart toont de live-opslagweergave. Kom hier terug om te annuleren of de voortgang te bekijken.",
+    "stayOnMapWhileSaving": "Blijf op Kaart of Downloads terwijl kaarten worden opgeslagen — anders kunnen offline tegels onvolledig zijn.",
+    "statusSummaryCancelTeardown": "Kaartsessie voor %{name} wordt afgesloten…",
+    "statusSummaryReadyOne": "1 kaartpakket offline klaar",
+    "statusSummaryReadyMany": "%{count} kaartpakketten offline klaar"
   },
   "waypoints": {
     "subtitle": "Opgeslagen markeringen en havens",

@@ -37,13 +37,31 @@ describe('downloadCoordinator map teardown', () => {
     expect(downloadCoordinator.hasExclusiveMapSession()).toBe(false);
   });
 
-  it('cancels teardown on invalidate', () => {
+  it('cancels teardown on invalidate when region never held exclusivity', () => {
+    // invalidate of a non-owner must not invent teardown.
+    downloadCoordinator.invalidate('kiel-bay');
+    expect(downloadCoordinator.getTeardownRegionId()).toBeNull();
+  });
+
+  it('keeps GL teardown exclusivity after invalidate of an active session (cancel path)', () => {
+    jest.spyOn(downloadMapConstants, 'downloadMapPostTeardownMs').mockReturnValue(40);
+
+    downloadCoordinator.tryBegin('kiel-bay');
+    downloadCoordinator.invalidate('kiel-bay');
+    expect(downloadCoordinator.getActiveRegionId()).toBeNull();
+    expect(downloadCoordinator.getTeardownRegionId()).toBe('kiel-bay');
+    expect(downloadCoordinator.tryBegin('laboe-bight')).toBeNull();
+    expect(downloadCoordinator.restoreActive('laboe-bight')).toBe(false);
+  });
+
+  it('restoreActive refuses while teardown still owns the TextureView', () => {
     jest.spyOn(downloadMapConstants, 'downloadMapPostTeardownMs').mockReturnValue(40);
 
     downloadCoordinator.tryBegin('kiel-bay');
     downloadCoordinator.beginMapTeardown('kiel-bay');
-    downloadCoordinator.invalidate('kiel-bay');
-    expect(downloadCoordinator.getTeardownRegionId()).toBeNull();
+    expect(downloadCoordinator.restoreActive('kiel-bay')).toBe(false);
+    expect(downloadCoordinator.restoreActive('laboe-bight')).toBe(false);
+    expect(downloadCoordinator.getActiveRegionId()).toBeNull();
   });
 
   it('resolves waitForDownloadMapTeardown when teardown clears before the listener attaches', async () => {
@@ -57,5 +75,18 @@ describe('downloadCoordinator map teardown', () => {
     const wait = waitForDownloadMapTeardown('kiel-bay', 200);
     downloadCoordinator.cancelMapTeardown('kiel-bay');
     await expect(wait).resolves.toBeUndefined();
+  });
+
+  it('blocks tryBegin and preflightLock while GL teardown still owns the TextureView', () => {
+    jest.spyOn(downloadMapConstants, 'downloadMapPostTeardownMs').mockReturnValue(40);
+
+    downloadCoordinator.tryBegin('kiel-bay');
+    downloadCoordinator.beginMapTeardown('kiel-bay');
+    expect(downloadCoordinator.getTeardownRegionId()).toBe('kiel-bay');
+
+    expect(downloadCoordinator.tryBegin('laboe-bight')).toBeNull();
+    expect(downloadCoordinator.preflightLock('laboe-bight')).toBe(false);
+    expect(downloadCoordinator.tryBegin('kiel-bay')).toBeNull();
+    expect(downloadCoordinator.preflightLock('kiel-bay')).toBe(false);
   });
 });

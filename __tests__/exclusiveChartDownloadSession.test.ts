@@ -22,9 +22,19 @@ describe('exclusive chart download session', () => {
     downloadCoordinator.releasePreflightLock('kiel-bay');
   });
 
+  it('becomes active in the same coordinator transition as tryBegin (no store rewrite required)', () => {
+    downloadCoordinator.preflightLock('kiel-bay');
+    expect(isDownloadMapSessionActive('kiel-bay', { state: 'downloading' }, 'kiel-bay', null)).toBe(false);
+    expect(downloadCoordinator.tryBegin('kiel-bay')).not.toBeNull();
+    expect(downloadCoordinator.isPreflightOnly()).toBe(false);
+    expect(isDownloadMapSessionActive('kiel-bay', { state: 'downloading' }, 'kiel-bay', null)).toBe(true);
+  });
+
   it('stays active during post-session map teardown', () => {
     expect(isDownloadMapSessionActive('kiel-bay', { state: 'ready' }, null, 'kiel-bay')).toBe(true);
     expect(hasExclusiveChartDownloadMap(null, 'kiel-bay')).toBe(true);
+    // Cancel clears downloading UI but teardown must keep exclusive GL ownership.
+    expect(isDownloadMapSessionActive('kiel-bay', { state: 'idle' }, null, 'kiel-bay')).toBe(true);
   });
 
   it('is inactive after the session and teardown end', () => {

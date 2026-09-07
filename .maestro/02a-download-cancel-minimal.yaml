@@ -1,0 +1,72 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - downloads
+  - honesty
+  - minimal
+---
+# Minimal cancel honesty — skips depth-overlay warm (less Maestro flake surface).
+# Explicit launch so release APK runs work without Metro/dev-client bootstrap.
+- launchApp:
+    appId: "de.softwarebydesign.seacheck"
+    clearState: true
+- runFlow: 01-onboarding-skip.yaml
+- runFlow: 01a-warm-map.yaml
+- runFlow: 01b-open-downloads.yaml
+- tapOn:
+    id: "confirm.proceed"
+    optional: true
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "downloads.download.kiel-bay"
+    direction: DOWN
+    timeout: 60000
+    visibilityPercentage: 40
+    centerElement: true
+- tapOn:
+    id: "downloads.download.kiel-bay"
+# Emulator NetInfo often reports cellular — wait for the Wi‑Fi confirm before kickoff.
+- extendedWaitUntil:
+    visible:
+      id: "confirm.proceed"
+    timeout: 15000
+    optional: true
+- tapOn:
+    id: "confirm.proceed"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "downloads\\.statusBanner\\.cancel|downloads\\.cancel\\.kiel-bay|downloads\\.globalSessionChrome\\.cancel|map\\.downloadSession"
+    timeout: 180000
+- assertNotVisible:
+    id: "downloadFailure.dismiss"
+- tapOn:
+    id: "downloads.statusBanner.cancel"
+    optional: true
+- tapOn:
+    id: "downloads.cancel.kiel-bay"
+    optional: true
+- tapOn:
+    id: "downloads.globalSessionChrome.cancel"
+    optional: true
+# Prefer label tap if id hit was swallowed by overlapping chrome (pre-fix).
+- tapOn:
+    text: "Cancel download"
+    optional: true
+# Map-tab host keeps exclusivity through GL teardown — wait until the whole
+# session pane is gone, not only the cancel button (cancel button hides early).
+- extendedWaitUntil:
+    notVisible:
+      id: "map.downloadSession"
+    timeout: 120000
+- extendedWaitUntil:
+    notVisible:
+      id: "downloads\\.statusBanner\\.active|downloads\\.statusBanner\\.cancel|downloads\\.cancel\\.kiel-bay|downloads\\.globalSessionChrome"
+    timeout: 90000
+- assertNotVisible:
+    id: "downloads.statusBanner.ready"
+- assertNotVisible:
+    id: "map.downloadSession"
+- takeScreenshot: download-cancel-minimal

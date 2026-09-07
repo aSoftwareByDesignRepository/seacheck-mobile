@@ -12,6 +12,7 @@ import { validateDownloadBounds, boundsCenter } from '../../lib/map/bounds';
 import { estimateDownloadKb, estimateTileCount, formatStorageSize } from '../../map/tileMath';
 import { t } from '../../i18n';
 import type { RootTabParamList } from '../../navigation/types';
+import { navigateToMapForChartDownload } from '../../navigation/rootNavigation';
 import { isFixStale, useLocationStore } from '../../services/locationService';
 import { useCustomDownloadStore } from '../../store/customDownloadStore';
 import { useFeedbackStore } from '../../store/feedbackStore';
@@ -105,7 +106,9 @@ export function CustomDownloadSection({
     onActionBusyChange?.('custom_quick');
     try {
       await runLockedChartDownloadPreflight(regionId, ensureChartStyle, boundsCenter(quickBounds));
-      await startCustomDownload(name, quickBounds, 10, 14, regionId);
+      const downloadPromise = startCustomDownload(name, quickBounds, 10, 14, regionId);
+      navigateToMapForChartDownload();
+      await downloadPromise;
       reportDownloadOutcome(regionId, { showInfo, showError });
     } catch (err) {
       useOfflinePackStore.getState().releasePreflightDownloadLock(regionId);

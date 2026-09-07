@@ -7,8 +7,17 @@ import { registerDownloadMapController, resetDownloadMapHostForTests } from '../
 import { resetSeamarkIndexQueueForTests } from '../src/lib/seamarks/seamarkIndexQueue';
 import { resetOfflinePackStoreForTests, useOfflinePackStore } from '../src/store/offlinePackStore';
 
+/**
+ * Session / state-machine tests for durable Ready + cancel honesty.
+ *
+ * LIMITATION (Momos I5): OfflineManager and tile sweep are mocked — these tests prove
+ * wiring (Ready only after createPack complete; cancel mid-seal ≠ Ready). They do NOT
+ * prove Android TextureView tile pixels. Device proof = Maestro cancel/kill + seal on emulator.
+ */
 jest.mock('../src/map/chartStyle', () => ({
   ensureChartStyleFile: jest.fn(async () => 'file:///mock/map/chart-style.json'),
+  offlinePackMapStyleUri: jest.fn((uri: string) => uri),
+  ensureOfflinePackStyleReachable: jest.fn(async () => {}),
 }));
 
 jest.mock('../src/lib/seamarks/seamarkIndex', () => ({
@@ -29,6 +38,15 @@ jest.mock('../src/lib/network/downloadNetwork', () => ({
 jest.mock('../src/lib/offline/warmupOfflineEngine', () => ({
   warmupOfflineEngine: jest.fn(async () => {}),
 }));
+
+jest.mock('../src/lib/offline/downloadMapHost', () => {
+  const actual = jest.requireActual('../src/lib/offline/downloadMapHost') as typeof import('../src/lib/offline/downloadMapHost');
+  return {
+    ...actual,
+    // Durable tests mock the sweep; do not burn wall-clock waiting for a real MapLibre host.
+    waitForDownloadMapReady: jest.fn(async () => true),
+  };
+});
 
 jest.mock('../src/lib/offline/tileCacheDownload', () => {
   const actual = jest.requireActual('../src/lib/offline/tileCacheDownload') as typeof import('../src/lib/offline/tileCacheDownload');
@@ -131,6 +149,9 @@ describe('offline pack durable ready + kill-mid-download', () => {
     resetSeamarkIndexQueueForTests();
     resetDownloadMapHostForTests();
     resetOfflinePackStoreForTests();
+    const { resetDownloadMapSlotForTests, setDownloadMapMapClaim } = require('../src/lib/offline/downloadMapSlot') as typeof import('../src/lib/offline/downloadMapSlot');
+    resetDownloadMapSlotForTests();
+    setDownloadMapMapClaim(true);
     await AsyncStorage.clear();
     await AsyncStorage.setItem('seacheck.chart.basemapId', 'osm-standard-v1');
     getPacks.mockReset();
@@ -139,11 +160,17 @@ describe('offline pack durable ready + kill-mid-download', () => {
     clearAmbientCache.mockClear();
     deletePack.mockClear();
     deletePack.mockResolvedValue(undefined);
-    const { markDownloadMapStyleLoaded } = require('../src/lib/offline/downloadMapHost') as {
+    const {
+      markDownloadMapStyleLoaded,
+      markDownloadMapFrameRendered,
+    } = require('../src/lib/offline/downloadMapHost') as {
       markDownloadMapStyleLoaded: (uri: string) => void;
+      markDownloadMapFrameRendered: () => void;
     };
     markDownloadMapStyleLoaded('file:///mock/map/chart-style.json');
+    markDownloadMapFrameRendered();
     registerDownloadMapController({
+      showTile: jest.fn(async () => {}),
       fitBounds: jest.fn(async () => {}),
       waitForFrame: jest.fn(async () => {}),
     });
@@ -174,6 +201,86 @@ describe('offline pack durable ready + kill-mid-download', () => {
     >;
     expect(index[KIEL.id]?.packId).toBe('mock-pack');
     expect(index[KIEL.id]?.cacheBacked).toBeUndefined();
+  });
+
+  it('calls createPack only after the tile sweep reports 100% (ordering honesty)', async () => {
+    const order: string[] = [];
+    const tileCache = require('../src/lib/offline/tileCacheDownload') as {
+      runTileCacheSweep: jest.Mock;
+    };
+    tileCache.runTileCacheSweep.mockImplementationOnce(
+      async ({
+        onProgress,
+        isCancelled,
+      }: {
+        onProgress?: (p: { completed: number; total: number; percentage: number }) => void;
+        isCancelled?: () => boolean;
+      }) => {
+        order.push('sweep-start');
+        expect(createPack).not.toHaveBeenCalled();
+        onProgress?.({ completed: 5, total: 5, percentage: 100 });
+        if (isCancelled?.()) {
+          order.push('sweep-cancelled');
+          return { completed: 0, total: 5, percentage: 0 };
+        }
+        order.push('sweep-done');
+        expect(createPack).not.toHaveBeenCalled();
+        return { completed: 5, total: 5, percentage: 100 };
+      },
+    );
+
+    const defaultCreate = createPack.getMockImplementation();
+    createPack.mockImplementation(async (...args: unknown[]) => {
+      order.push('createPack');
+      return defaultCreate
+        ? defaultCreate(...(args as Parameters<typeof defaultCreate>))
+        : undefined;
+    });
+
+    await useOfflinePackStore.getState().hydrate();
+    await useOfflinePackStore.getState().startDownload(KIEL.id);
+
+    expect(order).toEqual(['sweep-start', 'sweep-done', 'createPack']);
+    expect(useOfflinePackStore.getState().regions[KIEL.id]?.state).toBe('ready');
+  });
+
+  it('does not mark Ready while createPack only reports active (incomplete seal)', async () => {
+    createPack.mockImplementationOnce(
+      async (
+        opts: { metadata?: Record<string, unknown>; bounds?: number[] },
+        onProgress: (
+          p: { id: string; resume: () => Promise<void>; pause: () => Promise<void>; status: () => Promise<unknown> },
+          s: Record<string, unknown>,
+        ) => void,
+      ) => {
+        const pack = mockNativePack('mock-pack-active', KIEL.id, incompleteNativeStatus('mock-pack-active', 40));
+        onProgress(pack, {
+          state: 'active',
+          percentage: 40,
+          requiredResourceCount: 10,
+          completedResourceCount: 4,
+          completedResourceSize: 400,
+          completedTileCount: 3,
+          completedTileSize: 300,
+        });
+        // Never emit complete — seal must hang / stay downloading.
+        return pack;
+      },
+    );
+
+    await useOfflinePackStore.getState().hydrate();
+    const downloadPromise = useOfflinePackStore.getState().startDownload(KIEL.id);
+
+    await waitFor(() => createPack.mock.calls.length > 0, 5_000);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const mid = useOfflinePackStore.getState().regions[KIEL.id];
+    expect(mid?.state).not.toBe('ready');
+    expect(mid?.state).toBe('downloading');
+
+    downloadCoordinator.invalidate(KIEL.id);
+    await downloadPromise.catch(() => undefined);
+    expect(useOfflinePackStore.getState().regions[KIEL.id]?.state).not.toBe('ready');
   });
 
   it('keeps Ready after ambient cache clear when a durable pack exists', async () => {
@@ -343,6 +450,44 @@ describe('offline pack durable ready + kill-mid-download', () => {
     const status = useOfflinePackStore.getState().regions[KIEL.id];
     expect(status?.state).not.toBe('ready');
     expect(OfflineManager.deletePack).toHaveBeenCalledWith('pack-sealing');
+  });
+
+  it('cancel clears downloading UI before native deletePack resolves', async () => {
+    let resolveDelete: () => void = () => {};
+    const deleteHang = new Promise<void>((resolve) => {
+      resolveDelete = resolve;
+    });
+    (OfflineManager.deletePack as jest.Mock).mockImplementation(() => deleteHang);
+    getPacks.mockResolvedValue([]);
+
+    useOfflinePackStore.setState({
+      hydrated: true,
+      activeDownloadRegionId: KIEL.id,
+      regions: {
+        ...useOfflinePackStore.getState().regions,
+        [KIEL.id]: {
+          regionId: KIEL.id,
+          state: 'downloading',
+          percentage: 40,
+          packId: 'pack-native-mid',
+          error: null,
+        },
+      },
+    });
+    downloadCoordinator.restoreActive(KIEL.id);
+
+    const cancelPromise = useOfflinePackStore.getState().cancelDownload(KIEL.id);
+    // Allow optimistic set + first awaits that resolve immediately (loadIndex).
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(useOfflinePackStore.getState().regions[KIEL.id]?.state).toBe('idle');
+    expect(useOfflinePackStore.getState().activeDownloadRegionId).toBeNull();
+
+    resolveDelete();
+    await cancelPromise;
+    expect(useOfflinePackStore.getState().regions[KIEL.id]?.state).toBe('idle');
   });
 
   it('cancel after durable seal already complete keeps Ready', async () => {

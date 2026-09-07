@@ -1,5 +1,6 @@
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 
+import { rootNavigationRef } from '../navigation/rootNavigation';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTheme } from '../theme/ThemeContext';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
@@ -20,7 +21,7 @@ export function RootNavigator() {
       {!settingsHydrated ? null : !onboardingCompleted ? (
         <OnboardingScreen />
       ) : (
-        <NavigationContainer theme={navTheme}>
+        <NavigationContainer ref={rootNavigationRef} theme={navTheme}>
           <MainShell />
         </NavigationContainer>
       )}

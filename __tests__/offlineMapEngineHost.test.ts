@@ -147,6 +147,7 @@ describe('offlineMapEngineHost', () => {
     markDownloadMapStyleLoaded(styleUri);
     markDownloadMapFrameRendered();
     registerDownloadMapController({
+      showTile: jest.fn(async () => {}),
       fitBounds: jest.fn(async () => {}),
       waitForFrame: jest.fn(async () => {}),
     });

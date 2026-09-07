@@ -1,5 +1,3 @@
-import { Platform } from 'react-native';
-
 import { assertChartDownloadNetworkReady } from '../network/downloadNetwork';
 import type { LonLatPoint } from '../map/bounds';
 import { resolveChartTileProbeCenter } from '../network/chartTileProbeCenter';
@@ -20,8 +18,11 @@ export async function prepareChartDownload(
   await assertChartDownloadNetworkReady(probeCenter);
   const chartStyleUri = await ensureChartStyle();
   await yieldToUi();
+  // Never require the hidden OfflineMapEngineHost to parse style here.
+  // Exclusive downloads mount DownloadMapEngine on the Map tab; requiring the
+  // hidden host competes for Android's single GL surface and can hang preflight.
   await warmupOfflineEngine(chartStyleUri, {
-    requireStyleLoaded: Platform.OS === 'android',
+    requireStyleLoaded: false,
     requireFileSource: true,
   });
   return chartStyleUri;

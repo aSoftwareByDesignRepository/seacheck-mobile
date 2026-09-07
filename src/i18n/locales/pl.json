@@ -51,7 +51,8 @@
     "stepBattery": "Bateria",
     "stepFinish": "Gotowe",
     "stepCounter": "Krok %{current} z %{total}",
-    "progress": "Krok wprowadzenia %{step} z %{total}"
+    "progress": "Krok wprowadzenia %{step} z %{total}",
+    "disclaimerScrollHint": "Przewiń, aby przeczytać całą informację o bezpieczeństwie. Kontynuuj pozostaje widoczne na dole."
   },
   "boot": {
     "loading": "Ładowanie SeaCheck…",
@@ -623,7 +624,7 @@
     },
     "customStartedTitle": "Pobieranie rozpoczęte",
     "customStartedBody": "Wróć do Pobrane, aby zobaczyć postęp. Pozostań w Wi-Fi, aż do zakończenia.",
-    "mapSessionHint": "Żywa mapa jest wstrzymana, gdy SeaCheck zapisuje kafelki. Otwórz Pobieranie, aby śledzić postęp lub anulować.",
+    "mapSessionHint": "Pozostań w Wi‑Fi i na karcie Mapa, aż zapis się zakończy.",
     "mapSessionOpenHint": "Pokazuje postęp pobierania i przyciski anulowania",
     "statusSummaryActiveTitle": "Pobieram pakiet wykresów",
     "statusSummaryActive": "Pobieranie %{name} — %{percent}% zostało ukończone",
@@ -633,7 +634,6 @@
     "statusSummaryCompleting": "Zakończenie %{name} — zapisywanie wykresów do użytku offline",
     "statusSummaryCompletingHint": "Prawie gotowe — pozostaw aplikację otwartą na chwilę.",
     "statusCompleting": "Zapisywanie wykresów na urządzeniu…",
-    "statusSummaryReady": "%{count} pakiety wykresów gotowe w trybie offline",
     "statusSummaryReadyHint": "W pobranych obszarach mapy i znaczniki działają bez sygnału komórkowego.",
     "statusSummaryEmptyTitle": "Nie ma jeszcze pakietów offline",
     "statusSummaryEmpty": "Ostatnio oglądane wykresy są automatycznie buforowane, ale mogą zawierać luki. Pobierz pakiet korytarzowy poniżej, zanim stracisz sygnał.",
@@ -744,7 +744,15 @@
     },
     "basemapUpdatedTitle": "Zaktualizowano mapę bazową",
     "basemapUpdatedBody": "SeaCheck korzysta teraz z bezpłatnych map wybrzeża OpenSeaMap (bez klucza API). Wcześniej pobrane pakiety używały starej bazy i zostały usunięte. Pobierz ponownie pakiety korytarzy przez Wi‑Fi przed wyjściem w morze.",
-    "basemapUpdatedDismiss": "Rozumiem"
+    "basemapUpdatedDismiss": "Rozumiem",
+    "liveSweepTitle": "Zapisywanie kafelków mapy",
+    "liveSweepHint": "Kafelki i nakładki znaków nawigacyjnych muszą tu być widoczne podczas pobierania — tak trafiają do pamięci offline.",
+    "liveSweepA11y": "Podgląd na żywo obszaru zapisywanego do trybu offline",
+    "liveSweepDeferred": "Karta Mapa pokazuje widok zapisu na żywo. Wróć tutaj w dowolnej chwili, aby anulować lub sprawdzić postęp.",
+    "stayOnMapWhileSaving": "Pozostań na Mapie lub Pobieraniu podczas zapisu map — w przeciwnym razie kafelki offline mogą być niekompletne.",
+    "statusSummaryCancelTeardown": "Zamykanie sesji mapy dla %{name}…",
+    "statusSummaryReadyOne": "1 pakiet map gotowy offline",
+    "statusSummaryReadyMany": "%{count} pakiety map gotowe offline"
   },
   "waypoints": {
     "subtitle": "Zapisane znaki i porty",

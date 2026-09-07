@@ -57,6 +57,8 @@ class DownloadCoordinator {
    * Keeps MapLibre network enabled on Android while preflight runs.
    */
   preflightLock(regionId: string): boolean {
+    // Never start preflight while a prior session still owns the TextureView for teardown.
+    if (this.teardownRegionId != null) return false;
     if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;
     if (this.activeRegionId === regionId && !this.preflightOnly) return false;
     this.activeRegionId = regionId;
@@ -76,6 +78,8 @@ class DownloadCoordinator {
 
   /** Returns session token when download may start; null when another region holds the lock. */
   tryBegin(regionId: string): number | null {
+    // Block all starts until GL teardown finishes — dual TextureView is a hard crash class.
+    if (this.teardownRegionId != null) return null;
     if (this.activeRegionId != null && this.activeRegionId !== regionId) return null;
     if (this.activeRegionId === regionId && !this.preflightOnly) return null;
     this.activeRegionId = regionId;
@@ -138,8 +142,11 @@ class DownloadCoordinator {
 
   /** Re-lock after app restart when a native pack is still downloading. */
   restoreActive(regionId: string): boolean {
+    // Never remount a second GL owner while teardown still holds the TextureView.
+    if (this.teardownRegionId != null) return false;
     if (this.activeRegionId != null && this.activeRegionId !== regionId) return false;
     this.activeRegionId = regionId;
+    this.preflightOnly = false;
     if (!this.sessions.has(regionId)) this.sessions.set(regionId, 1);
     ensureMapLibreNetworkForDownload();
     this.notifyActivity();
@@ -150,16 +157,25 @@ class DownloadCoordinator {
     return this.sessions.get(regionId) ?? 0;
   }
 
-  /** Bump session so in-flight native callbacks are ignored (cancel / delete). */
+  /**
+   * Bump session so in-flight native callbacks are ignored (cancel / delete / crash recovery).
+   * Clears the active lock but keeps GL exclusivity via map teardown — cancel must not
+   * immediately free NavigationMap / a second DownloadMapEngine (dual TextureView).
+   */
   invalidate(regionId: string): void {
     const next = (this.sessions.get(regionId) ?? 0) + 1;
     this.sessions.set(regionId, next);
+    const hadExclusive =
+      this.activeRegionId === regionId || this.teardownRegionId === regionId;
     if (this.activeRegionId === regionId) {
       this.activeRegionId = null;
       this.preflightOnly = false;
     }
-    this.cancelMapTeardown(regionId);
-    this.notifyActivity();
+    if (hadExclusive) {
+      this.beginMapTeardown(regionId);
+    } else {
+      this.notifyActivity();
+    }
   }
 
   isStale(regionId: string, token: number): boolean {

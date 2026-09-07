@@ -192,19 +192,27 @@ export function OnboardingScreen() {
         <OnboardingStepIndicator current={step} />
 
         {step === 'disclaimer' ? (
-          <ScrollView
-            style={styles.disclaimerScroll}
-            contentContainerStyle={styles.disclaimerScrollContent}
-            showsVerticalScrollIndicator
-          >
-            <Card>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('onboarding.disclaimerTitle')}</Text>
-              <NavigationDisclaimer testIDPrefix="onboarding.disclaimer" />
-              <View style={{ marginTop: spacing.md }}>
-                <Button label={t('onboarding.acceptDisclaimer')} onPress={() => void acceptDisclaimer()} testID="onboarding.disclaimer.continue" />
-              </View>
-            </Card>
-          </ScrollView>
+          <View style={styles.disclaimerPane}>
+            <ScrollView
+              style={styles.disclaimerScroll}
+              contentContainerStyle={styles.disclaimerScrollContent}
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+              accessibilityHint={t('onboarding.disclaimerScrollHint')}
+            >
+              <Card>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('onboarding.disclaimerTitle')}</Text>
+                <NavigationDisclaimer testIDPrefix="onboarding.disclaimer" />
+              </Card>
+            </ScrollView>
+            <View style={[styles.stickyCta, { minHeight: minTouch, paddingTop: spacing.sm }]}>
+              <Button
+                label={t('onboarding.acceptDisclaimer')}
+                onPress={() => void acceptDisclaimer()}
+                testID="onboarding.disclaimer.continue"
+              />
+            </View>
+          </View>
         ) : null}
 
         {step === 'location' ? (
@@ -300,13 +308,15 @@ export function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  content: { flex: 1, justifyContent: 'center' },
+  content: { flex: 1, justifyContent: 'flex-start' },
   title: { fontSize: 28, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
   body: { fontSize: 15, lineHeight: 22, marginBottom: 16 },
   status: { fontSize: 14, marginBottom: 8, fontWeight: '600' },
   hint: { fontSize: 13, lineHeight: 18, textAlign: 'center' },
   actions: { gap: 12 },
-  disclaimerScroll: { flexGrow: 0, maxHeight: '72%' },
-  disclaimerScrollContent: { paddingBottom: 8 },
+  disclaimerPane: { flex: 1, minHeight: 0 },
+  disclaimerScroll: { flex: 1, minHeight: 0 },
+  disclaimerScrollContent: { paddingBottom: 8, flexGrow: 1 },
+  stickyCta: { width: '100%' },
 });

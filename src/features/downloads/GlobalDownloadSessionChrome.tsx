@@ -83,8 +83,8 @@ export function GlobalDownloadSessionChrome() {
           {
             marginHorizontal: spacing.md,
             marginBottom: spacing.sm,
-            backgroundColor: completing ? colors.successBg : colors.warningBg,
-            borderColor: completing ? colors.success : colors.warningBorder,
+            backgroundColor: completing ? colors.primary + '12' : colors.warningBg,
+            borderColor: completing ? colors.primary : colors.warningBorder,
             gap: spacing.sm,
           },
         ]}
@@ -93,7 +93,7 @@ export function GlobalDownloadSessionChrome() {
         accessibilityLiveRegion="polite"
       >
         <Text
-          style={[styles.title, { color: completing ? colors.success : colors.warningText }]}
+          style={[styles.title, { color: completing ? colors.primary : colors.warningText }]}
           accessibilityRole="header"
         >
           {title}
@@ -109,6 +109,7 @@ export function GlobalDownloadSessionChrome() {
               error: null,
               downloadInitializing: status?.downloadInitializing || initializing,
             })}
+            showLabel={false}
             testID="downloads.globalSessionChrome.progress"
           />
         ) : null}
@@ -134,22 +135,21 @@ export function GlobalDownloadSessionChrome() {
 
 const styles = StyleSheet.create({
   host: {
-    ...StyleSheet.absoluteFill,
+    // Top-only host — never absoluteFill. Avoid elevation: it creates a hardware
+    // layer that can prevent Android TextureViews (download map) from painting.
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     zIndex: 200,
-    elevation: 200,
-    justifyContent: 'flex-start',
+    elevation: 0,
   },
   banner: {
     borderWidth: 1,
     borderRadius: 16,
     padding: 16,
-    // Keep banner readable over any native map surface that still peeks through.
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
   },
   title: { fontSize: 16, fontWeight: '800', lineHeight: 22 },
-  body: { fontSize: 15, fontWeight: '600', lineHeight: 22 },
-  hint: { fontSize: 14, lineHeight: 20 },
+  body: { fontSize: 15, fontWeight: '600', lineHeight: 22, flexShrink: 1 },
+  hint: { fontSize: 14, lineHeight: 20, flexShrink: 1 },
 });

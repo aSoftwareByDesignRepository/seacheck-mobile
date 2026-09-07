@@ -59,8 +59,12 @@ export function isDownloadMapSessionActive(
   // minimap + hidden engine alive so chart style and tiles can prime (July behaviour).
   if (downloadCoordinator.isPreflightOnly()) return false;
   const ownsMap = activeDownloadRegionId === regionId || downloadMapTeardownRegionId === regionId;
+  if (!ownsMap) return false;
+  // Cancel clears downloading UI immediately but GL teardown must keep the TextureView
+  // until the coordinator timer ends — otherwise Android remounts a second map.
+  if (downloadMapTeardownRegionId === regionId) return true;
   // Completing keeps state=downloading until Ready flips after teardown — both must hold the map.
-  return ownsMap && (status?.state === 'downloading' || status?.state === 'ready');
+  return status?.state === 'downloading' || status?.state === 'ready';
 }
 
 /** True when any chart download map owns the sole GL context (including post-session teardown). */

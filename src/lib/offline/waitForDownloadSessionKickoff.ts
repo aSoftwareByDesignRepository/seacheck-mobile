@@ -1,7 +1,8 @@
 import { downloadCoordinator, subscribeDownloadCoordinatorActivity } from './downloadCoordinator';
 import { useOfflinePackStore } from '../../store/offlinePackStore';
 
-const DEFAULT_TIMEOUT_MS = 45_000;
+const DEFAULT_TIMEOUT_MS = process.env.NODE_ENV === 'test' ? 45_000 : 90_000;
+
 
 function isSessionKickedOff(regionId: string): boolean {
   if (downloadCoordinator.isPreflightOnly()) return false;
@@ -65,7 +66,12 @@ export async function waitForDownloadSessionKickoff(
       else if (hasTerminalFailure(regionId)) finish('finished');
     };
 
-    const unsubscribe = subscribeDownloadCoordinatorActivity(check);
+    const unsubscribeCoordinator = subscribeDownloadCoordinatorActivity(check);
+    const unsubscribeStore = useOfflinePackStore.subscribe(check);
+    const unsubscribe = () => {
+      unsubscribeCoordinator();
+      unsubscribeStore();
+    };
 
     void downloadPromise.then(
       () => finish('finished'),

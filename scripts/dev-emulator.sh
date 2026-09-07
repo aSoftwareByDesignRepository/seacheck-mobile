@@ -79,9 +79,13 @@ require_cmd() {
 
 setup_android_path() {
   export ANDROID_HOME
-  export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
+  # Guard MUST win over platform-tools — never put SDK adb first.
+  local repo_scripts
+  repo_scripts="$(cd "$APP_ROOT/../.." && pwd)/.cursor/scripts"
+  export PATH="$repo_scripts:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
   [[ -x "$ANDROID_HOME/emulator/emulator" ]] || die "Android emulator not found at $ANDROID_HOME/emulator/emulator"
-  [[ -x "$ANDROID_HOME/platform-tools/adb" ]] || die "adb not found at $ANDROID_HOME/platform-tools/adb"
+  [[ -x "$ANDROID_HOME/platform-tools/adb" ]] || die "SDK adb not found at $ANDROID_HOME/platform-tools/adb"
+  [[ -x "$repo_scripts/adb" ]] || die "adb guard missing at $repo_scripts/adb"
 }
 
 ensure_node_deps() {
@@ -98,16 +102,17 @@ maybe_preflight() {
 }
 
 adb_device_ready() {
-  "$ANDROID_HOME/platform-tools/adb" devices 2>/dev/null | awk 'NR>1 && $2=="device" { found=1 } END { exit !found }'
+  # PATH adb only (guard after acquire) — never absolute platform-tools/adb.
+  adb devices 2>/dev/null | awk 'NR>1 && $2=="device" { found=1 } END { exit !found }'
 }
 
 wait_for_emulator_boot() {
   log "Waiting for emulator to finish booting"
-  "$ANDROID_HOME/platform-tools/adb" wait-for-device
+  adb wait-for-device
   local attempt=0
   while [[ $attempt -lt 120 ]]; do
     local boot
-    boot="$("$ANDROID_HOME/platform-tools/adb" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
+    boot="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
     if [[ "$boot" == "1" ]]; then
       return 0
     fi

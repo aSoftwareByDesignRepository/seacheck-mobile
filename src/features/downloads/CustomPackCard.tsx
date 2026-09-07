@@ -10,6 +10,7 @@ import { DownloadProgressBar } from './DownloadProgressBar';
 import { downloadsStyles } from './downloadsStyles';
 import {
   isPackDownloadActive,
+  packHasDownloadFailure,
   packStatusBadgeVariant,
   packStatusLabel,
   seamarkStatusLabel,
@@ -60,7 +61,11 @@ export function CustomPackCard({
   return (
     <View
       style={containerStyle}
-      testID={`downloads.custom.${status.regionId}`}
+      testID={
+        status.state === 'ready' && !status.cacheBacked && !packHasDownloadFailure(status)
+          ? `downloads.custom.${status.regionId}.durable`
+          : `downloads.custom.${status.regionId}`
+      }
       accessibilityLabel={a11yParts.join('. ')}
     >
       <View style={downloadsStyles.titleRow}>

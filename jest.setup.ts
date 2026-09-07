@@ -127,6 +127,7 @@ jest.mock('@maplibre/maplibre-react-native', () => {
       invalidateAmbientCache: jest.fn(async () => {}),
       deletePack: jest.fn(async () => {}),
       createPack: jest.fn(async (opts: { metadata?: Record<string, unknown>; bounds?: number[] }, onProgress: (p: { id: string; resume: () => Promise<void>; pause: () => Promise<void>; status: () => Promise<unknown> }, s: Record<string, unknown>) => void) => {
+        // Default mock: active progress THEN complete. Instant-complete alone green-washes seal honesty.
         const pack = {
           id: 'mock-pack',
           metadata: { ...(opts?.metadata ?? {}) },
@@ -144,6 +145,16 @@ jest.mock('@maplibre/maplibre-react-native', () => {
             requiredResourceCount: 10,
           }),
         };
+        onProgress(pack, {
+          state: 'active',
+          percentage: 25,
+          requiredResourceCount: 10,
+          completedResourceCount: 2,
+          completedResourceSize: 200,
+          completedTileCount: 2,
+          completedTileSize: 160,
+        });
+        await Promise.resolve();
         onProgress(pack, {
           state: 'complete',
           percentage: 100,

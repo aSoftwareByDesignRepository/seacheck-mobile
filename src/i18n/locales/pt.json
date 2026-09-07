@@ -51,7 +51,8 @@
     "stepBattery": "Bateria",
     "stepFinish": "Pronto",
     "stepCounter": "Passo %{current} do %{total}",
-    "progress": "Passo de integração %{step} de %{total}"
+    "progress": "Passo de integração %{step} de %{total}",
+    "disclaimerScrollHint": "Deslize para ler o aviso de segurança completo. Continuar permanece visível em baixo."
   },
   "boot": {
     "loading": "Carregando SeaCheck...",
@@ -623,7 +624,7 @@
     },
     "customStartedTitle": "Transferência iniciada",
     "customStartedBody": "Voltar aos Downloads para ver o progresso. Fique no Wi-Fi até estar completo.",
-    "mapSessionHint": "O mapa ao vivo pausa enquanto o SeaCheck grava mosaicos. Abra Transferências para ver o progresso ou cancelar.",
+    "mapSessionHint": "Mantenha o Wi‑Fi e o separador Mapa até terminar de guardar.",
     "mapSessionOpenHint": "Mostra o progresso da transferência e controlos de cancelamento",
     "statusSummaryActiveTitle": "Baixando pacote de gráficos",
     "statusSummaryActive": "Baixando %{name} — %{percent}% completo",
@@ -633,7 +634,6 @@
     "statusSummaryCompleting": "Terminando o %{name} — salvando gráficos para uso offline",
     "statusSummaryCompletingHint": "Quase pronto — mantenha o aplicativo aberto por um momento.",
     "statusCompleting": "Salvando gráficos para o seu dispositivo...",
-    "statusSummaryReady": "Pacotes de gráficos %{count} prontos offline",
     "statusSummaryReadyHint": "Gráficos e marcas de mar funcionam sem sinal móvel em áreas baixadas.",
     "statusSummaryEmptyTitle": "Nenhum pacote offline ainda",
     "statusSummaryEmpty": "Os gráficos recentemente visualizados são armazenados em cache automaticamente, mas podem ter lacunas. Baixe um pacote de corredor abaixo antes de perder o sinal.",
@@ -744,7 +744,15 @@
     },
     "basemapUpdatedTitle": "Mapa base atualizado",
     "basemapUpdatedBody": "O SeaCheck agora usa cartas costeiras gratuitas da OpenSeaMap (sem chave de API). Pacotes descarregados antes usavam a base antiga e foram limpos. Descarregue novamente os pacotes de corredor em Wi‑Fi antes de sair para o mar.",
-    "basemapUpdatedDismiss": "Entendi"
+    "basemapUpdatedDismiss": "Entendi",
+    "liveSweepTitle": "A guardar mosaicos da carta",
+    "liveSweepHint": "Os mosaicos e overlays de marcas náuticas devem aparecer aqui durante a transferência — é assim que ficam guardados offline.",
+    "liveSweepA11y": "Vista em direto da área a guardar para uso offline",
+    "liveSweepDeferred": "O separador Mapa mostra a vista de gravação em direto. Volte aqui a qualquer momento para cancelar ou ver o progresso.",
+    "stayOnMapWhileSaving": "Fique em Mapa ou Transferências enquanto as cartas são guardadas — caso contrário as mosaicos offline podem ficar incompletos.",
+    "statusSummaryCancelTeardown": "A fechar a sessão de cartas de %{name}…",
+    "statusSummaryReadyOne": "1 pacote de cartas pronto offline",
+    "statusSummaryReadyMany": "%{count} pacotes de cartas prontos offline"
   },
   "waypoints": {
     "subtitle": "Marcas e portos salvos",

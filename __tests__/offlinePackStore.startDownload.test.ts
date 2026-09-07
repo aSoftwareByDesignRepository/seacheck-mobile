@@ -5,11 +5,14 @@ import { downloadCoordinator } from '../src/lib/offline/downloadCoordinator';
 import { resetSeamarkIndexQueueForTests } from '../src/lib/seamarks/seamarkIndexQueue';
 import { resetDownloadMapHostForTests, registerDownloadMapController } from '../src/lib/offline/downloadMapHost';
 import * as downloadMapHost from '../src/lib/offline/downloadMapHost';
+import { resetDownloadMapSlotForTests, setDownloadMapMapClaim } from '../src/lib/offline/downloadMapSlot';
 import { resetOfflinePackStoreForTests, useOfflinePackStore } from '../src/store/offlinePackStore';
 import { OfflineManager } from '@maplibre/maplibre-react-native';
 
 jest.mock('../src/map/chartStyle', () => ({
   ensureChartStyleFile: jest.fn(async () => 'file:///mock/map/chart-style.json'),
+  offlinePackMapStyleUri: jest.fn((uri: string) => uri),
+  ensureOfflinePackStyleReachable: jest.fn(async () => {}),
 }));
 
 jest.mock('../src/lib/seamarks/seamarkIndex', () => ({
@@ -39,6 +42,8 @@ describe('offlinePackStore.startDownload (sweep + durable seal)', () => {
   beforeEach(async () => {
     resetSeamarkIndexQueueForTests();
     resetDownloadMapHostForTests();
+    resetDownloadMapSlotForTests();
+    setDownloadMapMapClaim(true);
     resetOfflinePackStoreForTests();
     await AsyncStorage.clear();
     await AsyncStorage.setItem('seacheck.chart.basemapId', 'osm-standard-v1');
@@ -52,6 +57,7 @@ describe('offlinePackStore.startDownload (sweep + durable seal)', () => {
 
   it('marks a region ready after tile sweep seals a durable OfflineManager pack', async () => {
     const controller = {
+      showTile: jest.fn(async () => {}),
       fitBounds: jest.fn(async () => {}),
       waitForFrame: jest.fn(async () => {}),
     };

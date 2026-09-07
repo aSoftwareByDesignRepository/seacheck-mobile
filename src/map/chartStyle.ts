@@ -1,4 +1,5 @@
 import type { StyleSpecification } from '@maplibre/maplibre-react-native';
+import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { MAP_ATTRIBUTION } from './constants';
@@ -10,6 +11,14 @@ import {
 } from '../lib/settings/chartBaseStyle';
 
 export const CHART_STYLE_FILENAME = 'chart-style.json';
+
+/**
+ * Android OfflineManager.createPack feeds mapStyle through the HTTP stack.
+ * `file://` / `asset://` then fail with "Unable to parse resourceUrl" and the pack
+ * stays at 0% forever. ChartStyleLocalServer serves the bundled style on loopback.
+ * MapView keeps using the documents `file://` copy from ensureChartStyleFile().
+ */
+export const ANDROID_OFFLINE_PACK_STYLE_URI = 'http://127.0.0.1:18765/chart-style.json';
 
 export type ChartLayerVisibility = {
   base: boolean;
@@ -83,7 +92,56 @@ export function toMapLibreStyleUri(uri: string): string {
   return uri;
 }
 
-/** Writes chart style JSON to app documents; required for OfflineManager + offline Map. */
+/**
+ * Style URI for OfflineManager.createPack / recreate.
+ * Android must not use documents file:// (HTTP parser rejects it).
+ */
+export function offlinePackMapStyleUri(documentStyleUri: string): string {
+  if (Platform.OS === 'android') {
+    return ANDROID_OFFLINE_PACK_STYLE_URI;
+  }
+  return documentStyleUri;
+}
+
+/**
+ * Fail fast if the Android loopback chart-style server is down before createPack.
+ * iOS / non-HTTP styles are a no-op.
+ */
+export async function ensureOfflinePackStyleReachable(documentStyleUri: string): Promise<void> {
+  const packStyleUri = offlinePackMapStyleUri(documentStyleUri);
+  if (!/^https?:\/\//i.test(packStyleUri)) return;
+
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer =
+    controller != null
+      ? setTimeout(() => {
+          controller.abort();
+        }, 3_000)
+      : null;
+  try {
+    const response = await fetch(packStyleUri, {
+      method: 'GET',
+      signal: controller?.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`OFFLINE_STYLE_UNREACHABLE:${response.status}`);
+    }
+    // Ensure body is actually JSON-ish (not an empty proxy error page).
+    const text = await response.text();
+    if (!text.includes('"version"') || !text.includes('osm-base')) {
+      throw new Error('OFFLINE_STYLE_INVALID');
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('OFFLINE_STYLE_UNREACHABLE:timeout');
+    }
+    throw error instanceof Error ? error : new Error('OFFLINE_STYLE_UNREACHABLE');
+  } finally {
+    if (timer != null) clearTimeout(timer);
+  }
+}
+
+/** Writes chart style JSON to app documents; required for MapView + iOS OfflineManager. */
 export async function ensureChartStyleFile(): Promise<string> {
   const dir = chartStyleDirectory();
   const fsPath = chartStyleFilesystemPath();

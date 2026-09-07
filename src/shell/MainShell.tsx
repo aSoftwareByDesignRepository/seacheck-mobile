@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { GlobalDownloadSessionChrome } from '../features/downloads/GlobalDownloadSessionChrome';
@@ -15,18 +15,23 @@ import { useDownloadKeepAwake } from '../hooks/useDownloadKeepAwake';
 import { useAppLocationWatch } from '../hooks/useAppLocationWatch';
 import { useMaritimeMonitors } from '../hooks/useMaritimeMonitors';
 import { useForegroundTrackRecording } from '../hooks/useForegroundTrackRecording';
+import { useExclusiveChartDownloadSession } from '../hooks/useExclusiveChartDownloadSession';
 import { useFormFactor } from '../hooks/useFormFactor';
 import { t } from '../i18n';
+import { navigateToMapForChartDownload } from '../navigation/rootNavigation';
 import type { RootTabParamList } from '../navigation/types';
 import { DownloadsScreen } from '../screens/DownloadsScreen';
 import { MapScreen } from '../screens/MapScreen';
 import { PassageStack } from '../navigation/PassageStack';
 import { SettingsStack } from '../navigation/SettingsStack';
 import { TracksScreen } from '../screens/TracksScreen';
+import { useFeedbackStore } from '../store/feedbackStore';
 import { useNavigationStore } from '../store/navigationStore';
 import { useTheme } from '../theme/ThemeContext';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
+
+const DOWNLOAD_SAFE_TABS = new Set<keyof RootTabParamList>(['Map', 'Downloads']);
 
 /**
  * Active root tab — tracked via Tab.Navigator `screenListeners.state`.
@@ -41,13 +46,25 @@ export function MainShell() {
   useDownloadFailureAlerts();
   useMaritimeMonitors();
   useForegroundTrackRecording();
+  const exclusiveChartDownload = useExclusiveChartDownloadSession();
+  const showInfo = useFeedbackStore((s) => s.showInfo);
   const { formFactor, isLandscape } = useFormFactor();
   const screenLocked = useNavigationStore((s) => s.screenLocked);
   const setScreenLocked = useNavigationStore((s) => s.setScreenLocked);
   const { useRail, tabBarPosition } = resolveShellTabBarLayout(formFactor, isLandscape);
   const [activeTab, setActiveTab] = useState<keyof RootTabParamList>('Map');
-  /** Global cancel must stay reachable on every tab (including Downloads). */
-  const showGlobalDownloadChrome = Boolean(activeTab);
+  /**
+   * Global cancel on non-Map tabs. On Map, VisibleDownloadMapPane owns cancel —
+   * an absolute overlay here can block Android TextureView paint (DOWNLOAD_MAP_NOT_READY).
+   */
+  const showGlobalDownloadChrome = exclusiveChartDownload && activeTab !== 'Map';
+
+  // Keep the sticky download GL surface on the Map tab (Android TextureView must paint).
+  useEffect(() => {
+    if (!exclusiveChartDownload) return;
+    if (activeTab === 'Map') return;
+    navigateToMapForChartDownload();
+  }, [exclusiveChartDownload, activeTab]);
 
   const onTabNavigatorState = useCallback(
     (e: { data: { state?: { index: number; routes: { name: string }[] } } }) => {
@@ -59,15 +76,30 @@ export function MainShell() {
     [],
   );
 
+  const guardDownloadTabPress = useCallback(
+    (tab: keyof RootTabParamList) =>
+      ({
+        tabPress: (e: { preventDefault: () => void }) => {
+          if (!exclusiveChartDownload) return;
+          if (DOWNLOAD_SAFE_TABS.has(tab)) return;
+          e.preventDefault();
+          showInfo(t('downloads.stayOnMapWhileSaving'));
+        },
+      }) as const,
+    [exclusiveChartDownload, showInfo],
+  );
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <ScreenLockCoordinator />
       <Tab.Navigator
         tabBar={(props) => <AdaptiveTabBar {...props} variant={useRail ? 'rail' : 'bottom'} />}
+        detachInactiveScreens={false}
         screenListeners={{ state: onTabNavigatorState }}
         screenOptions={{
           headerShown: false,
+          freezeOnBlur: false,
           sceneStyle: [styles.scene, { backgroundColor: colors.background }],
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
@@ -90,6 +122,7 @@ export function MainShell() {
           name="Map"
           component={MapScreen}
           options={{ title: t('tabs.map'), tabBarButtonTestID: 'tab.map' }}
+          listeners={guardDownloadTabPress('Map')}
         />
         <Tab.Screen
           name="Passage"
@@ -97,6 +130,11 @@ export function MainShell() {
           options={{ title: t('tabs.passage'), tabBarButtonTestID: 'tab.passage' }}
           listeners={({ navigation }) => ({
             tabPress: (e) => {
+              if (exclusiveChartDownload) {
+                e.preventDefault();
+                showInfo(t('downloads.stayOnMapWhileSaving'));
+                return;
+              }
               // Always land on the passage overview list, even when a detail page
               // is still on the nested stack from a previous visit or map hand-off.
               e.preventDefault();
@@ -104,9 +142,24 @@ export function MainShell() {
             },
           })}
         />
-        <Tab.Screen name="Tracks" component={TracksScreen} options={{ title: t('tabs.tracks'), tabBarButtonTestID: 'tab.tracks' }} />
-        <Tab.Screen name="Downloads" component={DownloadsScreen} options={{ title: t('tabs.downloads'), tabBarButtonTestID: 'tab.downloads' }} />
-        <Tab.Screen name="Settings" component={SettingsStack} options={{ title: t('tabs.settings'), tabBarButtonTestID: 'tab.settings' }} />
+        <Tab.Screen
+          name="Tracks"
+          component={TracksScreen}
+          options={{ title: t('tabs.tracks'), tabBarButtonTestID: 'tab.tracks' }}
+          listeners={guardDownloadTabPress('Tracks')}
+        />
+        <Tab.Screen
+          name="Downloads"
+          component={DownloadsScreen}
+          options={{ title: t('tabs.downloads'), tabBarButtonTestID: 'tab.downloads' }}
+          listeners={guardDownloadTabPress('Downloads')}
+        />
+        <Tab.Screen
+          name="Settings"
+          component={SettingsStack}
+          options={{ title: t('tabs.settings'), tabBarButtonTestID: 'tab.settings' }}
+          listeners={guardDownloadTabPress('Settings')}
+        />
       </Tab.Navigator>
       <TabOverflowMenu />
       {showGlobalDownloadChrome ? <GlobalDownloadSessionChrome /> : null}

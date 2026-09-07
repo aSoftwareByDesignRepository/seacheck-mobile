@@ -51,7 +51,8 @@
     "stepBattery": "Batterie",
     "stepFinish": "Prêt",
     "stepCounter": "Étape %{current} de %{total}",
-    "progress": "Étape d'intégration %{step} de %{total}"
+    "progress": "Étape d'intégration %{step} de %{total}",
+    "disclaimerScrollHint": "Faites défiler pour lire l’avis de sécurité complet. Continuer reste visible en bas."
   },
   "boot": {
     "loading": "Chargement de SeaCheck…",
@@ -623,7 +624,7 @@
     },
     "customStartedTitle": "Téléchargement commencé",
     "customStartedBody": "Revenez aux téléchargements pour suivre la progression. Restez connecté au Wi‑Fi jusqu’à la fin.",
-    "mapSessionHint": "La carte live se met en pause pendant que SeaCheck enregistre les tuiles. Ouvrez Téléchargements pour suivre la progression ou annuler.",
+    "mapSessionHint": "Restez en Wi‑Fi et sur l’onglet Carte jusqu’à la fin de l’enregistrement.",
     "mapSessionOpenHint": "Affiche la progression du téléchargement et les commandes d’annulation",
     "statusSummaryActiveTitle": "Téléchargement du pack de cartes",
     "statusSummaryActive": "Téléchargement de %{name} — %{percent}% terminé",
@@ -633,7 +634,6 @@
     "statusSummaryCompleting": "Fin de %{name} – enregistrement des graphiques pour une utilisation hors ligne",
     "statusSummaryCompletingHint": "Presque terminé : laissez l'application ouverte pendant un moment.",
     "statusCompleting": "Enregistrer des graphiques sur votre appareil…",
-    "statusSummaryReady": "Packs de cartes %{count} prêts hors ligne",
     "statusSummaryReadyHint": "Les cartes et les marins fonctionnent sans signal mobile dans les zones téléchargées.",
     "statusSummaryEmptyTitle": "Pas encore de packs hors ligne",
     "statusSummaryEmpty": "Les graphiques récemment consultés sont automatiquement mis en cache mais peuvent présenter des lacunes. Téléchargez un pack de couloirs ci-dessous avant de perdre le signal.",
@@ -744,7 +744,15 @@
     },
     "basemapUpdatedTitle": "Fond de carte mis à jour",
     "basemapUpdatedBody": "SeaCheck utilise désormais les cartes côtières gratuites OpenSeaMap (sans clé API). Les packs déjà téléchargés utilisaient l’ancien fond et ont été effacés. Téléchargez à nouveau vos packs de corridor en Wi‑Fi avant de partir en mer.",
-    "basemapUpdatedDismiss": "Compris"
+    "basemapUpdatedDismiss": "Compris",
+    "liveSweepTitle": "Enregistrement des tuiles",
+    "liveSweepHint": "Les tuiles et les overlays de balisage doivent apparaître ici pendant le téléchargement — c’est ainsi qu’ils sont stockés hors ligne.",
+    "liveSweepA11y": "Vue carte en direct de la zone enregistrée pour le hors ligne",
+    "liveSweepDeferred": "L’onglet Carte affiche la vue d’enregistrement en direct. Revenez ici à tout moment pour annuler ou suivre la progression.",
+    "stayOnMapWhileSaving": "Restez sur Carte ou Téléchargements pendant l’enregistrement — sinon les tuiles hors ligne peuvent être incomplètes.",
+    "statusSummaryCancelTeardown": "Fermeture de la session cartes pour %{name}…",
+    "statusSummaryReadyOne": "1 pack de cartes prêt hors ligne",
+    "statusSummaryReadyMany": "%{count} packs de cartes prêts hors ligne"
   },
   "waypoints": {
     "subtitle": "Marques et ports enregistrés",
