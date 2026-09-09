@@ -1,11 +1,17 @@
 import fs from 'fs';
 import path from 'path';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
 import { CHART_BASE_TILE_URL, CHART_BASE_TILE_URLS } from '../src/lib/settings/chartBaseStyle';
 import {
   ANDROID_OFFLINE_PACK_STYLE_URI,
   buildChartStyleSpec,
+  chartStyleDirectory,
+  chartStyleFileUri,
+  chartStyleFilesystemPath,
+  CHART_STYLE_FILENAME,
+  ensureChartStyleFile,
   ensureOfflinePackStyleReachable,
   offlinePackMapStyleUri,
   toMapLibreStyleUri,
@@ -124,5 +130,44 @@ describe('ensureOfflinePackStyleReachable', () => {
     })) as unknown as typeof fetch;
 
     await expect(ensureOfflinePackStyleReachable('file:///docs/map/chart-style.json')).resolves.toBeUndefined();
+  });
+});
+
+describe('chart style document paths + ensureChartStyleFile', () => {
+  const getInfo = FileSystem.getInfoAsync as jest.Mock;
+  const makeDir = FileSystem.makeDirectoryAsync as jest.Mock;
+  const write = FileSystem.writeAsStringAsync as jest.Mock;
+  const read = FileSystem.readAsStringAsync as jest.Mock;
+
+  beforeEach(() => {
+    getInfo.mockReset();
+    makeDir.mockReset();
+    write.mockReset();
+    read.mockReset();
+    getInfo.mockImplementation(async (uri: string) => {
+      if (String(uri).endsWith('/map/') || String(uri).endsWith('/map')) {
+        return { exists: true };
+      }
+      return { exists: true };
+    });
+    read.mockRejectedValue(new Error('ENOENT'));
+    write.mockResolvedValue(undefined);
+    makeDir.mockResolvedValue(undefined);
+  });
+
+  it('builds documentDirectory map paths under chart-style.json', () => {
+    expect(CHART_STYLE_FILENAME).toBe('chart-style.json');
+    expect(chartStyleDirectory()).toBe('file:///mock/map/');
+    expect(chartStyleFilesystemPath()).toBe(`file:///mock/map/${CHART_STYLE_FILENAME}`);
+    expect(chartStyleFileUri()).toBe(`file:///mock/map/${CHART_STYLE_FILENAME}`);
+  });
+
+  it('writes buildChartStyleSpec JSON when the documents file is missing/stale', async () => {
+    const uri = await ensureChartStyleFile();
+    expect(uri).toBe(`file:///mock/map/${CHART_STYLE_FILENAME}`);
+    expect(write).toHaveBeenCalled();
+    const written = write.mock.calls[0]?.[1] as string;
+    expect(written).toContain('"osm-base"');
+    expect(JSON.parse(written)).toEqual(buildChartStyleSpec());
   });
 });

@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 import { formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
+import { displayPassageName } from '../../lib/passage/displayPassageName';
 import { stopPassageMapPlanning, unlockActivePassageRouteEdits } from '../../lib/passage/passageMapPlanning';
 import { t } from '../../i18n';
 import type { RootTabParamList } from '../../navigation/types';
@@ -153,7 +154,7 @@ export function PassageMapPlanningPanel() {
     >
       <View style={styles.headerText}>
         <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header" numberOfLines={1}>
-          {passage?.name ?? t('passage.defaultName')}
+          {displayPassageName(passage?.name)}
         </Text>
         <Text
           style={[styles.meta, { color: colors.textMuted }]}

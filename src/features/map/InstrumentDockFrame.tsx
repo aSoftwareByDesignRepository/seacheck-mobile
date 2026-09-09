@@ -33,7 +33,15 @@ export function InstrumentDockFrame({ children, testID, mode = 'overlay' }: Prop
     >
       <ScrollView
         style={mode === 'embedded' ? styles.embeddedScroll : { maxHeight: bottom.instrumentDockHeight }}
-        contentContainerStyle={[styles.scroll, { gap: spacing.sm, minHeight: minTouch }]}
+        contentContainerStyle={[
+          styles.scroll,
+          {
+            gap: spacing.sm,
+            minHeight: minTouch,
+            // Extra bottom air so Open passage / Deactivate clear the tab bar fold.
+            paddingBottom: mode === 'overlay' ? spacing.lg + 4 : 12,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={mode === 'embedded'}
         bounces={mode === 'embedded'}
@@ -69,5 +77,5 @@ const styles = StyleSheet.create({
   shell: { borderTopWidth: StyleSheet.hairlineWidth * 2 },
   embeddedShell: { flex: 1, minHeight: 0, borderTopWidth: 0 },
   embeddedScroll: { flex: 1, minHeight: 0 },
-  scroll: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12, flexGrow: 0 },
+  scroll: { paddingHorizontal: 12, paddingTop: 10, flexGrow: 0 },
 });

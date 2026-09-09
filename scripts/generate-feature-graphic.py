@@ -73,7 +73,8 @@ def add_text(base: Image.Image) -> Image.Image:
     draw.text((tx + 2, ty + 2), "SeaCheck", font=title_font, fill=(0, 0, 0, 120))
     draw.text((tx, ty), "SeaCheck", font=title_font, fill=(*WHITE, 255))
     draw.text((tx, ty + 88), "Offline coastal navigation", font=sub_font, fill=(*MUTED, 240))
-    draw.text((tx, ty + 140), "Aid to navigation — not official charts", font=tag_font, fill=(*ACCENT, 220))
+    # Slightly lighter than ACCENT for WCAG on navy (#0b1622)
+    draw.text((tx, ty + 140), "Aid to navigation — not official charts", font=tag_font, fill=(160, 210, 235, 255))
     draw.rounded_rectangle((tx - 20, ty + 8, tx - 16, ty + 170), radius=2, fill=(*ACCENT, 200))
     return Image.alpha_composite(base, layer)
 

@@ -635,6 +635,7 @@
     "statusSummaryCompletingHint": "Quasi finito: tieni l'app aperta per un momento.",
     "statusCompleting": "Salvataggio delle carte sul tuo dispositivo…",
     "statusSummaryReadyHint": "Le carte e i seamark funzionano senza segnale mobile nelle aree scaricate.",
+    "statusSummaryReadyHintBaseOnly": "Le tessere base funzionano offline nelle aree scaricate. I seamark vanno ancora indicizzati via Wi‑Fi.",
     "statusSummaryEmptyTitle": "Nessun pacchetto offline ancora",
     "statusSummaryEmpty": "I grafici visualizzati di recente vengono memorizzati automaticamente nella cache ma potrebbero presentare lacune. Scarica un pacchetto corridoio qui sotto prima di perdere il segnale.",
     "statusSummaryFailedTitleOne": "Download della mappa non riuscito",

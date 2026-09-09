@@ -28,3 +28,11 @@ yarn-error.*
 build/
 scripts/.mutation-backups/
 docs/play-store/assets/screenshots/_raw-live/
+
+# Local Atlas build artifacts (too large for GitHub)
+*.apk
+*.aab
+artifacts/*.apk
+documentation/**/qa-report/artifacts/*.apk
+documentation/**/qa-report/artifacts/*.aab
+documentation/**/qa-report/builds/*.apk

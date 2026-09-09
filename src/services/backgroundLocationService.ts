@@ -17,6 +17,7 @@ import {
   shouldRunBackgroundLocation,
 } from '../lib/alarms/alarmCoordinator';
 import { TRACK_LOCATION_TASK } from './trackLocationTaskConstants';
+import { persistRecordingTrackId } from './trackBackgroundTask';
 
 const BG_MODE_KEY = 'seacheck.location.bgMode';
 
@@ -243,7 +244,6 @@ export function resetBackgroundLocationSyncChainForTests(): void {
 
 /** Persist the active recording id, then reconcile the unified background GPS task. */
 export async function syncRecordingBackgroundGps(trackId: string | null): Promise<void> {
-  const { persistRecordingTrackId } = await import('./trackBackgroundTask');
   await persistRecordingTrackId(trackId);
   await syncBackgroundLocationMonitoring();
 }

@@ -39,8 +39,8 @@ export const MINIMAL_PASSAGE_INSTRUMENT_DOCK_HEIGHT = computeMinimalPassageInstr
 /** Map-forward dock — hero row, coords, metrics (safety actions on map edge). */
 export const MAP_FORWARD_INSTRUMENT_DOCK_HEIGHT = 220;
 
-/** Map-forward dock while following a passage or MOB. */
-export const MAP_FORWARD_PASSAGE_INSTRUMENT_DOCK_HEIGHT = 312;
+/** Map-forward dock while following a passage or MOB — room for Open/Deactivate CTA above tab bar. */
+export const MAP_FORWARD_PASSAGE_INSTRUMENT_DOCK_HEIGHT = 348;
 
 /** Max scrollable content height for passage planning panel — fits title, hint, and actions without scroll. */
 export const PASSAGE_PLANNING_PANEL_CONTENT_MAX = 300;

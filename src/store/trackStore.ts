@@ -7,6 +7,7 @@ import { computePathDistanceNm } from '../lib/geo/pathDistance';
 import type { LonLat } from '../lib/geo/navigation';
 import { t } from '../i18n';
 import { registerTrackLiveTrail } from '../services/trackLiveTrail';
+import { syncRecordingBackgroundGps } from '../services/backgroundLocationService';
 import { useNavigationStore } from './navigationStore';
 import { usePassageStore } from './passageStore';
 
@@ -22,11 +23,6 @@ function buildDefaultTrackName(): string {
 
 const MAX_LIVE_TRAIL = 2000;
 const MAX_LIVE_INSPECT = 500;
-
-async function syncRecordingBackgroundGps(trackId: string | null): Promise<void> {
-  const { syncRecordingBackgroundGps: sync } = await import('../services/backgroundLocationService');
-  await sync(trackId);
-}
 
 type TrackStore = {
   hydrated: boolean;

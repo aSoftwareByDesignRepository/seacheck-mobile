@@ -635,6 +635,7 @@
     "statusSummaryCompletingHint": "Nesten ferdig - hold appen åpen et øyeblikk.",
     "statusCompleting": "Lagrer diagrammer på enheten din …",
     "statusSummaryReadyHint": "Kart og sjømerker fungerer uten mobilsignal i nedlastede områder.",
+    "statusSummaryReadyHintBaseOnly": "Grunnkartfliser fungerer offline i nedlastede områder. Sjømerker må fortsatt indekseres via Wi‑Fi.",
     "statusSummaryEmptyTitle": "Ingen offline-pakker ennå",
     "statusSummaryEmpty": "Nylig viste diagrammer bufres automatisk, men kan ha hull. Last ned en korridorpakke nedenfor før du mister signalet.",
     "statusSummaryFailedTitleOne": "Nedlasting av diagram mislyktes",

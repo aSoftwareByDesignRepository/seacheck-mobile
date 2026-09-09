@@ -32,7 +32,15 @@ export function SettingsMenuRow({ label, hint, onPress, testID, first }: Props) 
     >
       <View style={styles.textWrap}>
         <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
-        {hint ? <Text style={[styles.hint, { color: colors.textMuted }]}>{hint}</Text> : null}
+        {hint ? (
+          <Text
+            style={[styles.hint, { color: colors.textMuted }]}
+            numberOfLines={3}
+            ellipsizeMode="tail"
+          >
+            {hint}
+          </Text>
+        ) : null}
       </View>
       <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} accessibilityElementsHidden />
     </Pressable>

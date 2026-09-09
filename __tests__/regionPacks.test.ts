@@ -1,7 +1,11 @@
 import { MAX_TILE_COUNT } from '../src/lib/map/bounds';
-import { LEGACY_REGION_PACKS } from '../src/map/legacyRegionPacks';
-import { REGION_PACKS } from '../src/map/regionPacks';
-import { validateRegionPack } from '../src/map/regionPackValidation';
+import {
+  getLegacyRegionPack,
+  isLegacyRegionPackId,
+  LEGACY_REGION_PACKS,
+} from '../src/map/legacyRegionPacks';
+import { getRegionPack, REGION_PACKS, resolveRegionPack } from '../src/map/regionPacks';
+import { isLargeRegionPack, validateRegionPack } from '../src/map/regionPackValidation';
 
 describe('region packs', () => {
   it('keeps every downloadable pack within the custom download tile budget', () => {
@@ -33,5 +37,22 @@ describe('region packs', () => {
     const legacyTiles = validateRegionPack(legacyWest).tileCount;
     const replacementTiles = replacementPacks.reduce((sum, p) => sum + validateRegionPack(p).tileCount, 0);
     expect(legacyTiles).toBeGreaterThan(replacementTiles * 2);
+  });
+
+  it('resolves current and legacy packs by id', () => {
+    expect(getRegionPack('kiel-bay')?.id).toBe('kiel-bay');
+    expect(getRegionPack('baltic-west')).toBeUndefined();
+    expect(getLegacyRegionPack('baltic-west')?.legacy).toBe(true);
+    expect(isLegacyRegionPackId('baltic-west')).toBe(true);
+    expect(isLegacyRegionPackId('kiel-bay')).toBe(false);
+    expect(resolveRegionPack('kiel-bay')?.id).toBe('kiel-bay');
+    expect(resolveRegionPack('baltic-west')?.id).toBe('baltic-west');
+    expect(resolveRegionPack('does-not-exist')).toBeUndefined();
+  });
+
+  it('flags large packs via isLargeRegionPack', () => {
+    const kiel = getRegionPack('kiel-bay')!;
+    expect(typeof isLargeRegionPack(kiel)).toBe('boolean');
+    expect(isLargeRegionPack(kiel)).toBe(validateRegionPack(kiel).estimatedKb >= 100 * 1024);
   });
 });

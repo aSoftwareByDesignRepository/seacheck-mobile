@@ -635,6 +635,7 @@
     "statusSummaryCompletingHint": "Næsten færdig - hold appen åben et øjeblik.",
     "statusCompleting": "Gemmer diagrammer på din enhed...",
     "statusSummaryReadyHint": "Søkort og sømærker fungerer uden mobilsignal i downloadede områder.",
+    "statusSummaryReadyHintBaseOnly": "Basiskortfliser virker offline i downloadede områder. Sømærker skal stadig indekseres via Wi‑Fi.",
     "statusSummaryEmptyTitle": "Ingen offline-pakker endnu",
     "statusSummaryEmpty": "Senest viste diagrammer cachelagres automatisk, men kan have huller. Download en korridorpakke nedenfor, før du mister signalet.",
     "statusSummaryFailedTitleOne": "Diagramoverførsel mislykkedes",

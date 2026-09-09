@@ -635,6 +635,7 @@
     "statusSummaryCompletingHint": "Bijna klaar: houd de app even open.",
     "statusCompleting": "Grafieken opslaan op uw apparaat…",
     "statusSummaryReadyHint": "Kaarten en zeemarkeringen werken zonder mobiel signaal in gedownloade gebieden.",
+    "statusSummaryReadyHintBaseOnly": "Basiskaarttegels werken offline in gedownloade gebieden. Zeemerken moeten nog via Wi‑Fi worden geïndexeerd.",
     "statusSummaryEmptyTitle": "Nog geen offline pakketten",
     "statusSummaryEmpty": "Recent bekeken grafieken worden automatisch in de cache opgeslagen, maar kunnen hiaten bevatten. Download hieronder een corridorpakket voordat u het signaal verliest.",
     "statusSummaryFailedTitleOne": "Downloaden van diagram mislukt",

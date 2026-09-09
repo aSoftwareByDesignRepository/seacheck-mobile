@@ -635,6 +635,7 @@
     "statusSummaryCompletingHint": "Prawie gotowe — pozostaw aplikację otwartą na chwilę.",
     "statusCompleting": "Zapisywanie wykresów na urządzeniu…",
     "statusSummaryReadyHint": "W pobranych obszarach mapy i znaczniki działają bez sygnału komórkowego.",
+    "statusSummaryReadyHintBaseOnly": "Kafelki mapy bazowej działają offline w pobranych obszarach. Znaki morskie nadal wymagają indeksowania przez Wi‑Fi.",
     "statusSummaryEmptyTitle": "Nie ma jeszcze pakietów offline",
     "statusSummaryEmpty": "Ostatnio oglądane wykresy są automatycznie buforowane, ale mogą zawierać luki. Pobierz pakiet korytarzowy poniżej, zanim stracisz sygnał.",
     "statusSummaryFailedTitleOne": "Pobieranie wykresu nie powiodło się",

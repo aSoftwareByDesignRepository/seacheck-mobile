@@ -1,0 +1,199 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - atlas
+  - screen-inventory
+---
+# Per-screen AVD proof for Atlas inventory (residual v4). Release APK on held AVD.
+# Skip/complete onboarding if present, then visit each primary surface + settings stack.
+
+- extendedWaitUntil:
+    visible:
+      id: "screen\\.onboarding|tab\\.map|screen\\.map"
+    timeout: 180000
+- takeScreenshot: atlas-screen-onboarding-or-map
+
+# Onboarding path (optional when already completed)
+- tapOn:
+    id: "onboarding.disclaimer.continue"
+    optional: true
+- tapOn:
+    id: "onboarding.location.skip"
+    optional: true
+- tapOn:
+    id: "onboarding.battery.ack"
+    optional: true
+- tapOn:
+    id: "onboarding.finish"
+    optional: true
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    text: "While using the app"
+    optional: true
+- tapOn:
+    text: "Allow only while using the app"
+    optional: true
+- tapOn:
+    text: "Only this time"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "tab.map"
+    timeout: 120000
+
+# --- Map ---
+- tapOn:
+    id: "tab.map"
+- extendedWaitUntil:
+    visible:
+      id: "screen.map"
+    timeout: 60000
+- takeScreenshot: atlas-screen-map
+
+# --- Tracks ---
+- tapOn:
+    id: "tab.tracks"
+    optional: true
+- tapOn:
+    id: "tab.more"
+    optional: true
+- tapOn:
+    id: "tab.tracks"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "screen.tracks"
+    timeout: 45000
+- takeScreenshot: atlas-screen-tracks
+
+# --- Passage list ---
+- tapOn:
+    id: "tab.passage"
+    optional: true
+- tapOn:
+    id: "tab.more"
+    optional: true
+- tapOn:
+    id: "tab.passage"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "screen.passage"
+    timeout: 45000
+- takeScreenshot: atlas-screen-passage-list
+# Passage detail: open first row if any exists
+- tapOn:
+    id: "passage.row.0"
+    optional: true
+- tapOn:
+    id: "passage.detail"
+    optional: true
+- takeScreenshot: atlas-screen-passage-detail-or-list
+- back:
+    optional: true
+
+# --- Downloads (often under More on compact) ---
+- tapOn:
+    id: "tab.downloads"
+    optional: true
+- tapOn:
+    id: "tab.more"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "tab.more.sheet"
+    timeout: 15000
+    optional: true
+- tapOn:
+    id: "tab.downloads"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "screen.downloads"
+    timeout: 45000
+- takeScreenshot: atlas-screen-downloads
+
+# --- Settings home + each submenu ---
+- tapOn:
+    id: "tab.settings"
+    optional: true
+- tapOn:
+    id: "tab.more"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "tab.more.sheet"
+    timeout: 15000
+    optional: true
+- tapOn:
+    id: "tab.settings"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings"
+    timeout: 45000
+- takeScreenshot: atlas-screen-settings-home
+
+- tapOn:
+    id: "settings.menu.display"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings.display"
+    timeout: 30000
+- takeScreenshot: atlas-screen-settings-display
+- back
+
+- tapOn:
+    id: "settings.menu.map"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings.map"
+    timeout: 30000
+- takeScreenshot: atlas-screen-settings-map
+- back
+
+- tapOn:
+    id: "settings.menu.units"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings.units"
+    timeout: 30000
+- takeScreenshot: atlas-screen-settings-units
+- back
+
+- tapOn:
+    id: "settings.menu.vessel"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings.vessel"
+    timeout: 30000
+- takeScreenshot: atlas-screen-settings-vessel
+- back
+
+- tapOn:
+    id: "settings.menu.gps"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings.gps"
+    timeout: 30000
+- takeScreenshot: atlas-screen-settings-gps
+- back
+
+- tapOn:
+    id: "settings.menu.alarms"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings.alarms"
+    timeout: 30000
+- takeScreenshot: atlas-screen-settings-alarms
+- back
+
+- tapOn:
+    id: "settings.menu.about"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings.about"
+    timeout: 30000
+- takeScreenshot: atlas-screen-settings-about

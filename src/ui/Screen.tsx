@@ -1,4 +1,4 @@
-import { PropsWithChildren, ReactElement, RefObject, useCallback } from 'react';
+import { PropsWithChildren, ReactElement, RefObject, useCallback, useContext } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
@@ -23,6 +24,11 @@ const UNDER_HEADER_EDGES: Edge[] = ['left', 'right'];
 function useScreenEdges(): Edge[] {
   const headerHeight = useHeaderHeight();
   return headerHeight > 0 ? UNDER_HEADER_EDGES : TAB_SCREEN_EDGES;
+}
+
+/** Bottom tab bar pad when nested under MainShell; 0 outside a bottom-tab navigator. */
+function useTabBarContentPad(): number {
+  return useContext(BottomTabBarHeightContext) ?? 0;
 }
 
 type ScreenProps = PropsWithChildren<{
@@ -50,9 +56,11 @@ export function Screen({
 }: ScreenProps) {
   const { colors, spacing } = useTheme();
   const edges = useScreenEdges();
+  const tabBarPad = useTabBarContentPad();
   const { formFactor } = useFormFactor();
   const contentMaxWidth = formFactor === 'expanded' ? 1200 : formFactor === 'medium' ? 960 : undefined;
-  const basePad = spacing.xl;
+  /** Keep last settings rows (e.g. About hint) clear of bottom tab chrome. */
+  const basePad = spacing.xl + tabBarPad;
   const { keyboardPad, scrollProps, onScrollViewLayout } = useKeyboardAwareScroll(basePad);
   const assignScrollRef = useCallback(
     (node: ScrollView | null) => {
@@ -107,6 +115,8 @@ export function Screen({
             {
               paddingHorizontal: spacing.xl,
               paddingTop: spacing.sm,
+              // Nested ScrollView screens (Downloads) own their bottom inset — do not add tab bar
+              // pad here or pack rows can collapse out of the scrollable accessibility tree.
               paddingBottom: spacing.xl,
               alignItems: contentMaxWidth ? 'center' : undefined,
             },

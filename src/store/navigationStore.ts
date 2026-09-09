@@ -11,6 +11,7 @@ import type { FormFactor } from '../hooks/useFormFactor';
 import { enqueuePersist } from '../lib/persist/asyncPersistQueue';
 import { t } from '../i18n';
 import { ensureMaritimeAlarmNotifications } from '../services/maritimeAlarmNotifications';
+import { syncBackgroundLocationMonitoring } from '../services/backgroundLocationService';
 
 const STORAGE_KEY = 'seacheck.navigation.v1';
 
@@ -190,7 +191,6 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     set({ goToTarget: target });
     await persist(get());
     try {
-      const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
       await syncBackgroundLocationMonitoring();
     } catch (error) {
       console.warn('[navigationStore] go-to background sync failed', error);
@@ -212,7 +212,6 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     set({ mobTarget: target, goToTarget: target, mobDroppedAtMs: now });
     await persist(get());
     try {
-      const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
       await syncBackgroundLocationMonitoring();
     } catch (error) {
       console.warn('[navigationStore] MOB background sync failed', error);
@@ -230,7 +229,6 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     });
     await persist(get());
     try {
-      const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
       await syncBackgroundLocationMonitoring();
     } catch (error) {
       console.warn('[navigationStore] MOB clear background sync failed', error);
@@ -267,7 +265,6 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     await resetAlarmRuntime();
     try {
       void ensureMaritimeAlarmNotifications();
-      const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
       const sync = await syncBackgroundLocationMonitoring();
       if (!sync.ok) {
         console.warn('[navigationStore] anchor alarm background sync failed', sync.reason);
@@ -304,7 +301,6 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
       anchorWatchPromptDismissed: false,
     });
     await persist(get());
-    const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
     await syncBackgroundLocationMonitoring();
   },
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { displayPassageName } from '../lib/passage/displayPassageName';
 import { assessLegWaypointArrival } from '../lib/passage/legArrival';
 import { useNavigationInstruments } from './useNavigationInstruments';
 import { useNavigationStore } from '../store/navigationStore';
@@ -45,7 +46,7 @@ export function usePassageFollow() {
   return {
     following: Boolean(activePassageId && goToTarget && detail && detail.legs.length > 0),
     passageId: activePassageId,
-    passageName: passage?.name ?? '',
+    passageName: displayPassageName(passage?.name),
     legIndex: activeLegIndex,
     legNumber: totalLegs > 0 ? activeLegIndex + 1 : 0,
     totalLegs,

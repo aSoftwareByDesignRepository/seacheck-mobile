@@ -635,6 +635,7 @@
     "statusSummaryCompletingHint": "Casi listo: mantén la aplicación abierta por un momento.",
     "statusCompleting": "Guardando gráficos en su dispositivo...",
     "statusSummaryReadyHint": "Las cartas y marcas náuticas funcionan sin señal móvil en las áreas descargadas.",
+    "statusSummaryReadyHintBaseOnly": "Las teselas base funcionan sin conexión en áreas descargadas. Las marcas aún deben indexarse por Wi‑Fi.",
     "statusSummaryEmptyTitle": "Aún no hay paquetes sin conexión",
     "statusSummaryEmpty": "Los gráficos vistos recientemente se almacenan en caché automáticamente, pero pueden tener espacios en blanco. Descargue un paquete de corredor a continuación antes de perder la señal.",
     "statusSummaryFailedTitleOne": "Falló la descarga del gráfico",

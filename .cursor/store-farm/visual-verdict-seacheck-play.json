@@ -1,0 +1,168 @@
+{
+  "app": "seacheck",
+  "store": "play",
+  "round": 3,
+  "verdict": "REJECT",
+  "wow_factor": 5.9,
+  "exit_met": false,
+  "visual_aaa": false,
+  "ready_for_critic": false,
+  "visual_fix_queued": true,
+  "critic_pass": "harsh-aaa-r3",
+  "reviewed_at": "2026-09-08T01:37:06Z",
+  "versionName": "0.1.9",
+  "versionCode": 9,
+  "avd_lock": "left_untouched — emulator-5602 SeaCheck_Maestro_API_33 still LOCKED by agent-26970 (lock_held_for_critic); critic did not steal/release; AVD release only after ACCEPT wow≥9 by coordinator",
+  "locale_reviewed": "en-US + de-DE phoneScreenshots 1–6 (1080x1920), featureGraphic+icon, listings+changelogs/9.txt",
+  "critic": "harsh R3 — full PNG Read all 12 phone shots + md5/rgb_diff + top crops; AAA bar wow≥9; prior R2 wow 3.8 REJECT",
+  "shots_inspected": [
+    "en-US/phoneScreenshots/1.png",
+    "en-US/phoneScreenshots/2.png",
+    "en-US/phoneScreenshots/3.png",
+    "en-US/phoneScreenshots/4.png",
+    "en-US/phoneScreenshots/5.png",
+    "en-US/phoneScreenshots/6.png",
+    "de-DE/phoneScreenshots/1.png",
+    "de-DE/phoneScreenshots/2.png",
+    "de-DE/phoneScreenshots/3.png",
+    "de-DE/phoneScreenshots/4.png",
+    "de-DE/phoneScreenshots/5.png",
+    "de-DE/phoneScreenshots/6.png"
+  ],
+  "prior_r2_next_actions_verify": [
+    {
+      "action": "Wipe de-DE phone 1–6 independently — no Fertig/Akku onboarding clones; product map/passage/downloads/offline/safety",
+      "status": "PARTIAL",
+      "evidence": "DE Fertig byte-clones GONE (all 6 unique md5). DE#1 map Fahrt 5.6 kn; DE#4 Offline-Karten sealed; DE#6 Sicherheitshinweis. FAIL: DE#2+#3 same Wegpunkt-erreicht modal beat; DE#2/#5 Sprung gefiltert; DE#3 not Passage-detail Etappen list"
+    },
+    {
+      "action": "Replace en #2/#3 Screen locked twins with active passage + passage detail (≥3 named legs)",
+      "status": "PARTIAL",
+      "evidence": "en#2 CLOSED: Kieler Foerde Laboe / Leg 1 of 3 / Next Friedrichsort / BRG·DIST·ETA live — lock overlay gone. en#3 OPEN: Route edit form (Legs:3 summary) — Passage waypoints list cropped to zero named WP rows"
+    },
+    {
+      "action": "Replace en #6 Battery onboarding with Safety notice",
+      "status": "CLOSED",
+      "evidence": "en#6 Safety notice Step 1 of 4 / Aid to navigation only / I understand — continue; de#6 Sicherheitshinweis / Verstanden — weiter — not Akku/Fertig"
+    },
+    {
+      "action": "Dismiss/clip-fix top tips — zero mid-banner crops",
+      "status": "OPEN_DE",
+      "evidence": "EN map tops clean (±5 m / Battery). DE#2 + DE#5 show peach 'Sprung gefiltert' debug pill — R1/R2 hard fail resurrected"
+    },
+    {
+      "action": "Keep AVD lock on emulator-5602 until ACCEPT",
+      "status": "CLOSED",
+      "evidence": "critic left lock_held_for_critic untouched"
+    }
+  ],
+  "char_counts": {
+    "en-US": {
+      "title": 8,
+      "title_limit": 30,
+      "short_description": 72,
+      "short_limit": 80,
+      "full_description": 912,
+      "full_limit": 4000,
+      "ok": true
+    },
+    "de-DE": {
+      "title": 8,
+      "title_limit": 30,
+      "short_description": 78,
+      "short_limit": 80,
+      "full_description": 948,
+      "full_limit": 4000,
+      "ok": true
+    }
+  },
+  "asset_audit": {
+    "featureGraphic": {
+      "en-US": "1024x500 RGB no-alpha",
+      "de-DE": "1024x500 RGB no-alpha",
+      "ok": true
+    },
+    "icon": {
+      "size": "512x512",
+      "mode": "RGBA",
+      "ok": true
+    },
+    "phoneScreenshots": {
+      "en-US_count": 6,
+      "de-DE_count": 6,
+      "size": "1080x1920 RGB",
+      "en_de_byte_identical": false,
+      "de_internal_byte_identical": "none — all unique md5 (Fertig clone class CLOSED)",
+      "en_near_duplicates": {
+        "1_5": "map+instruments near-dup rgb_diff_mean=14.86 — #5 airplane offline claim weak vs #1 hero"
+      },
+      "de_near_duplicates": {
+        "1_5": "map instruments rgb_diff_mean=13.47",
+        "2_3": "same Wegpunkt-erreicht modal story (rgb_diff=48.77 different crop; beat twin)"
+      }
+    },
+    "sevenInchScreenshots": {
+      "en-US_count": 0,
+      "de-DE_count": 0,
+      "note": "empty; phone primary gate"
+    },
+    "tenInchScreenshots": {
+      "en-US_count": 0,
+      "de-DE_count": 0,
+      "note": "empty; phone primary gate"
+    },
+    "changelogs": {
+      "fastlane_9_en": true,
+      "fastlane_9_de": true,
+      "en_chars": 319,
+      "de_chars": 330,
+      "play_limit_500": true
+    },
+    "listing_copy": {
+      "source": "LISTING-en.txt + LISTING-de.txt → fastlane",
+      "mt_suspected": false,
+      "en_de_clones": false
+    }
+  },
+  "shot_findings": {
+    "en-US": {
+      "1_map": "Strong hero: Kieler Förde chart, SOG 4.3 kn / COG 224° T / ±5 m, LOCK/ANCHOR/SOS MOB — underway, no Jump pill, no scribble.",
+      "2_passage": "WIN vs R2: active passage theatre — Kieler Foerde Laboe, Leg 1 of 3, Next Friedrichsort, BRG 316 T / 0.8 NM / ETA — unique beat.",
+      "3_route_edit": "WRONG DEPTH for shot-list passage detail: Route editor + Legs:3 / 6.1 NM but Passage waypoints list cropped — zero named Holtenau/Friedrichsort/Laboe rows visible.",
+      "4_downloads": "Sealed banner '1 chart pack ready offline' kept; FAIL fold: no Kieler Bucht / named pack card — how-to text only to Before you download.",
+      "5_map_airplane": "SOG 6.6 / COG 43° T + airplane status — offline intent; visually near-dup of #1 instruments story (rgb 14.86).",
+      "6_safety": "Safety notice Step 1 of 4 from sentence start; CTA I understand — continue bottom-anchored. Body long-scroll truncated at card edge (acceptable if start intact)."
+    },
+    "de-DE": {
+      "1_map": "Product hero CLOSED vs R2 Fertig: FAHRT 5.6 kn / KURS 40° T / ±5 m, SPERRE/ANKER/SOS — live GPS German chrome.",
+      "2_passage_modal": "Kieler Foerde Laboe Etappe 1 von 3 under overlay BUT foreground Wegpunkt erreicht (Holtenau) + Sprung gefiltert peach pill — metrics obscured; debug FAIL.",
+      "3_modal_twin": "Same Wegpunkt erreicht / Nächste Etappe beat as #2 — burns slot; NOT Passage-detail with ≥3 named Etappen list.",
+      "4_downloads": "Offline-Karten + 1 Kartenpaket offline bereit — sealed; same fold miss as EN (no named Kieler-Bucht pack card).",
+      "5_map": "Airplane + FAHRT 1.9 kn but Sprung gefiltert debug pill — unshippable chrome; near-dup of #1.",
+      "6_safety": "Sicherheitshinweis Schritt 1 von 4 / Nur als Navigationshilfe / Verstanden — weiter — CLOSED vs Akku onboarding."
+    }
+  },
+  "hard_fails": [
+    "de-DE #2 and #5 show 'Sprung gefiltert' debug pill — Play-rail poison; must dismiss before grab",
+    "de-DE #2+#3 duplicate Wegpunkt-erreicht modal beat — not unique passage + passage-detail roster",
+    "en-US #3 passage detail miss: waypoints list cropped — need ≥3 named coastal legs visible (not edit-form summary only)",
+    "en+de #4 sealed banner OK but no named Kieler Bucht / pack list card in fold",
+    "wow_factor 5.9 < 9.0 — recovery vs R2 3.8 but ACCEPT forbidden at AAA bar"
+  ],
+  "defects": [
+    "REJECT gate: wow 5.9 ≪ 9 — R3 fixed DE Fertig clones, EN lock twins, Safety slots; still not AAA theatre set.",
+    "FAIL debug: Sprung gefiltert on DE passage + offline map frames.",
+    "FAIL roster uniqueness: DE modal twin; EN#1≈#5 map instruments; EN#3 wrong depth.",
+    "WEAK downloads: educational wall without installed pack identity card.",
+    "Graphics/listings/changelogs OK — cannot carry AAA without phone set."
+  ],
+  "next_actions": [
+    "MUST dismiss Sprung gefiltert / Jump filtered before every DE (and EN) map grab — zero peach debug pills on #1/#2/#5.",
+    "MUST replace de #2 with clean active-passage HUD (Etappe metrics fully visible, no Wegpunkt modal); replace de #3 with Passage detail showing ≥3 named Etappen/waypoints (Holtenau→Friedrichsort→Laboe class) — delete modal twin.",
+    "MUST replace en #3: scroll Passage waypoints so ≥3 named coastal legs are in-frame (or dedicated detail) — not edit-only with cropped list.",
+    "MUST scroll en+de #4 to show named Kieler Bucht / sealed pack card Ready/install row in fold — keep green ready banner.",
+    "SHOULD differentiate en #5 offline beat (clear offline/airplane chrome + distinct framing) from en #1 hero — avoid instrument twin.",
+    "MUST keep AVD lock on emulator-5602 for fixer; do not release until ACCEPT wow≥9 — then exit_met+visual_aaa and coordinator release."
+  ],
+  "notes": "R3 REJECT. Big lift vs R2 (DE product frames, EN passage theatre, Safety both locales). Still fails AAA: debug pill, DE modal twins, weak #3 detail, pack-card fold. AVD lock untouched. visual_fix_queued; ready superseded."
+}

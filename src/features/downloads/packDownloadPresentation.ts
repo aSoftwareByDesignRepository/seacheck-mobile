@@ -138,3 +138,19 @@ export function seamarkStatusLabel(
 export function countReadyPacks(regions: Record<string, Pick<RegionPackStatus, 'state'>>): number {
   return Object.values(regions).filter((r) => r.state === 'ready').length;
 }
+
+/**
+ * Ready banner body must not claim seamarks work while any ready pack still
+ * shows "not indexed". Full charts+seamarks voice only when every ready pack
+ * has finished indexing.
+ */
+export function readySummaryHintKey(
+  regions: Record<string, Pick<RegionPackStatus, 'state' | 'seamarksIndexed'>>,
+): 'downloads.statusSummaryReadyHint' | 'downloads.statusSummaryReadyHintBaseOnly' {
+  const ready = Object.values(regions).filter((r) => r.state === 'ready');
+  if (ready.length === 0) return 'downloads.statusSummaryReadyHint';
+  const allSeamarksIndexed = ready.every((r) => r.seamarksIndexed === true);
+  return allSeamarksIndexed
+    ? 'downloads.statusSummaryReadyHint'
+    : 'downloads.statusSummaryReadyHintBaseOnly';
+}

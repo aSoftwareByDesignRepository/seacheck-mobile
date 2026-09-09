@@ -1,10 +1,19 @@
-# SeaCheck Android screenshots — Atlas Round 8
+# SeaCheck Android screenshots — Atlas Round 10
 
-| File | Flow | Proven this session |
-|------|------|---------------------|
-| `atlas-r8-download-cancel-minimal.png` | Maestro `02a` release-cancel | 🟢 EXIT 0 · Pixel_3 · 2026-09-07 ~20:06 |
-| `atlas-r8-download-kill-mid-release.png` | Maestro `03a` release-kill | 🟢 EXIT 0 · Pixel_3 · 2026-09-07 ~20:08 |
-| `atlas-r8-download-seal-ready.png` | Maestro `04` release-seal EN | 🟢 EXIT 0 · Pixel_3 · 2026-09-07 ~20:13 |
-| DE seal Ready | Maestro `05` | ❌ NOT VERIFIED this session — see ATLAS-master-verdict.md |
+| File | Flow / screen | Proven this session |
+|------|---------------|---------------------|
+| `atlas-r10-download-cancel-minimal.png` | Maestro `02a` release-cancel | 🟢 EXIT 0 · SeaCheck_Maestro · emulator-5602 |
+| `atlas-r10-download-kill-mid-release.png` | Maestro `03a` release-kill | 🟢 EXIT 0 |
+| `atlas-r10-download-seal-ready.png` | Ready EN + BaseOnly honesty | adb · md5=en-downloads |
+| `atlas-r10-download-seal-ready-de.png` | Ready DE + BaseOnly + Kieler | adb · md5=de-downloads-ready |
+| `atlas-visual-r10-android-en-map.png` | Map + SOG/COG instruments + SOS MOB | adb screencap |
+| `atlas-visual-r10-android-en-more.png` | More sections sheet | adb screencap |
+| `atlas-visual-r10-android-en-settings.png` | Settings About full subtitle (no comma-clip) | adb screencap |
+| `atlas-visual-r10-android-en-downloads.png` | Offline Ready EN BaseOnly + Kieler pack | adb screencap |
+| `atlas-visual-r10-android-en-passage.png` | **Live** active-leg HUD (Leg 1 / BRG / ETA) ≠ More | adb after Activate |
+| `atlas-visual-r10-android-de-map.png` | Map DE | adb screencap |
+| `atlas-visual-r10-android-de-downloads-ready.png` | Offline Ready DE BaseOnly + Kieler Offline bereit | adb screencap |
 
-Device note: dedicated `SeaCheck_*` AVDs crashed on boot this session (qemu disappear). E2E used locked `Pixel_3_API_33` / `emulator-5606` with APK `0.1.8` vc8 (`seacheck-0.1.8-atlas-r8.apk`).
+**AVD:** `SeaCheck_Maestro_API_33` / `emulator-5602` (dedicated; lock held for critic until `exit_met+visual_aaa`).  
+**APK:** `0.1.9` vc9 · `artifacts/seacheck-0.1.9-atlas-r10.apk`  
+**R9 Absolute No-Gos closed:** Ready seamarks honesty · About clip · passage More-twin.

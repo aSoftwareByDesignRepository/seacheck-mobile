@@ -1,0 +1,9 @@
+SeaCheck 0.1.9
+
+• Törn-Zoom bleibt beim Setzen von Wegpunkten
+• Route einpassen zeigt die ganze Passage
+• Download-Buttons anderer Kartenpakete bleiben nutzbar
+• Boots-Verfolgung pausiert während der Planung
+• R8, Edge-to-Edge, WebP; Offline-Paket-Sperren stabiler
+
+Nur Navigationsbegleiter — kein Ersatz für offizielle Seekarten.

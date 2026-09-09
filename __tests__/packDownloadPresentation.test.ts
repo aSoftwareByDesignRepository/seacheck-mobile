@@ -8,6 +8,7 @@ import {
   packHasDownloadFailure,
   packStatusBadgeVariant,
   packStatusLabel,
+  readySummaryHintKey,
   seamarkStatusLabel,
 } from '../src/features/downloads/packDownloadPresentation';
 
@@ -161,5 +162,24 @@ describe('packDownloadPresentation', () => {
     expect(failed).toHaveLength(1);
     expect(failed[0]?.name).toMatch(/Kieler Bucht/i);
     expect(countFailedPacks({ a: { state: 'error' }, b: { state: 'ready' } })).toBe(1);
+  });
+
+  it('uses base-tiles Ready hint while seamarks are not indexed', () => {
+    expect(
+      readySummaryHintKey({
+        'kiel-bay': { state: 'ready', seamarksIndexed: false },
+      }),
+    ).toBe('downloads.statusSummaryReadyHintBaseOnly');
+    expect(
+      readySummaryHintKey({
+        'kiel-bay': { state: 'ready', seamarksIndexed: true },
+      }),
+    ).toBe('downloads.statusSummaryReadyHint');
+    expect(
+      readySummaryHintKey({
+        a: { state: 'ready', seamarksIndexed: true },
+        b: { state: 'ready', seamarksIndexed: false },
+      }),
+    ).toBe('downloads.statusSummaryReadyHintBaseOnly');
   });
 });

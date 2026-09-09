@@ -59,6 +59,7 @@ import { useOfflinePackStore } from '../../store/offlinePackStore';
 import { usePassageMapPlanningStore } from '../../store/passageMapPlanningStore';
 import { usePassageStore } from '../../store/passageStore';
 import { useTrackStore } from '../../store/trackStore';
+import { useTabOverflowStore } from '../../navigation/tabOverflowStore';
 import { PLANNING_WAYPOINT_PICK_RADIUS_NM } from '../../lib/geo/nearestWaypoint';
 import { mapChartHasOpenDetail, pickMapChartFeatures, resolveMapChartTapAction } from '../../lib/map/mapChartInteraction';
 import { buildMapChartAccessibilityLabel } from '../../lib/map/mapAccessibility';
@@ -165,7 +166,13 @@ export function NavigationMap() {
   const planningRevision = usePassageMapPlanningStore((s) => s.revision);
   const allowRouteEdits = usePassageMapPlanningStore((s) => s.allowRouteEdits);
   const fitRouteRequestId = usePassageMapPlanningStore((s) => s.fitRouteRequestId);
+  const guideDismissedForSession = usePassageMapPlanningStore((s) => s.guideDismissedForSession);
   const passageMapPlanning = planningPassageId != null;
+  const moreMenuOpen = useTabOverflowStore((s) => s.menuOpen);
+  const planningGuideDismissedPermanently = useSettingsStore((s) => s.passagePlanningGuideDismissed);
+  /** Coachmark owns the tip — hide the short strip while guide shows; quiet both when More is open. */
+  const showPlanningGuide =
+    passageMapPlanning && !planningGuideDismissedPermanently && !guideDismissedForSession && !moreMenuOpen;
   const getPassageDetail = usePassageStore((s) => s.getPassageDetail);
   const activePassageId = usePassageStore((s) => s.activePassageId);
   const passages = usePassageStore((s) => s.passages);
@@ -785,11 +792,12 @@ export function NavigationMap() {
     ],
   );
 
-  const planningModeHint = passageMapPlanning
-    ? allowRouteEdits
-      ? t('passage.mapPlanningBannerShort')
-      : t('passage.mapPlanningViewBannerShort')
-    : null;
+  const planningModeHint =
+    passageMapPlanning && !showPlanningGuide && !moreMenuOpen
+      ? allowRouteEdits
+        ? t('passage.mapPlanningBannerShort')
+        : t('passage.mapPlanningViewBannerShort')
+      : null;
 
   function handleLongPressAnchor(lat: number, lon: number) {
     void (async () => {
@@ -996,7 +1004,7 @@ export function NavigationMap() {
               pointerEvents="box-none"
               style={[styles.topOverlay, { top: mapBottom.top, left: mapBottom.left, right: mapBottom.right }]}
             >
-              <PassageMapPlanningGuideBanner allowRouteEdits={allowRouteEdits} />
+              {showPlanningGuide ? <PassageMapPlanningGuideBanner allowRouteEdits={allowRouteEdits} /> : null}
               <MapTopChrome
                 actionColumnWidth={0}
                 onOpenDownloads={() => navigation.navigate('Downloads')}
@@ -1114,7 +1122,7 @@ export function NavigationMap() {
         onDelete={(id) => void handleCustomCornerDelete(id)}
       />
 
-      {passageMapPlanning && !customSelecting && !mobTarget ? <PassageMapPlanningPanel /> : null}
+      {passageMapPlanning && !customSelecting && !mobTarget && !moreMenuOpen ? <PassageMapPlanningPanel /> : null}
 
       {surface.showBottomDock && !effectiveSplit && !exclusiveChartDownload && (isMinimalLayout || (isInstrumentsOnlyLayout && showChartInInstrumentsOnly)) ? (
         <MapBottomDock fix={fix} onOpenPassage={openPassage} />

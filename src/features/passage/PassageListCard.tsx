@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { formatDistanceNm, distanceUnitLabel } from '../../lib/geo/units';
+import { displayPassageName } from '../../lib/passage/displayPassageName';
 import { t } from '../../i18n';
 import type { PassageRow } from '../../lib/db/database';
 import type { DistanceUnit } from '../../settings/defaults';
@@ -54,8 +55,9 @@ export function PassageListCard({
   const canRoute = (meta?.waypoints ?? 0) >= 2;
   const primaryBusy = activating || deactivating;
 
+  const shownName = displayPassageName(passage.name);
   const a11yState = [
-    passage.name,
+    shownName,
     isActive ? t('passage.active') : null,
     meta
       ? t('passage.listMeta', {
@@ -94,7 +96,7 @@ export function PassageListCard({
       >
         <View style={styles.header}>
           <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
-            {passage.name}
+            {shownName}
           </Text>
           {isActive ? <StatusBadge label={t('passage.active')} variant="success" /> : null}
         </View>

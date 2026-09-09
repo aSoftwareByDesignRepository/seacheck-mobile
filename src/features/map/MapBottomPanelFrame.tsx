@@ -42,7 +42,7 @@ export function MapBottomPanelFrame({
       >
         <ScrollView
           style={{ maxHeight: maxContentHeight }}
-          contentContainerStyle={[styles.scroll, { gap: spacing.sm, padding: spacing.md, minHeight: minTouch }]}
+          contentContainerStyle={[styles.scroll, { gap: spacing.sm, padding: spacing.md, paddingBottom: spacing.lg, minHeight: minTouch }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}

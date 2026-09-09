@@ -635,6 +635,7 @@
     "statusSummaryCompletingHint": "Presque terminé : laissez l'application ouverte pendant un moment.",
     "statusCompleting": "Enregistrer des graphiques sur votre appareil…",
     "statusSummaryReadyHint": "Les cartes et les marins fonctionnent sans signal mobile dans les zones téléchargées.",
+    "statusSummaryReadyHintBaseOnly": "Les tuiles de base fonctionnent hors ligne dans les zones téléchargées. Les seamarks restent à indexer en Wi‑Fi.",
     "statusSummaryEmptyTitle": "Pas encore de packs hors ligne",
     "statusSummaryEmpty": "Les graphiques récemment consultés sont automatiquement mis en cache mais peuvent présenter des lacunes. Téléchargez un pack de couloirs ci-dessous avant de perdre le signal.",
     "statusSummaryFailedTitleOne": "Échec du téléchargement du graphique",

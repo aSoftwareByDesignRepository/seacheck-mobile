@@ -635,6 +635,7 @@
     "statusSummaryCompletingHint": "Fast fertig — App kurz geöffnet lassen.",
     "statusCompleting": "Karten werden auf dem Gerät gespeichert…",
     "statusSummaryReadyHint": "Karten und Seezeichen funktionieren ohne Mobilfunk in geladenen Gebieten.",
+    "statusSummaryReadyHintBaseOnly": "Basiskarten funktionieren offline in geladenen Gebieten. Seezeichen noch per WLAN indexieren.",
     "statusSummaryEmptyTitle": "Noch keine Offline-Pakete",
     "statusSummaryEmpty": "Kürzlich angesehene Karten werden automatisch zwischengespeichert, können aber lückenhaft sein. Vor dem Verlust des Empfangs unten ein Korridor-Paket laden.",
     "statusSummaryFailedTitleOne": "Karten-Download fehlgeschlagen",

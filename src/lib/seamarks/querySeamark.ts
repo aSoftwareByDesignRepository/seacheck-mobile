@@ -1,6 +1,7 @@
 import { bearingTrue, distanceNm, type LonLat } from '../geo/navigation';
 import { fetchIsEffectivelyOffline } from '../network/connectivity';
 import { fetchOverpass } from './overpassClient';
+import { queryLocalSeamark } from './seamarkIndex';
 
 export type SeamarkHit = {
   name: string;
@@ -56,7 +57,6 @@ export async function queryNearestSeamark(lat: number, lon: number): Promise<Sea
 
 /** Fast offline pick — indexed seamarks only, no network. */
 export async function queryLocalSeamarkAtTap(lat: number, lon: number): Promise<SeamarkHit | null> {
-  const { queryLocalSeamark } = await import('./seamarkIndex');
   return queryLocalSeamark(lat, lon);
 }
 

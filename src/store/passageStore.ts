@@ -18,6 +18,7 @@ import {
 } from '../lib/passage/computeLegs';
 import { notifyPassagePlanningChanged } from '../lib/passage/passageMapPlanning';
 import { remapActiveLegIndexAfterReversal, remapLegOverridesForReversal } from '../lib/passage/reversePassageOrder';
+import { syncBackgroundLocationMonitoring } from '../services/backgroundLocationService';
 
 export type { PassageLeg } from '../lib/passage/computeLegs';
 
@@ -134,7 +135,6 @@ async function rewriteWaypointOrder(passageId: string, orderedIds: string[], db?
 
 async function syncPassageBackgroundMonitoring(): Promise<void> {
   try {
-    const { syncBackgroundLocationMonitoring } = await import('../services/backgroundLocationService');
     await syncBackgroundLocationMonitoring();
   } catch (error) {
     console.warn('[passageStore] background monitoring sync failed', error);

@@ -4,7 +4,7 @@ tags:
   - honesty
   - minimal
 ---
-# Minimal cancel honesty — skips depth-overlay warm (less Maestro flake surface).
+# Minimal cancel honesty — prefers Downloads cancelled-empty proof after cancel.
 # Explicit launch so release APK runs work without Metro/dev-client bootstrap.
 - launchApp:
     appId: "de.softwarebydesign.seacheck"
@@ -69,4 +69,20 @@ tags:
     id: "downloads.statusBanner.ready"
 - assertNotVisible:
     id: "map.downloadSession"
+# Prefer Downloads cancelled-empty: reopen Downloads, prove no Ready seal + Download CTA back.
+- runFlow: 01b-open-downloads.yaml
+- assertNotVisible:
+    id: "downloads.statusBanner.ready"
+- assertNotVisible:
+    id: "downloads.statusBanner.active"
+- scrollUntilVisible:
+    element:
+      id: "downloads.download.kiel-bay"
+    direction: DOWN
+    timeout: 30000
+    visibilityPercentage: 30
+    centerElement: true
+    optional: true
+- assertNotVisible:
+    id: "downloads.pack.kiel-bay.durable"
 - takeScreenshot: download-cancel-minimal

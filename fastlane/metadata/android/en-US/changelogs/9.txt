@@ -1,0 +1,9 @@
+SeaCheck 0.1.9
+
+• Passage zoom stays when adding waypoints
+• Fit-route shows the whole planned passage
+• Chart pack Download buttons no longer stuck grey
+• Boat follow pauses while you plan on the chart
+• R8, edge-to-edge, WebP splash; offline pack lock fixes
+
+Nav companion only — not a substitute for official charts.

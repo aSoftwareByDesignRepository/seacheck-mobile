@@ -1,19 +1,18 @@
-SeaCheck is a deck-side companion to paper charts for small-boat coastal sailing — not a replacement for official nautical charts.
+SeaCheck is something I built for my own small-boat sailing — a deck-side companion to paper charts, not a replacement for them.
 
-Use it for boat speed, coordinates, a quick chart position without going below, passage sketches, and anchor alarms. Aid to navigation only; not a certified chart plotter. Maps use OpenSeaMap / OpenStreetMap volunteer data and may be outdated. Always carry official, corrected nautical charts.
+I use it for boat speed, coordinates, a quick chart position without going below, passage sketches, and anchor alarms. I'm sharing it in case another coastal sailor finds it useful. No launch, no support promise — use at your own risk.
 
-Features:
+NOT FOR PRIMARY NAVIGATION
+Aid to navigation only. Not a certified chart plotter. Maps use OpenSeaMap / OpenStreetMap volunteer data and may be outdated. Always carry official, corrected nautical charts.
+
+FEATURES
 • GPS on chart — COG, SOG, bearing
 • Passage planning, waypoints, GPX export
 • Offline region packs (Wi‑Fi download)
 • Anchor, arrival, and off-course alarms
 • Track recording
-• English and German UI
-
-Background location (optional, user permission): used only for anchor watch and track recording while the screen is off. Location stays on your device — not uploaded.
-
-Battery optimization: Android may prompt you to exempt SeaCheck from battery savers so GPS and alarms stay reliable at sea. This is optional and user-initiated.
+• EN / DE UI
 
 Free. No ads. No analytics. Data stays on your device.
 
-Developed by Software by Design.
+Built by Alexander Mäule / Software by Design GbR, Schleswig, Germany (side project).

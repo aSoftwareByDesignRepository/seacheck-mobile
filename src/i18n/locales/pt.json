@@ -635,6 +635,7 @@
     "statusSummaryCompletingHint": "Quase pronto — mantenha o aplicativo aberto por um momento.",
     "statusCompleting": "Salvando gráficos para o seu dispositivo...",
     "statusSummaryReadyHint": "Gráficos e marcas de mar funcionam sem sinal móvel em áreas baixadas.",
+    "statusSummaryReadyHintBaseOnly": "Os mosaicos base funcionam offline nas áreas descarregadas. As marcas ainda precisam de indexação via Wi‑Fi.",
     "statusSummaryEmptyTitle": "Nenhum pacote offline ainda",
     "statusSummaryEmpty": "Os gráficos recentemente visualizados são armazenados em cache automaticamente, mas podem ter lacunas. Baixe um pacote de corredor abaixo antes de perder o sinal.",
     "statusSummaryFailedTitleOne": "A transferência do gráfico falhou",

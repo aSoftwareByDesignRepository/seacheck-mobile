@@ -11,6 +11,7 @@ import {
   isPackDownloadActive,
   listFailedPacks,
   packStatusLabel,
+  readySummaryHintKey,
   resolvePackDisplayName,
 } from './packDownloadPresentation';
 
@@ -83,7 +84,7 @@ export function DownloadsStatusBanner({
 
       {!sessionRegionId && failedPacks.length === 0 ? (
         readyCount > 0 ? (
-          <ReadyBanner readyCount={readyCount} colors={colors} />
+          <ReadyBanner readyCount={readyCount} regions={regions} colors={colors} />
         ) : (
           <EmptyBanner colors={colors} />
         )
@@ -297,11 +298,14 @@ function FailedDownloadsBanner({
 
 function ReadyBanner({
   readyCount,
+  regions,
   colors,
 }: {
   readyCount: number;
+  regions: Record<string, RegionPackStatus>;
   colors: ReturnType<typeof useTheme>['colors'];
 }) {
+  const hintKey = readySummaryHintKey(regions);
   return (
     <View
       style={[styles.banner, { backgroundColor: colors.successBg, borderColor: colors.success }]}
@@ -318,7 +322,7 @@ function ReadyBanner({
           ? t('downloads.statusSummaryReadyOne')
           : t('downloads.statusSummaryReadyMany', { count: readyCount })}
       </Text>
-      <Text style={[styles.hint, { color: colors.textMuted }]}>{t('downloads.statusSummaryReadyHint')}</Text>
+      <Text style={[styles.hint, { color: colors.textMuted }]}>{t(hintKey)}</Text>
     </View>
   );
 }

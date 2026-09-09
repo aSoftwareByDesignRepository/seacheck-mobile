@@ -33,6 +33,7 @@ jest.mock('expo-location', () => ({
   stopLocationUpdatesAsync: jest.fn(async () => {}),
   Accuracy: { BestForNavigation: 6 },
   ActivityType: { OtherNavigation: 3 },
+  PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
 }));
 
 jest.mock('expo-haptics', () => ({
@@ -78,6 +79,9 @@ jest.mock('expo-file-system/legacy', () => ({
   getInfoAsync: jest.fn(async () => ({ exists: false })),
   makeDirectoryAsync: jest.fn(async () => {}),
   writeAsStringAsync: jest.fn(async () => {}),
+  readAsStringAsync: jest.fn(async () => {
+    throw new Error('ENOENT');
+  }),
   /** Default: plenty of free space so download tests are not blocked by fail-closed storageCheck. */
   getFreeDiskStorageAsync: jest.fn(async () => 8 * 1024 * 1024 * 1024),
 }));
@@ -168,6 +172,10 @@ jest.mock('@maplibre/maplibre-react-native', () => {
       }),
     },
     useCurrentPosition: jest.fn(() => undefined),
+    LogManager: {
+      start: jest.fn(),
+      onLog: jest.fn(),
+    },
   };
 });
 

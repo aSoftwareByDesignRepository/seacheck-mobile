@@ -635,6 +635,7 @@
     "statusSummaryCompletingHint": "Nästan klart – håll appen öppen ett ögonblick.",
     "statusCompleting": "Sparar diagram på din enhet...",
     "statusSummaryReadyHint": "Sjökort och sjömärken fungerar utan mobilsignal i nedladdade områden.",
+    "statusSummaryReadyHintBaseOnly": "Baskartplattor fungerar offline i nedladdade områden. Sjömärken behöver fortfarande indexeras via Wi‑Fi.",
     "statusSummaryEmptyTitle": "Inga offlinepaket ännu",
     "statusSummaryEmpty": "Senast visade diagram cachelagras automatiskt men kan ha luckor. Ladda ner ett korridorpaket nedan innan du tappar signalen.",
     "statusSummaryFailedTitleOne": "Nedladdning av diagram misslyckades",
