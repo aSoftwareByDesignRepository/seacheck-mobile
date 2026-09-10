@@ -3,6 +3,7 @@ import withAndroid15PlayCompliance from '@check/android15-play-compliance';
 
 import withAndroidReleaseSigning from './plugins/withAndroidReleaseSigning';
 import withAndroidNodePath from './plugins/withAndroidNodePath';
+import withChartStyleLocalServer from './plugins/withChartStyleLocalServer';
 
 /** True when building store/F-Droid release (no expo-dev-client plugin). */
 function isExpoDevClientInstalled(): boolean {
@@ -121,6 +122,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [withAndroid15PlayCompliance as unknown as string, { profile: 'keepBoot' }],
     withAndroidReleaseSigning as unknown as string,
     withAndroidNodePath,
+    withChartStyleLocalServer as unknown as string,
   ],
   extra: {
     eas: {

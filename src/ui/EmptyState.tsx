@@ -10,10 +10,20 @@ type Props = {
   body: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** Empty-screen primary CTA defaults to family primary fill (Bachus one-obvious-CTA). */
+  actionVariant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   testID?: string;
 };
 
-export function EmptyState({ icon, title, body, actionLabel, onAction, testID }: Props) {
+export function EmptyState({
+  icon,
+  title,
+  body,
+  actionLabel,
+  onAction,
+  actionVariant = 'primary',
+  testID,
+}: Props) {
   const { colors, spacing } = useTheme();
   return (
     <View testID={testID} style={[styles.wrap, { padding: spacing.xl }]} accessibilityRole="text">
@@ -23,7 +33,13 @@ export function EmptyState({ icon, title, body, actionLabel, onAction, testID }:
       </Text>
       <Text style={[styles.body, { color: colors.textMuted, marginTop: spacing.sm }]}>{body}</Text>
       {actionLabel && onAction ? (
-        <Button label={actionLabel} onPress={onAction} variant="secondary" style={{ marginTop: spacing.lg }} testID={`${testID}.action`} />
+        <Button
+          label={actionLabel}
+          onPress={onAction}
+          variant={actionVariant}
+          style={{ marginTop: spacing.lg }}
+          testID={`${testID}.action`}
+        />
       ) : null}
     </View>
   );

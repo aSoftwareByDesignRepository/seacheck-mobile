@@ -39,8 +39,8 @@ const M = 3;
 if (!check('muted text on light bg', '#486581', '#f5f7fb', M)) fail++;
 if (!check('muted text on dark bg', '#bcccdc', '#0b1622', M)) fail++;
 if (!check('danger button light', '#ffffff', '#ba1b1b', N)) fail++;
-if (!check('danger button dark', '#0b1622', '#ff6b6b', N)) fail++;
-if (!check('danger button high contrast', '#000000', '#ff4d4d', N)) fail++;
+if (!check('danger button dark', '#ffffff', '#c62828', N)) fail++;
+if (!check('danger button high contrast', '#000000', '#ff6666', N)) fail++;
 if (!check('warning text on light', '#8a4b08', '#fff4e6', N)) fail++;
 // Completing chrome uses primary title on primary@12% over white (not success green).
 if (!check('completing title on light primary wash', '#0073ad', '#edf5f9', N)) fail++;

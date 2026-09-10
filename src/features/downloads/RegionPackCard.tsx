@@ -93,7 +93,7 @@ export function RegionPackCard({
         testPack && !selected
           ? [
               downloadsStyles.listItemSelected,
-              { backgroundColor: colors.successBg, borderColor: colors.success, borderWidth: 1 },
+              { backgroundColor: colors.successBg, borderColor: colors.successBorder, borderWidth: 1 },
             ]
           : null,
       ]
@@ -118,7 +118,7 @@ export function RegionPackCard({
       accessibilityLabel={a11yParts.join('. ')}
     >
       <View style={downloadsStyles.titleRow}>
-        <Text style={[downloadsStyles.packName, { color: colors.text, flex: 1 }]} accessibilityRole="header">
+        <Text style={[downloadsStyles.packName, { color: colors.text }]} accessibilityRole="header">
           {name}
         </Text>
         <View style={downloadsStyles.badges}>
@@ -135,7 +135,7 @@ export function RegionPackCard({
             downloadsStyles.testPackCallout,
             {
               backgroundColor: colors.successBg,
-              borderColor: colors.success,
+              borderColor: colors.successBorder,
             },
           ]}
           accessibilityRole="text"

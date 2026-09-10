@@ -1,0 +1,85 @@
+appId: de.softwarebydesign.seacheck
+tags:
+  - downloads
+  - honesty
+  - seal
+  - atlas
+---
+# Atlas phone: Downloads is a primary tab (tab.downloads), not under tab.more.
+- launchApp:
+    appId: "de.softwarebydesign.seacheck"
+    clearState: true
+- runFlow: 01-onboarding-skip.yaml
+- runFlow: 01a-warm-map.yaml
+- tapOn:
+    id: "map.topAlert.dismiss"
+    optional: true
+- tapOn:
+    id: "tab.downloads"
+- extendedWaitUntil:
+    visible:
+      id: "screen.downloads"
+    timeout: 60000
+- waitForAnimationToEnd:
+    timeout: 15000
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "downloads.download.kiel-bay"
+    direction: DOWN
+    timeout: 90000
+    visibilityPercentage: 40
+    centerElement: true
+- tapOn:
+    id: "downloads.download.kiel-bay"
+- extendedWaitUntil:
+    visible:
+      id: "confirm.proceed"
+    timeout: 15000
+    optional: true
+- tapOn:
+    id: "confirm.proceed"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "map.downloadSession"
+    timeout: 180000
+- assertNotVisible:
+    id: "downloadFailure.dismiss"
+- extendedWaitUntil:
+    notVisible:
+      id: "map.downloadSession"
+    timeout: 1200000
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- tapOn:
+    id: "tab.downloads"
+- extendedWaitUntil:
+    visible:
+      id: "screen.downloads"
+    timeout: 60000
+- tapOn:
+    id: "downloadFailure.dismiss"
+    optional: true
+- assertNotVisible:
+    id: "downloads.statusBanner.failed"
+- extendedWaitUntil:
+    notVisible:
+      id: "downloadFailure.dismiss"
+    timeout: 15000
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "downloads.pack.kiel-bay.durable"
+    direction: DOWN
+    timeout: 180000
+- assertVisible:
+    id: "downloads.pack.kiel-bay.durable"
+- assertVisible:
+    id: "downloads.delete.kiel-bay"
+- assertVisible:
+    id: "downloads.statusBanner.ready"
+- takeScreenshot: download-seal-ready-atlas

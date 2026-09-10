@@ -27,7 +27,7 @@ function FeedbackBanner({ message, kind, onDismiss, topOffset, horizontalInset }
       ? { bg: colors.dangerBg, border: colors.dangerBorder, text: colors.danger }
       : kind === 'info'
         ? { bg: colors.surface, border: colors.border, text: colors.text }
-        : { bg: colors.successBg, border: colors.success, text: colors.success };
+        : { bg: colors.successBg, border: colors.successBorder, text: colors.success };
 
   return (
     <View pointerEvents="box-none" style={[styles.host, { top: topOffset, paddingHorizontal: horizontalInset }]}>

@@ -41,7 +41,8 @@ export function Button({
           : 'transparent';
 
   const borderColor = variant === 'secondary' || variant === 'ghost' ? colors.border : bg;
-  const textColor = variant === 'primary' || variant === 'danger' ? colors.primaryText : colors.text;
+  const textColor =
+    variant === 'primary' ? colors.primaryText : variant === 'danger' ? colors.dangerText : colors.text;
 
   return (
     <Pressable

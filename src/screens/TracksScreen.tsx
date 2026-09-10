@@ -141,9 +141,9 @@ export function TracksScreen() {
   const controls = (
     <View style={{ marginBottom: spacing.lg, minHeight: minTouch }}>
       {recordingTrackId ? (
-        <StatusBadge label={t('tracks.recording')} variant="warning" />
+        <StatusBadge label={t('tracks.recording')} variant="warning" testID="tracks.status.recording" />
       ) : (
-        <StatusBadge label={t('tracks.idle')} variant="neutral" />
+        <StatusBadge label={t('tracks.idle')} variant="neutral" testID="tracks.status.idle" />
       )}
       {recordingModeLabel ? (
         <Text style={[styles.modeLine, { color: colors.textMuted, marginTop: spacing.sm }]}>{recordingModeLabel}</Text>

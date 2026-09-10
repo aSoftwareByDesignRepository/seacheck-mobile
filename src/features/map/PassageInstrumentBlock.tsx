@@ -255,7 +255,7 @@ export function PassageInstrumentBlock({
             </Text>
           </Pressable>
         ) : (
-          <View style={[styles.finalChip, { backgroundColor: colors.successBg, borderColor: colors.success }]}>
+          <View style={[styles.finalChip, { backgroundColor: colors.successBg, borderColor: colors.successBorder }]}>
             <Text style={[styles.finalText, { color: colors.success }]}>{t('passage.finalLeg')}</Text>
           </View>
         )}

@@ -2,16 +2,28 @@ appId: de.softwarebydesign.seacheck
 tags:
   - helper
 ---
-# Open Downloads — on compact phones it lives under More.
+# Open Downloads — Atlas phones expose tab.downloads directly; compact may use More sheet.
 # Stay on this screen briefly so the hidden offline map engine can mount (Map tab unfocused).
-- tapOn:
-    id: "tab.more"
-- extendedWaitUntil:
-    visible:
-      id: "tab.more.sheet"
-    timeout: 15000
-- tapOn:
-    id: "tab.downloads"
+- runFlow:
+    when:
+      visible:
+        id: "tab.downloads"
+    commands:
+      - tapOn:
+          id: "tab.downloads"
+- runFlow:
+    when:
+      notVisible:
+        id: "tab.downloads"
+    commands:
+      - tapOn:
+          id: "tab.more"
+      - extendedWaitUntil:
+          visible:
+            id: "tab.more.sheet"
+          timeout: 15000
+      - tapOn:
+          id: "tab.downloads"
 - extendedWaitUntil:
     visible:
       id: "screen.downloads"

@@ -69,10 +69,14 @@ export function CustomPackCard({
       accessibilityLabel={a11yParts.join('. ')}
     >
       <View style={downloadsStyles.titleRow}>
-        <Text style={[downloadsStyles.packName, { color: colors.text, flex: 1 }]} accessibilityRole="header">
+        <Text style={[downloadsStyles.packName, { color: colors.text }]} accessibilityRole="header">
           {name}
         </Text>
-        {listMode ? <StatusBadge label={stateLabel} variant={packStatusBadgeVariant(status)} /> : null}
+        {listMode ? (
+          <View style={downloadsStyles.badges}>
+            <StatusBadge label={stateLabel} variant={packStatusBadgeVariant(status)} />
+          </View>
+        ) : null}
       </View>
       {!listMode ? (
         <Text style={[downloadsStyles.packMeta, { color: colors.textMuted }]}>{t('downloads.customPackLabel')}</Text>

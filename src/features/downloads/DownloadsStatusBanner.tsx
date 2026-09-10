@@ -308,7 +308,7 @@ function ReadyBanner({
   const hintKey = readySummaryHintKey(regions);
   return (
     <View
-      style={[styles.banner, { backgroundColor: colors.successBg, borderColor: colors.success }]}
+      style={[styles.banner, { backgroundColor: colors.successBg, borderColor: colors.successBorder }]}
       testID="downloads.statusBanner.ready"
       accessibilityRole="summary"
       accessibilityLabel={

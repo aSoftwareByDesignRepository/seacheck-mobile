@@ -10,6 +10,9 @@ export NODE_ENV="${NODE_ENV:-test}"
 echo "==> Typecheck"
 npm run typecheck
 
+echo "==> Sync Android chart-style asset"
+node scripts/sync-chart-style-asset.mjs
+
 echo "==> Unit tests (no forceExit)"
 npm test -- --ci --no-coverage
 
