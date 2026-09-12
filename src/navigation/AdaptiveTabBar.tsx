@@ -190,7 +190,7 @@ function CompactTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          paddingBottom: Math.max(insets.bottom, 8),
+          paddingBottom: Math.max(insets.bottom, 48),
           paddingTop: 6,
           zIndex: 10,
           elevation: 8,
