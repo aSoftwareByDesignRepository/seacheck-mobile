@@ -270,7 +270,7 @@
   "map": {
     "cog": "DENT",
     "hdg": "HDG",
-    "sog": "SOG",
+    "sog": "Vitesse",
     "accuracy": "GPS",
     "awaitingGps": "En attente du correctif GPS…",
     "copyCoords": "Copier les coordonnées",
@@ -345,7 +345,7 @@
     "brgMob": "BRG à MOB",
     "distTo": "Distance",
     "eta": "ETA (locale)",
-    "xte": "XTE",
+    "xte": "Écart",
     "leg": "Jambe",
     "distanceRun": "Course à pied",
     "sessionElapsed": "Écoulé",
@@ -448,12 +448,12 @@
     "depthChipOfflineA11y": "Calque de profondeur en pause car l’appareil est hors ligne",
     "depthChipHint": "Ouvre les réglages carte pour le calque de profondeur",
     "chartA11yDepthOn": "Calque de profondeur non officiel visible",
-    "anchorLimitedActive": "Limited watch — open-app only",
-    "anchorLimitedShort": "Limited",
-    "anchorLimitedBannerTitle": "Limited anchor watch",
-    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
-    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
-    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
+    "anchorLimitedActive": "Veille limitée — app ouverte seulement",
+    "anchorLimitedShort": "Limitée",
+    "anchorLimitedBannerTitle": "Veille d’ancre limitée",
+    "anchorLimitedBannerBody": "Les alertes ne fonctionnent que tant que SeaCheck est à l’écran. Touchez ici pour activer la veille complète en arrière-plan.",
+    "anchorLimitedBannerHint": "Ouvre les étapes pour activer la localisation en arrière-plan et les notifications d’alarme",
+    "anchorLimitedSettingsHealth": "Veille limitée active — alertes seulement tant que l’app est ouverte. Activez la localisation en arrière-plan et les notifications pour une protection complète."
   },
   "profiles": {
     "cruisePassage": "Croisière / passage"
@@ -541,7 +541,7 @@
     "errorMapEngineStyle": "Le moteur de graphiques n'a pas démarré. Fermez et rouvrez l'application, puis réessayez en Wi-Fi.",
     "errorDownloadInterrupted": "Le téléchargement a été interrompu — appuyez sur Réessayer pour reprendre.",
     "errorStorageInsufficient": "Espace de stockage gratuit insuffisant pour ce téléchargement. Libérez de l'espace et réessayez.",
-    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
+    "errorStorageUnavailable": "Impossible de vérifier l’espace libre. Libérez de l’espace, redémarrez l’app, puis réessayez.",
     "errorPackTooLarge": "Ce pack de cartes dépasse la limite de téléchargement sécurisé : choisissez un pack de couloirs plus petit ou utilisez une zone personnalisée.",
     "errorPackRetired": "Ce pack régional a été remplacé par des téléchargements de corridors plus petits et ne peut plus être téléchargé.",
     "downloadSuccess": "Pack de graphiques prêt pour une utilisation hors ligne",
@@ -675,7 +675,7 @@
         "description": "Grande Ceinture, Petite Ceinture et Ceinture Fehmarn - détail du détroit pour les passages de ceinture."
       },
       "oresund": {
-        "name": "Øresund",
+        "name": "Öresund",
         "description": "Approches du détroit de Copenhague-Malmö et du Sound - détail à l'échelle du port."
       },
       "bornholm": {

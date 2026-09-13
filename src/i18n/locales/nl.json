@@ -268,9 +268,9 @@
     "gebcoAttribution": "GEBCO — bathymetrie (niet-officieel)"
   },
   "map": {
-    "cog": "COG",
+    "cog": "Koers",
     "hdg": "HDG",
-    "sog": "SOG",
+    "sog": "Vaart",
     "accuracy": "GPS",
     "awaitingGps": "In afwachting van een GPS-oplossing…",
     "copyCoords": "Kopieer coördinaten",
@@ -345,7 +345,7 @@
     "brgMob": "BRG naar MOB",
     "distTo": "Afstand",
     "eta": "verwachte aankomsttijd (lokaal)",
-    "xte": "XTE",
+    "xte": "Afwijking",
     "leg": "Been",
     "distanceRun": "Afstand rennen",
     "sessionElapsed": "Verstreken",
@@ -448,12 +448,12 @@
     "depthChipOfflineA11y": "Diepte-overlay gepauzeerd omdat het apparaat offline is",
     "depthChipHint": "Opent kaartinstellingen voor de diepte-overlay",
     "chartA11yDepthOn": "Niet-officiële diepte-overlay zichtbaar",
-    "anchorLimitedActive": "Limited watch — open-app only",
-    "anchorLimitedShort": "Limited",
-    "anchorLimitedBannerTitle": "Limited anchor watch",
-    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
-    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
-    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
+    "anchorLimitedActive": "Beperkte wacht — alleen met open app",
+    "anchorLimitedShort": "Beperkt",
+    "anchorLimitedBannerTitle": "Ankerwacht beperkt",
+    "anchorLimitedBannerBody": "Meldingen werken alleen terwijl SeaCheck op het scherm staat. Tik hier om de volledige achtergrondwacht te activeren.",
+    "anchorLimitedBannerHint": "Opent stappen voor achtergrondlocatie en alarmmeldingen",
+    "anchorLimitedSettingsHealth": "Beperkte wacht actief — meldingen alleen met open app. Schakel achtergrondlocatie en meldingen in voor volledige bescherming."
   },
   "profiles": {
     "cruisePassage": "Vaart / passage"
@@ -541,7 +541,7 @@
     "errorMapEngineStyle": "De kaartengine is niet gestart. Sluit de app, open deze opnieuw en probeer het opnieuw via wifi.",
     "errorDownloadInterrupted": "Het downloaden is onderbroken. Tik op Opnieuw proberen om te hervatten.",
     "errorStorageInsufficient": "Niet genoeg gratis opslagruimte voor deze download. Maak ruimte vrij en probeer het opnieuw.",
-    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
+    "errorStorageUnavailable": "Vrije opslag kon niet worden gecontroleerd. Maak ruimte vrij, herstart de app en probeer opnieuw.",
     "errorPackTooLarge": "Dit kaartenpakket overschrijdt de veilige downloadlimiet. Kies een kleiner gangpakket of gebruik een aangepast gebied.",
     "errorPackRetired": "Dit regiopakket is vervangen door kleinere corridordownloads en kan niet opnieuw worden gedownload.",
     "downloadSuccess": "Kaartpakket klaar voor offline gebruik",
@@ -675,7 +675,7 @@
         "description": "Grote Gordel, Kleine Gordel en Fehmarn Gordel - nauw detail voor riemdoorgangen."
       },
       "oresund": {
-        "name": "Øresund",
+        "name": "Öresund",
         "description": "Straat Kopenhagen-Malmö en Sound-naderingen - details op havenschaal."
       },
       "bornholm": {

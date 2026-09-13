@@ -1,0 +1,45 @@
+Version: 0.1.10
+Build: 10
+=== GOOGLE PLAY LISTING — SPANISH (es-ES) ===
+Nombre del paquete: de.softwarebydesign.seacheck
+Categoría (ajustes de la tienda): Mapas y navegación
+Etiquetas (opcional): vela · costera · GPS · SOG · mapa sin conexión
+Visibilidad: UNLISTED (solo compartir enlace)
+Notas de la versión v0.1.10: pegue release-notes/0.1.10.txt en Play Console
+  (formato: <en-US>…</en-US><de-DE>…</de-DE>, máx. 500 caracteres por idioma)
+Tono: proyecto personal compartido tal cual — no es un lanzamiento de producto.
+
+--- Nombre de la app (máx. 30 caracteres) ---
+SeaCheck
+
+--- Descripción breve (máx. 80 caracteres) ---
+Ayuda nav. costera — GPS, SOG, mapa offline. Con cartas de papel.
+
+--- Descripción completa (máx. 4000 caracteres) ---
+SeaCheck lo hice para mi propia navegación en barco pequeño — un compañero de cubierta junto a las cartas de papel, no un sustituto.
+
+Lo uso para la velocidad, las coordenadas, una posición rápida en la carta sin bajar abajo, bocetos de derrota y alarmas de ancla. Lo comparto por si a otro navegante costero le resulta útil. Sin lanzamiento, sin promesa de soporte — úsalo bajo tu propia responsabilidad.
+
+NO PARA NAVEGACIÓN PRINCIPAL
+Solo ayuda a la navegación. No es un plotter certificado. Los mapas usan datos voluntarios de OpenSeaMap / OpenStreetMap y pueden estar desactualizados. Lleva siempre cartas náuticas oficiales y corregidas.
+
+FUNCIONES
+• GPS en la carta — COG, SOG, demora
+• Planificación de derrota, waypoints, export GPX
+• Paquetes de regiones sin conexión (descarga por Wi‑Fi)
+• Alarmas de ancla, llegada y desviación de rumbo
+• Grabación de track
+• Interfaz EN / DE
+
+Gratis. Sin anuncios. Sin analytics. Los datos se quedan en tu dispositivo.
+
+Hecho por Alexander Mäule / Software by Design GbR, Schleswig, Alemania (proyecto paralelo).
+
+--- Correo de contacto ---
+info@software-by-design.de
+
+--- Sitio web ---
+(opcional — dejar en blanco o software-by-design.de)
+
+--- Política de privacidad ---
+https://nextcloud.software-by-design.de/es/privacy-seacheck-mobile.html

@@ -1,0 +1,45 @@
+Version: 0.1.10
+Build: 10
+=== GOOGLE PLAY LISTING — DUTCH (nl-NL) ===
+Pakketnaam: de.softwarebydesign.seacheck
+Categorie (Store-instellingen): Kaarten en navigatie
+Tags (optioneel): zeilen · kust · GPS · SOG · offlinekaart
+Zichtbaarheid: UNLISTED (alleen via link delen)
+Release notes v0.1.10: plak release-notes/0.1.10.txt in de Play Console
+  (formaat: <en-US>…</en-US><de-DE>…</de-DE>, max. 500 tekens per taal)
+Toon: persoonlijk project gedeeld zoals het is — geen productlancering.
+
+--- App-naam (max. 30 tekens) ---
+SeaCheck
+
+--- Korte beschrijving (max. 80 tekens) ---
+Persoonlijke kustnav — GPS, vaart, offlinekaart. Bij papieren kaarten.
+
+--- Volledige beschrijving (max. 4000 tekens) ---
+SeaCheck heb ik gemaakt voor mijn eigen zeilen in een klein bootje — een dekgenoot naast papieren kaarten, geen vervanging ervan.
+
+Ik gebruik het voor vaart, coördinaten, snel de positie op de kaart zonder onderdeks te gaan, routeschetsen en ankeralarms. Ik deel het voor het geval een andere kustzeiler er iets aan heeft. Geen lancering, geen supportbelofte — gebruik op eigen risico.
+
+NIET VOOR PRIMAIRE NAVIGATIE
+Alleen navigatiehulp. Geen gecertificeerde kaartplotter. Kaarten komen uit OpenSeaMap-/OpenStreetMap-vrijwilligersdata en kunnen verouderd zijn. Neem altijd officiële, gecorrigeerde zeekaarten mee.
+
+FUNCTIES
+• GPS op de kaart — COG, SOG, peiling
+• Routeplanning, waypoints, GPX-export
+• Offline-regiopakketten (download via Wi‑Fi)
+• Anker-, aankomst- en koersafwijkingsalarmen
+• Trackopname
+• EN / DE-interface
+
+Gratis. Geen ads. Geen analytics. Gegevens blijven op je apparaat.
+
+Gemaakt door Alexander Mäule / Software by Design GbR, Schleswig, Duitsland (nevenproject).
+
+--- Contact-e-mail ---
+info@software-by-design.de
+
+--- Website ---
+(optioneel — leeg laten of software-by-design.de)
+
+--- Privacybeleid ---
+https://nextcloud.software-by-design.de/nl/privacy-seacheck-mobile.html

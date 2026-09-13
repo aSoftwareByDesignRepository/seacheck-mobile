@@ -1,0 +1,45 @@
+Version: 0.1.10
+Build: 10
+=== GOOGLE PLAY LISTING — FRENCH (fr-FR) ===
+Nom du package : de.softwarebydesign.seacheck
+Catégorie (réglages Store) : Cartes et navigation
+Tags (optionnel) : voile · côtier · GPS · SOG · carte hors ligne
+Visibilité : UNLISTED (partage par lien uniquement)
+Notes de version v0.1.10 : coller release-notes/0.1.10.txt dans la Play Console
+  (format : <en-US>…</en-US><de-DE>…</de-DE>, max. 500 caractères par langue)
+Ton : projet personnel partagé tel quel — pas un lancement produit.
+
+--- Nom de l'application (max. 30 caractères) ---
+SeaCheck
+
+--- Description courte (max. 80 caractères) ---
+Aide nav. côtière — GPS, vitesse, carte hors ligne. Avec cartes papier.
+
+--- Description complète (max. 4000 caractères) ---
+SeaCheck, je l'ai fait pour mes propres sorties en petit bateau — un compagnon de pont aux cartes papier, pas un remplacement.
+
+Je m'en sers pour la vitesse, les coordonnées, une position rapide sur la carte sans descendre, des croquis de route et les alarmes d'ancre. Je le partage au cas où un autre navigateur côtier le trouve utile. Pas de lancement, pas de promesse de support — à tes risques et périls.
+
+PAS POUR LA NAVIGATION PRINCIPALE
+Aide à la navigation uniquement. Pas un traceur certifié. Les cartes viennent des données bénévoles OpenSeaMap / OpenStreetMap et peuvent être périmées. Emporte toujours des cartes marines officielles et corrigées.
+
+FONCTIONS
+• GPS sur la carte — COG, SOG, relèvement
+• Préparation de route, waypoints, export GPX
+• Paquets de régions hors ligne (téléchargement Wi‑Fi)
+• Alarmes d'ancre, d'arrivée et de déroute
+• Enregistrement de trace
+• Interface EN / DE
+
+Gratuit. Sans pub. Sans analytics. Les données restent sur ton appareil.
+
+Réalisé par Alexander Mäule / Software by Design GbR, Schleswig, Allemagne (projet annexe).
+
+--- E-mail de contact ---
+info@software-by-design.de
+
+--- Site web ---
+(optionnel — laisser vide ou software-by-design.de)
+
+--- Politique de confidentialité ---
+https://nextcloud.software-by-design.de/fr/privacy-seacheck-mobile.html

@@ -270,7 +270,7 @@
   "map": {
     "cog": "KUGGE",
     "hdg": "HDG",
-    "sog": "SOG",
+    "sog": "Fart",
     "accuracy": "GPS",
     "awaitingGps": "Väntar på GPS fix...",
     "copyCoords": "Kopiera koordinater",
@@ -345,7 +345,7 @@
     "brgMob": "BRG till MOB",
     "distTo": "Avstånd",
     "eta": "ETA (lokal)",
-    "xte": "XTE",
+    "xte": "Avvikelse",
     "leg": "Ben",
     "distanceRun": "Distanslöpning",
     "sessionElapsed": "Förfluten",
@@ -448,12 +448,12 @@
     "depthChipOfflineA11y": "Djupöverlägg pausat eftersom enheten är offline",
     "depthChipHint": "Öppnar kartinställningar för djupöverlägget",
     "chartA11yDepthOn": "Inofficiellt djupöverlägg synligt",
-    "anchorLimitedActive": "Limited watch — open-app only",
-    "anchorLimitedShort": "Limited",
-    "anchorLimitedBannerTitle": "Limited anchor watch",
-    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
-    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
-    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
+    "anchorLimitedActive": "Begränsad vakt — endast med öppen app",
+    "anchorLimitedShort": "Begränsad",
+    "anchorLimitedBannerTitle": "Ankarvakt begränsad",
+    "anchorLimitedBannerBody": "Larm fungerar bara medan SeaCheck är på skärmen. Tryck här för att aktivera full bakgrundsvakt.",
+    "anchorLimitedBannerHint": "Öppnar steg för bakgrundsplats och larmaviseringar",
+    "anchorLimitedSettingsHealth": "Begränsad vakt aktiv — larm bara med öppen app. Aktivera bakgrundsplats och aviseringar för fullt skydd."
   },
   "profiles": {
     "cruisePassage": "Kryssning/passage"
@@ -541,7 +541,7 @@
     "errorMapEngineStyle": "Kartmotorn startade inte. Stäng och öppna appen igen och försök sedan igen på Wi-Fi.",
     "errorDownloadInterrupted": "Nedladdningen avbröts — tryck på Försök igen för att återuppta.",
     "errorStorageInsufficient": "Inte tillräckligt med gratis lagringsutrymme för den här nedladdningen. Frigör utrymme och försök igen.",
-    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
+    "errorStorageUnavailable": "Kunde inte kontrollera ledigt utrymme. Frigör utrymme, starta om appen och försök igen.",
     "errorPackTooLarge": "Detta kartpaket överskrider gränsen för säker nedladdning - välj ett mindre korridorpaket eller använd ett anpassat område.",
     "errorPackRetired": "Detta regionpaket ersattes av mindre korridornedladdningar och kan inte laddas ner igen.",
     "downloadSuccess": "Kartpaket redo för offlineanvändning",

@@ -1,0 +1,44 @@
+Version: 0.1.10
+Build: 10
+=== GOOGLE PLAY LISTING — SWEDISH (sv-SE) ===
+Paketnamn: de.softwarebydesign.seacheck
+Kategori (butiksinställningar): Kartor och navigering
+Taggar (valfritt): segling · kust · GPS · SOG · offlinekarta
+Synlighet: UNLISTED (endast delningslänk)
+Versionsanteckningar v0.1.10: klistra in release-notes/0.1.10.txt i Play Console
+Ton: personligt sidoprojekt delat som det är — inte en produktlansering.
+
+--- Appnamn (max 30 tecken) ---
+SeaCheck
+
+--- Kort beskrivning (max 80 tecken) ---
+Personlig kustnav — GPS, fart, offlinekarta. Med papperssjökort.
+
+--- Fullständig beskrivning (max 4000 tecken) ---
+SeaCheck byggde jag för min egen småbåtssegling — en däckscompanion till papperssjökort, inte en ersättare.
+
+Jag använder den för fart, koordinater, snabb kartposition utan att gå ner, ruttutkast och ankaralarm. Jag delar den ifall en annan kustseglare har nytta av den. Ingen lansering, inget supportlöfte — på egen risk.
+
+INTE FÖR PRIMÄRNAVIGERING
+Endast navigeringshjälp. Inte en certifierad plotter. Kartorna bygger på OpenSeaMap / OpenStreetMap-volontärdata och kan vara inaktuella. Ha alltid officiella, korrigerade sjökort ombord.
+
+FUNKTIONER
+• GPS på kartan — COG, SOG, bäring
+• Passagerplanering, waypoints, GPX-export
+• Offline-regionpaket (nedladdning via Wi‑Fi)
+• Ankar-, ankomst- och kursavvikelsealarm
+• Spårinspelning
+• UI EN / DE
+
+Gratis. Inga annonser. Ingen analytics. Data stannar på din enhet.
+
+Byggd av Alexander Mäule / Software by Design GbR, Schleswig, Tyskland (sidoprojekt).
+
+--- Kontakt-e-post ---
+info@software-by-design.de
+
+--- Webbplats ---
+(valfritt — lämna tomt eller software-by-design.de)
+
+--- Integritetspolicy ---
+https://nextcloud.software-by-design.de/sv/privacy-seacheck-mobile.html

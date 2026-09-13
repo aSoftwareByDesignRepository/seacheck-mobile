@@ -268,9 +268,9 @@
     "gebcoAttribution": "GEBCO — batimetria (não oficial)"
   },
   "map": {
-    "cog": "COG",
+    "cog": "Rumo",
     "hdg": "HDG",
-    "sog": "SOG",
+    "sog": "Velocidade",
     "accuracy": "GPS",
     "awaitingGps": "Aguardando correção GPS...",
     "copyCoords": "Copiar as coordenadas",
@@ -344,8 +344,8 @@
     "brgTo": "BRG para WP",
     "brgMob": "BRG para MOB",
     "distTo": "Distância",
-    "eta": "ETA (local)",
-    "xte": "XTE",
+    "eta": "ETA (hora local)",
+    "xte": "Desvio",
     "leg": "Perna",
     "distanceRun": "Distância",
     "sessionElapsed": "Eclodido",
@@ -448,12 +448,12 @@
     "depthChipOfflineA11y": "Sobreposição de profundidade em pausa porque o dispositivo está offline",
     "depthChipHint": "Abre as definições do mapa para a sobreposição de profundidade",
     "chartA11yDepthOn": "Sobreposição de profundidade não oficial visível",
-    "anchorLimitedActive": "Limited watch — open-app only",
-    "anchorLimitedShort": "Limited",
-    "anchorLimitedBannerTitle": "Limited anchor watch",
-    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
-    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
-    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
+    "anchorLimitedActive": "Vigília limitada — só com a app aberta",
+    "anchorLimitedShort": "Limitada",
+    "anchorLimitedBannerTitle": "Vigília de âncora limitada",
+    "anchorLimitedBannerBody": "Os alertas só funcionam enquanto o SeaCheck está no ecrã. Toque aqui para ativar a vigília completa em segundo plano.",
+    "anchorLimitedBannerHint": "Abre os passos para localização em segundo plano e notificações de alarme",
+    "anchorLimitedSettingsHealth": "Vigília limitada ativa — alertas só com a app aberta. Ative a localização em segundo plano e as notificações para proteção total."
   },
   "profiles": {
     "cruisePassage": "Cruzeiro / passagem"
@@ -541,7 +541,7 @@
     "errorMapEngineStyle": "O motor gráfico não começou. Feche e reabra o aplicativo e tente novamente no Wi-Fi.",
     "errorDownloadInterrupted": "O download foi interrompido — toque em Tentar novamente retomar.",
     "errorStorageInsufficient": "Não há armazenamento gratuito suficiente para este download. Espaço livre e tente novamente.",
-    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
+    "errorStorageUnavailable": "Não foi possível verificar o armazenamento livre. Liberte espaço, reinicie a app e tente novamente.",
     "errorPackTooLarge": "Este pacote gráfico excede o limite de download seguro — escolha um pacote de corredor menor ou use uma área personalizada.",
     "errorPackRetired": "Este pacote de regiões foi substituído por downloads de corredores menores e não pode ser baixado novamente.",
     "downloadSuccess": "Pacote de gráficos pronto para uso offline",
@@ -675,7 +675,7 @@
         "description": "Grande Cinturão, Pequeno Cinturão e Fehmarn Cinturão — detalhe estreito para passagens de cinto."
       },
       "oresund": {
-        "name": "Øresund",
+        "name": "Öresund",
         "description": "Copenhagen–Malmö estreito e aproximações de som — detalhe à escala do porto."
       },
       "bornholm": {

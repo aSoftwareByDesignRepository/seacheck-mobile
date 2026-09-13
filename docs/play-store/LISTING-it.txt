@@ -1,0 +1,45 @@
+Version: 0.1.10
+Build: 10
+=== GOOGLE PLAY LISTING — ITALIAN (it-IT) ===
+Nome pacchetto: de.softwarebydesign.seacheck
+Categoria (impostazioni Store): Mappe e navigazione
+Tag (opzionali): vela · costiera · GPS · SOG · mappa offline
+Visibilità: UNLISTED (condivisione solo tramite link)
+Note di rilascio v0.1.10: incollare release-notes/0.1.10.txt nella Play Console
+  (formato: <en-US>…</en-US><de-DE>…</de-DE>, max. 500 caratteri per lingua)
+Tono: progetto personale condiviso così com'è — non un lancio di prodotto.
+
+--- Nome app (max. 30 caratteri) ---
+SeaCheck
+
+--- Descrizione breve (max. 80 caratteri) ---
+Aiuto nav. costiera — GPS, SOG, mappa offline. Con carte di carta.
+
+--- Descrizione completa (max. 4000 caratteri) ---
+SeaCheck l'ho costruito per le mie uscite in barca piccola — un compagno di ponte alle carte cartacee, non un sostituto.
+
+Lo uso per la velocità, le coordinate, una posizione rapida sulla carta senza scendere sotto, schizzi di rotta e allarmi di ancora. Lo condivido nel caso possa servire a un altro navigatore costiero. Niente lancio, nessuna promessa di supporto — uso a tuo rischio.
+
+NON PER LA NAVIGAZIONE PRIMARIA
+Solo aiuto alla navigazione. Non è un plotter certificato. Le mappe usano dati volontari OpenSeaMap / OpenStreetMap e possono essere obsolete. Porta sempre carte nautiche ufficiali e corrette.
+
+FUNZIONI
+• GPS sulla carta — COG, SOG, rilevamento
+• Pianificazione di rotta, waypoint, export GPX
+• Pacchetti regioni offline (download Wi‑Fi)
+• Allarmi di ancora, arrivo e fuori rotta
+• Registrazione della traccia
+• Interfaccia EN / DE
+
+Gratis. Senza pubblicità. Senza analytics. I dati restano sul tuo dispositivo.
+
+Realizzato da Alexander Mäule / Software by Design GbR, Schleswig, Germania (progetto parallelo).
+
+--- Email di contatto ---
+info@software-by-design.de
+
+--- Sito web ---
+(opzionale — lasciare vuoto o software-by-design.de)
+
+--- Informativa sulla privacy ---
+https://nextcloud.software-by-design.de/it/privacy-seacheck-mobile.html

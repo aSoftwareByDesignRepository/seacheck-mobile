@@ -1,0 +1,44 @@
+Version: 0.1.10
+Build: 10
+=== GOOGLE PLAY LISTING — POLISH (pl-PL) ===
+Nazwa pakietu: de.softwarebydesign.seacheck
+Kategoria (ustawienia sklepu): Mapy i nawigacja
+Tagi (opcjonalnie): żeglarstwo · wybrzeże · GPS · SOG · mapa offline
+Widoczność: UNLISTED (tylko link do udostępnienia)
+Informacje o wersji v0.1.10: wklej release-notes/0.1.10.txt w Play Console
+Ton: osobisty projekt poboczny udostępniony jak jest — nie premierę produktu.
+
+--- Nazwa aplikacji (maks. 30 znaków) ---
+SeaCheck
+
+--- Krótki opis (maks. 80 znaków) ---
+Osobista naw. przybrzeżna — GPS, SOG, mapa offline. Z mapami papierowymi.
+
+--- Pełny opis (maks. 4000 znaków) ---
+SeaCheck zrobiłem na własne rejsy małą łodzią — towarzysz pokładowy do map papierowych, nie ich zamiennik.
+
+Używam go do prędkości, współrzędnych, szybkiej pozycji na mapie bez schodzenia pod pokład, szkiców trasy i alarmów kotwicznych. Udostępniam na wypadek, gdyby inny żeglarz przybrzeżny uznał to za przydatne. Bez premiery, bez obietnicy wsparcia — na własne ryzyko.
+
+NIE DO NAWIGACJI GŁÓWNEJ
+Tylko pomoc nawigacyjna. To nie certyfikowany ploter. Mapy korzystają z danych wolontariuszy OpenSeaMap / OpenStreetMap i mogą być nieaktualne. Zawsze miej na pokładzie oficjalne, poprawione mapy morskie.
+
+FUNKCJE
+• GPS na mapie — COG, SOG, namiar
+• Planowanie przejścia, waypointy, eksport GPX
+• Pakiety regionów offline (pobieranie przez Wi‑Fi)
+• Alarmy kotwicy, przybycia i zejścia z kursu
+• Nagrywanie śladu
+• UI EN / DE
+
+Za darmo. Bez reklam. Bez analytics. Dane zostają na Twoim urządzeniu.
+
+Zrobił Alexander Mäule / Software by Design GbR, Schleswig, Niemcy (projekt poboczny).
+
+--- E-mail kontaktowy ---
+info@software-by-design.de
+
+--- Strona WWW ---
+(opcjonalnie — zostaw puste lub software-by-design.de)
+
+--- Polityka prywatności ---
+https://nextcloud.software-by-design.de/pl/privacy-seacheck-mobile.html

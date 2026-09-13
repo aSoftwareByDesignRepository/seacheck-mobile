@@ -594,7 +594,7 @@ def run(locale: str, serial: str, apk: Path, out_docs: Path, fastlane_dest: Path
     fastlane_dest.mkdir(parents=True, exist_ok=True)
 
     print(f"==> Locale {locale} on {serial}", flush=True)
-    lang = "de-DE" if locale.startswith("de") else "en-US"
+    lang = locale if "-" in locale else ("de-DE" if locale.startswith("de") else "en-US")
     adb(serial, "shell", "settings", "put", "system", "system_locales", lang, check=False)
     adb(serial, "uninstall", PKG, check=False)
     adb(serial, "install", "-r", str(apk), check=True)
@@ -807,7 +807,7 @@ def run(locale: str, serial: str, apk: Path, out_docs: Path, fastlane_dest: Path
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--locale", required=True, choices=["en-US", "de-DE"])
+    p.add_argument("--locale", required=True, choices=["en-US","de-DE","fr-FR","es-ES","da-DK","nl-NL","it-IT","pl-PL","sv-SE","nb-NO","pt-BR"])
     p.add_argument("--serial", required=True)
     p.add_argument("--apk", required=True)
     p.add_argument("--docs-out", required=True)

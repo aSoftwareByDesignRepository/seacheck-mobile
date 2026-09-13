@@ -268,9 +268,9 @@
     "gebcoAttribution": "GEBCO — batimetria (non ufficiale)"
   },
   "map": {
-    "cog": "COG",
+    "cog": "Rotta",
     "hdg": "HDG",
-    "sog": "SOG",
+    "sog": "Velocità",
     "accuracy": "GPS",
     "awaitingGps": "In attesa della correzione GPS…",
     "copyCoords": "Copia le coordinate",
@@ -345,7 +345,7 @@
     "brgMob": "BRG a MOB",
     "distTo": "Distanza",
     "eta": "ETA (locale)",
-    "xte": "XTE",
+    "xte": "Scostamento",
     "leg": "Gamba",
     "distanceRun": "Corsa a distanza",
     "sessionElapsed": "Trascorso",
@@ -448,12 +448,12 @@
     "depthChipOfflineA11y": "Overlay profondità in pausa perché il dispositivo è offline",
     "depthChipHint": "Apre le impostazioni mappa per l’overlay profondità",
     "chartA11yDepthOn": "Overlay profondità non ufficiale visibile",
-    "anchorLimitedActive": "Limited watch — open-app only",
-    "anchorLimitedShort": "Limited",
-    "anchorLimitedBannerTitle": "Limited anchor watch",
-    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
-    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
-    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
+    "anchorLimitedActive": "Veglia limitata — solo con app aperta",
+    "anchorLimitedShort": "Limitata",
+    "anchorLimitedBannerTitle": "Veglia sull’ancora limitata",
+    "anchorLimitedBannerBody": "Gli allarmi funzionano solo mentre SeaCheck è a schermo. Toccare qui per attivare la veglia completa in background.",
+    "anchorLimitedBannerHint": "Apre i passaggi per posizione in background e notifiche di allarme",
+    "anchorLimitedSettingsHealth": "Veglia limitata attiva — allarmi solo con app aperta. Attivare posizione in background e notifiche per protezione completa."
   },
   "profiles": {
     "cruisePassage": "Crociera/passaggio"
@@ -541,7 +541,7 @@
     "errorMapEngineStyle": "Il motore grafico non si è avviato. Chiudi e riapri l'app, quindi riprova su Wi‑Fi.",
     "errorDownloadInterrupted": "Il download è stato interrotto: tocca Riprova per riprendere.",
     "errorStorageInsufficient": "Spazio di archiviazione gratuito insufficiente per questo download. Libera spazio e riprova.",
-    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
+    "errorStorageUnavailable": "Impossibile verificare lo spazio libero. Liberare spazio, riavviare l’app e riprovare.",
     "errorPackTooLarge": "Questo pacchetto cartografico supera il limite di download sicuro: scegli un pacchetto corridoio più piccolo o utilizza un'area personalizzata.",
     "errorPackRetired": "Questo pacchetto regionale è stato sostituito da download di corridoi più piccoli e non può essere scaricato nuovamente.",
     "downloadSuccess": "Pacchetto grafico pronto per l'uso offline",
@@ -675,7 +675,7 @@
         "description": "Grande Cintura, Piccola Cintura e Cintura di Fehmarn: dettaglio dello stretto per i passaggi della cintura."
       },
       "oresund": {
-        "name": "Øresund",
+        "name": "Öresund",
         "description": "Approcci allo Stretto e al Sound di Copenaghen – Malmö: dettaglio alla scala del porto."
       },
       "bornholm": {

@@ -268,9 +268,9 @@
     "gebcoAttribution": "GEBCO — batymetri (uoffisiell)"
   },
   "map": {
-    "cog": "COG",
+    "cog": "Kurs",
     "hdg": "HDG",
-    "sog": "SOG",
+    "sog": "Fart",
     "accuracy": "GPS",
     "awaitingGps": "Venter på GPS rettelse …",
     "copyCoords": "Kopier koordinater",
@@ -345,7 +345,7 @@
     "brgMob": "BRG til MOB",
     "distTo": "Afstand",
     "eta": "ETA (lokal)",
-    "xte": "XTE",
+    "xte": "Avvik",
     "leg": "Bein",
     "distanceRun": "Distanseløp",
     "sessionElapsed": "Forløpt",
@@ -448,12 +448,12 @@
     "depthChipOfflineA11y": "Dybde-overlay pauset fordi enheten er offline",
     "depthChipHint": "Åpner kartinnstillinger for dybde-overlay",
     "chartA11yDepthOn": "Uoffisielt dybde-overlay synlig",
-    "anchorLimitedActive": "Limited watch — open-app only",
-    "anchorLimitedShort": "Limited",
-    "anchorLimitedBannerTitle": "Limited anchor watch",
-    "anchorLimitedBannerBody": "Alerts only work while SeaCheck is on screen. Tap here to enable full background watch.",
-    "anchorLimitedBannerHint": "Opens steps to enable background location and alarm notifications",
-    "anchorLimitedSettingsHealth": "Limited watch active — alerts only while the app is open on screen. Enable background location and notifications for full protection."
+    "anchorLimitedActive": "Begrenset vakt — bare med åpen app",
+    "anchorLimitedShort": "Begrenset",
+    "anchorLimitedBannerTitle": "Ankervakt begrenset",
+    "anchorLimitedBannerBody": "Varsler virker bare mens SeaCheck er på skjermen. Trykk her for å aktivere full bakgrunnsvakt.",
+    "anchorLimitedBannerHint": "Åpner steg for bakgrunnsposisjon og alarmvarsler",
+    "anchorLimitedSettingsHealth": "Begrenset vakt aktiv — varsler bare med åpen app. Aktiver bakgrunnsposisjon og varsler for full beskyttelse."
   },
   "profiles": {
     "cruisePassage": "Cruise/passasje"
@@ -541,7 +541,7 @@
     "errorMapEngineStyle": "Kartmotoren startet ikke. Lukk og åpne appen på nytt, og prøv igjen på Wi-Fi.",
     "errorDownloadInterrupted": "Nedlastingen ble avbrutt – trykk på Prøv igjen for å fortsette.",
     "errorStorageInsufficient": "Ikke nok ledig lagringsplass for denne nedlastingen. Frigjør plass og prøv igjen.",
-    "errorStorageUnavailable": "Could not verify free storage. Free space, restart the app, and try again.",
+    "errorStorageUnavailable": "Kunne ikke kontrollere ledig lagring. Frigjør plass, start appen på nytt og prøv igjen.",
     "errorPackTooLarge": "Denne kartpakken overskrider grensen for sikker nedlasting – velg en mindre korridorpakke eller bruk et tilpasset område.",
     "errorPackRetired": "Denne regionpakken ble erstattet av mindre korridornedlastinger og kan ikke lastes ned igjen.",
     "downloadSuccess": "Kartpakke klar for offline bruk",
