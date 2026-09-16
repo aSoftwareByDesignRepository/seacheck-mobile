@@ -1,11 +1,11 @@
-Version: 0.1.10
-Build: 10
+Version: 0.1.12
+Build: 12
 === GOOGLE PLAY LISTING — SWEDISH (sv-SE) ===
 Paketnamn: de.softwarebydesign.seacheck
 Kategori (butiksinställningar): Kartor och navigering
 Taggar (valfritt): segling · kust · GPS · SOG · offlinekarta
 Synlighet: UNLISTED (endast delningslänk)
-Versionsanteckningar v0.1.10: klistra in release-notes/0.1.10.txt i Play Console
+Versionsanteckningar v0.1.12: klistra in release-notes/0.1.12.txt i Play Console
 Ton: personligt sidoprojekt delat som det är — inte en produktlansering.
 
 --- Appnamn (max 30 tecken) ---

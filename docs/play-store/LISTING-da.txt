@@ -1,11 +1,11 @@
-Version: 0.1.10
-Build: 10
+Version: 0.1.12
+Build: 12
 === GOOGLE PLAY LISTING — DANISH (da-DK) ===
 Pakkenavn: de.softwarebydesign.seacheck
 Kategori (Store-indstillinger): Kort og navigation
 Tags (valgfrit): sejlads · kyst · GPS · SOG · offline-kort
 Synlighed: UNLISTED (kun via link)
-Versionsnoter v0.1.10: indsæt release-notes/0.1.10.txt i Play Console
+Versionsnoter v0.1.12: indsæt release-notes/0.1.12.txt i Play Console
   (format: <en-US>…</en-US><de-DE>…</de-DE>, maks. 500 tegn pr. sprog)
 Tone: personligt projekt delt som det er — ikke et produktlaunch.
 

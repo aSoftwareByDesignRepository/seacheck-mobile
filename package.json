@@ -1,6 +1,6 @@
 {
   "name": "seacheck-mobile",
-  "version": "0.1.10",
+  "version": "0.1.12",
   "main": "index.ts",
   "license": "AGPL-3.0-or-later",
   "engines": {
@@ -22,7 +22,7 @@
     "a11y:contrast": "node scripts/contrast-check.mjs",
     "a11y:touch": "node scripts/a11y-touch-target-audit.mjs",
     "i18n:parity": "node scripts/i18n-parity.mjs",
-    "test": "jest",
+    "test": "jest --forceExit",
     "test:downloads": "jest --testPathPattern='downloadTiming|downloadStallWatchdog|nativePackProgress|nativePackStatus|offlinePackStore.startDownload|offlinePackStore.hydrate|offlinePackStore.durableDownload|resolveOfflineEngineCamera|offlineMapEngineHost|downloadNetwork|downloadCoordinator|reportDownloadFailure'",
     "e2e:maestro": "bash scripts/maestro-e2e.sh all",
     "e2e:maestro:cancel": "bash scripts/maestro-e2e.sh cancel",

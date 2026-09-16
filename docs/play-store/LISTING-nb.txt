@@ -1,11 +1,11 @@
-Version: 0.1.10
-Build: 10
+Version: 0.1.12
+Build: 12
 === GOOGLE PLAY LISTING — NORWEGIAN BOKMÅL (nb-NO) ===
 Pakkenavn: de.softwarebydesign.seacheck
 Kategori (butikkinnstillinger): Kart og navigasjon
 Tagger (valgfritt): seiling · kyst · GPS · SOG · offlinekart
 Synlighet: UNLISTED (kun delingslenke)
-Versjonsmerknader v0.1.10: lim inn release-notes/0.1.10.txt i Play Console
+Versjonsmerknader v0.1.10: lim inn release-notes/0.1.12.txt i Play Console
 Tone: personlig sideprosjekt delt som det er — ikke en produktlansering.
 
 --- Appnavn (maks. 30 tegn) ---

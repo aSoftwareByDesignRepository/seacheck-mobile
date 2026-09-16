@@ -1,8 +1,8 @@
 STATUS: DRAFT — transcreate before Console paste (EN body + localized URLs)
 === APP STORE CONNECT — DUTCH ===
 Bundle ID: de.softwarebydesign.seacheck
-Version: 0.1.10
-Build: 10
+Version: 0.1.12
+Build: 12
 Category: Navigation (primary). Secondary: Utilities if offered.
 
 --- Name (max 30) ---

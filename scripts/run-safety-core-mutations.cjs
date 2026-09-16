@@ -8,6 +8,7 @@
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { ensureJestBail, ensureJestForceExit, acquireMutationLock } = require('../../scripts/lib/mutation-jest-bail.cjs');
 
 const root = path.resolve(__dirname, '..');
 const backupDir = path.join(__dirname, '.mutation-backups');
@@ -17,6 +18,8 @@ const testCmd = [
   'npx',
   'jest',
   '--runInBand',
+      '--bail',
+      '--forceExit',
   '--testPathPattern=gpsFilter|fixQuality|processLocationAlarms|connectivity|downloadNetwork|downloadPolicy|downloadCoordinator|beginDownloadSession|offlinePackIndex|regionPacks|maydayMessage|copyMaydayClipboard|parsePersistedBoolean|settingsStore.booleanHydrate|followModeHydrate|anchorAlarmHydrate|allowRouteEditsHydrate|bootWarningPolicy|recoverAfterRenderCrash|normalizeSettingsEnums|settingsStore.vesselEnumIntegrity|offlinePackStatus',
 ];
 
@@ -266,6 +269,9 @@ function clearBackup() {
 }
 
 function main() {
+  // Single-flight: concurrent mutate leaves fail-open mutants in src/.
+  acquireMutationLock(__dirname);
+
   console.log('SeaCheck safety/offline core mutations');
   restoreLeftoverBackups();
   assertCleanBaselineSources();

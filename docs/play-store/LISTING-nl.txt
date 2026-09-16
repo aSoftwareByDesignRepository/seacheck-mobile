@@ -1,11 +1,11 @@
-Version: 0.1.10
-Build: 10
+Version: 0.1.12
+Build: 12
 === GOOGLE PLAY LISTING — DUTCH (nl-NL) ===
 Pakketnaam: de.softwarebydesign.seacheck
 Categorie (Store-instellingen): Kaarten en navigatie
 Tags (optioneel): zeilen · kust · GPS · SOG · offlinekaart
 Zichtbaarheid: UNLISTED (alleen via link delen)
-Release notes v0.1.10: plak release-notes/0.1.10.txt in de Play Console
+Release notes v0.1.12: plak release-notes/0.1.12.txt in de Play Console
   (formaat: <en-US>…</en-US><de-DE>…</de-DE>, max. 500 tekens per taal)
 Toon: persoonlijk project gedeeld zoals het is — geen productlancering.
 

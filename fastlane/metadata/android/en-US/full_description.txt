@@ -13,6 +13,8 @@ FEATURES
 • Track recording
 • EN / DE UI
 
+Optional background location: when you allow it, anchor-drag alarms and track recording can continue while the screen is off. You can deny background location and still use the map while the app is open. Location data stays on your device.
+
 Free. No ads. No analytics. Data stays on your device.
 
 Built by Alexander Mäule / Software by Design GbR, Schleswig, Germany (side project).

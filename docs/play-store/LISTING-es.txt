@@ -1,11 +1,11 @@
-Version: 0.1.10
-Build: 10
+Version: 0.1.12
+Build: 12
 === GOOGLE PLAY LISTING — SPANISH (es-ES) ===
 Nombre del paquete: de.softwarebydesign.seacheck
 Categoría (ajustes de la tienda): Mapas y navegación
 Etiquetas (opcional): vela · costera · GPS · SOG · mapa sin conexión
 Visibilidad: UNLISTED (solo compartir enlace)
-Notas de la versión v0.1.10: pegue release-notes/0.1.10.txt en Play Console
+Notas de la versión v0.1.10: pegue release-notes/0.1.12.txt en Play Console
   (formato: <en-US>…</en-US><de-DE>…</de-DE>, máx. 500 caracteres por idioma)
 Tono: proyecto personal compartido tal cual — no es un lanzamiento de producto.
 

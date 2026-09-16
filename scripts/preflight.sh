@@ -25,8 +25,11 @@ npm run patch:rn-edge
 echo "==> Typecheck"
 npm run typecheck
 
+echo "==> Sync Android chart-style asset (gitignored android/ tree)"
+node scripts/sync-chart-style-asset.mjs
+
 echo "==> Unit tests"
-npm test -- --passWithNoTests
+npm test -- --passWithNoTests --forceExit
 
 echo "==> Safety/offline mutations"
 npm run mutate:core
