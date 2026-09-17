@@ -6,6 +6,8 @@ Shared Expo config plugin + fleet verifier for Android 15 / Google Play Console 
 
 | Finding | Mitigation |
 |---------|------------|
+| Large-screen orientation / resize | Expo `orientation: 'default'` → MainActivity `unspecified`; no `resizeableActivity=false` |
+| Bitmap decode (Play heuristic) | `expo-image` + `OptimizedImage` (Glide); see `apply-fleet-large-screen-bitmap` |
 | Unused `SYSTEM_ALERT_WINDOW` | `tools:node="remove"` (Android 15 restricts background FGS when SAW is held without an overlay) |
 | Deprecated edge-to-edge bar colors | Strip `statusBarColor` / `navigationBarColor` from `styles.xml` |
 | R8 not enabled / optimization off | `android.enableMinifyInReleaseBuilds=true` + resource shrinking + `android.r8.optimizedResourceShrinking=true` + `proguard-android-optimize.txt` |
@@ -31,7 +33,13 @@ npm run apply-fleet-rn-edge
 
 Do **not** set `windowOptOutEdgeToEdgeEnforcement` or disable `edgeToEdgeEnabled` to silence the finding. Material bottomsheet call sites may remain until Google / androidx migrate.
 
-**Orientation note:** This package does **not** unlock `screenOrientation`. Apps that must support tablets/foldables set Expo `orientation: 'default'` (manifest `unspecified`) themselves — ProjectCheck / BudgetCheck do; phone-first companions may remain portrait by product choice until they adopt the same unlock.
+**Orientation / bitmap note:** Every fleet app unlocks Expo `orientation: 'default'` (manifest `unspecified`) and wires `expo-image` + `OptimizedImage` for brand logos. Apply with:
+
+```bash
+npm run apply-fleet-large-screen-bitmap
+```
+
+Do **not** keep `orientation: 'portrait'` or `resizeableActivity="false"` — Play flags both on large screens.
 
 ## Profiles
 

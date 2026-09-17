@@ -21,6 +21,7 @@
     "mutate": "node scripts/mutate-android15-play-compliance.cjs",
     "apply-fleet": "node scripts/apply-fleet.cjs",
     "apply-fleet-rn-edge": "node scripts/apply-fleet-rn-edge.cjs",
+    "apply-fleet-large-screen-bitmap": "node scripts/apply-fleet-large-screen-bitmap.cjs",
     "verify-fleet": "node scripts/verify-fleet.cjs",
     "gauntlet": "npm test && npm run mutate && npm run verify-fleet"
   },

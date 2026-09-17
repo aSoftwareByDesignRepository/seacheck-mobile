@@ -60,6 +60,16 @@ for (const [appId, meta] of Object.entries(fleetProfiles)) {
     ) {
       fail(appId, `missing profile ${meta.profile} in plugins array`);
     }
+    // Play large-screen: no portrait lock / resizability restriction.
+    if (/orientation:\s*['"]portrait['"]/.test(cfg)) {
+      fail(appId, 'app.config still locks orientation to portrait (use default)');
+    }
+    if (!/orientation:\s*['"]default['"]/.test(cfg)) {
+      fail(appId, "app.config must set orientation: 'default' for large screens");
+    }
+    if (!/['"]expo-image['"]/.test(cfg)) {
+      fail(appId, 'app.config must register expo-image plugin (bitmap optimization)');
+    }
   }
 
   const pkg = JSON.parse(read(appId, 'package.json'));
@@ -68,6 +78,15 @@ for (const [appId, meta] of Object.entries(fleetProfiles)) {
     pkg.devDependencies?.['@check/android15-play-compliance'];
   if (!dep) {
     fail(appId, 'package.json missing @check/android15-play-compliance');
+  }
+  if (!pkg.dependencies?.['expo-image']) {
+    fail(appId, 'package.json missing expo-image (Play bitmap optimization)');
+  }
+  if (
+    typeof pkg.scripts?.['test:play-compliance'] !== 'string' ||
+    !/mutate-app-play-compliance|mutate-play-compliance/.test(pkg.scripts['test:play-compliance'])
+  ) {
+    fail(appId, 'package.json must define test:play-compliance mutation gate');
   }
 
   // Prebuild / Expo config eval must resolve the plugin from the app tree.
@@ -78,12 +97,13 @@ for (const [appId, meta] of Object.entries(fleetProfiles)) {
   }
 
   // RN edge-to-edge patch must be wired for every release path (Play Console deprecated APIs).
-  const patchCmd = 'node ../shared/android15-play-compliance/scripts/patch-rn-edge-to-edge.cjs';
-  if (pkg.scripts?.['patch:rn-edge'] !== patchCmd) {
-    fail(appId, 'package.json must define patch:rn-edge → shared patch-cli script');
-  }
-  if (pkg.scripts?.postinstall !== patchCmd) {
-    fail(appId, 'package.json postinstall must run patch:rn-edge');
+  const patchOk =
+    typeof pkg.scripts?.['patch:rn-edge'] === 'string' &&
+    /patch-rn-edge-to-edge\.cjs/.test(pkg.scripts['patch:rn-edge']) &&
+    typeof pkg.scripts?.postinstall === 'string' &&
+    /patch-rn-edge-to-edge\.cjs/.test(pkg.scripts.postinstall);
+  if (!patchOk) {
+    fail(appId, 'package.json must define patch:rn-edge + postinstall → patch-rn-edge-to-edge.cjs');
   }
   if (exists(appId, 'scripts/preflight.sh')) {
     const preflight = read(appId, 'scripts/preflight.sh');
@@ -107,6 +127,14 @@ for (const [appId, meta] of Object.entries(fleetProfiles)) {
   // Match real <item> tags only — educational comments may mention the attr names.
   if (hasDeprecatedEdgeToEdgeItems(styles)) {
     fail(appId, 'styles.xml still sets deprecated edge-to-edge bar colors');
+  }
+
+  const manifestOrient = read(appId, 'android/app/src/main/AndroidManifest.xml');
+  if (/android:screenOrientation\s*=\s*["']portrait["']/.test(manifestOrient)) {
+    fail(appId, 'AndroidManifest still locks MainActivity to portrait');
+  }
+  if (/android:resizeableActivity\s*=\s*["']false["']/.test(manifestOrient)) {
+    fail(appId, 'AndroidManifest sets resizeableActivity=false (blocked for large screens)');
   }
 
   const gradle = read(appId, 'android/gradle.properties');

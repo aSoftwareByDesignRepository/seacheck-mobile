@@ -8,7 +8,8 @@ const path = require('path');
 const fleetProfiles = require('../src/fleetProfiles');
 
 const mobileRoot = path.resolve(__dirname, '../../..');
-const PATCH_SCRIPT = '../shared/android15-play-compliance/scripts/patch-rn-edge-to-edge.cjs';
+const SHARED_PATCH = '../shared/android15-play-compliance/scripts/patch-rn-edge-to-edge.cjs';
+const VENDOR_PATCH = 'node_modules/@check/android15-play-compliance/scripts/patch-rn-edge-to-edge.cjs';
 const PREFLIGHT_BLOCK = `echo "==> Android 15 / Play: patch RN edge-to-edge deprecated Window APIs"
 npm run patch:rn-edge
 `;
@@ -17,8 +18,22 @@ npm run patch:rn-edge
 
 `;
 
-/** Apps with the shared plugin but outside fleetProfiles (maintenance / inventory). */
-const EXTRA_APPS = ['maintenancecheck', 'inventorycheck'];
+/** Apps with the shared plugin but outside fleetProfiles (legacy extras). */
+const EXTRA_APPS = [];
+
+function patchCmdFor(appDir) {
+  const pkgPath = path.join(appDir, 'package.json');
+  if (!fs.existsSync(pkgPath)) return `node ${SHARED_PATCH}`;
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  const dep =
+    pkg.dependencies?.['@check/android15-play-compliance'] ||
+    pkg.devDependencies?.['@check/android15-play-compliance'] ||
+    '';
+  if (/vendor\/android15-play-compliance/.test(dep)) {
+    return `node ${VENDOR_PATCH}`;
+  }
+  return `node ${SHARED_PATCH}`;
+}
 
 function readJson(p) {
   return JSON.parse(fs.readFileSync(p, 'utf8'));
@@ -34,7 +49,7 @@ function ensurePackageScripts(appDir) {
   const pkg = readJson(pkgPath);
   pkg.scripts = pkg.scripts || {};
   let changed = false;
-  const patchCmd = `node ${PATCH_SCRIPT}`;
+  const patchCmd = patchCmdFor(appDir);
   if (pkg.scripts['patch:rn-edge'] !== patchCmd) {
     pkg.scripts['patch:rn-edge'] = patchCmd;
     changed = true;

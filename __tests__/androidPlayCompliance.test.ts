@@ -12,6 +12,19 @@ describe('Android Play compliance toolchain (SeaCheck)', () => {
     expect(appConfig).not.toMatch(/orientation:\s*'portrait'/);
   });
 
+
+  it('depends on expo-image + OptimizedImage for bitmap optimization', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+    expect(pkg.dependencies['expo-image']).toBeTruthy();
+    expect(fs.existsSync(path.join(root, 'src/ui/OptimizedImage.tsx'))).toBe(true);
+    const src = fs.readFileSync(path.join(root, 'src/ui/OptimizedImage.tsx'), 'utf8');
+    expect(src).toMatch(/from 'expo-image'/);
+    expect(src).toMatch(/cachePolicy\s*=\s*'memory-disk'/);
+    expect(src).not.toMatch(/from 'react-native'/);
+    const config = fs.readFileSync(path.join(root, 'app.config.ts'), 'utf8');
+    expect(config).toMatch(/['"]expo-image['"]/);
+  });
+
   it('wires the shared Android 15 Play compliance plugin (keepBoot for TaskManager)', () => {
     const config = fs.readFileSync(path.join(root, 'app.config.ts'), 'utf8');
     expect(config).toMatch(/withAndroid15PlayCompliance/);
@@ -23,6 +36,7 @@ describe('Android Play compliance toolchain (SeaCheck)', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
     expect(pkg.scripts['patch:rn-edge']).toMatch(/patch-rn-edge-to-edge/);
     expect(pkg.scripts.postinstall).toMatch(/patch-rn-edge-to-edge/);
+    expect(pkg.scripts['test:play-compliance']).toMatch(/mutate-(app-)?play-compliance/);
     expect(pkg.scripts['optimize:android-bitmaps']).toMatch(/optimize-android-bitmaps/);
     expect(pkg.scripts['android:apk']).toMatch(/android-apk/);
     expect(pkg.scripts['android:bundle']).toMatch(/android-bundle/);

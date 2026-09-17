@@ -22,6 +22,9 @@ npx expo install --check
 echo "==> Android 15 / Play: patch RN edge-to-edge deprecated Window APIs"
 npm run patch:rn-edge
 
+echo "==> Play compliance mutation gate"
+npm run test:play-compliance
+
 echo "==> Typecheck"
 npm run typecheck
 

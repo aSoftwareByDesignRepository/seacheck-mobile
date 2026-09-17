@@ -3,6 +3,8 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { ensureJestBail, ensureJestForceExit, acquireMutationLock } = require('../../../scripts/lib/mutation-jest-bail.cjs');
+
 const { spawnSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
@@ -248,10 +250,12 @@ for (const t of targets) {
   t._original = fs.readFileSync(path.join(root, t.rel), 'utf8');
 }
 
+acquireMutationLock(__dirname);
 const baseline = runTests();
 if (baseline.status !== 0) {
   fail(`baseline failed:\n${baseline.stdout}\n${baseline.stderr}`);
 }
+
 console.log('baseline OK');
 
 for (const t of targets) {

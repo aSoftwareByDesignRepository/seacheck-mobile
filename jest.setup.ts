@@ -192,3 +192,17 @@ jest.mock('@expo/vector-icons', () => {
     MaterialIcons: ({ name }: { name: string }) => React.createElement(Text, null, name),
   };
 });
+
+jest.mock('expo-image', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const ExpoImage = React.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+    React.createElement(View, { ...props, ref }),
+  );
+  ExpoImage.displayName = 'ExpoImage';
+  return {
+    __esModule: true,
+    Image: ExpoImage,
+  };
+});
+

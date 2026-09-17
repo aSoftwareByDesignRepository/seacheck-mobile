@@ -119,6 +119,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     ['@maplibre/maplibre-react-native', { android: {}, ios: { metalEnabled: true } }],
+    'expo-image',
     [withAndroid15PlayCompliance as unknown as string, { profile: 'keepBoot' }],
     withAndroidReleaseSigning as unknown as string,
     withAndroidNodePath,

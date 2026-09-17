@@ -71,4 +71,12 @@ module.exports = {
     profile: 'standard',
     reason: 'warehouse scanning; SAW/edge/R8',
   },
+  flowcheck: {
+    profile: 'standard',
+    reason: 'session alerts may survive reboot; SAW/edge/R8',
+  },
+  'snackcheck-kiosk': {
+    profile: 'standard',
+    reason: 'kiosk terminal; SAW/edge/R8; orientation unlocked',
+  },
 };

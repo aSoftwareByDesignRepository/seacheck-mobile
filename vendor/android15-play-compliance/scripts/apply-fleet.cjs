@@ -72,8 +72,14 @@ function ensurePackageDependency(appDir) {
   if (!fs.existsSync(pkgPath)) return false;
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   const depName = '@check/android15-play-compliance';
+  const existing =
+    pkg.dependencies?.[depName] || pkg.devDependencies?.[depName];
+  // Preserve vendor/ copies used by standalone repos (SeaCheck, FlowCheck).
+  if (existing && /vendor\/android15-play-compliance/.test(existing)) {
+    return false;
+  }
   const rel = 'file:../shared/android15-play-compliance';
-  if (pkg.dependencies?.[depName] === rel || pkg.devDependencies?.[depName] === rel) {
+  if (existing === rel) {
     return false;
   }
   pkg.dependencies = pkg.dependencies || {};

@@ -24,6 +24,9 @@ fi
 echo "==> Ensuring Android SDK path for Gradle"
 bash scripts/ensure-android-local-properties.sh
 
+echo "==> Android 15 / Play: ensure RN edge-to-edge sources are patched"
+npm run patch:rn-edge
+
 echo "==> Building release APK"
 export SEACHECK_APP_VARIANT=production
 export NODE_ENV=production
