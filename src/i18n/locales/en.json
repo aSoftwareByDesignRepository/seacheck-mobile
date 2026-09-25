@@ -194,6 +194,7 @@
     "defaultsTitle": "Underway defaults",
     "defaultsSummary": "Cruise/passage · knots · nautical miles · true north · degrees & decimal minutes · course-up",
     "vesselTitle": "Vessel",
+    "vesselSaved": "Vessel saved",
     "vesselName": "Vessel name",
     "callSign": "Call sign",
     "mmsi": "MMSI",

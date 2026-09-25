@@ -194,6 +194,7 @@
     "defaultsTitle": "Por omissão",
     "defaultsSummary": "Cruzeiro/passagem · nós · milhas náuticas · verdadeiro norte · graus e minutos decimais · curso-up",
     "vesselTitle": "Navio",
+    "vesselSaved": "Dados da embarcação guardados",
     "vesselName": "Nome do navio",
     "callSign": "Sinal de chamada",
     "mmsi": "MMSI",

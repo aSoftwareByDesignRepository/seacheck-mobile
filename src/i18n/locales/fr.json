@@ -194,6 +194,7 @@
     "defaultsTitle": "Défauts en cours",
     "defaultsSummary": "Croisière/passage · nœuds · milles marins · nord géographique · degrés et minutes décimales · parcours",
     "vesselTitle": "Navire",
+    "vesselSaved": "Données du bateau enregistrées",
     "vesselName": "Nom du navire",
     "callSign": "Indicatif d'appel",
     "mmsi": "MMSI",

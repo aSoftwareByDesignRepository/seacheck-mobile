@@ -31,7 +31,13 @@ export function DownloadFailureModal() {
       accessibilityViewIsModal
       statusBarTranslucent
     >
-      <View style={[styles.backdrop, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.md }]}>
+      <View
+        style={[
+          styles.backdrop,
+          // 48dp system-nav floor (DS §5) — keeps Copy/Dismiss clear of 3-button nav on zero-inset devices.
+          { paddingTop: insets.top + spacing.md, paddingBottom: Math.max(insets.bottom + spacing.md, 48) },
+        ]}
+      >
         <View
           style={[
             styles.sheet,

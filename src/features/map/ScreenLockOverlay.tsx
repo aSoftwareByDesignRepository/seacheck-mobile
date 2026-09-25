@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMapBottomLayout } from '../../hooks/useMapBottomLayout';
 import { useMobLayoutSwitch } from '../../hooks/useMobLayoutSwitch';
@@ -18,7 +19,8 @@ type Props = {
 
 /** Requires a deliberate hold to unlock — MOB stays reachable for emergencies. */
 export function ScreenLockOverlay({ visible, onUnlock }: Props) {
-  const { colors, minTouch } = useTheme();
+  const { colors, minTouch, spacing } = useTheme();
+  const insets = useSafeAreaInsets();
   const layout = useMapBottomLayout({ showSideActions: true });
   const layoutPreset = useEffectiveLayoutPreset();
   const isInstrumentsOnly = layoutPreset === 'instruments-only';
@@ -95,7 +97,14 @@ export function ScreenLockOverlay({ visible, onUnlock }: Props) {
             styles.mobHost,
             isInstrumentsOnly
               ? { top: layout.top, right: layout.right, alignItems: 'flex-end' }
-              : { bottom: layout.actionsColumnBottom, right: layout.right, alignItems: 'flex-end' },
+              : {
+                  // This Modal covers the whole window — actionsColumnBottom is measured
+                  // for the map pane (above the tab bar), so clamp a 48dp system-nav floor
+                  // (DS §5) to keep the MOB emergency button off the 3-button nav bar.
+                  bottom: Math.max(layout.actionsColumnBottom, Math.max(insets.bottom, 48) + spacing.sm),
+                  right: layout.right,
+                  alignItems: 'flex-end',
+                },
           ]}
         >
           <MobActionButton

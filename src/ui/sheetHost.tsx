@@ -280,7 +280,10 @@ export function BottomSheetChrome({
             borderColor: colors.border,
             paddingHorizontal: spacing.lg,
             paddingTop: spacing.md,
-            paddingBottom: insets.bottom + spacing.lg,
+            // 48dp system-nav floor (COMPANION-DESIGN-SYSTEM §5): 3-button nav and
+            // some AVDs report insets.bottom=0 while chrome still covers ~48px —
+            // spacing-only pads would leave footer CTAs under the system bar.
+            paddingBottom: Math.max(insets.bottom + spacing.lg, 48),
             maxHeight: maxSheetHeight,
           },
         ]}

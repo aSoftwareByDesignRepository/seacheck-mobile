@@ -1,7 +1,7 @@
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   openSystemSettings,
@@ -35,6 +35,11 @@ function resumeStep(
 
 export function OnboardingScreen() {
   const { colors, spacing, minTouch } = useTheme();
+  const insets = useSafeAreaInsets();
+  // 48dp system-nav floor (COMPANION-DESIGN-SYSTEM §5): SafeAreaView pads by
+  // insets.bottom, but 3-button nav / zero-inset AVDs can report 0 while chrome
+  // still covers ~48px — the pinned disclaimer CTA must not sit under it.
+  const stickyBottomPad = Math.max(48 - insets.bottom, 0);
   const completeOnboarding = useSettingsStore((s) => s.completeOnboarding);
   const acknowledgeBatteryGuidance = useSettingsStore((s) => s.acknowledgeBatteryGuidance);
   const batteryGuidanceAcknowledged = useSettingsStore((s) => s.batteryGuidanceAcknowledged);
@@ -205,7 +210,7 @@ export function OnboardingScreen() {
                 <NavigationDisclaimer testIDPrefix="onboarding.disclaimer" />
               </Card>
             </ScrollView>
-            <View style={[styles.stickyCta, { minHeight: minTouch, paddingTop: spacing.sm }]}>
+            <View style={[styles.stickyCta, { minHeight: minTouch, paddingTop: spacing.sm, paddingBottom: stickyBottomPad }]}>
               <Button
                 label={t('onboarding.acceptDisclaimer')}
                 onPress={() => void acceptDisclaimer()}

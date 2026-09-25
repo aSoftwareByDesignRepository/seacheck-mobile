@@ -194,6 +194,7 @@
     "defaultsTitle": "Pågående standardinställningar",
     "defaultsSummary": "Kryssning/passage · knop · sjömil · sann nord · grader & decimalminuter · kurs upp",
     "vesselTitle": "Fartyg",
+    "vesselSaved": "Båtdata sparade",
     "vesselName": "Fartygets namn",
     "callSign": "Anropssignal",
     "mmsi": "MMSI",

@@ -20,7 +20,7 @@ export function SettingsVesselScreen() {
 
   async function saveVessel() {
     await useSettingsStore.getState().updateVessel(draft);
-    showSuccess(t('common.save'));
+    showSuccess(t('settings.vesselSaved'));
   }
 
   return (

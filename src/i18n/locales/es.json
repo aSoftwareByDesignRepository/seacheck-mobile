@@ -194,6 +194,7 @@
     "defaultsTitle": "Impagos en curso",
     "defaultsSummary": "Crucero/paso · nudos · millas náuticas · norte verdadero · grados y minutos decimales · rumbo arriba",
     "vesselTitle": "Buque",
+    "vesselSaved": "Datos del barco guardados",
     "vesselName": "Nombre del barco",
     "callSign": "indicativo de llamada",
     "mmsi": "MMSI",

@@ -194,6 +194,7 @@
     "defaultsTitle": "Impostazioni predefinite in corso",
     "defaultsSummary": "Crociera/passaggio · nodi · miglia nautiche · nord geografico · gradi e minuti decimali · rotta in su",
     "vesselTitle": "Nave",
+    "vesselSaved": "Dati dell'imbarcazione salvati",
     "vesselName": "Nome della nave",
     "callSign": "Indicativo di chiamata",
     "mmsi": "MMSI",

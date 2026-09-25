@@ -194,6 +194,7 @@
     "defaultsTitle": "Pågående standarder",
     "defaultsSummary": "Cruise/passasje · knop · nautiske mil · sann nord · grader og desimalminutter · kurs opp",
     "vesselTitle": "Fartøy",
+    "vesselSaved": "Båtdata lagret",
     "vesselName": "Fartøyets navn",
     "callSign": "Kallesignal",
     "mmsi": "MMSI",
