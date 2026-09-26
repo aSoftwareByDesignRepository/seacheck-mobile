@@ -36,3 +36,7 @@ artifacts/*.apk
 documentation/**/qa-report/artifacts/*.apk
 documentation/**/qa-report/artifacts/*.aab
 documentation/**/qa-report/builds/*.apk
+
+# live capture provenance — not for shipping
+docs/play-store/assets/**/live-raw*/
+docs/play-store/assets/**/_raw-live*/
