@@ -1,0 +1,18 @@
+SeaCheck bygde jeg for egen småbåtseiling — en dekkskompanjong til papirsjøkart, ikke en erstatning.
+
+Jeg bruker den til fart, koordinater, rask kartposisjon uten å gå under dekk, ruteskisser og ankeralarmer. Jeg deler den i tilfelle en annen kystseiler har nytte av den. Ingen lansering, ingen supportgaranti — på egen risiko.
+
+IKKE FOR PRIMÆRNAVIGASJON
+Kun navigasjonshjelp. Ikke en sertifisert plotter. Kartene bruker OpenSeaMap / OpenStreetMap-frivilligdata og kan være utdaterte. Ha alltid offisielle, korrigerte sjøkart om bord.
+
+FUNKSJONER
+• GPS på kartet — COG, SOG, peiling
+• Passasjeplanlegging, waypoints, GPX-eksport
+• Offline-regionpakker (nedlasting over Wi‑Fi)
+• Anker-, ankomst- og kursavviksalarmer
+• Sporopptak
+• UI EN / DE
+
+Gratis. Ingen reklame. Ingen analytics. Data blir på enheten din.
+
+Bygget av Alexander Mäule / Software by Design GbR, Schleswig, Tyskland (sideprosjekt).

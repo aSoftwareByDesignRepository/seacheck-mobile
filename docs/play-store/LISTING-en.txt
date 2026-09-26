@@ -14,7 +14,7 @@ Tone: personal project shared as-is — not a product launch.
 SeaCheck
 
 --- Short description (max 80 characters) ---
-Personal coastal nav aid — GPS, SOG, offline map. Use with paper charts.
+GPS on the chart, anchor alarm, offline maps — a deck-side companion.
 
 --- Full description (max 4000 characters) ---
 SeaCheck is something I built for my own small-boat sailing — a deck-side companion to paper charts, not a replacement for them.

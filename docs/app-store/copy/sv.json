@@ -1,0 +1,11 @@
+{
+  "brand": "SEACHECK  ·  COASTAL NAV",
+  "shots": {
+    "sv-SE-phone-01-map.png": {"kicker": "KARTA", "headline": "GPS på sjökortet", "sub": "SOG, COG och position vid däck"},
+    "sv-SE-phone-02-passage-map.png": {"kicker": "RUTT", "headline": "Rutten på kartan", "sub": "Kurslinje och sjömärken i samma bild"},
+    "sv-SE-phone-03-passage.png": {"kicker": "TUR", "headline": "Skissa turen", "sub": "Vägpunkter, bensträckor, ETA — GPX-export"},
+    "sv-SE-phone-04-downloads.png": {"kicker": "PAKET", "headline": "Ladda ner på wifi", "sub": "Kortpaket klara innan ni lättar förtöjning"},
+    "sv-SE-phone-05-offline.png": {"kicker": "OFFLINE", "headline": "Kartor utan täckning", "sub": "Baskarta och sjömärken ligger på enheten"},
+    "sv-SE-phone-06-disclaimer.png": {"kicker": "ÄRLIGT", "headline": "Ett hjälpmedel, ingen plotter", "sub": "Ha officiella sjökort ombord — data av frivilliga"}
+  }
+}

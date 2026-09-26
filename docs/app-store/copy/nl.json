@@ -1,0 +1,11 @@
+{
+  "brand": "SEACHECK  ·  COASTAL NAV",
+  "shots": {
+    "nl-NL-phone-01-map.png": {"kicker": "KAART", "headline": "GPS op de kaart", "sub": "SOG, COG en positie aan dek"},
+    "nl-NL-phone-02-passage-map.png": {"kicker": "ROUTE", "headline": "De route op de kaart", "sub": "Koerslijn en zeetekens in één beeld"},
+    "nl-NL-phone-03-passage.png": {"kicker": "TOCHT", "headline": "Schets de tocht", "sub": "Waypoints, beenkoersen en ETA's — GPX"},
+    "nl-NL-phone-04-downloads.png": {"kicker": "PAKKETTEN", "headline": "Download op wifi", "sub": "Kaartpakketten klaar vóór het afmeren"},
+    "nl-NL-phone-05-offline.png": {"kicker": "OFFLINE", "headline": "Kaarten zonder bereik", "sub": "Basiskaart en zeetekens blijven op het toestel"},
+    "nl-NL-phone-06-disclaimer.png": {"kicker": "EERLIJK", "headline": "Hulpmiddel, geen plotter", "sub": "Houd officiële kaarten aan boord — vrijwilligersdata"}
+  }
+}

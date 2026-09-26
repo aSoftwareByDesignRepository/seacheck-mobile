@@ -1,0 +1,11 @@
+{
+  "brand": "SEACHECK  ·  COASTAL NAV",
+  "shots": {
+    "en-US-phone-01-map.png": {"kicker": "CHART", "headline": "GPS on the chart", "sub": "SOG, COG and position at deck level"},
+    "en-US-phone-02-passage-map.png": {"kicker": "ROUTE", "headline": "The route on the chart", "sub": "Course line and seamarks in one view"},
+    "en-US-phone-03-passage.png": {"kicker": "PASSAGE", "headline": "Sketch the passage", "sub": "Waypoints, leg bearings and ETAs — GPX export"},
+    "en-US-phone-04-downloads.png": {"kicker": "PACKS", "headline": "Download on Wi-Fi", "sub": "Chart packs ready before you cast off"},
+    "en-US-phone-05-offline.png": {"kicker": "OFFLINE", "headline": "Charts without signal", "sub": "Base map and seamarks stay on the device"},
+    "en-US-phone-06-disclaimer.png": {"kicker": "HONEST", "headline": "An aid, not a plotter", "sub": "Carry official charts — volunteer-made data"}
+  }
+}

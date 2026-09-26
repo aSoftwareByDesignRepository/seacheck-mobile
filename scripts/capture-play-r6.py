@@ -211,8 +211,8 @@ def visible_in_fold(bounds, y_max: int = 1850, y_min: int = 80) -> bool:
 
 
 def dump():
-    sh("shell", "uiautomator", "dump", "/sdcard/sc.xml", t=8)
-    return sh("shell", "cat", "/sdcard/sc.xml", t=6).stdout or ""
+    sh("shell", "uiautomator", "dump", "/data/local/tmp/sc.xml", t=8)
+    return sh("shell", "cat", "/data/local/tmp/sc.xml", t=6).stdout or ""
 
 
 def find(xml, rid=None, text=None):

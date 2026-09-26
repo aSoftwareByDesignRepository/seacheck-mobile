@@ -1,0 +1,11 @@
+{
+  "brand": "SEACHECK  ·  COASTAL NAV",
+  "shots": {
+    "de-DE-phone-01-map.png": {"kicker": "KARTE", "headline": "GPS auf der Karte", "sub": "SOG, COG und Position an Deck"},
+    "de-DE-phone-02-passage-map.png": {"kicker": "ROUTE", "headline": "Die Route auf der Karte", "sub": "Kurslinie und Seezeichen im Blick"},
+    "de-DE-phone-03-passage.png": {"kicker": "TÖRN", "headline": "Törn skizzieren", "sub": "Wegpunkte, Etappenkurse, ETAs — GPX-Export"},
+    "de-DE-phone-04-downloads.png": {"kicker": "PAKETE", "headline": "Per WLAN laden", "sub": "Kartenpakete bereit vor dem Ablegen"},
+    "de-DE-phone-05-offline.png": {"kicker": "OFFLINE", "headline": "Karten ohne Empfang", "sub": "Basiskarte und Seezeichen bleiben an Bord"},
+    "de-DE-phone-06-disclaimer.png": {"kicker": "EHRLICH", "headline": "Hilfsmittel, kein Plotter", "sub": "Amtliche Seekarten an Bord — Daten von Freiwilligen"}
+  }
+}

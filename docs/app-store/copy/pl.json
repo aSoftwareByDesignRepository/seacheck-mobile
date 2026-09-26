@@ -1,0 +1,11 @@
+{
+  "brand": "SEACHECK  ·  COASTAL NAV",
+  "shots": {
+    "pl-PL-phone-01-map.png": {"kicker": "MAPA", "headline": "GPS na mapie", "sub": "SOG, COG i pozycja przy burcie"},
+    "pl-PL-phone-02-passage-map.png": {"kicker": "TRASA", "headline": "Trasa na mapie", "sub": "Linia kursu i znaki w jednym widoku"},
+    "pl-PL-phone-03-passage.png": {"kicker": "REJS", "headline": "Naszkicuj rejs", "sub": "Waypointy, kursy odcinków, ETA — GPX"},
+    "pl-PL-phone-04-downloads.png": {"kicker": "PACZKI", "headline": "Pobierz przez Wi-Fi", "sub": "Paczki map gotowe przed odpłynięciem"},
+    "pl-PL-phone-05-offline.png": {"kicker": "OFFLINE", "headline": "Mapy bez zasięgu", "sub": "Mapa bazowa i znaki zostają na urządzeniu"},
+    "pl-PL-phone-06-disclaimer.png": {"kicker": "UCZCIWIE", "headline": "Pomoc, nie ploter", "sub": "Miej oficjalne mapy — dane od wolontariuszy"}
+  }
+}

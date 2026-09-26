@@ -11,13 +11,13 @@ SeaCheck
 Coastal nav aid for sailors
 
 --- Promotional text (max 170, optional) ---
-Deck-side GPS, offline OpenSeaMap packs, anchor alarms — a companion to paper charts. Not a certified plotter. No account. No ads.
+GPS on the chart, anchor alarm, offline packs — a deck-side companion to paper charts, not a certified plotter. No account.
 
 --- Keywords (max 100, commas, no spaces after commas) ---
 sailing,coastal,GPS,chart,anchor,offline,OpenSeaMap,passage,navigation,boat
 
 --- Description (max 4000) ---
-SeaCheck is a personal coastal navigation companion for small-boat sailing — a deck-side aid to paper charts, not a replacement for official nautical charts.
+SeaCheck is a personal coastal navigation companion for small-boat sailing — a deck-side aid to paper charts, not a replacement for official nautical charts. It was built for the cockpit of a small boat: bright enough to read in glare, simple enough to use one-handed, honest about what it isn't.
 
 Who it is for
 • Coastal sailors who want GPS on a chart, passage sketches, and anchor alarms without a cloud account

@@ -61,8 +61,8 @@ def geo(n=10, kn=6.5):
 
 
 def dump():
-    sh("shell", "uiautomator", "dump", "--compressed", "/sdcard/sc.xml", t=6)
-    return sh("shell", "cat", "/sdcard/sc.xml", t=4).stdout or ""
+    sh("shell", "uiautomator", "dump", "--compressed", "/data/local/tmp/sc.xml", t=6)
+    return sh("shell", "cat", "/data/local/tmp/sc.xml", t=4).stdout or ""
 
 
 def find(xml, rid=None, text=None):

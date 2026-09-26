@@ -1,0 +1,18 @@
+O SeaCheck eu fiz para as minhas próprias saídas de barco pequeno — um companheiro de convés às cartas de papel, não um substituto.
+
+Uso para velocidade, coordenadas, posição rápida na carta sem descer, esboços de rota e alarmes de âncora. Compartilho caso outro navegante costeiro ache útil. Sem lançamento, sem promessa de suporte — use por sua conta e risco.
+
+NÃO PARA NAVEGAÇÃO PRINCIPAL
+Apenas auxílio à navegação. Não é um plotter certificado. Os mapas usam dados voluntários do OpenSeaMap / OpenStreetMap e podem estar desatualizados. Leve sempre cartas náuticas oficiais e corrigidas.
+
+FUNÇÕES
+• GPS na carta — COG, SOG, marcação
+• Planejamento de rota, waypoints, exportação GPX
+• Pacotes de regiões offline (download via Wi‑Fi)
+• Alarmes de âncora, chegada e fora de rumo
+• Gravação de track
+• Interface EN / DE
+
+Grátis. Sem anúncios. Sem analytics. Os dados ficam no seu dispositivo.
+
+Feito por Alexander Mäule / Software by Design GbR, Schleswig, Alemanha (projeto paralelo).

@@ -78,12 +78,12 @@ def dump(serial: str) -> str:
     r = adb(serial, "exec-out", "uiautomator", "dump", "/dev/tty", timeout=4)
     if r.returncode == 0 and r.stdout and "<hierarchy" in r.stdout:
         return r.stdout
-    adb(serial, "shell", "rm", "-f", "/sdcard/sc-cap.xml", timeout=3)
-    r = adb(serial, "shell", "uiautomator", "dump", "--compressed", "/sdcard/sc-cap.xml", timeout=4)
+    adb(serial, "shell", "rm", "-f", "/data/local/tmp/sc-cap.xml", timeout=3)
+    r = adb(serial, "shell", "uiautomator", "dump", "--compressed", "/data/local/tmp/sc-cap.xml", timeout=4)
     if r.returncode != 0:
         adb_kill_ui(serial)
         return ""
-    out = adb(serial, "shell", "cat", "/sdcard/sc-cap.xml", timeout=4)
+    out = adb(serial, "shell", "cat", "/data/local/tmp/sc-cap.xml", timeout=4)
     return out.stdout or ""
 
 

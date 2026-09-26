@@ -13,8 +13,6 @@ FUNKTIONEN
 • Track-Aufzeichnung
 • DE / EN Oberfläche
 
-Optionaler Hintergrund-Standort: Wenn du ihn erlaubst, können Anker-Drift-Alarme und Track-Aufzeichnung weiterlaufen, während der Bildschirm aus ist. Du kannst Hintergrund-Standort ablehnen und die Karte trotzdem bei geöffneter App nutzen. Standortdaten bleiben auf dem Gerät.
-
 Kostenlos. Keine Werbung. Keine Analyse-SDKs. Daten bleiben auf dem Gerät.
 
 Von Alexander Mäule / Software by Design GbR, Schleswig (Nebenprojekt).

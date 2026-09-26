@@ -1,0 +1,11 @@
+{
+  "brand": "SEACHECK  ·  COASTAL NAV",
+  "shots": {
+    "it-IT-phone-01-map.png": {"kicker": "CARTA", "headline": "Il GPS sulla carta", "sub": "SOG, COG e posizione dal pozzetto"},
+    "it-IT-phone-02-passage-map.png": {"kicker": "ROTTA", "headline": "La rotta sulla carta", "sub": "Rotta e segnali in un'unica vista"},
+    "it-IT-phone-03-passage.png": {"kicker": "PASSAGGIO", "headline": "Disegni la rotta", "sub": "Waypoint, rotte di tratto ed ETA — GPX"},
+    "it-IT-phone-04-downloads.png": {"kicker": "PACCHETTI", "headline": "Scarichi in Wi-Fi", "sub": "Carte pronte prima di mollare gli ormeggi"},
+    "it-IT-phone-05-offline.png": {"kicker": "OFFLINE", "headline": "Carte senza campo", "sub": "Mappa base e segnali restano sul dispositivo"},
+    "it-IT-phone-06-disclaimer.png": {"kicker": "ONESTO", "headline": "Un aiuto, non un plotter", "sub": "Carte ufficiali a bordo — dati dei volontari"}
+  }
+}

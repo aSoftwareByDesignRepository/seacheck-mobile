@@ -1,0 +1,18 @@
+SeaCheck har jeg bygget til min egen sejllads i en lille båd — en dæksledsager til papirkortene, ikke en erstatning for dem.
+
+Jeg bruger den til fart, koordinater, hurtig positionsvisning uden at gå under dæk, ruteskitser og ankeralarmer. Jeg deler den, hvis en anden kystsejler kan bruge den. Intet launch, intet supportløfte — brug på eget ansvar.
+
+IKKE TIL PRIMÆRNAVIGATION
+Kun navigationshjælp. Ikke en certificeret kortplotter. Kortene bygger på OpenSeaMap-/OpenStreetMap-frivilligdata og kan være forældede. Medbring altid officielle, rettede søkort.
+
+FUNKTIONER
+• GPS på kortet — COG, SOG, pejling
+• Ruteplanlægning, waypoints, GPX-eksport
+• Offline-regionpakker (Wi‑Fi-download)
+• Anker-, ankomst- og kursafvigelsesalarmer
+• Track-optagelse
+• EN / DE-grænseflade
+
+Gratis. Ingen reklamer. Ingen analytics. Data bliver på din enhed.
+
+Lavet af Alexander Mäule / Software by Design GbR, Schleswig, Tyskland (sideprojekt).

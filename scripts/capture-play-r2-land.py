@@ -64,8 +64,8 @@ def geo(n=12, kn=6.5):
 def dump(retries=3):
     out = ""
     for _ in range(retries):
-        sh("shell", "uiautomator", "dump", "--compressed", "/sdcard/sc.xml", t=6)
-        out = sh("shell", "cat", "/sdcard/sc.xml", t=4).stdout or ""
+        sh("shell", "uiautomator", "dump", "--compressed", "/data/local/tmp/sc.xml", t=6)
+        out = sh("shell", "cat", "/data/local/tmp/sc.xml", t=4).stdout or ""
         if out.count("<node") > 3:
             return out
         time.sleep(0.4)

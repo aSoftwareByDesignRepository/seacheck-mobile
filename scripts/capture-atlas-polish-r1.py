@@ -35,8 +35,8 @@ def swipe(x1: int, y1: int, x2: int, y2: int, dur: int = 280) -> None:
 
 
 def dump_xml() -> str:
-    sh("shell", "uiautomator", "dump", "/sdcard/ui.xml", timeout=90)
-    return sh("shell", "cat", "/sdcard/ui.xml", timeout=30).stdout or ""
+    sh("shell", "uiautomator", "dump", "/data/local/tmp/ui.xml", timeout=90)
+    return sh("shell", "cat", "/data/local/tmp/ui.xml", timeout=30).stdout or ""
 
 
 def has(xml: str, rid: str) -> bool:

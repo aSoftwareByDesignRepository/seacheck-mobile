@@ -92,11 +92,11 @@ def dump() -> str:
     r = adb("exec-out", "uiautomator", "dump", "/dev/tty", timeout=4)
     if r.returncode == 0 and r.stdout and "<hierarchy" in r.stdout:
         return r.stdout
-    adb("shell", "rm", "-f", "/sdcard/sc-cap.xml", timeout=3)
-    r = adb("shell", "uiautomator", "dump", "--compressed", "/sdcard/sc-cap.xml", timeout=4)
+    adb("shell", "rm", "-f", "/data/local/tmp/sc-cap.xml", timeout=3)
+    r = adb("shell", "uiautomator", "dump", "--compressed", "/data/local/tmp/sc-cap.xml", timeout=4)
     if r.returncode != 0:
         return ""
-    return adb("shell", "cat", "/sdcard/sc-cap.xml", timeout=4).stdout or ""
+    return adb("shell", "cat", "/data/local/tmp/sc-cap.xml", timeout=4).stdout or ""
 
 
 def grant():

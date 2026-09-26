@@ -16,14 +16,14 @@ Target: **2–8 phone screenshots** (9:16), plus **512×512 icon** and **1024×5
 | 2 | `phone-02-passage-map.png` | Map + active passage | Route on chart |
 | 3 | `phone-03-passage.png` | Passage | Active passage (≥2 WPs), not empty |
 | 4 | `phone-04-downloads.png` | Downloads | Region packs + Download / Ready |
-| 5 | `phone-05-offline.png` | Map offline or Tracks | Offline banner or tracks with content |
+| 5 | `phone-05-tracks.png` | Map offline or Tracks | Offline banner or tracks with content (Tracks w/ seeded log = clearly distinct from shot 02) |
 | 6 | `phone-06-disclaimer.png` | Safety (≤1) | Full disclaimer, no mid-sentence crop |
 
 Capture **de-DE** as a separate device locale pass. Do not copy en-US PNGs into `de-DE`.
 
 ## Automated live capture (preferred)
 
-Installs the production APK, drives onboarding via uiautomator, writes 1080×1920 finals. **Run once per locale** (`system_locales en-US` then `de-DE`); do not copy the same PNGs into both folders. Current script still clones both — update before Play resubmit.
+Installs the production APK, drives onboarding via uiautomator, pushes a deterministic demo DB (Rostock→Kopenhagen passage + waypoints + track + vessel; `scripts/seed-demo-data.py`), and writes 1080×1920 finals. **Run once per locale** — every locale gets its own real capture; never copy PNGs between locale folders.
 
 ```bash
 cd mobile/seacheck
@@ -35,8 +35,8 @@ bash scripts/capture-play-screenshots.sh
 
 Outputs:
 
-- `docs/play-store/assets/screenshots/phone-0N-*.png` (store-ready)
-- `docs/play-store/assets/screenshots/_raw-live/` (device resolution; gitignored)
+- `docs/play-store/assets/screenshots[-<loc>]/<bcp>-phone-0N-*.png` (store-ready)
+- `docs/play-store/assets/screenshots[-<loc>]/_raw-live-<bcp>/` (device resolution)
 - `fastlane/metadata/android/{locale}/images/phoneScreenshots/1.png`…`6.png`
 
 ## Manual emulator capture

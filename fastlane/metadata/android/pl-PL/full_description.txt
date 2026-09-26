@@ -1,0 +1,18 @@
+SeaCheck zrobiłem na własne rejsy małą łodzią — towarzysz pokładowy do map papierowych, nie ich zamiennik.
+
+Używam go do prędkości, współrzędnych, szybkiej pozycji na mapie bez schodzenia pod pokład, szkiców trasy i alarmów kotwicznych. Udostępniam na wypadek, gdyby inny żeglarz przybrzeżny uznał to za przydatne. Bez premiery, bez obietnicy wsparcia — na własne ryzyko.
+
+NIE DO NAWIGACJI GŁÓWNEJ
+Tylko pomoc nawigacyjna. To nie certyfikowany ploter. Mapy korzystają z danych wolontariuszy OpenSeaMap / OpenStreetMap i mogą być nieaktualne. Zawsze miej na pokładzie oficjalne, poprawione mapy morskie.
+
+FUNKCJE
+• GPS na mapie — COG, SOG, namiar
+• Planowanie przejścia, waypointy, eksport GPX
+• Pakiety regionów offline (pobieranie przez Wi‑Fi)
+• Alarmy kotwicy, przybycia i zejścia z kursu
+• Nagrywanie śladu
+• UI EN / DE
+
+Za darmo. Bez reklam. Bez analytics. Dane zostają na Twoim urządzeniu.
+
+Zrobił Alexander Mäule / Software by Design GbR, Schleswig, Niemcy (projekt poboczny).

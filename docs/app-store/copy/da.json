@@ -1,0 +1,11 @@
+{
+  "brand": "SEACHECK  ·  COASTAL NAV",
+  "shots": {
+    "da-DK-phone-01-map.png": {"kicker": "KORT", "headline": "GPS på søkortet", "sub": "SOG, COG og position ved dækket"},
+    "da-DK-phone-02-passage-map.png": {"kicker": "RUTE", "headline": "Ruten på kortet", "sub": "Kurslinje og sømærker i ét billede"},
+    "da-DK-phone-03-passage.png": {"kicker": "TØRN", "headline": "Skitsér tørnen", "sub": "Vejpunkter, ben og ETAs — GPX-eksport"},
+    "da-DK-phone-04-downloads.png": {"kicker": "PAKKER", "headline": "Hent på wifi", "sub": "Kortpakker klar før I letter fortøjning"},
+    "da-DK-phone-05-offline.png": {"kicker": "OFFLINE", "headline": "Kort uden signal", "sub": "Basiskort og sømærker ligger på enheden"},
+    "da-DK-phone-06-disclaimer.png": {"kicker": "BEMÆRK", "headline": "Et hjælpemiddel, ingen plotter", "sub": "Hav officielle søkort ombord — frivillige data"}
+  }
+}

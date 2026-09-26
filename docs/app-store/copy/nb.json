@@ -1,0 +1,11 @@
+{
+  "brand": "SEACHECK  ·  COASTAL NAV",
+  "shots": {
+    "nb-NO-phone-01-map.png": {"kicker": "KART", "headline": "GPS på sjøkartet", "sub": "SOG, COG og posisjon på dekk"},
+    "nb-NO-phone-02-passage-map.png": {"kicker": "RUTE", "headline": "Ruten på kartet", "sub": "Kurslinje og sjømerker i ett bilde"},
+    "nb-NO-phone-03-passage.png": {"kicker": "ETAPPE", "headline": "Legg opp turen", "sub": "Waypoints, ben og ETA-er — GPX-eksport"},
+    "nb-NO-phone-04-downloads.png": {"kicker": "PAKKER", "headline": "Last ned på Wi-Fi", "sub": "Kortpakker klare før avgang"},
+    "nb-NO-phone-05-offline.png": {"kicker": "OFFLINE", "headline": "Kart uten dekning", "sub": "Grunnkart og sjømerker ligger på enheten"},
+    "nb-NO-phone-06-disclaimer.png": {"kicker": "ÆRLIG", "headline": "Et hjelpemiddel, ikke plotter", "sub": "Ha offisielle sjøkart om bord — frivillig data"}
+  }
+}

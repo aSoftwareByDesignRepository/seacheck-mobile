@@ -33,8 +33,8 @@ def swipe(x1, y1, x2, y2, d=280):
 
 
 def dump():
-    sh("shell", "uiautomator", "dump", "/sdcard/ui.xml", timeout=90)
-    return sh("shell", "cat", "/sdcard/ui.xml", timeout=30).stdout or ""
+    sh("shell", "uiautomator", "dump", "/data/local/tmp/ui.xml", timeout=90)
+    return sh("shell", "cat", "/data/local/tmp/ui.xml", timeout=30).stdout or ""
 
 
 def find(xml, rid=None, text=None):

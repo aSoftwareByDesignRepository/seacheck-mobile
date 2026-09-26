@@ -1,0 +1,18 @@
+SeaCheck heb ik gemaakt voor mijn eigen zeilen in een klein bootje — een dekgenoot naast papieren kaarten, geen vervanging ervan.
+
+Ik gebruik het voor vaart, coördinaten, snel de positie op de kaart zonder onderdeks te gaan, routeschetsen en ankeralarms. Ik deel het voor het geval een andere kustzeiler er iets aan heeft. Geen lancering, geen supportbelofte — gebruik op eigen risico.
+
+NIET VOOR PRIMAIRE NAVIGATIE
+Alleen navigatiehulp. Geen gecertificeerde kaartplotter. Kaarten komen uit OpenSeaMap-/OpenStreetMap-vrijwilligersdata en kunnen verouderd zijn. Neem altijd officiële, gecorrigeerde zeekaarten mee.
+
+FUNCTIES
+• GPS op de kaart — COG, SOG, peiling
+• Routeplanning, waypoints, GPX-export
+• Offline-regiopakketten (download via Wi‑Fi)
+• Anker-, aankomst- en koersafwijkingsalarmen
+• Trackopname
+• EN / DE-interface
+
+Gratis. Geen ads. Geen analytics. Gegevens blijven op je apparaat.
+
+Gemaakt door Alexander Mäule / Software by Design GbR, Schleswig, Duitsland (nevenproject).

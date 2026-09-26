@@ -1,0 +1,11 @@
+{
+  "brand": "SEACHECK  ·  COASTAL NAV",
+  "shots": {
+    "fr-FR-phone-01-map.png": {"kicker": "CARTE", "headline": "Le GPS sur la carte", "sub": "SOG, COG et position depuis le pont"},
+    "fr-FR-phone-02-passage-map.png": {"kicker": "ROUTE", "headline": "La route sur la carte", "sub": "Route et marques dans une même vue"},
+    "fr-FR-phone-03-passage.png": {"kicker": "TRAVERSÉE", "headline": "Esquissez la traversée", "sub": "Waypoints, caps et ETAs — export GPX"},
+    "fr-FR-phone-04-downloads.png": {"kicker": "PACKS", "headline": "Téléchargez en Wi-Fi", "sub": "Cartes prêtes avant de larguer les amarres"},
+    "fr-FR-phone-05-offline.png": {"kicker": "OFFLINE", "headline": "Des cartes sans réseau", "sub": "Fond de carte et marques gardés à bord"},
+    "fr-FR-phone-06-disclaimer.png": {"kicker": "SINCÈRE", "headline": "Une aide, pas un plotter", "sub": "Gardez les cartes officielles — données bénévoles"}
+  }
+}

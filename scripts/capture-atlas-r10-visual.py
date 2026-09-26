@@ -45,8 +45,8 @@ def swipe(x1: int, y1: int, x2: int, y2: int, dur: int = 280) -> None:
 
 
 def dump_xml() -> str:
-    sh("shell", "uiautomator", "dump", "/sdcard/ui.xml", timeout=90)
-    p = sh("shell", "cat", "/sdcard/ui.xml", timeout=30)
+    sh("shell", "uiautomator", "dump", "/data/local/tmp/ui.xml", timeout=90)
+    p = sh("shell", "cat", "/data/local/tmp/ui.xml", timeout=30)
     return p.stdout or ""
 
 

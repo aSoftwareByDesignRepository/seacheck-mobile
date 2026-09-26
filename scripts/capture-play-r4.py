@@ -101,8 +101,8 @@ def geo_at(lon: float, lat: float, n: int = 14, kn: float = 5.5, dlon: float = 0
 
 
 def dump():
-    sh("shell", "uiautomator", "dump", "--compressed", "/sdcard/sc.xml", t=6)
-    return sh("shell", "cat", "/sdcard/sc.xml", t=4).stdout or ""
+    sh("shell", "uiautomator", "dump", "--compressed", "/data/local/tmp/sc.xml", t=6)
+    return sh("shell", "cat", "/data/local/tmp/sc.xml", t=4).stdout or ""
 
 
 def find(xml, rid=None, text=None):

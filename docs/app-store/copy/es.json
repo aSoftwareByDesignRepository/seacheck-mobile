@@ -1,0 +1,11 @@
+{
+  "brand": "SEACHECK  ·  COASTAL NAV",
+  "shots": {
+    "es-ES-phone-01-map.png": {"kicker": "CARTA", "headline": "GPS sobre la carta", "sub": "SOG, COG y posición a nivel de cubierta"},
+    "es-ES-phone-02-passage-map.png": {"kicker": "RUTA", "headline": "La ruta en la carta", "sub": "Línea de rumbo y señales en una vista"},
+    "es-ES-phone-03-passage.png": {"kicker": "TRAVESÍA", "headline": "Trace la travesía", "sub": "Waypoints, rumbos de tramo y ETAs — GPX"},
+    "es-ES-phone-04-downloads.png": {"kicker": "PAQUETES", "headline": "Descargue con Wi-Fi", "sub": "Cartas listas antes de soltar amarras"},
+    "es-ES-phone-05-offline.png": {"kicker": "OFFLINE", "headline": "Cartas sin cobertura", "sub": "Mapa base y señales quedan en el dispositivo"},
+    "es-ES-phone-06-disclaimer.png": {"kicker": "AVISO", "headline": "Una ayuda, no un plotter", "sub": "Lleve cartas oficiales — datos de voluntarios"}
+  }
+}

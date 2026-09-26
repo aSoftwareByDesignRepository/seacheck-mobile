@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""SeaCheck Play Store phone capture — one locale per run (en-US or de-DE).
+"""SeaCheck Play Store phone capture — one locale per run.
 
 Shot list (store-farm/seacheck-play-shot-list.md):
   1 map hero + live GPS
   2 map + active passage
   3 passage detail (≥2 WPs)
   4 downloads
-  5 offline map (or tracks)
+  5 tracks (seeded log) — differs meaningfully from shot 02
   6 safety notice (full disclaimer)
 """
 from __future__ import annotations
 
 import argparse
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -23,15 +25,10 @@ from PIL import Image
 PKG = "de.softwarebydesign.seacheck"
 TW, TH = 1080, 1920
 
-# Kiel / Förde coastal demo — real coastal labels (≥3 legs)
-PASSAGE_NAME_EN = "Kieler Foerde Laboe"
-PASSAGE_NAME_DE = "Kieler Foerde Laboe"
-WP = [
-    ("Laboe", "54.4000", "10.2200"),
-    ("Friedrichsort", "54.3900", "10.1850"),
-    ("Holtenau", "54.3680", "10.1520"),
-    ("Kiel Marina", "54.3230", "10.1860"),
-]
+# Demo voyage is a seeded Rostock → Kopenhagen Baltic route (see
+# seed-demo-data.py). The injected GPS fix sits on leg 2, just south of
+# Gedser Odde, so the active route + waypoint markers share the frame.
+GPS_LON, GPS_LAT = 11.9850, 54.4700
 
 
 def adb(serial: str, *args: str, check: bool = True, timeout: float = 30) -> subprocess.CompletedProcess[str]:
@@ -60,7 +57,7 @@ def sh(serial: str, *args: str) -> str:
 
 def dump(serial: str) -> str:
     """UI hierarchy dump with hard timeout — plain uiautomator dump can hang on MapLibre."""
-    adb(serial, "shell", "rm", "-f", "/sdcard/sc-cap.xml", check=False, timeout=5)
+    adb(serial, "shell", "rm", "-f", "/data/local/tmp/sc-cap.xml", check=False, timeout=5)
     # --compressed is faster/less likely to wedge on dense map views
     r = adb(
         serial,
@@ -68,25 +65,32 @@ def dump(serial: str) -> str:
         "uiautomator",
         "dump",
         "--compressed",
-        "/sdcard/sc-cap.xml",
+        "/data/local/tmp/sc-cap.xml",
         check=False,
         timeout=12,
     )
-    if r.returncode != 0:
+    def _read() -> str:
+        o = adb(serial, "shell", "cat", "/data/local/tmp/sc-cap.xml", check=False, timeout=8)
+        return o.stdout or ""
+
+    out = _read() if r.returncode == 0 else ""
+    # --compressed can emit a degenerate single-node tree when a modal sheet
+    # (separate window) is up — retry uncompressed when the tree is a stub.
+    if r.returncode != 0 or out.count("<node") < 3:
         r = adb(
             serial,
             "shell",
             "uiautomator",
             "dump",
-            "/sdcard/sc-cap.xml",
+            "/data/local/tmp/sc-cap.xml",
             check=False,
             timeout=10,
         )
-    if r.returncode != 0:
+        if r.returncode == 0:
+            out = _read()
+    if not out:
         print("WARN uiautomator dump failed", flush=True)
-        return ""
-    out = adb(serial, "shell", "cat", "/sdcard/sc-cap.xml", check=False, timeout=8)
-    return out.stdout or ""
+    return out
 
 
 def screencap(serial: str, path: Path) -> None:
@@ -158,6 +162,38 @@ def dismiss_perm(serial: str, max_rounds: int = 6) -> None:
         "Allow",
         "Zulassen",
         "Only this time",
+        # fr / es / it
+        "Lorsque vous utilisez l’appli",
+        "Uniquement cette fois",
+        "Autoriser",
+        "Mientras usas la app",
+        "Mientras usas la aplicación",
+        "Solo esta vez",
+        "Permitir",
+        "Solo mentre usi l’app",
+        "Solo questa volta",
+        "Consenti",
+        # nl / pl
+        "Tijdens gebruik van de app",
+        "Alleen deze keer",
+        "Toestaan",
+        "Podczas korzystania z aplikacji",
+        "Tylko tym razem",
+        "Zezwól",
+        # sv / nb / da
+        "När du använder appen",
+        "Endast den här gången",
+        "Tillåt",
+        "Mens du bruker appen",
+        "Bare denne gangen",
+        "Mens du bruger appen",
+        "Kun denne gang",
+        "Tillad",
+        # pt
+        "Ao usar a app",
+        "Ao usar a aplicação",
+        "Apenas desta vez",
+        "Permitir",
     )
     for _ in range(max_rounds):
         xml = dump(serial)
@@ -222,15 +258,63 @@ def wait_rid(serial: str, rids: list[str], timeout: float = 75) -> str | None:
     return None
 
 
+# Quick-settings/notification shade resource markers (SystemUI)
+_SHADE_MARKERS = ("qs_panel", "quick_settings_panel", "expanded_status_bar", "notification_panel")
+
+
+def shade_open(xml: str) -> bool:
+    return "com.android.systemui:id/" in xml and any(
+        f"com.android.systemui:id/{m}" in xml for m in _SHADE_MARKERS
+    )
+
+
+def ensure_app_foreground(serial: str, *, relaunch: bool = True) -> bool:
+    """BACK out of system shade/sheets; relaunch as last resort.
+
+    A wedged overlay or a pulled-down quick-settings shade makes every
+    subsequent screencap worthless — guard before each capture.
+    """
+    for _ in range(5):
+        xml = dump(serial)
+        if not shade_open(xml) and (
+            has_rid(xml, "tab.map") or has_rid(xml, "tab.passage") or has_rid(xml, "screen.map")
+        ):
+            return True
+        adb(serial, "shell", "input", "keyevent", "4", check=False, timeout=5)
+        time.sleep(0.7)
+    if not relaunch:
+        return False
+    # Cold relaunch — onboarding state is persisted, lands back on the map.
+    adb(serial, "shell", "wm", "dismiss-keyguard", check=False, timeout=8)
+    adb(serial, "shell", "am", "force-stop", PKG, check=False, timeout=8)
+    time.sleep(1)
+    adb(
+        serial,
+        "shell",
+        "monkey",
+        "-p",
+        PKG,
+        "-c",
+        "android.intent.category.LAUNCHER",
+        "1",
+        check=False,
+        timeout=15,
+    )
+    wait_rid(serial, ["tab.map", "screen.map"], 60)
+    geo_fix(serial, steps=10)
+    xml = dump(serial)
+    return not shade_open(xml) and (has_rid(xml, "tab.map") or has_rid(xml, "screen.map"))
+
+
 def geo_fix(serial: str, *, steps: int = 16, settle: bool = True, speed_kn: float = 6.5) -> None:
-    """Inject mid-Förde GPS with velocity so SOG/COG populate without Jump-filtered jumps.
+    """Inject a moving GPS fix on the seeded Rostock→Kopenhagen leg.
 
     Emulator: `geo fix <lon> <lat> [<alt> [<sats> [<velocity_kn>]]]`.
-    Stay on open water (avoids black OSM pier scribble near ZMT).
+    Small steps + explicit velocity → underway SOG without outlier chip.
     """
     adb(serial, "shell", "settings", "put", "secure", "location_mode", "3", check=False)
     adb(serial, "shell", "cmd", "location", "set-location-enabled", "true", check=False)
-    lon, lat = 10.1680, 54.3550
+    lon, lat = GPS_LON, GPS_LAT
     # Small steps + explicit velocity → underway SOG without outlier chip
     dlon_step = 0.000040
     dlat_step = 0.000025
@@ -292,273 +376,43 @@ def fit_phone(im: Image.Image, *, anchor: str = "bottom") -> Image.Image:
     return im.crop((left, top, left + TW, top + TH))
 
 
-def long_press(serial: str, x: int, y: int, ms: int = 1200) -> None:
-    adb(
-        serial,
-        "shell",
-        "input",
-        "swipe",
-        str(x),
-        str(y),
-        str(x),
-        str(y),
-        str(ms),
-        check=False,
-    )
-    time.sleep(1.0)
+def seed_databases(serial: str) -> None:
+    """Push pre-built demo DBs (Rostock→Kopenhagen passage, track, vessel).
 
-
-def fill_field_by_a11y(serial: str, label: str, value: str) -> bool:
-    xml = dump(serial)
-    # Prefer EditText with matching content-desc
-    for node in re.finditer(r"<node[^>]+>", xml):
-        n = node.group(0)
-        if f'content-desc="{label}"' not in n:
-            continue
-        if "EditText" not in n:
-            continue
-        b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n)
-        if not b:
-            continue
-        x1, y1, x2, y2 = map(int, b.groups())
-        tap_xy(serial, (x1 + x2) // 2, (y1 + y2) // 2)
-        # Clear field quickly then type
-        adb(serial, "shell", "input", "keyevent", "KEYCODE_MOVE_END", check=False)
-        adb(serial, "shell", "input", "keyevent", "--longpress", "KEYCODE_DEL", check=False)
-        for _ in range(20):
-            adb(serial, "shell", "input", "keyevent", "67", check=False)
-        adb(serial, "shell", "input", "text", value.replace(" ", "%s"), check=False)
-        time.sleep(0.2)
-        return True
-    hit = find_bounds(xml, text_exact=label)
-    if hit:
-        tap_xy(serial, hit[0], hit[1] + 80)
-        adb(serial, "shell", "input", "text", value.replace(" ", "%s"), check=False)
-        return True
-    return False
-
-
-def fill_edittexts_in_order(serial: str, values: list[str]) -> int:
-    """Fill successive EditTexts on the current sheet (fast waypoint coords)."""
-    xml = dump(serial)
-    edits = []
-    for node in re.finditer(r"<node[^>]+>", xml):
-        n = node.group(0)
-        if "EditText" not in n:
-            continue
-        b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n)
-        if not b:
-            continue
-        x1, y1, x2, y2 = map(int, b.groups())
-        edits.append(((x1 + x2) // 2, (y1 + y2) // 2, y1))
-    edits.sort(key=lambda e: e[2])
-    filled = 0
-    for (x, y, _), val in zip(edits, values):
-        tap_xy(serial, x, y)
-        # One shot clear: Ctrl-A isn't available; triple-tap select then type over
-        adb(serial, "shell", "input", "keyevent", "KEYCODE_MOVE_END", check=False)
-        adb(
-            serial,
-            "shell",
-            "input",
-            "keyevent",
-            "KEYCODE_MOVE_HOME",
-            "KEYCODE_SHIFT_LEFT",
-            "KEYCODE_MOVE_END",
-            check=False,
+    Deterministic replacement for the old tap-driven waypoint entry — the app
+    hydrates the seeded SQLite stores on first launch after `pm clear`.
+    Requires adbd as root (Atlas images are userdebug). Skip `adb root` when
+    already root: a no-op request restarts adbd and can race the farm lock
+    sweeper seeing the serial briefly absent.
+    """
+    if sh(serial, "shell", "id", "-u").strip() != "0":
+        adb(serial, "root", check=False, timeout=20)
+        adb(serial, "wait-for-device", check=False, timeout=20)
+        time.sleep(2)
+    tmp = Path(tempfile.mkdtemp(prefix="sc-seed-"))
+    try:
+        subprocess.run(
+            [sys.executable, str(Path(__file__).resolve().with_name("seed-demo-data.py")),
+             "--out-dir", str(tmp)],
+            check=True,
         )
-        adb(serial, "shell", "input", "text", val.replace(" ", "%s"), check=False)
-        filled += 1
-        time.sleep(0.12)
-    return filled
+        files_dir = f"/data/data/{PKG}/files/SQLite"
+        db_dir = f"/data/data/{PKG}/databases"
+        adb(serial, "shell", "mkdir", "-p", files_dir, db_dir, check=False)
+        adb(serial, "push", str(tmp / "seacheck.db"), f"{files_dir}/seacheck.db", check=True)
+        adb(serial, "push", str(tmp / "RKStorage"), f"{db_dir}/RKStorage", check=True)
+        # adbd-created dirs/files are root-owned with a foreign SELinux
+        # category — hand everything to the app uid and restore context.
+        owner = sh(serial, "shell", "stat", "-c", "%u:%g", f"/data/data/{PKG}").strip()
+        for target in (files_dir, db_dir, f"{files_dir}/seacheck.db", f"{db_dir}/RKStorage"):
+            adb(serial, "shell", "chown", "-R", owner, target, check=False)
+            adb(serial, "shell", "restorecon", "-R", target, check=False)
+        for f in (f"{files_dir}/seacheck.db", f"{db_dir}/RKStorage"):
+            adb(serial, "shell", "chmod", "660", f, check=False)
+        print("SEEDED demo databases pushed", flush=True)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
-
-def add_waypoint_coords(serial: str, name: str, lat: str, lon: str, locale: str) -> bool:
-    if not ensure_tap(serial, "passage.addByCoords", scrolls=5):
-        return False
-    time.sleep(0.5)
-    end = time.time() + 8
-    while time.time() < end:
-        if has_rid(dump(serial), "passage.waypointCoordSheet"):
-            break
-        time.sleep(0.25)
-    n = fill_edittexts_in_order(serial, [name, lat, lon])
-    if n < 3:
-        name_lab = "Name"
-        lat_lab = "Latitude (decimal degrees)" if locale.startswith("en") else "Breite (Dezimalgrad)"
-        lon_lab = "Longitude (decimal degrees)" if locale.startswith("en") else "Länge (Dezimalgrad)"
-        for lab, val in ((name_lab, name), (lat_lab, lat), (lon_lab, lon)):
-            fill_field_by_a11y(serial, lab, val)
-    adb(serial, "shell", "input", "keyevent", "4", check=False)
-    time.sleep(0.2)
-    return ensure_tap(serial, "passage.waypointCoord.save", scrolls=3) or ensure_tap(
-        serial, text_substr="Add waypoint", scrolls=2
-    ) or ensure_tap(serial, text_substr="Wegpunkt hinzufügen", scrolls=2)
-
-
-def rename_passage(serial: str, locale: str) -> None:
-    name = PASSAGE_NAME_DE if locale.startswith("de") else PASSAGE_NAME_EN
-    xml = dump(serial)
-    if not has_rid(xml, "passage.meta"):
-        ensure_tap(serial, "tab.passage", scrolls=2)
-        time.sleep(0.5)
-        xml = dump(serial)
-        m = re.search(r'resource-id="passage\.card\.open\.[^"]+"', xml) or re.search(
-            r'resource-id="passage\.card\.[^"]+"', xml
-        )
-        if m:
-            ensure_tap(serial, m.group(0).split('"')[1], scrolls=2)
-            time.sleep(0.7)
-    for lab in ("Passage name", "Passagename"):
-        if fill_field_by_a11y(serial, lab, name):
-            break
-    else:
-        fill_edittexts_in_order(serial, [name])
-    adb(serial, "shell", "input", "keyevent", "66", check=False)
-    time.sleep(0.25)
-    ensure_tap(serial, "passage.saveName", scrolls=2) or ensure_tap(
-        serial, text_substr="Save name", scrolls=1
-    ) or ensure_tap(serial, text_substr="Namen speichern", scrolls=1)
-    time.sleep(0.3)
-
-
-def seed_passage(serial: str, locale: str) -> None:
-    """Map long-press planning (≥3 WPs) with minimal dumps (dump hangs on MapLibre)."""
-    ensure_tap(serial, "tab.map", scrolls=1)
-    time.sleep(0.6)
-    geo_fix(serial, steps=5)
-    # Dismiss banner via fixed taps — avoid dump on map chrome
-    for x, y in ((1000, 180), (980, 160), (1020, 200)):
-        tap_xy(serial, x, y)
-
-    long_press(serial, 540, 950, 1200)
-    time.sleep(0.6)
-    started = (
-        ensure_tap(serial, "map.longPress.startPassage", scrolls=1)
-        or ensure_tap(serial, text_substr="Start new passage", scrolls=1)
-        or ensure_tap(serial, text_substr="Neue Passage hier", scrolls=1)
-    )
-    if started:
-        time.sleep(0.8)
-        for x, y in ((360, 780), (740, 980), (480, 1120), (620, 860)):
-            long_press(serial, x, y, 1100)
-            time.sleep(0.55)
-            # Dismiss accidental sheets without dump storms
-            adb(serial, "shell", "input", "keyevent", "4", check=False, timeout=5)
-            time.sleep(0.2)
-        time.sleep(0.4)
-        activated = (
-            ensure_tap(serial, "passage.mapPlanning.activate", scrolls=2)
-            or ensure_tap(serial, text_substr="Activate passage", scrolls=2)
-            or ensure_tap(serial, text_substr="Activate", scrolls=2)
-            or ensure_tap(serial, text_substr="Aktivieren", scrolls=2)
-        )
-        if not activated:
-            ensure_tap(serial, "passage.mapPlanning.openPassage", scrolls=2)
-            time.sleep(0.7)
-            rename_passage(serial, locale)
-            ensure_tap(serial, "passage.detail.activate", scrolls=4) or ensure_tap(
-                serial, text_substr="Activate", scrolls=3
-            )
-        else:
-            time.sleep(0.3)
-            ensure_tap(serial, "passage.mapPlanning.done", scrolls=1) or ensure_tap(
-                serial, text_substr="Done", scrolls=1
-            ) or ensure_tap(serial, text_substr="Fertig", scrolls=1)
-            ensure_tap(serial, "tab.passage", scrolls=1)
-            time.sleep(0.5)
-            xml = dump(serial)
-            m = re.search(r'resource-id="passage\.card\.open\.[^"]+"', xml) or re.search(
-                r'resource-id="passage\.card\.[^"]+"', xml
-            )
-            if m:
-                ensure_tap(serial, m.group(0).split('"')[1], scrolls=1)
-                time.sleep(0.6)
-            rename_passage(serial, locale)
-            ensure_tap(serial, "passage.preview.showOnMap", scrolls=1) or ensure_tap(
-                serial, "passage.planOnMap", scrolls=1
-            )
-        return
-
-    print("WARN map planning failed — coords fallback", flush=True)
-    ensure_tap(serial, "tab.passage", scrolls=1)
-    time.sleep(0.6)
-    ensure_tap(serial, text_substr="New passage", scrolls=2) or ensure_tap(
-        serial, text_substr="Neue Passage", scrolls=2
-    )
-    time.sleep(0.7)
-    for wp_name, lat, lon in WP[:4]:
-        ok = add_waypoint_coords(serial, wp_name, lat, lon, locale)
-        print(f"WP {wp_name} ok={ok}", flush=True)
-        time.sleep(0.25)
-    rename_passage(serial, locale)
-    ensure_tap(serial, "passage.detail.activate", scrolls=4) or ensure_tap(
-        serial, text_substr="Activate", scrolls=3
-    )
-    time.sleep(0.4)
-    ensure_tap(serial, "passage.preview.showOnMap", scrolls=1)
-
-
-def seal_region_pack(serial: str, locale: str, pack_id: str = "kiel-bay", timeout: float = 600) -> bool:
-    """Download + seal one corridor pack so #4 does not lead with empty-state."""
-    ensure_tap(serial, "tab.more", scrolls=1)
-    time.sleep(0.4)
-    ensure_tap(serial, "tab.downloads", scrolls=3) or ensure_tap(
-        serial, text_substr="Download", scrolls=3
-    ) or ensure_tap(serial, text_substr="Herunterladen", scrolls=3) or ensure_tap(
-        serial, text_substr="Offline", scrolls=3
-    )
-    time.sleep(1.5)
-    # Wi-Fi only may block — allow cellular for emulator
-    xml = dump(serial)
-    if "downloads.wifiOnly" in xml or "Wi-Fi" in xml or "WLAN" in xml:
-        hit = find_bounds(xml, rid="downloads.wifiOnly")
-        if hit:
-            # Toggle off if switch looks checked — tap once
-            tap_xy(serial, hit[0], hit[1])
-            time.sleep(0.5)
-    rid = f"downloads.download.{pack_id}"
-    started = ensure_tap(serial, rid, scrolls=10) or ensure_tap(
-        serial, text_substr="Download pack", scrolls=6
-    ) or ensure_tap(serial, text_substr="Paket laden", scrolls=6)
-    if not started:
-        print("FAIL could not start pack download", flush=True)
-        return False
-    print(f"DOWNLOAD started {pack_id}", flush=True)
-    end = time.time() + timeout
-    while time.time() < end:
-        xml = dump(serial)
-        ready_markers = (
-            "statusSummaryReady",
-            "chart pack ready",
-            "Paket offline bereit",
-            "Ready for offline",
-            "Bereit für Offline",
-            "1 chart pack ready",
-            "1 Kartenpaket",
-            "No offline packs yet",
-            "Noch keine Offline-Pakete",
-        )
-        if "No offline packs yet" not in xml and "Noch keine Offline-Pakete" not in xml:
-            if (
-                "Ready" in xml
-                or "Bereit" in xml
-                or "ready offline" in xml
-                or "offline bereit" in xml
-                or f"downloads.delete.{pack_id}" in xml
-                or "statusSummaryReady" in xml
-            ):
-                # Confirm empty lead is gone
-                if "No offline packs yet" not in xml and "Noch keine Offline-Pakete" not in xml:
-                    print("PACK sealed / ready UI", flush=True)
-                    return True
-        # Progress still going
-        time.sleep(3)
-        # Keep screen awake / dismiss blocking sheets
-        dismiss_download_banner(serial)
-        dismiss_perm(serial, max_rounds=1)
-    print("FAIL pack seal timeout", flush=True)
-    return False
 
 
 def dismiss_download_banner(serial: str) -> None:
@@ -606,8 +460,16 @@ def run(locale: str, serial: str, apk: Path, out_docs: Path, fastlane_dest: Path
     # Re-apply after clear
     adb(serial, "shell", "cmd", "locale", "set-app-locales", PKG, "--locales", lang, check=False)
     adb(serial, "shell", "pm", "grant", PKG, "android.permission.POST_NOTIFICATIONS", check=False)
+    # Seed passage/waypoints/track/vessel BEFORE first launch — deterministic,
+    # no flaky map-tap waypoint entry. Onboarding still runs (shot 06 needs it).
+    seed_databases(serial)
+    # NOTE: do NOT pre-grant location here — resumeStep() would skip the
+    # disclaimer step entirely and the 06-safety shot could never be taken.
     adb(serial, "shell", "cmd", "location", "set-location-enabled", "true", check=False)
     adb(serial, "shell", "settings", "put", "secure", "location_mode", "3", check=False)
+    # swipe lockscreen blocks am start foregrounding — dismiss before launch
+    adb(serial, "shell", "wm", "dismiss-keyguard", check=False, timeout=8)
+    adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False, timeout=8)
     adb(serial, "shell", "am", "start", "-W", "-n", f"{PKG}/.MainActivity", check=False)
     time.sleep(5)
 
@@ -657,8 +519,12 @@ def run(locale: str, serial: str, apk: Path, out_docs: Path, fastlane_dest: Path
         if has_rid(xml, "onboarding.location.skip") or has_rid(xml, "onboarding.location.continue") or has_rid(
             xml, "onboarding.location.foreground"
         ):
-            ensure_tap(serial, "onboarding.location.continue", scrolls=3) or ensure_tap(
-                serial, "onboarding.location.foreground", scrolls=2
+            # Request foreground FIRST: fires the system dialog directly (the
+            # Continue path routes through a modal ConfirmSheet that uiautomator
+            # --compressed dumps as a stub tree). Once granted the foreground
+            # button unmounts and we fall through to Continue → battery step.
+            ensure_tap(serial, "onboarding.location.foreground", scrolls=2) or ensure_tap(
+                serial, "onboarding.location.continue", scrolls=3
             ) or ensure_tap(serial, text_substr="Continue", scrolls=2) or ensure_tap(
                 serial, "onboarding.location.skip", scrolls=2
             )
@@ -709,7 +575,12 @@ def run(locale: str, serial: str, apk: Path, out_docs: Path, fastlane_dest: Path
             continue
         dismiss_perm(serial)
         time.sleep(0.5)
-    assert wait_rid(serial, ["tab.map", "screen.map"], 90), "map not ready"
+    if not wait_rid(serial, ["tab.map", "screen.map"], 90):
+        # Debug artifact: capture the blocking UI state for diagnosis
+        dbg_xml = dump(serial)
+        (raw / "DEBUG-stuck.xml").write_text(dbg_xml or "<empty/>")
+        screencap(serial, raw / "DEBUG-stuck.png")
+        raise AssertionError("map not ready")
     dismiss_perm(serial)
     # Grant location early; inject underway track on open water (no Jump filtered)
     for perm in (
@@ -728,18 +599,21 @@ def run(locale: str, serial: str, apk: Path, out_docs: Path, fastlane_dest: Path
     wait_clean_gps_chrome(serial, timeout=30)
     screencap(serial, raw / "01-map-hero.png")
 
-    # Seed named passage (≥3 legs) + activate
-    seed_passage(serial, locale)
-    geo_fix(serial, steps=12)
+    # The seeded Rostock→Kopenhagen passage is already active — just ensure a
+    # clean foreground before the route shot.
+    if not ensure_app_foreground(serial):
+        print("WARN could not recover clean foreground before 02", flush=True)
     ensure_tap(serial, "tab.map", scrolls=2)
     time.sleep(2)
     dismiss_download_banner(serial)
     wait_clean_gps_chrome(serial, timeout=40)
     geo_fix(serial, steps=6)
     time.sleep(1)
-    screencap(serial, raw / "02-map-passage.png")
+    if ensure_app_foreground(serial):
+        screencap(serial, raw / "02-map-passage.png")
 
     # Passage detail — named + waypoint list
+    ensure_app_foreground(serial)
     ensure_tap(serial, "tab.passage", scrolls=2)
     time.sleep(1)
     xml = dump(serial)
@@ -758,9 +632,25 @@ def run(locale: str, serial: str, apk: Path, out_docs: Path, fastlane_dest: Path
     time.sleep(0.6)
     screencap(serial, raw / "03-passage-detail.png")
 
-    # Seal ≥1 pack BEFORE empty-state lead on downloads
-    sealed = seal_region_pack(serial, locale, pack_id="kiel-bay", timeout=720)
-    print(f"seal_ok={sealed}", flush=True)
+    # Shot 05 — Tracks list with the seeded log (meaningfully different from
+    # the shot-02 map; the shot list allows "offline map OR tracks").
+    # Captured BEFORE the pack seal: an active download blocks every tab tap
+    # (guardDownloadTabPress), so this must happen while navigation is free.
+    ensure_app_foreground(serial)
+    ensure_tap(serial, "tab.tracks", scrolls=3) or ensure_tap(
+        serial, text_substr="Tracks", scrolls=2
+    ) or ensure_tap(serial, text_substr="Törn", scrolls=2)
+    time.sleep(1.5)
+    if not wait_rid(serial, ["screen.tracks"], 15):
+        print("WARN screen.tracks not reached before 05 capture", flush=True)
+    screencap(serial, raw / "05-tracks.png")
+
+    # Shot 04 — Downloads catalog. No live pack seal: an active download
+    # blocks every tab tap (guardDownloadTabPress) and the OSM/OpenSeaMap tile
+    # fetch stalls for many minutes on the farm — meanwhile shots 04/05
+    # captured the blocking map overlay instead of their screens. The catalog
+    # renders every region pack with Download/Ready CTAs regardless.
+    ensure_app_foreground(serial)
     ensure_tap(serial, "tab.downloads", scrolls=2) or ensure_tap(
         serial, text_substr="Offline", scrolls=2
     )
@@ -770,16 +660,8 @@ def run(locale: str, serial: str, apk: Path, out_docs: Path, fastlane_dest: Path
         adb(serial, "shell", "input", "swipe", "540", "700", "540", "1500", "280", check=False)
         time.sleep(0.25)
     time.sleep(0.5)
-    screencap(serial, raw / "04-downloads.png")
-
-    # Offline map
-    adb(serial, "shell", "cmd", "connectivity", "airplane-mode", "enable", check=False)
-    time.sleep(1.5)
-    ensure_tap(serial, "tab.map", scrolls=2)
-    time.sleep(3)
-    screencap(serial, raw / "05-offline.png")
-    adb(serial, "shell", "cmd", "connectivity", "airplane-mode", "disable", check=False)
-    time.sleep(1)
+    if ensure_app_foreground(serial):
+        screencap(serial, raw / "04-downloads.png")
 
     # Normalize + write numbered fastlane + docs names
     mapping = {
@@ -787,7 +669,7 @@ def run(locale: str, serial: str, apk: Path, out_docs: Path, fastlane_dest: Path
         "02-map-passage.png": ("phone-02-passage-map.png", "2.png"),
         "03-passage-detail.png": ("phone-03-passage.png", "3.png"),
         "04-downloads.png": ("phone-04-downloads.png", "4.png"),
-        "05-offline.png": ("phone-05-offline.png", "5.png"),
+        "05-tracks.png": ("phone-05-tracks.png", "5.png"),
         "06-safety.png": ("phone-06-disclaimer.png", "6.png"),
     }
     for src_name, (docs_name, fl_name) in mapping.items():
@@ -797,8 +679,6 @@ def run(locale: str, serial: str, apk: Path, out_docs: Path, fastlane_dest: Path
         img = fit_phone(Image.open(src), anchor="bottom")
         docs_path = out_docs / f"{locale}-{docs_name}"
         img.save(docs_path, "PNG", optimize=True)
-        if locale == "en-US":
-            img.save(out_docs / docs_name, "PNG", optimize=True)
         fl_path = fastlane_dest / fl_name
         img.save(fl_path, "PNG", optimize=True)
         print(f"WROTE {docs_path.name} + {fl_path} {img.size}", flush=True)
