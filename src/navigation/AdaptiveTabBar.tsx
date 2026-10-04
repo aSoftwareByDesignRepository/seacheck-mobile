@@ -191,6 +191,10 @@ function CompactTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           paddingBottom: Math.max(insets.bottom, 48),
+          // API-33+ landscape docks 3-button nav on the right edge
+          // (insets.bottom=0, insets.right>0) — keep the tab row out of it.
+          paddingRight: insets.right,
+          paddingLeft: insets.left,
           paddingTop: 6,
           zIndex: 10,
           elevation: 8,

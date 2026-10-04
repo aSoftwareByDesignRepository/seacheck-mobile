@@ -63,15 +63,16 @@ describe('SeaCheck store listing contract', () => {
     }
   });
 
-  it('ships at least six phone screenshot placeholders', () => {
-    // Names match docs/play-store/assets/screenshots (store-farm R6 kit).
+  it('ships at least six phone screenshots in the en-US kit', () => {
+    // docs/play-store/assets/screenshots/ is the en-US staging kit; every locale
+    // dir uses <locale>-phone-NN-*.png names (see screenshots-de/, screenshots-nl/).
     const names = [
-      'phone-01-map.png',
-      'phone-02-passage-map.png',
-      'phone-03-passage.png',
-      'phone-04-downloads.png',
-      'phone-05-offline.png',
-      'phone-06-disclaimer.png',
+      'en-US-phone-01-map.png',
+      'en-US-phone-02-passage-map.png',
+      'en-US-phone-03-passage.png',
+      'en-US-phone-04-downloads.png',
+      'en-US-phone-05-tracks.png',
+      'en-US-phone-06-disclaimer.png',
     ];
     expect(names.every((n) => existsSync(join(playRoot, 'assets/screenshots', n)))).toBe(true);
   });

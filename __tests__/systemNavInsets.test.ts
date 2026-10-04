@@ -14,6 +14,12 @@ describe('system-nav 48dp floor on bottom-docked chrome (DS §5)', () => {
     expect(src).toMatch(/paddingBottom:\s*Math\.max\(insets\.bottom,\s*48\)/);
   });
 
+  it('AdaptiveTabBar honors side-docked nav (landscape right/left edge insets)', () => {
+    const src = readSrc('src/navigation/AdaptiveTabBar.tsx');
+    expect(src).toMatch(/paddingRight:\s*insets\.right/);
+    expect(src).toMatch(/paddingLeft:\s*insets\.left/);
+  });
+
   it('BottomSheetChrome sheet pad keeps a 48 floor for footer CTAs', () => {
     const src = readSrc('src/ui/sheetHost.tsx');
     expect(src).toMatch(/paddingBottom:\s*Math\.max\(insets\.bottom\s*\+\s*spacing\.lg,\s*48\)/);

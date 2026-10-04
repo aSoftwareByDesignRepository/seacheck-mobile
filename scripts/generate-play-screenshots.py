@@ -54,7 +54,17 @@ def shot_map() -> None:
     draw.rectangle((48, 220, W - 48, H - 200), fill=(20, 55, 90))
     draw.ellipse((480, 760, 560, 840), fill=ACCENT)
     draw.text((48, H - 320), "Depth overlay · OpenSeaMap", font=font(24), fill=MUTED)
-    save(img, "phone-01-map.png")
+    save(img, "en-US-phone-01-map.png")
+
+
+def shot_passage_map() -> None:
+    img, draw = base("Map", "Active passage")
+    draw.rectangle((48, 220, W - 48, H - 200), fill=(20, 55, 90))
+    draw.line([(120, 1500), (520, 900), (880, 620)], fill=ACCENT, width=10)
+    for x, y in [(120, 1500), (520, 900), (880, 620)]:
+        draw.ellipse((x - 18, y - 18, x + 18, y + 18), fill=TEXT)
+    draw.text((48, H - 320), "Route + waypoints on chart", font=font(24), fill=MUTED)
+    save(img, "en-US-phone-02-passage-map.png")
 
 
 def shot_disclaimer() -> None:
@@ -62,7 +72,7 @@ def shot_disclaimer() -> None:
     draw.rounded_rectangle((48, 260, W - 48, 620), radius=24, fill=SURFACE)
     draw.text((80, 300), "NOT FOR PRIMARY NAVIGATION", font=font(30, True), fill=WARN)
     draw.text((80, 360), "Aid to navigation only. Carry official charts.", font=font(26), fill=TEXT)
-    save(img, "phone-02-disclaimer.png")
+    save(img, "en-US-phone-06-disclaimer.png")
 
 
 def shot_passage() -> None:
@@ -70,7 +80,7 @@ def shot_passage() -> None:
     for y, label in [(280, "WP1 — harbour"), (420, "WP2 — channel"), (560, "WP3 — anchorage")]:
         draw.rounded_rectangle((48, y, W - 48, y + 90), radius=16, fill=SURFACE)
         draw.text((80, y + 28), label, font=font(30), fill=TEXT)
-    save(img, "phone-03-passage.png")
+    save(img, "en-US-phone-03-passage.png")
 
 
 def shot_downloads() -> None:
@@ -78,32 +88,25 @@ def shot_downloads() -> None:
     draw.rounded_rectangle((48, 280, W - 48, 430), radius=20, fill=SURFACE)
     draw.text((80, 320), "Kiel Bay — Ready for offline use", font=font(30, True), fill=TEXT)
     draw.text((80, 370), "OpenSeaMap base + seamarks", font=font(24), fill=MUTED)
-    save(img, "phone-04-downloads.png")
+    save(img, "en-US-phone-04-downloads.png")
 
 
-def shot_offline() -> None:
-    img, draw = base("Map", "Offline mode")
-    draw.rounded_rectangle((48, 220, W - 48, 300), radius=16, fill=(40, 70, 40))
-    draw.text((80, 248), "Using offline charts", font=font(28, True), fill=(200, 255, 200))
+def shot_tracks() -> None:
+    img, draw = base("Tracks", "Recorded track")
     draw.rectangle((48, 340, W - 48, H - 200), fill=(20, 55, 90))
-    save(img, "phone-05-offline.png")
-
-
-def shot_about() -> None:
-    img, draw = base("About", "Legal · attribution")
-    for y, label in [(280, "Privacy policy"), (380, "Terms of use"), (480, "OpenSeaMap attribution")]:
-        draw.rounded_rectangle((48, y, W - 48, y + 70), radius=14, fill=SURFACE)
-        draw.text((80, y + 20), label, font=font(28), fill=TEXT)
-    save(img, "phone-06-about.png")
+    draw.line([(120, 1600), (420, 1100), (700, 900), (900, 560)], fill=ACCENT, width=8)
+    draw.rounded_rectangle((48, 220, W - 48, 300), radius=16, fill=SURFACE)
+    draw.text((80, 248), "12.4 nm - 2 h 10 min underway", font=font(28), fill=TEXT)
+    save(img, "en-US-phone-05-tracks.png")
 
 
 def main() -> None:
     shot_disclaimer()
     shot_map()
+    shot_passage_map()
     shot_passage()
     shot_downloads()
-    shot_offline()
-    shot_about()
+    shot_tracks()
 
 
 if __name__ == "__main__":

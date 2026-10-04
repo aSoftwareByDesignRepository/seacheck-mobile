@@ -65,7 +65,17 @@ export function MobNavigateBackOverlay() {
 
   return (
     <View
-      style={[styles.overlay, { backgroundColor: `${colors.dangerBg}F2`, paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.lg }]}
+      style={[
+        styles.overlay,
+        {
+          backgroundColor: `${colors.dangerBg}F2`,
+          paddingTop: insets.top + spacing.md,
+          // 48dp system-nav floor (COMPANION-DESIGN-SYSTEM §5): zero-inset AVDs /
+          // 3-button nav can report insets.bottom=0 while chrome covers ~48px —
+          // keep the clear-MOB CTA stack clear of the system bar on short screens.
+          paddingBottom: Math.max(insets.bottom + spacing.lg, 48),
+        },
+      ]}
       testID="map.mobNavigateBack"
       accessibilityViewIsModal
     >

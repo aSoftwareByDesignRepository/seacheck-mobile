@@ -13,6 +13,9 @@ FUNKTIONEN
 • Track-Aufzeichnung
 • DE / EN Oberfläche
 
+OPTIONALER HINTERGRUND-STANDORT
+Ankeralarme und Track-Aufzeichnung können deine Position weiter überwachen, während die App im Hintergrund läuft oder der Bildschirm aus ist. Du kannst die Hintergrund-Standort-Freigabe („Immer zulassen“) verweigern — Karte, Instrumente und Planung funktionieren weiter, solange die App geöffnet ist. Standortdaten verlassen das Gerät nicht.
+
 Kostenlos. Keine Werbung. Keine Analyse-SDKs. Daten bleiben auf dem Gerät.
 
 Von Alexander Mäule / Software by Design GbR, Schleswig (Nebenprojekt).

@@ -13,6 +13,9 @@ FEATURES
 • Track recording
 • EN / DE UI
 
+OPTIONAL BACKGROUND LOCATION
+Anchor alarms and track recording can keep monitoring your position while the app is in the background or the screen is off. You can deny the background location permission ("Allow all the time") — chart, instruments, and planning still work while the app is open. Location never leaves your device.
+
 Free. No ads. No analytics. Data stays on your device.
 
 Built by Alexander Mäule / Software by Design GbR, Schleswig, Germany (side project).
