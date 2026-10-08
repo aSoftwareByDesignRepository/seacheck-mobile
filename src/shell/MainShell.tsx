@@ -1,5 +1,4 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -39,7 +38,7 @@ const DOWNLOAD_SAFE_TABS = new Set<keyof RootTabParamList>(['Map', 'Downloads'])
  * not inside it (throws "Couldn't get the navigation state").
  */
 export function MainShell() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   useResumeBackgroundSync();
   useAppLocationWatch();
   useDownloadKeepAwake();
@@ -90,8 +89,9 @@ export function MainShell() {
   );
 
   return (
+    // StatusBar is mounted once in RootNavigator so onboarding/boot screens
+    // (outside this shell) get correct icon contrast too.
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
       <ScreenLockCoordinator />
       <Tab.Navigator
         tabBar={(props) => <AdaptiveTabBar {...props} variant={useRail ? 'rail' : 'bottom'} />}
