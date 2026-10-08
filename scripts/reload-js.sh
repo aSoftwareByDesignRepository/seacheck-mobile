@@ -4,7 +4,7 @@ set -euo pipefail
 
 PORT="${SEACHECK_METRO_PORT:-8092}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-AVD="${SEACHECK_AVD:-SeaCheck_Maestro_API_33}"
+AVD="${SEACHECK_AVD:-SeaCheck_Atlas_API_36}"
 
 reload_via_metro() {
   if curl -sf -o /dev/null -X POST "http://127.0.0.1:${PORT}/reload" 2>/dev/null; then

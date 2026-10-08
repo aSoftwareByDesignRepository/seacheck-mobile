@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-AVD="${SEACHECK_AVD:-SeaCheck_Maestro_API_33}"
+AVD="${SEACHECK_AVD:-SeaCheck_Atlas_API_36}"
 
 # shellcheck source=../../scripts/emulator-acquire.sh
 source "$ROOT/../scripts/emulator-acquire.sh"

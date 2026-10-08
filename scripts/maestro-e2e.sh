@@ -11,7 +11,7 @@
 #   SEACHECK_MAESTRO_DEVICE=emulator-5556 bash scripts/maestro-e2e.sh
 #
 # Env:
-#   SEACHECK_MAESTRO_DEVICE  adb serial (must hold lock; default: acquire SeaCheck_Maestro_API_33)
+#   SEACHECK_MAESTRO_DEVICE  adb serial (must hold lock; default: acquire SeaCheck_Atlas_API_36)
 #   SEACHECK_METRO_PORT      Metro port (default 8092; unused for release-*)
 #   SEACHECK_MAESTRO_CLEAR   1 = pm clear before run (default 1)
 #   SEACHECK_MAESTRO_DISABLE_RIVALS  1 = pm disable-user other softwarebydesign apps
@@ -21,7 +21,7 @@ set -euo pipefail
 APP_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP_ID="de.softwarebydesign.seacheck"
 METRO_PORT="${SEACHECK_METRO_PORT:-8092}"
-MAESTRO_AVD="${SEACHECK_MAESTRO_AVD:-SeaCheck_Maestro_API_33}"
+MAESTRO_AVD="${SEACHECK_MAESTRO_AVD:-SeaCheck_Atlas_API_36}"
 CLEAR="${SEACHECK_MAESTRO_CLEAR:-1}"
 DISABLE_RIVALS="${SEACHECK_MAESTRO_DISABLE_RIVALS:-1}"
 ANDROID_HOME="${ANDROID_HOME:-/home/alex/Android/Sdk}"

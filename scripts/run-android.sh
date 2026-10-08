@@ -4,7 +4,7 @@ set -euo pipefail
 
 PORT="${SEACHECK_METRO_PORT:-8092}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-AVD="${SEACHECK_AVD:-SeaCheck_Maestro_API_33}"
+AVD="${SEACHECK_AVD:-SeaCheck_Atlas_API_36}"
 
 metro_listening() {
   if command -v ss >/dev/null 2>&1; then

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Capture live Play Store phone screenshots for SeaCheck (all supported store locales).
-#   source ../../scripts/emulator-acquire.sh && emulator_acquire SeaCheck_Atlas_API_33 --boot-if-needed
+#   source ../../scripts/emulator-acquire.sh && emulator_acquire SeaCheck_Atlas_API_36 --boot-if-needed
 #   SEACHECK_RELEASE_APK=... bash scripts/capture-play-screenshots.sh
 # Optional: STORE_LOCALE=fr to capture one locale only.
 set -euo pipefail

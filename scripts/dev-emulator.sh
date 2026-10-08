@@ -3,7 +3,7 @@
 #
 # Usage:
 #   npm run dev
-#   npm run dev -- --avd Pixel_API_33
+#   npm run dev -- --avd Pixel_6_API_36
 #   npm run dev -- --preflight
 #
 # Re-run safely: reuses running emulator and Metro when possible.
@@ -12,7 +12,7 @@ set -euo pipefail
 APP_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_ROOT="$(cd "$APP_ROOT/../.." && pwd)"
 METRO_PORT="${SEACHECK_METRO_PORT:-8092}"
-AVD="${SEACHECK_AVD:-SeaCheck_Maestro_API_33}"
+AVD="${SEACHECK_AVD:-SeaCheck_Atlas_API_36}"
 ANDROID_HOME="${ANDROID_HOME:-/home/alex/Android/Sdk}"
 
 SKIP_EMULATOR=0
