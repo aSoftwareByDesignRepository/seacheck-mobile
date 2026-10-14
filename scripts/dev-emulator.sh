@@ -10,6 +10,8 @@
 set -euo pipefail
 
 APP_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=../../scripts/metro-guard.sh
+source "$APP_ROOT/../scripts/metro-guard.sh"
 REPO_ROOT="$(cd "$APP_ROOT/../.." && pwd)"
 METRO_PORT="${SEACHECK_METRO_PORT:-8092}"
 AVD="${SEACHECK_AVD:-SeaCheck_Atlas_API_36}"
@@ -145,7 +147,9 @@ wait_for_metro() {
 
 ensure_metro() {
   if port_listening "$METRO_PORT"; then
-    log "Metro already on port $METRO_PORT"
+    # A listening port is not proof it is our Metro (foreign_dev_server_on_port).
+    assert_own_metro "$METRO_PORT" "$APP_ROOT" "SEACHECK_METRO_PORT" || exit 1
+    log "Metro already on port $METRO_PORT (ours)"
     return 0
   fi
 

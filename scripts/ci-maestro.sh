@@ -69,7 +69,10 @@ trap cleanup EXIT
 
 start_metro() {
   if curl -sf -o /dev/null "http://127.0.0.1:${METRO_PORT}/status"; then
-    log "Metro already on :${METRO_PORT}"
+    # A listening port is not proof it is our Metro (foreign_dev_server_on_port).
+    source "$ROOT/../scripts/metro-guard.sh"
+    assert_own_metro "$METRO_PORT" "$ROOT" "SEACHECK_METRO_PORT" || exit 1
+    log "Metro already on :${METRO_PORT} (ours)"
     return 0
   fi
   log "starting Metro on :${METRO_PORT}"

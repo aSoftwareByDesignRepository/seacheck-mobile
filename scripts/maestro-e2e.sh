@@ -202,6 +202,9 @@ if [[ "$RELEASE_MODE" != "1" ]]; then
   if ! curl -sf -o /dev/null "http://127.0.0.1:${METRO_PORT}/status"; then
     die "Metro not running on :${METRO_PORT}. Start with: npx expo start --port ${METRO_PORT} --dev-client"
   fi
+  # A live port is not proof it is OUR Metro (foreign_dev_server_on_port).
+  source "$APP_ROOT/../scripts/metro-guard.sh"
+  assert_own_metro "$METRO_PORT" "$APP_ROOT" "SEACHECK_METRO_PORT" || exit 1
   # Emulator → host Metro (also works when 10.0.2.2 is firewalled).
   adb -s "$DEVICE" reverse "tcp:${METRO_PORT}" "tcp:${METRO_PORT}" >/dev/null 2>&1 || true
 fi

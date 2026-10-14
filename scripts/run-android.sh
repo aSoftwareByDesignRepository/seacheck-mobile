@@ -27,6 +27,9 @@ trap emulator_release EXIT
 emulator_adb_reverse "$PORT"
 
 if metro_listening; then
+  # A listening port is not proof it is our Metro (foreign_dev_server_on_port).
+  source "$ROOT/../scripts/metro-guard.sh"
+  assert_own_metro "$PORT" "$ROOT" "SEACHECK_METRO_PORT" || exit 1
   echo "==> Metro already on port $PORT — reusing it (no second bundler)"
   exec env CI=1 ANDROID_SERIAL="$ANDROID_SERIAL" npx expo run:android --port "$PORT" "$@"
 fi
