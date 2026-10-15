@@ -77,6 +77,7 @@ export function PassageWaypointCoordSheet({ visible, mode, waypoint, onClose, on
       title={mode === 'add' ? t('passage.addByCoordsTitle') : t('passage.editWaypointTitle')}
       subtitle={t('passage.coordsHint')}
       testID="passage.waypointCoordSheet"
+      scrollable
     >
       <View style={[styles.body, { paddingBottom: Math.max(insets.bottom, spacing.sm), gap: spacing.sm }]}>
         <FieldLabel>{t('passage.waypointNameLabel')}</FieldLabel>

@@ -4,11 +4,13 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
+  useState,
   useSyncExternalStore,
 } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { t } from '../i18n';
@@ -16,6 +18,7 @@ import { useNavigationStore } from '../store/navigationStore';
 import { radius, sheet, typography } from '../theme/tokens';
 import { useTheme } from '../theme/ThemeContext';
 import { Button } from './Button';
+import { scrollFocusedInputIntoView } from './keyboardAware';
 
 /** Global confirms sit above ordinary sheets in the single modal host. */
 export const CONFIRM_SHEET_PRIORITY = 1000;
@@ -241,7 +244,47 @@ export function BottomSheetChrome({
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const backdropDismiss = useContext(SheetBackdropDismissContext) ?? onClose;
-  const maxSheetHeight = Math.round(windowHeight * 0.88);
+  const scrollBodyRef = useRef<ScrollView | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // The SheetHost RN <Modal> window does not resize for the IME
+  // (adjustResize does not reach Modal) — lift the sheet by the keyboard
+  // height and shrink its max height so fields + CTAs stay above the IME.
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      const next = e.endCoordinates?.height ?? 0;
+      setKeyboardHeight(Number.isFinite(next) ? Math.max(0, next) : 0);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  // Reveal the focused input after the keyboard margin has committed —
+  // padding must exist before scroll-into-view has range to move.
+  useEffect(() => {
+    if (keyboardHeight <= 0) return;
+    const reveal = () => scrollFocusedInputIntoView(scrollBodyRef);
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(reveal);
+    });
+    const retry = setTimeout(reveal, 160);
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+      clearTimeout(retry);
+    };
+  }, [keyboardHeight]);
+
+  const maxSheetHeight = Math.max(
+    240,
+    Math.min(Math.round(windowHeight * 0.88), windowHeight - keyboardHeight - Math.max(insets.top, 8)),
+  );
 
   const header = (
     <View style={[styles.header, { marginBottom: spacing.md }]}>
@@ -284,6 +327,7 @@ export function BottomSheetChrome({
             // some AVDs report insets.bottom=0 while chrome still covers ~48px —
             // spacing-only pads would leave footer CTAs under the system bar.
             paddingBottom: Math.max(insets.bottom + spacing.lg, 48),
+            marginBottom: keyboardHeight,
             maxHeight: maxSheetHeight,
           },
         ]}
@@ -295,10 +339,14 @@ export function BottomSheetChrome({
         {header}
         {scrollable ? (
           <ScrollView
+            ref={scrollBodyRef}
             style={styles.scrollBody}
             keyboardShouldPersistTaps="handled"
             nestedScrollEnabled
             showsVerticalScrollIndicator
+            onContentSizeChange={() => {
+              if (keyboardHeight > 0) scrollFocusedInputIntoView(scrollBodyRef);
+            }}
             contentContainerStyle={{ paddingBottom: spacing.sm, gap: spacing.sm }}
           >
             {children}
