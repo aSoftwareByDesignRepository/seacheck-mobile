@@ -31,8 +31,9 @@ if metro_listening; then
   source "$ROOT/../scripts/metro-guard.sh"
   assert_own_metro "$PORT" "$ROOT" "SEACHECK_METRO_PORT" || exit 1
   echo "==> Metro already on port $PORT — reusing it (no second bundler)"
-  exec env CI=1 ANDROID_SERIAL="$ANDROID_SERIAL" npx expo run:android --port "$PORT" "$@"
+  env CI=1 ANDROID_SERIAL="$ANDROID_SERIAL" npx expo run:android --port "$PORT" "$@"
+  exit
 fi
 
 echo "==> Metro not detected on port $PORT — building and starting bundler"
-exec env ANDROID_SERIAL="$ANDROID_SERIAL" npx expo run:android --port "$PORT" "$@"
+env ANDROID_SERIAL="$ANDROID_SERIAL" npx expo run:android --port "$PORT" "$@"
