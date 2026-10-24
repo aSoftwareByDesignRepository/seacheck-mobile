@@ -101,6 +101,7 @@ import { DepthOverlay } from './DepthOverlay';
 import { CustomDownloadOverlays } from './CustomDownloadOverlays';
 import { mapChromeInsets } from './mapChromeInsets';
 import { CUSTOM_DOWNLOAD_PANEL_CONTENT_MAX, PASSAGE_PLANNING_PANEL_CONTENT_MAX } from './mapChromeLayout';
+import { safetyActionButtonCount } from './mapSafetyActionsLayout';
 import { boundsFromLonLat, boundsFromWaypoints } from '../../lib/map/passageBounds';
 import {
   lookupChartObjectOnline,
@@ -196,12 +197,14 @@ export function NavigationMap() {
   /** Ashore / planning / download area pick — no lock, anchor, or MOB on the chart edge. */
   const showSideActions =
     !screenLocked && !mobTarget && !passageMapPlanning && !customSelecting;
+  const showSafetyAnchor = !(isInstrumentsOnlyLayout && !showChartInInstrumentsOnly);
+  const safetyButtonCount = safetyActionButtonCount(showSafetyAnchor);
   const safetyChromePlacement = resolveMapSafetyChromePlacement({
     showSideActions,
     effectiveSplit,
   });
-  const mapBottom = useMapBottomLayout({ showSideActions });
-  const instrumentsTopChromeLayout = useMapBottomLayout({ showSideActions });
+  const mapBottom = useMapBottomLayout({ showSideActions, safetyButtonCount });
+  const instrumentsTopChromeLayout = useMapBottomLayout({ showSideActions, safetyButtonCount });
   const [seamarkHit, setSeamarkHit] = useState<SeamarkHit | null>(null);
   const [waypointHit, setWaypointHit] = useState<WaypointRow | null>(null);
   const [trackPointHit, setTrackPointHit] = useState<TrackPointRow | null>(null);
@@ -1055,7 +1058,7 @@ export function NavigationMap() {
         <View pointerEvents="box-none" style={styles.mapOverlayLayer}>
           <MapChrome
             onMobDropped={switchLayoutOnMob}
-            showAnchor={!(isInstrumentsOnlyLayout && !showChartInInstrumentsOnly)}
+            showAnchor={showSafetyAnchor}
             screenLocked={screenLocked}
           />
         </View>
@@ -1133,7 +1136,7 @@ export function NavigationMap() {
       {safetyChromePlacement === 'root' && !exclusiveChartDownload ? (
         <MapChrome
           onMobDropped={switchLayoutOnMob}
-          showAnchor={!(isInstrumentsOnlyLayout && !showChartInInstrumentsOnly)}
+          showAnchor={showSafetyAnchor}
           screenLocked={screenLocked}
         />
       ) : null}

@@ -98,7 +98,10 @@ export function MapActions({ onMobDropped, showAnchor = true, variant = 'side' }
   return (
     <>
       <View
-        style={[variant === 'inline' ? styles.row : styles.column, { gap: metrics.gap }]}
+        style={[
+          variant === 'inline' ? styles.row : variant === 'row' ? styles.overlayRow : styles.column,
+          { gap: metrics.gap },
+        ]}
         pointerEvents="box-none"
         testID="map.safetyActions"
       >
@@ -223,6 +226,7 @@ function SafetyAction({
 const styles = StyleSheet.create({
   column: { flexDirection: 'column', alignItems: 'center' },
   row: { flexDirection: 'row', alignItems: 'stretch', justifyContent: 'space-evenly', alignSelf: 'stretch' },
+  overlayRow: { flexDirection: 'row', alignItems: 'center' },
   actionBtn: {
     borderWidth: 1,
     justifyContent: 'center',

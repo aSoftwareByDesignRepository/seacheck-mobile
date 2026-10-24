@@ -230,3 +230,93 @@ describe('computeSafetyActionsMetrics', () => {
     expect(inline.gap).toBeLessThanOrEqual(side.gap);
   });
 });
+
+describe('safety arrangement fit check', () => {
+  const stackOf = (formFactor: 'compact' | 'expanded', count: number) =>
+    computeSafetyActionsMetrics({
+      minTouch: base.minTouch,
+      spacingSm: base.spacingSm,
+      spacingMd: base.spacingMd,
+      formFactor,
+      variant: 'side',
+      showAnchor: count > 2,
+      chromeRight: base.chromeRight,
+    }).stackHeight;
+
+  it('stays a column when the pane fits the stack', () => {
+    const layout = computeMapChromeLayout({
+      ...base,
+      layoutPreset: 'map-forward',
+      showSideActions: true,
+      paneHeight: 900,
+    });
+    expect(layout.safetyArrangement).toBe('column');
+    expect(layout.actionColumnWidth).toBeGreaterThan(0);
+    expect(layout.safetyChromeHeight).toBe(stackOf('compact', 3));
+  });
+
+  it('falls back to a row when the stack cannot fit between top inset and dock anchor', () => {
+    const layout = computeMapChromeLayout({
+      ...base,
+      formFactor: 'expanded',
+      layoutPreset: 'map-forward',
+      showSideActions: true,
+      // 2400x1080 compact-landscape shape: pane ≈ 309dp above the tab bar,
+      // map-forward dock 220dp — the 3-button stack (~210dp) cannot fit.
+      paneHeight: 309,
+    });
+    const stack = stackOf('expanded', 3);
+    expect(stack).toBeGreaterThan(
+      309 - layout.actionsColumnBottom - base.chromeTop - 8,
+    );
+    expect(layout.safetyArrangement).toBe('row');
+    // Row frees the top-chrome right reserve and uses a one-block footprint.
+    expect(layout.actionColumnWidth).toBe(0);
+    expect(layout.safetyChromeHeight).toBeLessThan(stack);
+  });
+
+  it('keeps the column for a two-button stack where three would not fit', () => {
+    const three = computeMapChromeLayout({
+      ...base,
+      layoutPreset: 'map-forward',
+      showSideActions: true,
+      paneHeight: 440,
+    });
+    const two = computeMapChromeLayout({
+      ...base,
+      layoutPreset: 'map-forward',
+      showSideActions: true,
+      safetyButtonCount: 2,
+      paneHeight: 440,
+    });
+    expect(three.safetyArrangement).toBe('row');
+    expect(two.safetyArrangement).toBe('column');
+    expect(two.safetyChromeHeight).toBe(stackOf('compact', 2));
+  });
+
+  it('defaults to the column arrangement when paneHeight is unknown', () => {
+    const layout = computeMapChromeLayout({
+      ...base,
+      layoutPreset: 'map-forward',
+      showSideActions: true,
+    });
+    expect(layout.safetyArrangement).toBe('column');
+  });
+
+  it('clears the compass by the row footprint, not the full stack', () => {
+    const row = computeMapChromeLayout({
+      ...base,
+      layoutPreset: 'map-forward',
+      showSideActions: true,
+      paneHeight: 309,
+    });
+    const column = computeMapChromeLayout({
+      ...base,
+      layoutPreset: 'map-forward',
+      showSideActions: true,
+      paneHeight: 900,
+    });
+    expect(row.compassBottom).toBeLessThan(column.compassBottom);
+    expect(row.compassBottom).toBeGreaterThan(row.actionsColumnBottom);
+  });
+});

@@ -6,7 +6,7 @@ export const MAP_SAFETY_COLUMN_GAP = 8;
 /** Extra lift while passage follow / MOB expands the instrument dock. */
 export const MAP_SAFETY_COLUMN_EXPANDED_LIFT = 8;
 
-export type SafetyActionsVariant = 'side' | 'inline';
+export type SafetyActionsVariant = 'side' | 'inline' | 'row';
 
 export type SafetyActionsMetrics = {
   variant: SafetyActionsVariant;
@@ -39,32 +39,39 @@ export function computeSafetyActionsMetrics(args: {
   const { minTouch, spacingSm, spacingMd, formFactor, variant, showAnchor, chromeRight } = args;
   const count = safetyActionButtonCount(showAnchor);
   const isSide = variant === 'side';
+  const isRow = variant === 'row';
   const expanded = formFactor === 'expanded';
   const medium = formFactor === 'medium';
 
   const buttonSize =
     isSide && expanded ? minTouch + 4 : isSide && medium ? minTouch + 2 : minTouch;
   const gap =
-    variant === 'inline'
+    variant === 'inline' || isRow
       ? spacingSm
       : expanded
         ? spacingMd
         : medium
           ? spacingSm + 2
           : spacingSm;
-  const captionSize = variant === 'inline' ? 10 : expanded ? 12 : 11;
-  const iconSize = Math.min(expanded ? 26 : 24, Math.round(buttonSize * 0.52));
-  const paddingV = variant === 'inline' ? 6 : expanded ? 12 : 10;
-  const paddingH = variant === 'inline' ? 10 : expanded ? 14 : 12;
+  const captionSize = variant === 'inline' || isRow ? 10 : expanded ? 12 : 11;
+  const iconSize = Math.min(isSide && expanded ? 26 : 24, Math.round(buttonSize * 0.52));
+  const paddingV = variant === 'inline' || isRow ? 6 : expanded ? 12 : 10;
+  const paddingH = variant === 'inline' || isRow ? 10 : expanded ? 14 : 12;
   const borderRadius = isSide && expanded ? 16 : 14;
 
   const blockHeight =
     variant === 'inline'
       ? buttonSize
       : buttonSize + Math.round(captionSize * 0.85);
-  const stackHeight = count * blockHeight + (count - 1) * gap;
+  // 'row' is the landscape/short-pane fallback: one horizontal line of buttons,
+  // so the arrangement height is a single block instead of the stacked count.
+  const stackHeight = isRow ? blockHeight : count * blockHeight + (count - 1) * gap;
   const btnOuterWidth = buttonSize + paddingH * 2;
-  const columnWidth = isSide ? btnOuterWidth + chromeRight + spacingSm : btnOuterWidth;
+  const columnWidth = isSide
+    ? btnOuterWidth + chromeRight + spacingSm
+    : isRow
+      ? count * btnOuterWidth + (count - 1) * gap + chromeRight + spacingSm
+      : btnOuterWidth;
 
   return {
     variant,

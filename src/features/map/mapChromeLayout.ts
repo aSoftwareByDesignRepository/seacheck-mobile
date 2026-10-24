@@ -8,6 +8,7 @@ import {
 import {
   computeMaxSafetyColumnWidth,
   computeMaxSafetyStackHeight,
+  computeSafetyActionsMetrics,
   MAP_SAFETY_COLUMN_EXPANDED_LIFT,
   MAP_SAFETY_COLUMN_GAP,
 } from './mapSafetyActionsLayout';
@@ -64,6 +65,10 @@ export type MapChromeLayout = {
   actionsBottom: number;
   /** Bottom inset for side safety column — lifted above bottom docks / panels. */
   actionsColumnBottom: number;
+  /** Side stack, or bottom-right row when the pane cannot fit the stack height. */
+  safetyArrangement: 'column' | 'row';
+  /** Vertical footprint of the current safety arrangement (stack or single row). */
+  safetyChromeHeight: number;
   /** Recommended compass bottom inset — clears side stack and bottom chrome. */
   compassBottom: number;
   attributionBottom: number;
@@ -90,6 +95,14 @@ type ComputeArgs = {
   extraBottomReserved?: number;
   /** Side panel carries instruments — no bottom dock reserve on the map pane. */
   suppressBottomDock?: boolean;
+  /** Rendered safety buttons (2 when the anchor action is hidden). Default 3. */
+  safetyButtonCount?: number;
+  /**
+   * Map-pane host height (window minus bottom tab bar). Without it the column
+   * arrangement is assumed — pass the real height so short panes (landscape
+   * compact) fall back to the row arrangement instead of clipping off-screen.
+   */
+  paneHeight?: number;
 };
 
 /** @deprecated Use computeMaxSafetyColumnWidth. */
@@ -143,11 +156,10 @@ export function computeMapChromeLayout({
   tabBarAtBottom = true,
   extraBottomReserved = 0,
   suppressBottomDock = false,
+  safetyButtonCount = 3,
+  paneHeight,
 }: ComputeArgs): MapChromeLayout {
   const baseBottom = chromeBottom + spacingSm;
-  const actionColumnWidth = showSideActions
-    ? computeMaxSafetyColumnWidth(minTouch, spacingSm, spacingMd, formFactor, chromeRight)
-    : 0;
   const actionStackHeight = showSideActions
     ? computeMaxSafetyStackHeight(minTouch, spacingSm, spacingMd, formFactor)
     : 0;
@@ -168,18 +180,56 @@ export function computeMapChromeLayout({
     ? instrumentDockBottom + bottomReserved + spacingSm
     : baseBottom;
 
-  const ornamentBottom = hasBottomChrome
-    ? instrumentDockBottom + bottomReserved + spacingSm
-    : baseBottom + actionStackHeight + spacingSm;
-
   const actionsColumnBottom = hasBottomChrome
     ? instrumentDockBottom + bottomReserved + columnLift
     : baseBottom;
 
+  // Compact-landscape fallback: when the pane cannot fit the real stack between
+  // the top inset and the bottom-chrome anchor, render the safety actions as a
+  // single bottom-right row — a column that tall would clip off the top edge.
+  const actualStackHeight = showSideActions
+    ? computeSafetyActionsMetrics({
+        minTouch,
+        spacingSm,
+        spacingMd,
+        formFactor,
+        variant: 'side',
+        showAnchor: safetyButtonCount > 2,
+        chromeRight,
+      }).stackHeight
+    : 0;
+  const safetyArrangement: 'column' | 'row' =
+    showSideActions &&
+    paneHeight != null &&
+    paneHeight > 0 &&
+    actualStackHeight > paneHeight - actionsColumnBottom - chromeTop - MAP_CHROME_GAP
+      ? 'row'
+      : 'column';
+  const safetyChromeHeight = !showSideActions
+    ? 0
+    : safetyArrangement === 'row'
+      ? computeSafetyActionsMetrics({
+          minTouch,
+          spacingSm,
+          spacingMd,
+          formFactor,
+          variant: 'row',
+          showAnchor: safetyButtonCount > 2,
+          chromeRight,
+        }).stackHeight
+      : actualStackHeight;
+  const actionColumnWidth = showSideActions && safetyArrangement === 'column'
+    ? computeMaxSafetyColumnWidth(minTouch, spacingSm, spacingMd, formFactor, chromeRight)
+    : 0;
+
+  const ornamentBottom = hasBottomChrome
+    ? instrumentDockBottom + bottomReserved + spacingSm
+    : baseBottom + safetyChromeHeight + spacingSm;
+
   const compassBottom = showSideActions
     ? Math.max(
         ornamentBottom,
-        actionsColumnBottom + actionStackHeight + MAP_COMPASS_ORNAMENT_HEIGHT + MAP_COMPASS_ABOVE_STACK_GAP,
+        actionsColumnBottom + safetyChromeHeight + MAP_COMPASS_ORNAMENT_HEIGHT + MAP_COMPASS_ABOVE_STACK_GAP,
       ) + spacingSm
     : ornamentBottom + spacingSm;
 
@@ -192,6 +242,8 @@ export function computeMapChromeLayout({
     actionStackHeight,
     actionsBottom: baseBottom,
     actionsColumnBottom,
+    safetyArrangement,
+    safetyChromeHeight,
     compassBottom,
     attributionBottom,
     instrumentDockBottom,

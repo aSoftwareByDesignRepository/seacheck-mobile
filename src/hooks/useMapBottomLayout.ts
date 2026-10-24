@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { computeMapChromeLayout } from '../features/map/mapChromeLayout';
 import { mapChromeInsets } from '../features/map/mapChromeInsets';
-import { usesBottomTabBar } from '../lib/navigation/tabBarGeometry';
+import { tabBarOccupiedHeight, usesBottomTabBar } from '../lib/navigation/tabBarGeometry';
 import { useTheme } from '../theme/ThemeContext';
 import { useEffectiveMapSplit } from './useEffectiveMapSplit';
 import { useFormFactor } from './useFormFactor';
@@ -11,6 +11,8 @@ import { useMapSurfaceMode } from './useMapSurfaceMode';
 
 type Options = {
   showSideActions?: boolean;
+  /** Rendered safety buttons (2 when the anchor action is hidden). Default 3. */
+  safetyButtonCount?: number;
 };
 
 /** Bottom + side chrome insets for map overlays and MapLibre ornaments. */
@@ -19,10 +21,13 @@ export function useMapBottomLayout(options: Options = {}) {
   const { spacing, minTouch } = useTheme();
   const surface = useMapSurfaceMode();
   const showSideActions = options.showSideActions ?? true;
-  const { formFactor, isLandscape } = useFormFactor();
+  const { formFactor, isLandscape, height } = useFormFactor();
   const effectiveSplit = useEffectiveMapSplit();
   const tabBarAtBottom = usesBottomTabBar(formFactor, isLandscape);
   const chrome = mapChromeInsets(insets, spacing.lg);
+  const paneHeight = tabBarAtBottom
+    ? height - tabBarOccupiedHeight(insets.bottom, minTouch)
+    : height;
 
   return useMemo(
     () =>
@@ -42,6 +47,8 @@ export function useMapBottomLayout(options: Options = {}) {
         tabBarAtBottom,
         extraBottomReserved: surface.bottomChromeReserve,
         suppressBottomDock: effectiveSplit,
+        safetyButtonCount: options.safetyButtonCount,
+        paneHeight,
       }),
     [
       chrome.left,
@@ -52,6 +59,7 @@ export function useMapBottomLayout(options: Options = {}) {
       spacing.sm,
       spacing.md,
       formFactor,
+      paneHeight,
       surface.dockLayoutPreset,
       surface.expandedInstrumentDock,
       surface.bottomChromeReserve,
@@ -59,6 +67,7 @@ export function useMapBottomLayout(options: Options = {}) {
       showSideActions,
       tabBarAtBottom,
       effectiveSplit,
+      options.safetyButtonCount,
     ],
   );
 }

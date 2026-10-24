@@ -331,7 +331,7 @@
     "longitude": "Longitud",
     "coordsTapCopy": "Toca para copiar",
     "coordsCardA11y": "Posición en %{format}: latitud %{lat}, longitud %{lon}",
-    "dropWaypointTitle": "¿Dejar el punto de ruta aquí?",
+    "dropWaypointTitle": "¿Colocar el punto de ruta aquí?",
     "locationMenuTitle": "¿Qué quieres hacer aquí?",
     "locationMenuHint": "Agregue un punto de referencia, establezca una vigilancia de fondeo, copie coordenadas o busque una marca de mar.",
     "dropWaypointConfirm": "Guardar punto de referencia",
