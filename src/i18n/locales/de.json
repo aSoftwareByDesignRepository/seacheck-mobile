@@ -890,28 +890,53 @@
     "offlineCheckBody": "Prüft, ob geladene Pakete jede Etappe abdecken (0,5 NM Puffer). Lücken vor Abfahrt schließen.",
     "mapPreviewOffline": "Kartenvorschau benötigt Offline-Karten — zuerst ein Paket laden",
     "offlineReady": "Alle Etappen offline abgedeckt",
-    "offlineGaps": "%{count} Etappe(n) nicht vollständig abgedeckt",
+    "offlineGaps": {
+      "one": "%{count} Etappe nicht vollständig abgedeckt",
+      "few": "%{count} Etappen nicht vollständig abgedeckt",
+      "many": "%{count} Etappen nicht vollständig abgedeckt",
+      "other": "%{count} Etappen nicht vollständig abgedeckt"
+    },
     "offlineNoPacks": "Keine Offline-Pakete bereit — zuerst Karten laden",
     "offlineLegOk": "Abgedeckt",
     "offlineLegGap": "Lücke",
     "offlineCoveredBy": "Pakete: %{packs}",
     "offlineLegStatusTitle": "Status je Etappe",
-    "offlineLegStatusSummary": "%{covered} von %{total} Etappen abgedeckt · %{gaps} Lücke(n)",
+    "offlineLegStatusSummary": {
+      "one": "%{covered}/%{total} Etappen abgedeckt · %{gaps} Lücke",
+      "few": "%{covered}/%{total} Etappen abgedeckt · %{gaps} Lücken",
+      "many": "%{covered}/%{total} Etappen abgedeckt · %{gaps} Lücken",
+      "other": "%{covered}/%{total} Etappen abgedeckt · %{gaps} Lücken"
+    },
     "offlineLegStatusExpand": "Etappen-Details anzeigen",
     "offlineLegStatusCollapse": "Etappen-Details ausblenden",
     "recommendedPacksTitle": "Empfohlen für diese Passage",
     "recommendedPacksBody": "Diese Korridor-Pakete schließen die Lücken unten. Jeweils eines auf WLAN laden.",
     "recommendedPacksCustomHint": "Einige Etappen brauchen noch einen eigenen Kartenbereich — Button unten.",
-    "remainingLegsAfterPacks": "%{count} Etappe(n) brauchen nach diesen Downloads evtl. noch einen eigenen Bereich.",
+    "remainingLegsAfterPacks": {
+      "one": "%{count} Etappe braucht nach diesen Downloads evtl. noch einen eigenen Bereich.",
+      "few": "%{count} Etappen brauchen nach diesen Downloads evtl. noch einen eigenen Bereich.",
+      "many": "%{count} Etappen brauchen nach diesen Downloads evtl. noch einen eigenen Bereich.",
+      "other": "%{count} Etappen brauchen nach diesen Downloads evtl. noch einen eigenen Bereich."
+    },
     "downloadAllRecommended": "Alle empfohlenen laden (%{count})",
-    "downloadAllProgress": "%{count} Paket(e) für diese Passage geladen.",
+    "downloadAllProgress": {
+      "one": "%{count} Paket für diese Passage geladen.",
+      "few": "%{count} Pakete für diese Passage geladen.",
+      "many": "%{count} Pakete für diese Passage geladen.",
+      "other": "%{count} Pakete für diese Passage geladen."
+    },
     "downloadAllPartialFail": "Einige Downloads fehlgeschlagen — einzeln per WLAN wiederholen.",
     "openCustomDownload": "Eigenen Kartenbereich einrichten",
     "openCustomDownloadShort": "Eigener Bereich",
     "offlineNeedsCustom": "Die Route führt durch Gebiete außerhalb der Korridor-Pakete. Rechteck in Downloads zeichnen.",
     "offlineNeedsCustomShort": "Route braucht einen eigenen Kartenbereich außerhalb der Korridor-Pakete.",
     "downloadPack": "Laden",
-    "suggestionLegs": "Hilft bei %{count} Etappe(n)",
+    "suggestionLegs": {
+      "one": "Hilft bei %{count} Etappe",
+      "few": "Hilft bei %{count} Etappen",
+      "many": "Hilft bei %{count} Etappen",
+      "other": "Hilft bei %{count} Etappen"
+    },
     "openDownloads": "Downloads öffnen",
     "openDownloadsShort": "Downloads",
     "metaTitle": "Passagedetails",

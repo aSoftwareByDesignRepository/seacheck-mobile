@@ -28,11 +28,25 @@ const catalogs: Record<string, Record<string, unknown>> = {
   sv: sv as Record<string, unknown>,
 };
 
+const PLURAL_FORMS = new Set(['zero', 'one', 'two', 'few', 'many', 'other']);
+
+/** i18n-js plural object — a leaf keyed by plural form, not a nested section. */
+function isPluralForms(v: unknown): v is Record<string, string> {
+  return (
+    !!v &&
+    typeof v === 'object' &&
+    !Array.isArray(v) &&
+    Object.keys(v as Record<string, unknown>).length > 0 &&
+    Object.keys(v as Record<string, unknown>).every((k) => PLURAL_FORMS.has(k)) &&
+    Object.values(v as Record<string, unknown>).every((s) => typeof s === 'string')
+  );
+}
+
 function flatten(obj: Record<string, unknown>, prefix = ''): string[] {
   const out: string[] = [];
   for (const [k, v] of Object.entries(obj)) {
     const path = prefix ? `${prefix}.${k}` : k;
-    if (v && typeof v === 'object' && !Array.isArray(v)) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && !isPluralForms(v)) {
       out.push(...flatten(v as Record<string, unknown>, path));
     } else {
       out.push(path);
@@ -48,8 +62,10 @@ function flattenValues(
   const out: Array<{ key: string; value: string }> = [];
   for (const [k, v] of Object.entries(obj)) {
     const path = prefix ? `${prefix}.${k}` : k;
-    if (v && typeof v === 'object' && !Array.isArray(v)) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && !isPluralForms(v)) {
       out.push(...flattenValues(v as Record<string, unknown>, path));
+    } else if (isPluralForms(v)) {
+      out.push({ key: path, value: v.other });
     } else if (typeof v === 'string') {
       out.push({ key: path, value: v });
     }

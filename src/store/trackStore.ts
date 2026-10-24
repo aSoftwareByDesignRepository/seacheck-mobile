@@ -6,14 +6,15 @@ import { getDatabase, newId, type TrackPointRow, type TrackRow } from '../lib/db
 import { computePathDistanceNm } from '../lib/geo/pathDistance';
 import type { LonLat } from '../lib/geo/navigation';
 import { t } from '../i18n';
+import { formatDateLocal } from '../lib/time/formatDateTimeLocal';
 import { registerTrackLiveTrail } from '../services/trackLiveTrail';
 import { syncRecordingBackgroundGps } from '../services/backgroundLocationService';
 import { useNavigationStore } from './navigationStore';
 import { usePassageStore } from './passageStore';
 
-function buildDefaultTrackName(): string {
+export function buildDefaultTrackName(): string {
   const { activePassageId, passages } = usePassageStore.getState();
-  const date = new Date().toISOString().slice(0, 10);
+  const date = formatDateLocal(new Date());
   if (activePassageId) {
     const passage = passages.find((p) => p.id === activePassageId);
     if (passage?.name) return `${passage.name} ${date}`;

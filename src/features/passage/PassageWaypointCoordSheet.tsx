@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -28,6 +28,7 @@ export function PassageWaypointCoordSheet({ visible, mode, waypoint, onClose, on
   const [lonDraft, setLonDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -54,6 +55,8 @@ export function PassageWaypointCoordSheet({ visible, mode, waypoint, onClose, on
       setError(t('passage.coordsOutOfRange'));
       return;
     }
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -66,6 +69,7 @@ export function PassageWaypointCoordSheet({ visible, mode, waypoint, onClose, on
     } catch {
       setError(t('passage.coordsSaveFailed'));
     } finally {
+      inFlightRef.current = false;
       setBusy(false);
     }
   }

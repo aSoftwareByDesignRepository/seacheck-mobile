@@ -890,28 +890,53 @@
     "offlineCheckBody": "Checks whether downloaded packs cover each leg (with 0.5 NM buffer). Download gaps before departure.",
     "mapPreviewOffline": "Map preview requires offline charts — download a pack first",
     "offlineReady": "All legs covered offline",
-    "offlineGaps": "%{count} leg(s) not fully covered",
+    "offlineGaps": {
+      "one": "%{count} leg not fully covered",
+      "few": "%{count} legs not fully covered",
+      "many": "%{count} legs not fully covered",
+      "other": "%{count} legs not fully covered"
+    },
     "offlineNoPacks": "No offline packs ready — download charts first",
     "offlineLegOk": "Covered",
     "offlineLegGap": "Gap",
     "offlineCoveredBy": "Packs: %{packs}",
     "offlineLegStatusTitle": "Leg-by-leg status",
-    "offlineLegStatusSummary": "%{covered} of %{total} legs covered · %{gaps} gap(s)",
+    "offlineLegStatusSummary": {
+      "one": "%{covered}/%{total} legs covered · %{gaps} gap",
+      "few": "%{covered}/%{total} legs covered · %{gaps} gaps",
+      "many": "%{covered}/%{total} legs covered · %{gaps} gaps",
+      "other": "%{covered}/%{total} legs covered · %{gaps} gaps"
+    },
     "offlineLegStatusExpand": "Show leg details",
     "offlineLegStatusCollapse": "Hide leg details",
     "recommendedPacksTitle": "Recommended for this passage",
     "recommendedPacksBody": "These corridor packs cover the gaps below. Download one at a time on Wi‑Fi.",
     "recommendedPacksCustomHint": "Some legs still need a custom map area — tap the button below.",
-    "remainingLegsAfterPacks": "%{count} leg(s) may still need a custom area after these downloads.",
+    "remainingLegsAfterPacks": {
+      "one": "%{count} leg may still need a custom area after these downloads.",
+      "few": "%{count} legs may still need a custom area after these downloads.",
+      "many": "%{count} legs may still need a custom area after these downloads.",
+      "other": "%{count} legs may still need a custom area after these downloads."
+    },
     "downloadAllRecommended": "Download all recommended (%{count})",
-    "downloadAllProgress": "%{count} pack(s) downloaded for this passage.",
+    "downloadAllProgress": {
+      "one": "%{count} pack downloaded for this passage.",
+      "few": "%{count} packs downloaded for this passage.",
+      "many": "%{count} packs downloaded for this passage.",
+      "other": "%{count} packs downloaded for this passage."
+    },
     "downloadAllPartialFail": "Some downloads failed — retry individually on Wi‑Fi.",
     "openCustomDownload": "Set up custom chart area",
     "openCustomDownloadShort": "Custom area",
     "offlineNeedsCustom": "This route crosses areas outside corridor packs. Draw a custom download rectangle in Downloads.",
     "offlineNeedsCustomShort": "Route needs a custom chart area outside corridor packs.",
     "downloadPack": "Download",
-    "suggestionLegs": "Helps with %{count} leg(s)",
+    "suggestionLegs": {
+      "one": "Helps with %{count} leg",
+      "few": "Helps with %{count} legs",
+      "many": "Helps with %{count} legs",
+      "other": "Helps with %{count} legs"
+    },
     "openDownloads": "Open Downloads",
     "openDownloadsShort": "Downloads",
     "metaTitle": "Passage details",

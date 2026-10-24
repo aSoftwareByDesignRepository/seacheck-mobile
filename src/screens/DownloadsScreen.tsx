@@ -478,7 +478,7 @@ export function DownloadsScreen() {
       </View>
       <ScrollView
         ref={scrollRef}
-        style={{ flex: 1 }}
+        style={{ flex: 1, minHeight: 200 }}
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         keyboardShouldPersistTaps="handled"
       >

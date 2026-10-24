@@ -193,6 +193,7 @@ export function PassageCoverageCard({ detail, onOpenDownloads }: Props) {
               covered: coveredLegCount,
               total: totalLegCount,
               gaps: report.uncoveredLegCount,
+              count: report.uncoveredLegCount,
             })}
             onPress={() => setLegsExpanded((value) => !value)}
             testID="passage.legStatus.toggle"
@@ -207,6 +208,7 @@ export function PassageCoverageCard({ detail, onOpenDownloads }: Props) {
                   covered: coveredLegCount,
                   total: totalLegCount,
                   gaps: report.uncoveredLegCount,
+                  count: report.uncoveredLegCount,
                 })}
               </Text>
               <Text style={[styles.legToggleHint, { color: colors.textMuted }]}>{legToggleLabel}</Text>

@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 
 import { PassageListCard } from '../../features/passage/PassageListCard';
@@ -68,9 +68,16 @@ export function PassageListScreen() {
     [navigation],
   );
 
+  const createInFlightRef = useRef(false);
   async function handleCreate() {
-    const p = await createPassage(t('passage.defaultName'));
-    openDetail(p.id);
+    if (createInFlightRef.current) return;
+    createInFlightRef.current = true;
+    try {
+      const p = await createPassage(t('passage.defaultName'));
+      openDetail(p.id);
+    } finally {
+      createInFlightRef.current = false;
+    }
   }
 
   async function handleActivate(passageId: string) {
@@ -199,7 +206,7 @@ export function PassageListScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { flex: 1, alignSelf: 'stretch', minHeight: 0 },
+  list: { flex: 1, alignSelf: 'stretch', minHeight: 200 },
   gridRow: { alignItems: 'flex-start' },
   gridCard: { flex: 1, minWidth: 0 },
 });
