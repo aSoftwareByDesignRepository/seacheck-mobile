@@ -1,0 +1,102 @@
+{
+  "accent": "#0b1622",
+  "ink": "#0d2534",
+  "shots": [
+    {
+      "pattern": "phone-01-map",
+      "captions": {
+        "en": { "title": "Your boat, on a real chart.", "sub": "Live GPS, bearing and ETA — where navigation happens." },
+        "de": { "title": "Dein Boot, auf echter Karte.", "sub": "Live-GPS, Kurs und ETA — dort, wo navigiert wird." },
+        "fr": { "title": "Ton bateau, sur une vraie carte.", "sub": "GPS live, cap et ETA — là où la navigation se joue." },
+        "es": { "title": "Tu barco, en una carta real.", "sub": "GPS en vivo, rumbo y ETA — donde ocurre la navegación." },
+        "da": { "title": "Din båd, på et rigtigt kort.", "sub": "Live-GPS, kurs og ETA — dér hvor navigationen sker." },
+        "nl": { "title": "Jouw boot, op een echte kaart.", "sub": "Live GPS, koers en ETA — daar waar je navigeert." },
+        "it": { "title": "La tua barca, su una carta vera.", "sub": "GPS live, rotta ed ETA — dove si naviga davvero." },
+        "pl": { "title": "Twoja łódź, na prawdziwej mapie.", "sub": "GPS na żywo, kurs i ETA — tam, gdzie się nawiguje." },
+        "sv": { "title": "Din båt, på en riktig karta.", "sub": "Live-GPS, bäring och ETA — där navigeringen sker." },
+        "nb": { "title": "Båten din, på et ekte kart.", "sub": "Live-GPS, kurs og ETA — der navigeringen skjer." },
+        "pt": { "title": "O teu barco, numa carta real.", "sub": "GPS ao vivo, rumo e ETA — onde a navegação acontece." }
+      }
+    },
+    {
+      "pattern": "phone-02-passage-map",
+      "captions": {
+        "en": { "title": "The route, drawn where it counts." },
+        "de": { "title": "Die Route, gezeichnet wo es zählt." },
+        "fr": { "title": "La route, tracée là où ça compte." },
+        "es": { "title": "La ruta, trazada donde importa." },
+        "da": { "title": "Ruten, tegnet hvor det betyder noget." },
+        "nl": { "title": "De route, getekend waar het telt." },
+        "it": { "title": "La rotta, tracciata dove conta." },
+        "pl": { "title": "Trasa, narysowana tam, gdzie się liczy." },
+        "sv": { "title": "Rutten, ritad där det räknas." },
+        "nb": { "title": "Ruten, tegnet der det teller." },
+        "pt": { "title": "A rota, desenhada onde conta." }
+      }
+    },
+    {
+      "pattern": "phone-03-passage",
+      "captions": {
+        "en": { "title": "Plan the leg, sail the plan.", "sub": "Waypoints, distances, ETAs — a passage that reads itself." },
+        "de": { "title": "Plane den Törn, segel den Plan.", "sub": "Wegpunkte, Distanzen, ETAs — ein Törn, der sich selbst erklärt." },
+        "fr": { "title": "Planifie l'étape, navigue le plan.", "sub": "Waypoints, distances, ETAs — un trajet qui se lit tout seul." },
+        "es": { "title": "Planea la etapa, navega el plan.", "sub": "Waypoints, distancias, ETAs — una travesía que se lee sola." },
+        "da": { "title": "Planlæg etappen, sejl planen.", "sub": "Waypoints, distancer, ETA'er — en tur, der læser sig selv." },
+        "nl": { "title": "Plan het traject, vaar het plan.", "sub": "Waypoints, afstanden, ETA's — een tocht die zichzelf voorleest." },
+        "it": { "title": "Pianifica la tratta, naviga il piano.", "sub": "Waypoint, distanze, ETA — una rotta che si legge da sola." },
+        "pl": { "title": "Zaplanuj odcinek, żegluj według planu.", "sub": "Punkty, odległości, ETA — rejs, który czyta się sam." },
+        "sv": { "title": "Planera benet, segla planen.", "sub": "Vägpunkter, distanser, ETA:er — en färd som läser sig själv." },
+        "nb": { "title": "Planlegg etappen, seil planen.", "sub": "Vei punkter, distanser, ETA-er — en tur som leser seg selv." },
+        "pt": { "title": "Planeia a etapa, navega o plano.", "sub": "Waypoints, distâncias, ETAs — uma travessia que se lê sozinha." }
+      }
+    },
+    {
+      "pattern": "phone-04-downloads",
+      "captions": {
+        "en": { "title": "Charts that work with no signal.", "sub": "Download the region once — it stays yours." },
+        "de": { "title": "Karten, die ohne Funkloch funktionieren.", "sub": "Region einmal laden — sie bleibt deine." },
+        "fr": { "title": "Des cartes qui marchent sans réseau.", "sub": "Télécharge la région une fois — elle reste à toi." },
+        "es": { "title": "Cartas que funcionan sin cobertura.", "sub": "Descarga la región una vez — se queda tuya." },
+        "da": { "title": "Kort, der virker uden signal.", "sub": "Download regionen én gang — den bliver din." },
+        "nl": { "title": "Kaarten die zonder bereik werken.", "sub": "Download de regio één keer — hij blijft van jou." },
+        "it": { "title": "Carte che funzionano senza segnale.", "sub": "Scarica la regione una volta — resta tua." },
+        "pl": { "title": "Mapy, które działają bez zasięgu.", "sub": "Pobierz region raz — zostaje twój." },
+        "sv": { "title": "Kartor som fungerar utan täckning.", "sub": "Ladda ner regionen en gång — den blir din." },
+        "nb": { "title": "Kart som virker uten dekning.", "sub": "Last ned regionen én gang — den blir din." },
+        "pt": { "title": "Cartas que funcionam sem rede.", "sub": "Descarrega a região uma vez — fica tua." }
+      }
+    },
+    {
+      "pattern": "phone-05-tracks",
+      "captions": {
+        "en": { "title": "Every track, kept." },
+        "de": { "title": "Jede Spur, behalten." },
+        "fr": { "title": "Chaque trace, gardée." },
+        "es": { "title": "Cada track, guardado." },
+        "da": { "title": "Hvert spor, gemt." },
+        "nl": { "title": "Elke track, bewaard." },
+        "it": { "title": "Ogni traccia, conservata." },
+        "pl": { "title": "Każdy ślad, zachowany." },
+        "sv": { "title": "Varje spår, sparat." },
+        "nb": { "title": "Hvert spor, lagret." },
+        "pt": { "title": "Cada trilho, guardado." }
+      }
+    },
+    {
+      "pattern": "phone-06-disclaimer",
+      "captions": {
+        "en": { "title": "A companion — not a substitute.", "sub": "Official charts and good seamanship still apply." },
+        "de": { "title": "Ein Begleiter — kein Ersatz.", "sub": "Offizielle Seekarten und seemännische Sorgfalt gelten weiter." },
+        "fr": { "title": "Un compagnon — pas un substitut.", "sub": "Cartes officielles et bon sens marin restent de mise." },
+        "es": { "title": "Un compañero — no un sustituto.", "sub": "Las cartas oficiales y la buena marinería siguen contando." },
+        "da": { "title": "En ledsager — ikke en erstatning.", "sub": "Officielle søkort og godt sømandskab gælder stadig." },
+        "nl": { "title": "Een metgezel — geen vervanging.", "sub": "Officiële kaarten en goed zeemanschap gelden nog steeds." },
+        "it": { "title": "Un compagno — non un sostituto.", "sub": "Carte ufficiali e buon senso marinaro valgono sempre." },
+        "pl": { "title": "Towarzysz — nie zamiennik.", "sub": "Oficjalne mapy i dobre żeglarstwo nadal obowiązują." },
+        "sv": { "title": "En följeslagare — inte en ersättning.", "sub": "Officiella sjökort och gott sjömannaskap gäller fortfarande." },
+        "nb": { "title": "En følgesvenn — ikke en erstatning.", "sub": "Offisielle sjøkart og godt sjømannskap gjelder fortsatt." },
+        "pt": { "title": "Um companheiro — não um substituto.", "sub": "Cartas oficiais e boa arte de marinheiro continuam a valer." }
+      }
+    }
+  ]
+}
