@@ -312,7 +312,7 @@
     "gpsOutlierHint": "Een plotselinge sprong van GPS werd voor de kaart genegeerd. Anker en MOB gebruiken nog steeds het ruwe signaal.",
     "anchorGpsSuspendedShort": "GPS verloren — anker gepauzeerd",
     "batteryOptimizationShort": "Batterijbesparing",
-    "anchorWatchLimitedShort": "Wacht beperkt",
+    "anchorWatchLimitedShort": "Anker beperkt",
     "lowSog": "Lage snelheid - COG onbetrouwbaar",
     "staleGps": "GPS signaal oud",
     "fixAge": "GPS %{sec} s geleden",
@@ -331,7 +331,7 @@
     "longitude": "Lengte",
     "coordsTapCopy": "Tik om te kopiëren",
     "coordsCardA11y": "Positie in %{format}: breedtegraad %{lat}, lengtegraad %{lon}",
-    "dropWaypointTitle": "Routepunt hier neerzetten?",
+    "dropWaypointTitle": "Waypoint hier plaatsen?",
     "locationMenuTitle": "Wat wil je hier doen?",
     "locationMenuHint": "Voeg een waypoint toe, stel de ankerwacht in, kopieer coördinaten of zoek een zeemarkering op.",
     "dropWaypointConfirm": "Waypoint opslaan",
@@ -366,7 +366,7 @@
     "emergencyNoGpsBody": "Geen betrouwbare positie beschikbaar. Wacht op GPS voordat u een Mayday-bericht kopieert.",
     "anchorWatchLabel": "Ankerwacht",
     "anchorWatchMonitoringHint": "Bewaakt voortdurend uw GPS-positie terwijl het alarm is ingeschakeld. U wordt gewaarschuwd als u buiten de groene cirkel afdrijft of gestaag beweegt terwijl u voor anker ligt.",
-    "anchorRadiusHint": "Alarmradius verslepen: kies voordat u het alarm instelt, of wijzig het hier terwijl de wacht actief is.",
+    "anchorRadiusHint": "Alarmradius verslepen: kies voordat u het alarm instelt, of wijzig het hier terwijl de ankerwacht actief is.",
     "anchorRadiusOption": "%{value} %{unit}",
     "anchorRadiusActive": "Alarm actief — straal %{value} %{unit}",
     "anchorRadiusUpdated": "Ankeralarmradius bijgewerkt naar %{value} %{unit}",
@@ -449,12 +449,12 @@
     "depthChipOfflineA11y": "Diepte-overlay gepauzeerd omdat het apparaat offline is",
     "depthChipHint": "Opent kaartinstellingen voor de diepte-overlay",
     "chartA11yDepthOn": "Niet-officiële diepte-overlay zichtbaar",
-    "anchorLimitedActive": "Beperkte wacht — alleen met open app",
+    "anchorLimitedActive": "Beperkte ankerwacht — alleen met open app",
     "anchorLimitedShort": "Beperkt",
     "anchorLimitedBannerTitle": "Ankerwacht beperkt",
-    "anchorLimitedBannerBody": "Meldingen werken alleen terwijl SeaCheck op het scherm staat. Tik hier om de volledige achtergrondwacht te activeren.",
+    "anchorLimitedBannerBody": "Meldingen werken alleen terwijl SeaCheck op het scherm staat. Tik hier om de volledige ankerwacht op de achtergrond te activeren.",
     "anchorLimitedBannerHint": "Opent stappen voor achtergrondlocatie en alarmmeldingen",
-    "anchorLimitedSettingsHealth": "Beperkte wacht actief — meldingen alleen met open app. Schakel achtergrondlocatie en meldingen in voor volledige bescherming."
+    "anchorLimitedSettingsHealth": "Beperkte ankerwacht actief — meldingen alleen met open app. Schakel achtergrondlocatie en meldingen in voor volledige bescherming."
   },
   "profiles": {
     "cruisePassage": "Vaart / passage"

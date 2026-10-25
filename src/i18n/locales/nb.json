@@ -309,10 +309,10 @@
     "gpsAccuracyWarn": "GPS nøyaktighet dårlig — pluss eller minus %{m} meter",
     "gpsOutlierShort": "Hopp filtrert",
     "gpsOutlierChip": "GPS posisjonshopp filtrert",
-    "gpsOutlierHint": "Et plutselig GPS-hopp ble ignorert for kartet. Anchor og MOB bruker fortsatt råsignalet.",
+    "gpsOutlierHint": "Et plutselig GPS-hopp ble ignorert for kartet. Anker og MOB bruker fortsatt råsignalet.",
     "anchorGpsSuspendedShort": "GPS tapt — ankeret er satt på pause",
     "batteryOptimizationShort": "Batterisparer",
-    "anchorWatchLimitedShort": "Vakt begrenset",
+    "anchorWatchLimitedShort": "Anker begrenset",
     "lowSog": "Lav hastighet — COG upålitelig",
     "staleGps": "GPS signal foreldet",
     "fixAge": "GPS %{sec} s siden",
@@ -366,7 +366,7 @@
     "emergencyNoGpsBody": "Ingen pålitelig posisjon tilgjengelig. Vent til GPS før du kopierer en Mayday-melding.",
     "anchorWatchLabel": "Ankervakt",
     "anchorWatchMonitoringHint": "Overvåker GPS-posisjonen din kontinuerlig mens alarmen er på. Du blir varslet hvis du driver utenfor den grønne sirkelen eller beveger deg jevnt mens du ligger for anker.",
-    "anchorRadiusHint": "Dra alarmradius — velg før du stiller inn alarmen, eller endre den her mens vakten er aktiv.",
+    "anchorRadiusHint": "Dra alarmradius — velg før du stiller inn alarmen, eller endre den her mens ankervakten er aktiv.",
     "anchorRadiusOption": "%{value} %{unit}",
     "anchorRadiusActive": "Alarm aktiv — radius %{value} %{unit}",
     "anchorRadiusUpdated": "Ankeralarmradius oppdatert til %{value} %{unit}",
@@ -449,12 +449,12 @@
     "depthChipOfflineA11y": "Dybde-overlay pauset fordi enheten er offline",
     "depthChipHint": "Åpner kartinnstillinger for dybde-overlay",
     "chartA11yDepthOn": "Uoffisielt dybde-overlay synlig",
-    "anchorLimitedActive": "Begrenset vakt — bare med åpen app",
+    "anchorLimitedActive": "Begrenset ankervakt — bare med åpen app",
     "anchorLimitedShort": "Begrenset",
     "anchorLimitedBannerTitle": "Ankervakt begrenset",
-    "anchorLimitedBannerBody": "Varsler virker bare mens SeaCheck er på skjermen. Trykk her for å aktivere full bakgrunnsvakt.",
+    "anchorLimitedBannerBody": "Varsler virker bare mens SeaCheck er på skjermen. Trykk her for å aktivere full ankervakt i bakgrunnen.",
     "anchorLimitedBannerHint": "Åpner steg for bakgrunnsposisjon og alarmvarsler",
-    "anchorLimitedSettingsHealth": "Begrenset vakt aktiv — varsler bare med åpen app. Aktiver bakgrunnsposisjon og varsler for full beskyttelse."
+    "anchorLimitedSettingsHealth": "Begrenset ankervakt aktiv — varsler bare med åpen app. Aktiver bakgrunnsposisjon og varsler for full beskyttelse."
   },
   "profiles": {
     "cruisePassage": "Cruise/passasje"

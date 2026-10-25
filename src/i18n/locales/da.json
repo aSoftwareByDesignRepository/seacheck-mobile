@@ -312,7 +312,7 @@
     "gpsOutlierHint": "Et pludseligt GPS-spring blev ignoreret for kortet. Anker og MOB bruger stadig råsignalet.",
     "anchorGpsSuspendedShort": "GPS mistet — anker sat på pause",
     "batteryOptimizationShort": "Batterisparer",
-    "anchorWatchLimitedShort": "Vagt begrænset",
+    "anchorWatchLimitedShort": "Anker begrænset",
     "lowSog": "Lav hastighed — COG upålidelig",
     "staleGps": "GPS signal forældet",
     "fixAge": "GPS %{sec} s siden",
@@ -331,7 +331,7 @@
     "longitude": "Længde",
     "coordsTapCopy": "Tryk for at kopiere",
     "coordsCardA11y": "Position i %{format}: breddegrad %{lat}, længdegrad %{lon}",
-    "dropWaypointTitle": "Sæt waypoint her?",
+    "dropWaypointTitle": "Vil du sætte et waypoint her?",
     "locationMenuTitle": "Hvad vil du lave her?",
     "locationMenuHint": "Tilføj et waypoint, sæt ankervagt, kopier koordinater, eller slå et sømærke op.",
     "dropWaypointConfirm": "Gem waypoint",
@@ -366,7 +366,7 @@
     "emergencyNoGpsBody": "Ingen pålidelig position tilgængelig. Vent til GPS, før du kopierer en Mayday-meddelelse.",
     "anchorWatchLabel": "Ankervagt",
     "anchorWatchMonitoringHint": "Overvåger din GPS position kontinuerligt, mens alarmen er tændt. Du bliver advaret, hvis du driver uden for den grønne cirkel eller bevæger dig støt, mens du ligger for anker.",
-    "anchorRadiusHint": "Træk alarmradius — vælg, før du indstiller alarmen, eller skift den her, mens vagten er aktiv.",
+    "anchorRadiusHint": "Træk alarmradius — vælg, før du indstiller alarmen, eller skift den her, mens ankervagten er aktiv.",
     "anchorRadiusOption": "%{value} %{unit}",
     "anchorRadiusActive": "Alarm aktiv — radius %{value} %{unit}",
     "anchorRadiusUpdated": "Ankeralarmradius opdateret til %{value} %{unit}",
@@ -449,12 +449,12 @@
     "depthChipOfflineA11y": "Dybde-overlay pauset, fordi enheden er offline",
     "depthChipHint": "Åbner kortindstillinger for dybde-overlay",
     "chartA11yDepthOn": "Uofficielt dybde-overlay synligt",
-    "anchorLimitedActive": "Begrænset vagt — kun med åben app",
+    "anchorLimitedActive": "Begrænset ankervagt — kun med åben app",
     "anchorLimitedShort": "Begrænset",
     "anchorLimitedBannerTitle": "Ankervagt begrænset",
-    "anchorLimitedBannerBody": "Alarmer virker kun, mens SeaCheck er på skærmen. Tryk her for at aktivere fuld baggrundsvagt.",
+    "anchorLimitedBannerBody": "Alarmer virker kun, mens SeaCheck er på skærmen. Tryk her for at aktivere fuld ankervagt i baggrunden.",
     "anchorLimitedBannerHint": "Åbner trin til baggrundslokation og alarmnotifikationer",
-    "anchorLimitedSettingsHealth": "Begrænset vagt aktiv — alarmer kun med åben app. Aktivér baggrundslokation og notifikationer for fuld beskyttelse."
+    "anchorLimitedSettingsHealth": "Begrænset ankervagt aktiv — alarmer kun med åben app. Aktivér baggrundslokation og notifikationer for fuld beskyttelse."
   },
   "profiles": {
     "cruisePassage": "Krydstogt / passage"
