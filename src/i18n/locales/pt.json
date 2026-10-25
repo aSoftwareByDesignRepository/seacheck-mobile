@@ -114,7 +114,7 @@
       "unitsSummary": "Velocidade, distância e rolamento",
       "vessel": "Navio",
       "vesselSummary": "Nome do barco, indicativo de chamada, MMSI, e porta de casa",
-      "gps": "& Bateria GPS",
+      "gps": "GPS e bateria",
       "gpsSummary": "Permissões de localização, bateria e rastreamento de fundo",
       "alarms": "Alarmes",
       "alarmsSummary": "Notificações, som, limites e vigia de âncora",
@@ -258,7 +258,7 @@
   },
   "legal": {
     "disclaimerLead": "SeaCheck é um companheiro útil na água — uma ajuda de navegação, não um plotter gráfico certificado ou substituição para gráficos náuticos oficiais.",
-    "disclaimerCharts": "O SeaCheck baseia-se no trabalho voluntário da OpenSeaMap e do OpenStreetMap: marcas da comunidade e um mapa costeiro geral para uso offline. Uma sobreposição de profundidade online opcional pode mostrar batimetria GEBCO não oficial e profundidades de tracks — nunca sondagens oficiais. Os dados são mantidos por voluntários e modelos e podem estar desatualizados ou incompletos — não é uma carta náutica levantada e não inclui profundidades, canais ou correções oficiais.",
+    "disclaimerCharts": "O SeaCheck baseia-se no trabalho voluntário da OpenSeaMap e do OpenStreetMap: marcas da comunidade e um mapa costeiro geral para uso offline. Uma sobreposição de profundidade online opcional pode mostrar batimetria GEBCO não oficial e profundidades de trajetos — nunca sondagens oficiais. Os dados são mantidos por voluntários e modelos e podem estar desatualizados ou incompletos — não é uma carta náutica levantada e não inclui profundidades, canais ou correções oficiais.",
     "disclaimerOfficial": "Por causa disso, SeaCheck não é adequado para a navegação por conta própria. Use-o ao lado de seus gráficos oficiais, corrigidos, atualizados, verifique avisos para a Mariners, e verifique qualquer coisa crítica de segurança antes de ir.",
     "openSeaMapLicense": "OpenSeaMap — projeto e licença",
     "openStreetMapCopyright": "OpenStreetMap — projeto e licença",

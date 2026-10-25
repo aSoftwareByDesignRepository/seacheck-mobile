@@ -96,7 +96,7 @@
     "backgroundSafetyTitle": "SeaCheck: monitoraggio della sicurezza",
     "backgroundSafetyBody": "Monitoraggio della posizione per navigazione e allarmi di sicurezza",
     "backgroundPassageTitle": "SeaCheck — navigazione di passaggio",
-    "backgroundPassageBody": "Monitoraggio della posizione per gli allarmi di arrivo e di cross-track",
+    "backgroundPassageBody": "Monitoraggio della posizione per gli allarmi di arrivo e di fuori rotta",
     "backgroundGoToTitle": "SeaCheck: vai alla navigazione",
     "backgroundGoToBody": "Posizione di monitoraggio per allarmi di arrivo",
     "backgroundMobTitle": "SeaCheck: navigazione MOB",
@@ -830,7 +830,7 @@
     "pointInspectTitle": "Punto traccia",
     "pointInspectTime": "Ora (locale)",
     "pointInspectSog": "Velocità fissa",
-    "pointInspectHint": "Tocca la linea del percorso sulla mappa per verificare una correzione"
+    "pointInspectHint": "Tocca la linea della traccia sulla mappa per verificare una correzione"
   },
   "passage": {
     "subtitle": "Pianificare le gambe prima della partenza",

@@ -490,7 +490,7 @@
     "arrivalTitle": "Veipunkt ankomst",
     "arrivalBody": "Innen %{dist} av %{name}",
     "xteTitle": "Selvfølgelig",
-    "xteBody": "Cross-track feil %{dist}",
+    "xteBody": "Avvik fra ruten %{dist}",
     "legAdvanceTitle": "Veipunkt nådd eller passert",
     "legAdvanceBody": "Du er på eller forbi %{name}. Starte neste etappe?",
     "legAdvanceConfirm": "Neste etappe",
