@@ -584,7 +584,7 @@
     "customNoGpsTitle": "GPS requerido",
     "customNoGpsBody": "Se necesita una posición GPS para centrar el rectángulo de descarga personalizado.",
     "customDefaultName": "Personalizado — %{lat}°N %{lon}°E",
-    "customSavedTitle": "Tus packs personalizados",
+    "customSavedTitle": "Tus paquetes personalizados",
     "customSavedBody": "Áreas personalizadas descargadas anteriormente: elimínelas cuando ya no las necesite.",
     "customPackLabel": "Paquete sin conexión personalizado",
     "customMapLead": "Mueva y amplíe la carta, luego toque las cuatro esquinas para dibujar su rectángulo de descarga.",

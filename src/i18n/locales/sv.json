@@ -899,7 +899,7 @@
     "offlineNoPacks": "Inga offlinepaket klara – ladda ner sjökort först",
     "offlineLegOk": "Täckt",
     "offlineLegGap": "Lucka",
-    "offlineCoveredBy": "Förpackningar: %{packs}",
+    "offlineCoveredBy": "Paket: %{packs}",
     "offlineLegStatusTitle": "Status etapp för etapp",
     "offlineLegStatusSummary": {
       "one": "%{covered}/%{total} etapper täckta · %{gaps} mellanrum",

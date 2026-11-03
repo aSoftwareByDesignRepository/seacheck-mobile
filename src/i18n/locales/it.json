@@ -584,7 +584,7 @@
     "customNoGpsTitle": "GPS richiesto",
     "customNoGpsBody": "È necessaria una posizione GPS per centrare il rettangolo di download personalizzato.",
     "customDefaultName": "Personalizzato — %{lat}°N %{lon}°E",
-    "customSavedTitle": "I tuoi pack personalizzati",
+    "customSavedTitle": "I tuoi pacchetti personalizzati",
     "customSavedBody": "Aree personalizzate scaricate in precedenza: eliminale quando non sono più necessarie.",
     "customPackLabel": "Pacchetto offline personalizzato",
     "customMapLead": "Effettua la panoramica e lo zoom della carta, quindi tocca i quattro angoli per disegnare il rettangolo di download.",

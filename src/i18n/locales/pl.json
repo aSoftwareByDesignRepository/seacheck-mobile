@@ -661,7 +661,7 @@
     "packs": {
       "kielBay": {
         "name": "Kieler Bucht (test)",
-        "description": "Mała paczka dla UAT na nabrzeżu i na wodzie w okolicach Kilonii."
+        "description": "Mały pakiet dla UAT na nabrzeżu i na wodzie w okolicach Kilonii."
       },
       "kattegatNorth": {
         "name": "Kattegat na północ",
