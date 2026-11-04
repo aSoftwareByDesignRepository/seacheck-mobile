@@ -316,7 +316,7 @@
     "lowSog": "Lav hastighet — COG upålitelig",
     "staleGps": "GPS signal foreldet",
     "fixAge": "GPS %{sec} s siden",
-    "gpsStale": "GPS signal tapt — siste rettelse er for gammel",
+    "gpsStale": "GPS-signal tapt — siste posisjon er for gammel",
     "gpsDenied": "Plassering avvist – åpne Innstillinger",
     "batteryLevel": "Batteri %{pct}%",
     "leeway": "Avdrift",

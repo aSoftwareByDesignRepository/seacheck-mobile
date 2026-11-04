@@ -316,7 +316,7 @@
     "lowSog": "Baja velocidad: COG poco confiable",
     "staleGps": "GPS señal obsoleta",
     "fixAge": "GPS Hace %{sec} s",
-    "gpsStale": "GPS señal perdida: la última solución es demasiado antigua",
+    "gpsStale": "GPS señal perdida: la última posición es demasiado antigua",
     "gpsDenied": "Ubicación denegada: abre Configuración",
     "batteryLevel": "Batería %{pct}%",
     "leeway": "Abatimiento",

@@ -158,7 +158,7 @@
     "followZoomHint": "Hur nära sjökortet zoomar när följningsläget centreras på din GPS-position.",
     "followMode": "Följ position på kartan",
     "gpsSmoothPosition": "Utjämna GPS på sjökortet",
-    "gpsSmoothPositionHint": "Minskar positionsjitter på kartan med hjälp av noggrannhetsvägd filtrering. Ankarlarm och MOB använder alltid den råa GPS fixen.",
+    "gpsSmoothPositionHint": "Minskar positionsjitter på kartan med hjälp av noggrannhetsvägd filtrering. Ankarlarm och MOB använder alltid den råa GPS-fixen.",
     "gloveMode": "Handskläge (större beröringsobjekt)",
     "gloveModeHint": "Ökar knapparna till 56 px för våta händer eller handskar",
     "mapShowPassageRouteLines": "Visa ruttlinjer för passage",
