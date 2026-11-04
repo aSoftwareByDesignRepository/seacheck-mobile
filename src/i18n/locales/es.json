@@ -669,26 +669,26 @@
       },
       "kattegatSouth": {
         "name": "Kattegat sur",
-        "description": "Accesos al este de Jutlandia y Limfjord: paso entre los mares del Norte y Báltico."
+        "description": "Accesos de Jutlandia oriental y del Limfjord: paso entre los mares del Norte y Báltico."
       },
       "danishBelts": {
         "name": "Estrechos daneses",
-        "description": "Great Belt, Little Belt y Fehmarn Belt: detalle del estrecho para los pasajes del cinturón."
+        "description": "Storebælt, Lillebælt y Fehmarnbelt: detalle de los estrechos para las travesías."
       },
       "oresund": {
         "name": "Öresund",
-        "description": "Estrecho de Copenhague-Malmö y accesos al Sound: detalle a escala del puerto."
+        "description": "Estrecho de Copenhague–Malmö y accesos del Öresund: detalle a escala del puerto."
       },
       "bornholm": {
         "name": "Bornholm",
         "description": "Isla de Bornholm y accesos del sur."
       },
       "germanBalticWest": {
-        "name": "Oeste báltico alemán",
+        "name": "Báltico alemán oeste",
         "description": "Desde Flensburgo hasta Fehmarn y la bahía de Lübeck."
       },
       "germanBalticEast": {
-        "name": "Este báltico alemán",
+        "name": "Báltico alemán este",
         "description": "Desde Wismar hasta Rügen y la laguna de Szczecin."
       },
       "skaneCoast": {
@@ -701,7 +701,7 @@
       },
       "kalmarSound": {
         "name": "Kalmar y Öland oeste",
-        "description": "Kalmar Sound, costa occidental de Öland y accesos a Västervik."
+        "description": "Estrecho de Kalmar, costa occidental de Öland y accesos a Västervik."
       },
       "gotlandWest": {
         "name": "Gotland oeste",
@@ -720,8 +720,8 @@
         "description": "Islas Åland, archipiélago de Turku y sur del mar de Botnia."
       },
       "balticWest": {
-        "name": "Kattegat y el estrecho danés (heredado)",
-        "description": "Antiguo paquete todo en uno, reemplazado por paquetes Kattegat, cinturones y corredores de Øresund."
+        "name": "Kattegat y estrechos daneses (legado)",
+        "description": "Antiguo paquete todo en uno, reemplazado por los paquetes de corredor del Kattegat, los estrechos y el Öresund."
       },
       "balticSouth": {
         "name": "Costa báltica alemana (legado)",
@@ -732,11 +732,11 @@
         "description": "Antiguo paquete todo en uno, reemplazado por paquetes de corredor de Skåne, Blekinge y Kalmar."
       },
       "balticCentral": {
-        "name": "Báltico central (heredado)",
+        "name": "Báltico central (legado)",
         "description": "Antiguo paquete todo en uno, reemplazado por paquetes del corredor oeste/este de Gotland."
       },
       "balticEast": {
-        "name": "Enfoque del Golfo de Finlandia (heredado)",
+        "name": "Acceso al Golfo de Finlandia (legado)",
         "description": "Antiguo paquete todo en uno, reemplazado por el paquete del corredor oeste del Golfo de Finlandia."
       },
       "balticNorth": {

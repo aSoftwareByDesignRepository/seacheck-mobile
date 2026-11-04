@@ -664,32 +664,32 @@
         "description": "Mały pakiet dla UAT na nabrzeżu i na wodzie w okolicach Kilonii."
       },
       "kattegatNorth": {
-        "name": "Kattegat na północ",
+        "name": "Północny Kattegat",
         "description": "Skagen do Anholt — otwarte przejście Kattegat i północne wybrzeże Jutlandii."
       },
       "kattegatSouth": {
-        "name": "Kattegat na południe",
-        "description": "Podejście do Jutlandii Wschodniej i Limfjordu — przejście między Morzem Północnym i Bałtyckim."
+        "name": "Południowy Kattegat",
+        "description": "Podejścia do wschodniej Jutlandii i Limfjordu — przejście między Morzem Północnym i Bałtyckim."
       },
       "danishBelts": {
         "name": "Cieśniny duńskie",
-        "description": "Wielki Bełt, Mały Bełt i Pas Fehmarn — detale cieśniny dla przejść pasa."
+        "description": "Wielki Bełt, Mały Bełt i Fehmarnbelt — szczegóły cieśnin do przepraw."
       },
       "oresund": {
         "name": "Öresund",
-        "description": "Podejścia do cieśniny Kopenhaga – Malmö i Sound — szczegóły w skali portu."
+        "description": "Podejścia do cieśnin Kopenhaga–Malmö i Sundu — szczegóły w skali portu."
       },
       "bornholm": {
         "name": "Bornholm",
         "description": "Wyspa Bornholm i południowe podejścia."
       },
       "germanBalticWest": {
-        "name": "Niemiecki Bałtyk na zachód",
+        "name": "Zachodni Bałtyk niemiecki",
         "description": "Flensburg do Fehmarn i Zatoki Lubeckiej."
       },
       "germanBalticEast": {
-        "name": "Niemiecki Bałtyk na wschód",
-        "description": "Podejście z Wismaru do Rugii i Zalewu Szczecińskiego."
+        "name": "Wschodni Bałtyk niemiecki",
+        "description": "Od Wismaru do Rugii i podejście do Zalewu Szczecińskiego."
       },
       "skaneCoast": {
         "name": "Wybrzeże Skanii",
@@ -700,8 +700,8 @@
         "description": "Archipelag Karlskrona i wschodnie wybrzeże Blekinge."
       },
       "kalmarSound": {
-        "name": "Kalmar i Olandia na zachód",
-        "description": "Cieśnina Kalmarska, zachodnie wybrzeże Olandii i podejście do Västervik."
+        "name": "Kalmar i zachodnia Olandia",
+        "description": "Cieśnina Kalmarska, zachodnie wybrzeże Olandii i podejścia do Västervik."
       },
       "gotlandWest": {
         "name": "Gotlandia zachodnia",
@@ -709,38 +709,38 @@
       },
       "gotlandEast": {
         "name": "Gotlandia wschodnia",
-        "description": "Wschodnie wybrzeże Gotlandii i zbliża się Hoburg."
+        "description": "Wschodnie wybrzeże Gotlandii i podejścia do Hoburga."
       },
       "gulfFinlandWest": {
-        "name": "Zatoka Fińska na zachód",
+        "name": "Zachodnia Zatoka Fińska",
         "description": "Archipelag Helsinki na południe i zachodnie wody Zatoki Fińskiej."
       },
       "alandBothniaSouth": {
-        "name": "Wyspy Alandzkie i Morze Botnickie na południe",
+        "name": "Południowa Zatoka Botnicka i Wyspy Alandzkie",
         "description": "Wyspy Alandzkie, archipelag Turku i południowe Morze Botnickie."
       },
       "balticWest": {
-        "name": "Kattegat i Cieśniny Duńskie (dziedzictwo)",
-        "description": "Dawny pakiet typu „wszystko w jednym” — zastąpiony przez Kattegat, paski i pakiety korytarzowe Øresund."
+        "name": "Kattegat i Cieśniny Duńskie (wycofany)",
+        "description": "Dawny pakiet typu „wszystko w jednym” — zastąpiony przez pakiety korytarzowe Kattegat, Bełty i Øresund."
       },
       "balticSouth": {
-        "name": "Niemieckie wybrzeże Bałtyku (dziedzictwo)",
+        "name": "Niemieckie wybrzeże Bałtyku (wycofany)",
         "description": "Dawny pakiet „wszystko w jednym” — zastąpiony przez niemieckie pakiety korytarza „Zachód/Wschód” Bałtyku."
       },
       "balticSouthSe": {
-        "name": "Południowa Szwecja (dziedzictwo)",
+        "name": "Południowa Szwecja (wycofany)",
         "description": "Dawny pakiet „wszystko w jednym” — zastąpiony pakietami korytarzowymi Skåne, Blekinge i Kalmar."
       },
       "balticCentral": {
-        "name": "Środkowy Bałtyk (dziedzictwo)",
+        "name": "Środkowy Bałtyk (wycofany)",
         "description": "Dawny pakiet „wszystko w jednym” — zastąpiony pakietami z korytarza zachodniego i wschodniego Gotlandii."
       },
       "balticEast": {
-        "name": "Podejście do Zatoki Fińskiej (starsze podejście)",
+        "name": "Podejście do Zatoki Fińskiej (wycofany)",
         "description": "Dawny pakiet „wszystko w jednym” — zastąpiony pakietem zachodniego korytarza Zatoki Fińskiej."
       },
       "balticNorth": {
-        "name": "Zatoka Botnicka na południe i Wyspy Alandzkie (dziedzictwo)",
+        "name": "Zatoka Botnicka na południe i Wyspy Alandzkie (wycofany)",
         "description": "Dawny pakiet „wszystko w jednym” — zastąpiony pakietem południowego korytarza Wysp Alandzkich i Morza Botnickiego."
       }
     },

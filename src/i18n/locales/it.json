@@ -669,27 +669,27 @@
       },
       "kattegatSouth": {
         "name": "Kattegat sud",
-        "description": "Avvicinamenti allo Jutland orientale e al Fiordo di Lim: passaggio tra il Mare del Nord e il Mar Baltico."
+        "description": "Avvicinamenti allo Jutland orientale e al Limfjord: passaggio tra il Mare del Nord e il Mar Baltico."
       },
       "danishBelts": {
         "name": "Stretti danesi",
-        "description": "Grande Cintura, Piccola Cintura e Cintura di Fehmarn: dettaglio dello stretto per i passaggi della cintura."
+        "description": "Storebælt, Lillebælt e Fehmarnbelt: dettaglio degli stretti per i passaggi."
       },
       "oresund": {
         "name": "Öresund",
-        "description": "Approcci allo Stretto e al Sound di Copenaghen – Malmö: dettaglio alla scala del porto."
+        "description": "Stretto di Copenaghen–Malmö e approcci dell’Öresund — dettaglio su scala portuale."
       },
       "bornholm": {
         "name": "Bornholm",
         "description": "Isola di Bornholm e approcci meridionali."
       },
       "germanBalticWest": {
-        "name": "Ovest baltico tedesco",
+        "name": "Baltico tedesco ovest",
         "description": "Da Flensburg a Fehmarn e alla baia di Lubecca."
       },
       "germanBalticEast": {
-        "name": "Baltico orientale tedesco",
-        "description": "Avvicinamento da Wismar a Rügen e alla laguna di Stettino."
+        "name": "Baltico tedesco est",
+        "description": "Da Wismar a Rügen e approccio alla laguna di Stettino."
       },
       "skaneCoast": {
         "name": "Costa della Scania",
@@ -701,7 +701,7 @@
       },
       "kalmarSound": {
         "name": "Kalmar e Öland ovest",
-        "description": "Kalmar Sound, costa occidentale di Öland e Västervik si avvicinano."
+        "description": "Stretto di Kalmar, costa occidentale di Öland e approcci di Västervik."
       },
       "gotlandWest": {
         "name": "Gotland ovest",
@@ -709,7 +709,7 @@
       },
       "gotlandEast": {
         "name": "Gotland est",
-        "description": "La costa orientale di Gotland e Hoburg si avvicinano."
+        "description": "La costa orientale di Gotland e gli approcci di Hoburg."
       },
       "gulfFinlandWest": {
         "name": "Golfo di Finlandia a ovest",
@@ -721,10 +721,10 @@
       },
       "balticWest": {
         "name": "Kattegat e Stretto danese (precedente)",
-        "description": "Ex pacchetto tutto in uno: sostituito da Kattegat, cinture e pacchetti corridoio Øresund."
+        "description": "Ex pacchetto tutto in uno: sostituito dai pacchetti di corridoio del Kattegat, dei Belt e dell’Öresund."
       },
       "balticSouth": {
-        "name": "Costa baltica tedesca (eredità)",
+        "name": "Costa baltica tedesca (precedente)",
         "description": "Ex pacchetto all-in-one: sostituito dai pacchetti tedeschi del corridoio ovest/est del Baltico."
       },
       "balticSouthSe": {
@@ -740,7 +740,7 @@
         "description": "Ex pacchetto all-in-one: sostituito dal pacchetto del corridoio ovest del Golfo di Finlandia."
       },
       "balticNorth": {
-        "name": "Golfo di Botnia sud e Åland (eredità)",
+        "name": "Golfo di Botnia sud e Åland (precedente)",
         "description": "Ex pacchetto tutto in uno: sostituito dal pacchetto corridoio sud Åland e Mare di Botnia."
       }
     },

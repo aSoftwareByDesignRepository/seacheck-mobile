@@ -669,22 +669,22 @@
       },
       "kattegatSouth": {
         "name": "Kattegat Zuid",
-        "description": "Oost-Jutland en Limfjord naderen - passage tussen de Noord- en de Baltische Zee."
+        "description": "Naderingen van Oost-Jutland en de Limfjord — passage tussen de Noordzee en de Oostzee."
       },
       "danishBelts": {
         "name": "Deense Belten",
-        "description": "Grote Gordel, Kleine Gordel en Fehmarn Gordel - nauw detail voor riemdoorgangen."
+        "description": "Storebælt, Lillebælt en Fehmarnbelt — detail van de zeestraten voor beltpassages."
       },
       "oresund": {
         "name": "Öresund",
-        "description": "Straat Kopenhagen-Malmö en Sound-naderingen - details op havenschaal."
+        "description": "De straat Kopenhagen–Malmö en naderingen van de Sont — details op havenschaal."
       },
       "bornholm": {
         "name": "Bornholm",
         "description": "Bornholm-eiland en zuidelijke benaderingen."
       },
       "germanBalticWest": {
-        "name": "Duitse Baltische Westen",
+        "name": "Duitse Oostzee West",
         "description": "Flensburg tot Fehmarn en de baai van Lübeck."
       },
       "germanBalticEast": {
@@ -701,7 +701,7 @@
       },
       "kalmarSound": {
         "name": "Kalmar en Öland west",
-        "description": "Kalmar Sound, de westkust van Öland en Västervik naderen."
+        "description": "Kalmarsund, de westkust van Öland en naderingen van Västervik."
       },
       "gotlandWest": {
         "name": "Gotland west",
@@ -709,38 +709,38 @@
       },
       "gotlandEast": {
         "name": "Gotland oost",
-        "description": "De oostkust van Gotland en Hoburg naderen."
+        "description": "De oostkust van Gotland en naderingen van Hoburg."
       },
       "gulfFinlandWest": {
-        "name": "Golf van Finland ten westen",
+        "name": "Westelijke Golf van Finland",
         "description": "De zuidelijke archipel van Helsinki en de westelijke wateren van de Golf van Finland."
       },
       "alandBothniaSouth": {
-        "name": "Åland en de Botnische Zee ten zuiden",
+        "name": "Åland en de zuidelijke Botnische Zee",
         "description": "Åland-eilanden, de Turku-archipel en de zuidelijke Botnische Zee."
       },
       "balticWest": {
-        "name": "Kattegat en Deense Straat (erfenis)",
+        "name": "Kattegat en Deense zeestraten (vorige)",
         "description": "Voormalig alles-in-één pakket — vervangen door Kattegat-, belts- en Øresund-corridorpakketten."
       },
       "balticSouth": {
-        "name": "Duitse Baltische kust (erfenis)",
+        "name": "Duitse Oostzeekust (vorige)",
         "description": "Voormalig alles-in-één pakket — vervangen door Duitse Oostzee west/oost-corridorpakketten."
       },
       "balticSouthSe": {
-        "name": "Zuid-Zweden (erfenis)",
+        "name": "Zuid-Zweden (vorige)",
         "description": "Voormalig alles-in-één pakket — vervangen door corridorpakketten Skåne, Blekinge en Kalmar."
       },
       "balticCentral": {
-        "name": "Centrale Oostzee (erfenis)",
+        "name": "Centrale Oostzee (vorige)",
         "description": "Voormalig alles-in-één pakket — vervangen door Gotland-corridorpakketten west/oost."
       },
       "balticEast": {
-        "name": "Benadering van de Golf van Finland (erfenis)",
+        "name": "Benadering van de Golf van Finland (vorige)",
         "description": "Voormalig alles-in-één pakket — vervangen door het corridorpakket westelijke Finse Golf."
       },
       "balticNorth": {
-        "name": "Botnische Golf ten zuiden en Åland (erfenis)",
+        "name": "Zuidelijke Botnische Golf en Åland (vorige)",
         "description": "Voormalig alles-in-één pakket - vervangen door zuidcorridorpakket Åland en Botnische Zee."
       }
     },

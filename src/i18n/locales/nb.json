@@ -669,15 +669,15 @@
       },
       "kattegatSouth": {
         "name": "Kattegat sør",
-        "description": "Øst-Jylland og Limfjord nærmer seg — passasje mellom Nord- og Østersjøen."
+        "description": "Tilnærminger til Øst-Jylland og Limfjorden — passasje mellom Nord- og Østersjøen."
       },
       "danishBelts": {
         "name": "Danske belter",
-        "description": "Great Belt, Little Belt og Fehmarn Belt — sunddetalj for beltepassasjer."
+        "description": "Storebælt, Lillebælt og Fehmarnbelt — sunddetalj for beltepassasjer."
       },
       "oresund": {
         "name": "Øresund",
-        "description": "Nærmer seg København–Malmö sund og Øresund — detaljer i havneskala."
+        "description": "Sundet København–Malmö og tilnærminger til Øresund — detaljer i havneskala."
       },
       "bornholm": {
         "name": "Bornholm",
@@ -688,7 +688,7 @@
         "description": "Flensburg til Fehmarn og Lübeckbukta."
       },
       "germanBalticEast": {
-        "name": "Tysk Baltikum øst",
+        "name": "Tysk Østersjø øst",
         "description": "Wismar til Rügen og Szczecin-lagunen nærmer seg."
       },
       "skaneCoast": {
@@ -701,7 +701,7 @@
       },
       "kalmarSound": {
         "name": "Kalmar & Öland vest",
-        "description": "Kalmarsund, Ölands vestkyst og Västervik nærmer seg."
+        "description": "Kalmarsund, Ölands vestkyst og tilnærminger til Västervik."
       },
       "gotlandWest": {
         "name": "Gotland vest",
@@ -709,7 +709,7 @@
       },
       "gotlandEast": {
         "name": "Gotland øst",
-        "description": "Gotlands østkyst og Hoburg nærmer seg."
+        "description": "Gotlands østkyst og tilnærminger til Hoburg."
       },
       "gulfFinlandWest": {
         "name": "Finskebukta vest",
@@ -720,27 +720,27 @@
         "description": "Åland, Åbo skjærgård og det sørlige Bottenhavet."
       },
       "balticWest": {
-        "name": "Kattegat og Danish Straits (arv)",
+        "name": "Kattegat og danske sund (eldre)",
         "description": "Tidligere alt-i-ett-pakke — erstattet av Kattegat, belter og Øresundskorridorpakker."
       },
       "balticSouth": {
-        "name": "Tysk baltiske kyst (arv)",
+        "name": "Tysk Østersjøkyst (eldre)",
         "description": "Tidligere alt-i-ett-pakke — erstattet av tyske baltiske vest/øst-korridorpakker."
       },
       "balticSouthSe": {
-        "name": "Sør-Sverige (arv)",
+        "name": "Sør-Sverige (eldre)",
         "description": "Tidligere alt-i-ett-pakke — erstattet av korridorpakker i Skåne, Blekinge og Kalmar."
       },
       "balticCentral": {
-        "name": "Sentral-baltikum (arv)",
+        "name": "Sentrale Østersjøen (eldre)",
         "description": "Tidligere alt-i-ett-pakke — erstattet av Gotland vest/øst korridorpakker."
       },
       "balticEast": {
-        "name": "Finskebukta-tilnærming (arv)",
+        "name": "Finskebukta-tilnærming (eldre)",
         "description": "Tidligere alt-i-ett-pakke — erstattet av vestkorridorpakken i Finskebukta."
       },
       "balticNorth": {
-        "name": "Bottenviken sør og Åland (arv)",
+        "name": "Bottenviken sør og Åland (eldre)",
         "description": "Tidligere alt-i-ett-pakke — erstattet av sørkorridorpakken Åland og Bottenhavet."
       }
     },

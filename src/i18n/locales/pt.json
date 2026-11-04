@@ -661,39 +661,39 @@
     "packs": {
       "kielBay": {
         "name": "Kieler Bucht (teste)",
-        "description": "Um pacote pequeno para o lado do cais e o UAT na água em torno de Kiel."
+        "description": "Pacote pequeno para UAT no cais e na água ao redor de Kiel."
       },
       "kattegatNorth": {
         "name": "Kattegat Norte",
-        "description": "Skagen para Anholt — abrir Kattegat cruzando e costa norte da Jutlândia."
+        "description": "De Skagen a Anholt — travessia aberta do Kattegat e costa norte da Jutlândia."
       },
       "kattegatSouth": {
         "name": "Kattegat sul",
-        "description": "Aproximação da Jutlândia Oriental e Limfjord — passagem entre os mares do Norte e do Báltico."
+        "description": "Aproximações da Jutlândia Oriental e do Limfjord — passagem entre os mares do Norte e do Báltico."
       },
       "danishBelts": {
         "name": "Estreitos dinamarqueses",
-        "description": "Grande Cinturão, Pequeno Cinturão e Fehmarn Cinturão — detalhe estreito para passagens de cinto."
+        "description": "Storebælt, Lillebælt e Fehmarnbelt — detalhe dos estreitos para as passagens."
       },
       "oresund": {
         "name": "Öresund",
-        "description": "Copenhagen–Malmö estreito e aproximações de som — detalhe à escala do porto."
+        "description": "Estreito de Copenhaga–Malmö e aproximações do Öresund — detalhe à escala do porto."
       },
       "bornholm": {
         "name": "Bornholm",
-        "description": "Bornholm ilha e aproxima-se do sul."
+        "description": "Ilha de Bornholm e aproximações do sul."
       },
       "germanBalticWest": {
-        "name": "Alemanha Báltico Oeste",
-        "description": "Flensburg para Fehmarn e Lübeck Bay."
+        "name": "Oeste do Báltico alemão",
+        "description": "De Flensburg a Fehmarn e à Baía de Lübeck."
       },
       "germanBalticEast": {
-        "name": "Alemanha Báltico Leste",
-        "description": "Wismar para Rügen e Szczecin laguna aproximação."
+        "name": "Leste do Báltico alemão",
+        "description": "De Wismar a Rügen e aproximação da lagoa de Szczecin."
       },
       "skaneCoast": {
         "name": "Costa de Skåne",
-        "description": "Malmö a Ystad e ao sul de Skåne."
+        "description": "De Malmö a Ystad e às águas de navegação do sul de Skåne."
       },
       "blekinge": {
         "name": "Blekinge",
@@ -701,47 +701,47 @@
       },
       "kalmarSound": {
         "name": "Kalmar & Öland oeste",
-        "description": "Kalmar Sound, Öland costa oeste, e Västervik aproxima-se."
+        "description": "Estreito de Kalmar, costa oeste de Öland e aproximações de Västervik."
       },
       "gotlandWest": {
         "name": "Gotland Oeste",
-        "description": "Visby costa oeste e águas de passagem Gotland."
+        "description": "Costa oeste de Visby e águas de passagem de Gotland."
       },
       "gotlandEast": {
         "name": "Gotland leste",
-        "description": "Gotland costa leste e Hoburg aproxima-se."
+        "description": "Costa leste de Gotland e aproximações de Hoburg."
       },
       "gulfFinlandWest": {
-        "name": "Golfo da Finlândia para oeste",
+        "name": "Oeste do Golfo da Finlândia",
         "description": "Arquipélago de Helsínquia a sul e águas ocidentais do Golfo da Finlândia."
       },
       "alandBothniaSouth": {
-        "name": "Åland & Bothnian Sea South",
-        "description": "Ilhas Åland, arquipélago de Turku, e sul do Mar Botniano."
+        "name": "Åland e sul do Mar de Botnia",
+        "description": "Ilhas Åland, arquipélago de Turku e sul do Mar de Botnia."
       },
       "balticWest": {
-        "name": "Kattegat & Estreito Dinamarquês (legacia)",
-        "description": "Ex-pacote tudo-em-um — substituído por Kattegat, cintos e pacotes de corredor Øresund."
+        "name": "Kattegat e Estreitos Dinamarqueses (legado)",
+        "description": "Ex-pacote tudo-em-um — substituído pelos pacotes de corredor do Kattegat, dos estreitos e do Öresund."
       },
       "balticSouth": {
-        "name": "Costa Báltica Alemã (legacia)",
+        "name": "Costa do Báltico alemã (legado)",
         "description": "Ex-pacote tudo-em-um — substituído por pacotes alemães do corredor oeste-leste do Báltico."
       },
       "balticSouthSe": {
         "name": "Sul da Suécia (legado)",
-        "description": "Antigo pacote tudo-em-um — substituído por Skåne, Blekinge e Kalmar."
+        "description": "Antigo pacote tudo-em-um — substituído pelos pacotes de corredor Skåne, Blekinge e Kalmar."
       },
       "balticCentral": {
         "name": "Báltico Central (legado)",
         "description": "Ex-pacote tudo-em-um — substituído por pacotes de corredor oeste/leste de Gotland."
       },
       "balticEast": {
-        "name": "Abordagem do Golfo da Finlândia (legacia)",
+        "name": "Abordagem do Golfo da Finlândia (legado)",
         "description": "Ex-pacote tudo-em-um — substituído pelo pacote corredor oeste do Golfo da Finlândia."
       },
       "balticNorth": {
-        "name": "Golfo de Botnia, Sul e Åland (legacia)",
-        "description": "Antigo pacote tudo-em-um — substituído pelo pacote corredor sul de Åland & Bothnian Sea."
+        "name": "Sul do Golfo de Botnia e Åland (legado)",
+        "description": "Antigo pacote tudo-em-um — substituído pelo pacote do corredor sul de Åland e do Mar de Botnia."
       }
     },
     "basemapUpdatedTitle": "Mapa base atualizado",

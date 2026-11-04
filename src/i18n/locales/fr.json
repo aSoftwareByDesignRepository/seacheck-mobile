@@ -673,23 +673,23 @@
       },
       "danishBelts": {
         "name": "Détroits danois",
-        "description": "Grande Ceinture, Petite Ceinture et Ceinture Fehmarn - détail du détroit pour les passages de ceinture."
+        "description": "Storebælt, Lillebælt et Fehmarnbelt — détail des détroits pour les passages."
       },
       "oresund": {
         "name": "Öresund",
-        "description": "Approches du détroit de Copenhague-Malmö et du Sound - détail à l'échelle du port."
+        "description": "Détroit de Copenhague–Malmö et approches de l’Öresund — détail à l’échelle du port."
       },
       "bornholm": {
         "name": "Bornholm",
         "description": "Île de Bornholm et approches sud."
       },
       "germanBalticWest": {
-        "name": "Ouest baltique allemand",
+        "name": "Ouest de la Baltique allemande",
         "description": "Flensburg jusqu'à Fehmarn et la baie de Lübeck."
       },
       "germanBalticEast": {
         "name": "Est de la Baltique allemande",
-        "description": "Approche de Wismar à Rügen et de la lagune de Szczecin."
+        "description": "De Wismar à Rügen et approche de la lagune de Szczecin."
       },
       "skaneCoast": {
         "name": "Côte de Scanie",
@@ -701,7 +701,7 @@
       },
       "kalmarSound": {
         "name": "Kalmar et Öland ouest",
-        "description": "Kalmar Sound, la côte ouest d'Öland et les approches de Västervik."
+        "description": "Détroit de Kalmar, côte ouest d’Öland et approches de Västervik."
       },
       "gotlandWest": {
         "name": "Gotland ouest",
@@ -709,38 +709,38 @@
       },
       "gotlandEast": {
         "name": "Gotland est",
-        "description": "La côte est de Gotland et Hoburg s'approchent."
+        "description": "La côte est de Gotland et les approches de Hoburg."
       },
       "gulfFinlandWest": {
         "name": "Golfe de Finlande ouest",
-        "description": "Eaux sud de l’archipel d’Helsinki et eaux occidentales du golfe de Finlande."
+        "description": "Sud de l’archipel d’Helsinki et eaux occidentales du golfe de Finlande."
       },
       "alandBothniaSouth": {
         "name": "Åland et sud de la mer de Botnie",
         "description": "Îles Åland, archipel de Turku et sud de la mer de Botnie."
       },
       "balticWest": {
-        "name": "Kattegat et le détroit danois (héritage)",
+        "name": "Kattegat et les détroits danois (hérité)",
         "description": "Ancien pack tout-en-un — remplacé par les packs Kattegat, détroits et corridor Øresund."
       },
       "balticSouth": {
-        "name": "Côte baltique allemande (héritage)",
+        "name": "Côte baltique allemande (hérité)",
         "description": "Ancien pack tout-en-un — remplacé par les packs allemands du corridor ouest/est de la Baltique."
       },
       "balticSouthSe": {
-        "name": "Sud de la Suède (héritage)",
+        "name": "Sud de la Suède (hérité)",
         "description": "Ancien pack tout-en-un — remplacé par les packs corridor Skåne, Blekinge et Kalmar."
       },
       "balticCentral": {
-        "name": "Baltique centrale (héritage)",
+        "name": "Baltique centrale (hérité)",
         "description": "Ancien pack tout-en-un — remplacé par les packs corridor ouest/est de Gotland."
       },
       "balticEast": {
-        "name": "Approche du golfe de Finlande (ancienne)",
+        "name": "Approche du golfe de Finlande (hérité)",
         "description": "Ancien pack tout-en-un — remplacé par le pack corridor ouest du golfe de Finlande."
       },
       "balticNorth": {
-        "name": "Sud du golfe de Botnie et Åland (héritage)",
+        "name": "Sud du golfe de Botnie et Åland (hérité)",
         "description": "Ancien pack tout-en-un — remplacé par le pack corridor sud d'Åland et de la mer de Botnie."
       }
     },

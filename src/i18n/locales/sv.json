@@ -665,11 +665,11 @@
       },
       "kattegatNorth": {
         "name": "Kattegatt norr",
-        "description": "Skagen till Anholt — öppen Kattegatts korsning och norra Jyllands kust."
+        "description": "Skagen till Anholt — öppen korsning av Kattegatt och norra Jyllands kust."
       },
       "kattegatSouth": {
         "name": "Kattegatt söderut",
-        "description": "Östjylland och Limfjorden närmar sig — passage mellan norra och Östersjön."
+        "description": "Inlopp till Östjylland och Limfjorden — passage mellan Nordsjön och Östersjön."
       },
       "danishBelts": {
         "name": "Danska bälten",
@@ -677,11 +677,11 @@
       },
       "oresund": {
         "name": "Öresund",
-        "description": "Köpenhamn–Malmö sund och Öresund närmar sig — hamnskala detalj."
+        "description": "Sundet Köpenhamn–Malmö och inlopp till Öresund — detaljer i hamnskala."
       },
       "bornholm": {
         "name": "Bornholm",
-        "description": "Bornholms ö och södra inflygningar."
+        "description": "Bornholm och sydliga inlopp."
       },
       "germanBalticWest": {
         "name": "Tyska Östersjön väst",
@@ -701,7 +701,7 @@
       },
       "kalmarSound": {
         "name": "Kalmar & Öland västra",
-        "description": "Kalmarsund, Ölands västkust och Västervik närmar sig."
+        "description": "Kalmarsund, Ölands västkust och inlopp till Västervik."
       },
       "gotlandWest": {
         "name": "Gotland väster",
@@ -709,26 +709,26 @@
       },
       "gotlandEast": {
         "name": "Gotland öster",
-        "description": "Gotlands östkust och Hoburg närmar sig."
+        "description": "Gotlands östkust och inlopp till Hoburg."
       },
       "gulfFinlandWest": {
         "name": "Finska viken väster",
-        "description": "Helsingfors skärgård söder och Finska vikens västra vatten."
+        "description": "Södra Helsingfors skärgård och Finska vikens västra vatten."
       },
       "alandBothniaSouth": {
         "name": "Åland & Bottenhavet söderut",
         "description": "Åland, Åbo skärgård och södra Bottenhavet."
       },
       "balticWest": {
-        "name": "Kattegatt och danska sundet (arv)",
+        "name": "Kattegatt och danska sunden (äldre)",
         "description": "Tidigare allt-i-ett-paket — ersatt av Kattegatt, bälten och Öresundskorridorpaket."
       },
       "balticSouth": {
-        "name": "Tyska Östersjökusten (arv)",
+        "name": "Tyska Östersjökusten (äldre)",
         "description": "Tidigare allt-i-ett-paket — ersatt av tyska baltiska väst/östra korridorpaket."
       },
       "balticSouthSe": {
-        "name": "Södra Sverige (arv)",
+        "name": "Södra Sverige (äldre)",
         "description": "Tidigare allt-i-ett-paket — ersatt av Skåne, Blekinge och Kalmar korridorpaket."
       },
       "balticCentral": {
@@ -736,11 +736,11 @@
         "description": "Tidigare allt-i-ett-paket — ersatt av Gotlands västra/östra korridorpaket."
       },
       "balticEast": {
-        "name": "Finska vikens strategi (arv)",
+        "name": "Finska vikens inlopp (äldre)",
         "description": "Tidigare allt-i-ett-paket — ersatt av västra korridorpaketet i Finska viken."
       },
       "balticNorth": {
-        "name": "Bottenviken söder & Åland (arv)",
+        "name": "Bottenviken söder & Åland (äldre)",
         "description": "Tidigare allt-i-ett-paket — ersatt av Åland & Bottenhavets sydkorridorpaket."
       }
     },
