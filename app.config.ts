@@ -73,9 +73,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
     ],
     // Belt-and-suspenders: Pedometer / motion deps must never pull health-adjacent permissions.
+    // READ_MEDIA_*: Play photo/video permissions policy — media picks go through
+    // the Android system photo picker; blocked so no dependency can reintroduce
+    // broad media-library grants into the merged manifest.
     blockedPermissions: [
       'android.permission.ACTIVITY_RECOGNITION',
       'com.google.android.gms.permission.ACTIVITY_RECOGNITION',
+      'android.permission.READ_MEDIA_IMAGES',
+      'android.permission.READ_MEDIA_VIDEO',
+      'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
     ],
   },
   ...(isProductionBuild
