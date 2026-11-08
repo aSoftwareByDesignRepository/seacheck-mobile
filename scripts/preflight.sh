@@ -19,6 +19,9 @@ fi
 echo "==> Expo native dependency alignment"
 npx expo install --check
 
+echo "==> Splash brand (no white template splash)"
+node scripts/verify-splash-brand.mjs
+
 echo "==> Android 15 / Play: patch RN edge-to-edge deprecated Window APIs"
 npm run patch:rn-edge
 

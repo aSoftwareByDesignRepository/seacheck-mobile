@@ -101,6 +101,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     ...(isProductionBuild ? [] : (['expo-dev-client'] as const)),
     [
+      'expo-splash-screen',
+      {
+        // Transparent logo mark on brand navy — the top-level `splash` key and
+        // a bare plugin string are ignored on SDK>=52, which ships Expo's
+        // #ffffff template splash (white flash on cold start + process
+        // restore). Keep the tuple props in sync with verify-splash-brand.mjs.
+        image: './assets/android-icon-foreground.png',
+        imageWidth: 288,
+        resizeMode: 'contain',
+        backgroundColor: '#0b1622',
+        dark: {
+          image: './assets/android-icon-foreground.png',
+          backgroundColor: '#0b1622',
+        },
+      },
+    ],
+    [
       'expo-localization',
       {
         supportedLocales: ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv'],
