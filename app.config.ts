@@ -75,13 +75,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // Belt-and-suspenders: Pedometer / motion deps must never pull health-adjacent permissions.
     // READ_MEDIA_*: Play photo/video permissions policy — media picks go through
     // the Android system photo picker; blocked so no dependency can reintroduce
-    // broad media-library grants into the merged manifest.
+    // broad media-library grants into the merged manifest. Same for the Expo
+    // template's unpinned shared-storage + overlay grants.
     blockedPermissions: [
       'android.permission.ACTIVITY_RECOGNITION',
       'com.google.android.gms.permission.ACTIVITY_RECOGNITION',
       'android.permission.READ_MEDIA_IMAGES',
       'android.permission.READ_MEDIA_VIDEO',
       'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      // Mic is never used — tombstone beats any plugin default
+      // (expo-camera/expo-audio/expo-image-picker all add it).
+      'android.permission.RECORD_AUDIO',
     ],
   },
   ...(isProductionBuild
@@ -114,7 +121,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     'expo-sqlite',
     'expo-sharing',
-    'expo-audio',
+    // Alert playback only — block RECORD_AUDIO that expo-audio adds by default.
+    ['expo-audio', { recordAudioAndroid: false, microphonePermission: false }],
     'expo-font',
     'expo-asset',
     [
