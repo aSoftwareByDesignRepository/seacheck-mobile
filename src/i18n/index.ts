@@ -14,15 +14,16 @@ import nl from './locales/nl.json';
 import pl from './locales/pl.json';
 import pt from './locales/pt.json';
 import sv from './locales/sv.json';
+import tr from './locales/tr.json';
 
 const STORAGE_KEY = 'seacheck.locale';
 
-export const SUPPORTED_LOCALES = ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv'] as const;
+export const SUPPORTED_LOCALES = ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv', 'tr'] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export type AppLocale = 'system' | SupportedLocale;
 
-export const i18n = new I18n({ en, de, fr, es, da, nl, it, pl, sv, nb, pt });
+export const i18n = new I18n({ en, de, fr, es, da, nl, it, pl, sv, nb, pt, tr });
 
 const localeListeners = new Set<() => void>();
 
@@ -106,6 +107,8 @@ export function getIntlLocale(): string {
       return 'nb-NO';
     case 'pt':
       return 'pt-BR';
+    case 'tr':
+      return 'tr-TR';
     default:
       return 'en-GB';
   }
@@ -137,6 +140,8 @@ export function localePreferenceLabel(pref: AppLocale): string {
       return 'Norsk';
     case 'pt':
       return 'Português';
+    case 'tr':
+      return 'Türkçe';
     default:
       return 'System';
   }
