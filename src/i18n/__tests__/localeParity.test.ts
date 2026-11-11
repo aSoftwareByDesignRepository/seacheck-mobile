@@ -13,6 +13,7 @@ import pl from '../locales/pl.json';
 import pt from '../locales/pt.json';
 import sv from '../locales/sv.json';
 import tr from '../locales/tr.json';
+import zh from '../locales/zh.json';
 import { SUPPORTED_LOCALES } from '../index';
 
 const catalogs: Record<string, Record<string, unknown>> = {
@@ -28,6 +29,7 @@ const catalogs: Record<string, Record<string, unknown>> = {
   pt: pt as Record<string, unknown>,
   sv: sv as Record<string, unknown>,
   tr: tr as Record<string, unknown>,
+  zh: zh as Record<string, unknown>,
 };
 
 const PLURAL_FORMS = new Set(['zero', 'one', 'two', 'few', 'many', 'other']);
@@ -101,7 +103,7 @@ function collectStaticTranslationKeys(srcRoot: string): string[] {
 describe('i18n locale parity', () => {
   it('covers the full Check-suite language family', () => {
     expect([...SUPPORTED_LOCALES].sort()).toEqual(
-      ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv', 'tr'].sort(),
+      ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv', 'tr', 'zh'].sort(),
     );
   });
 
@@ -132,7 +134,7 @@ describe('i18n locale parity', () => {
     const dir = join(__dirname, '../locales');
     const files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
     expect(files).toEqual(
-      ['da.json', 'de.json', 'en.json', 'es.json', 'fr.json', 'it.json', 'nb.json', 'nl.json', 'pl.json', 'pt.json', 'sv.json', 'tr.json'],
+      ['da.json', 'de.json', 'en.json', 'es.json', 'fr.json', 'it.json', 'nb.json', 'nl.json', 'pl.json', 'pt.json', 'sv.json', 'tr.json', 'zh.json'],
     );
   });
 

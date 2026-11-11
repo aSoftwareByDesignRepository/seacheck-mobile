@@ -15,15 +15,17 @@ import pl from './locales/pl.json';
 import pt from './locales/pt.json';
 import sv from './locales/sv.json';
 import tr from './locales/tr.json';
+import zh from './locales/zh.json';
+import zhHant from './locales/zh-Hant.json';
 
 const STORAGE_KEY = 'seacheck.locale';
 
-export const SUPPORTED_LOCALES = ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv', 'tr'] as const;
+export const SUPPORTED_LOCALES = ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv', 'tr', 'zh', 'zh-Hant'] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export type AppLocale = 'system' | SupportedLocale;
 
-export const i18n = new I18n({ en, de, fr, es, da, nl, it, pl, sv, nb, pt, tr });
+export const i18n = new I18n({ en, de, fr, es, da, nl, it, pl, sv, nb, pt, tr, zh, 'zh-Hant': zhHant });
 
 const localeListeners = new Set<() => void>();
 
@@ -55,6 +57,17 @@ function resolveDeviceLocale(): string {
   const code = getLocales()[0]?.languageCode ?? 'en';
   if (code === 'nb' || code === 'no') {
     return 'nb';
+  }
+  if (code === 'zh') {
+    // zh-Hant catalog covers Traditional (TW/HK/MO).
+    const loc = getLocales()[0];
+    if (
+      loc?.languageScriptCode === 'Hant' ||
+      ['TW', 'HK', 'MO'].includes(loc?.languageRegionCode ?? '')
+    ) {
+      return 'zh-Hant';
+    }
+    return 'zh';
   }
   if (isSupportedLocale(code)) {
     return code;
@@ -109,6 +122,10 @@ export function getIntlLocale(): string {
       return 'pt-BR';
     case 'tr':
       return 'tr-TR';
+    case 'zh':
+      return 'zh-CN';
+    case 'zh-Hant':
+      return 'zh-TW';
     default:
       return 'en-GB';
   }
@@ -142,6 +159,10 @@ export function localePreferenceLabel(pref: AppLocale): string {
       return 'Português';
     case 'tr':
       return 'Türkçe';
+    case 'zh':
+      return '简体中文';
+    case 'zh-Hant':
+      return '繁體中文';
     default:
       return 'System';
   }
