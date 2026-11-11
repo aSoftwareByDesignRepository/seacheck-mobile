@@ -23,7 +23,7 @@ export function readSupportedLocales(indexTsPath) {
     .map((part) => part.trim().replace(/^['"]|['"]$/g, ''))
     .filter(Boolean);
 
-  if (codes.length === 0 || codes.some((code) => !/^[a-z]{2}$/.test(code))) {
+  if (codes.length === 0 || codes.some((code) => !/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(code))) {
     throw new Error(`Invalid SUPPORTED_LOCALES entries in ${indexTsPath}: ${codes.join(',')}`);
   }
 
