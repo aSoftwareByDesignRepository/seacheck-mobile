@@ -91,14 +91,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.RECORD_AUDIO',
     ],
   },
-  ...(isProductionBuild
-    ? {
-        autolinking: {
-          exclude: ['expo-dev-client', 'expo-dev-menu', 'expo-dev-launcher'],
-        },
-      }
-    : {}),
   plugins: [
+    // Production must not link dev-client native code. The former
+    // top-level `autolinking.exclude` here was dead config (autolinking
+    // only reads package.json's expo.autolinking) — the real gate is
+    // expoAutolinking.exclude in generated settings.gradle, injected
+    // env/property-conditionally by this plugin so production builds shed
+    // expo-dev-client/menu/launcher while dev builds keep them.
+    './plugins/withAutolinkingProductionExclude',
     ...(isProductionBuild ? [] : (['expo-dev-client'] as const)),
     [
       'expo-splash-screen',
