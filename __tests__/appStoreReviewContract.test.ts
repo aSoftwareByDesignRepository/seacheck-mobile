@@ -15,8 +15,18 @@ describe('SeaCheck App Store / iOS review contract', () => {
   });
 
   it('excludes expo-dev-client from production autolinking', () => {
+    // The top-level app.config.ts `autolinking` key is dead config at gradle
+    // time — the real gate is expoAutolinking.exclude injected into
+    // settings.gradle by the withAutolinkingProductionExclude plugin.
     const config = readFileSync(join(root, 'app.config.ts'), 'utf8');
-    expect(config).toContain("exclude: ['expo-dev-client'");
+    expect(config).toContain('withAutolinkingProductionExclude');
+    const plugin = readFileSync(
+      join(root, 'plugins/withAutolinkingProductionExclude.js'),
+      'utf8',
+    );
+    expect(plugin).toContain('expoAutolinking.exclude');
+    expect(plugin).toContain("'expo-dev-client'");
+    expect(plugin).toContain('SEACHECK_APP_VARIANT');
   });
 
   it('keeps privacy policy and terms reachable from Settings → About', () => {
