@@ -181,7 +181,7 @@
     "chartDataSummary": "基礎地圖、航標和選填的線上水深渲染。",
     "chartDataLayersBody": "離線海圖包儲存來自 OpenSeaMap 的 OpenStreetMap 基礎圖塊和 OpenSeaMap 航標。水深渲染是獨立的——僅線上使用，從不存入海圖包。",
     "underwayGpsTitle": "航行中",
-    "alarmFeedbackTitle": "警報反饋",
+    "alarmFeedbackTitle": "警報回饋",
     "alarmLimitsTitle": "警報距離",
     "unitsTitle": "單位",
     "sogUnit": "速度",
