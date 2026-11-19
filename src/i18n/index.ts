@@ -15,17 +15,18 @@ import pl from './locales/pl.json';
 import pt from './locales/pt.json';
 import sv from './locales/sv.json';
 import tr from './locales/tr.json';
+import ru from './locales/ru.json';
 import zh from './locales/zh.json';
 import zhHant from './locales/zh-Hant.json';
 
 const STORAGE_KEY = 'seacheck.locale';
 
-export const SUPPORTED_LOCALES = ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv', 'tr', 'zh', 'zh-Hant'] as const;
+export const SUPPORTED_LOCALES = ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv', 'ru', 'tr', 'zh', 'zh-Hant'] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export type AppLocale = 'system' | SupportedLocale;
 
-export const i18n = new I18n({ en, de, fr, es, da, nl, it, pl, sv, nb, pt, tr, zh, 'zh-Hant': zhHant });
+export const i18n = new I18n({ en, de, fr, es, da, nl, it, pl, sv, nb, pt, tr, ru, zh, 'zh-Hant': zhHant });
 
 const localeListeners = new Set<() => void>();
 
@@ -122,6 +123,8 @@ export function getIntlLocale(): string {
       return 'pt-BR';
     case 'tr':
       return 'tr-TR';
+    case 'ru':
+      return 'ru-RU';
     case 'zh':
       return 'zh-CN';
     case 'zh-Hant':
@@ -159,6 +162,8 @@ export function localePreferenceLabel(pref: AppLocale): string {
       return 'Português';
     case 'tr':
       return 'Türkçe';
+    case 'ru':
+      return 'Русский';
     case 'zh':
       return '简体中文';
     case 'zh-Hant':
