@@ -11,6 +11,7 @@ import nb from '../locales/nb.json';
 import nl from '../locales/nl.json';
 import pl from '../locales/pl.json';
 import pt from '../locales/pt.json';
+import ru from '../locales/ru.json';
 import sv from '../locales/sv.json';
 import tr from '../locales/tr.json';
 import zh from '../locales/zh.json';
@@ -28,6 +29,7 @@ const catalogs: Record<string, Record<string, unknown>> = {
   nl: nl as Record<string, unknown>,
   pl: pl as Record<string, unknown>,
   pt: pt as Record<string, unknown>,
+  ru: ru as Record<string, unknown>,
   sv: sv as Record<string, unknown>,
   tr: tr as Record<string, unknown>,
   zh: zh as Record<string, unknown>,
@@ -105,7 +107,7 @@ function collectStaticTranslationKeys(srcRoot: string): string[] {
 describe('i18n locale parity', () => {
   it('covers the full Check-suite language family', () => {
     expect([...SUPPORTED_LOCALES].sort()).toEqual(
-      ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv', 'tr', 'zh', 'zh-Hant'].sort(),
+      ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'ru', 'sv', 'tr', 'zh', 'zh-Hant'].sort(),
     );
   });
 
@@ -136,7 +138,7 @@ describe('i18n locale parity', () => {
     const dir = join(__dirname, '../locales');
     const files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
     expect(files).toEqual(
-      ['da.json', 'de.json', 'en.json', 'es.json', 'fr.json', 'it.json', 'nb.json', 'nl.json', 'pl.json', 'pt.json', 'sv.json', 'tr.json', 'zh-Hant.json', 'zh.json'],
+      ['da.json', 'de.json', 'en.json', 'es.json', 'fr.json', 'it.json', 'nb.json', 'nl.json', 'pl.json', 'pt.json', 'ru.json', 'sv.json', 'tr.json', 'zh-Hant.json', 'zh.json'],
     );
   });
 
