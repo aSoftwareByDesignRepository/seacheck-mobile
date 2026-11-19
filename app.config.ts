@@ -120,7 +120,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-localization',
       {
-        supportedLocales: ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'sv', 'tr', 'zh', 'zh-Hant'],
+        supportedLocales: ['da', 'de', 'en', 'es', 'fr', 'it', 'nb', 'nl', 'pl', 'pt', 'ru', 'sv', 'tr', 'zh', 'zh-Hant'],
       },
     ],
     [
