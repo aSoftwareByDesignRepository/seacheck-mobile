@@ -43,14 +43,6 @@ module.exports = {
     profile: 'standard',
     reason: 'local timer notifications should survive reboot; no restricted FGS',
   },
-  mobilitycheck: {
-    profile: 'standard',
-    reason: 'no notifications; SAW/edge/R8',
-  },
-  'mobilitycheck-terminal': {
-    profile: 'standard',
-    reason: 'prebuild-only; SAW/edge/R8 when android/ is generated',
-  },
   ticketcheck: {
     profile: 'standard',
     reason: 'no notifications; SAW/edge/R8',
@@ -58,10 +50,6 @@ module.exports = {
   customercheck: {
     profile: 'standard',
     reason: 'prebuild-only; SAW/edge/R8 when android/ is generated',
-  },
-  invoicecheck: {
-    profile: 'standard',
-    reason: 'prebuild-only; may use notifications later — keep boot capable',
   },
   maintenancecheck: {
     profile: 'standard',

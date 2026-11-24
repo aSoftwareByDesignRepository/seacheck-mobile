@@ -17,12 +17,9 @@ const VERSION_BUMPS = {
   customercheck: { version: '1.0.16', versionCode: 16 },
   deskcheck: { version: '1.0.5', versionCode: 6 },
   inventorycheck: { version: '1.0.4', versionCode: 5 },
-  invoicecheck: { version: '1.0.5', versionCode: 6 },
   maintenancecheck: { version: '1.2.5', versionCode: 8 },
-  mobilitycheck: { version: '1.0.5', versionCode: 6 },
   ticketcheck: { version: '0.1.5', versionCode: 6 },
   flowcheck: { version: '1.0.1', versionCode: 2 },
-  'mobilitycheck-terminal': { version: '1.0.5', versionCode: 6 },
 };
 
 const OPTIMIZED_IMAGE_SRC = `import { Image, type ImageProps } from 'expo-image';
