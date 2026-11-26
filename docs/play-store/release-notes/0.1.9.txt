@@ -8,7 +8,7 @@ SeaCheck 0.1.9 for Google Play.
 • Play quality: full R8 optimization, edge-to-edge cleanup, WebP splash assets
 • Stability fixes for offline pack download locking
 
-Navigation companion only — not a substitute for official charts and good seamanship.
+Navigation companion only: not a substitute for official charts and good seamanship.
 </en-US>
 <de-DE>
 SeaCheck 0.1.9 für Google Play.
@@ -20,5 +20,5 @@ SeaCheck 0.1.9 für Google Play.
 • Play-Qualität: R8-Volloptimierung, Edge-to-Edge-Bereinigung, WebP-Splash
 • Stabilitätsverbesserungen bei Offline-Kartenpaket-Sperren
 
-Nur Navigationsbegleiter — kein Ersatz für offizielle Seekarten und seemännische Sorgfalt.
+Nur Navigationsbegleiter: kein Ersatz für offizielle Seekarten und seemännische Sorgfalt.
 </de-DE>

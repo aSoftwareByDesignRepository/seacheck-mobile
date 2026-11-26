@@ -1,57 +1,44 @@
-STATUS: DRAFT — transcreate before Console paste (EN body + localized URLs)
-=== APP STORE CONNECT — SWEDISH ===
+=== APP STORE CONNECT: SWEDISH ===
 Bundle ID: de.softwarebydesign.seacheck
 Version: 0.1.12
 Build: 12
-Category: Navigation (primary). Secondary: Utilities if offered.
+Add localization: Swedish
 
 --- Name (max 30) ---
 SeaCheck
 
 --- Subtitle (max 30) ---
-Coastal nav aid for sailors
+Kustnavhjälp för seglare
 
---- Promotional text (max 170, optional) ---
-Deck-side GPS, offline OpenSeaMap packs, anchor alarms — a companion to paper charts. Not a certified plotter. No account. No ads.
+--- Promotional text (max 170, optional, editable without a new review) ---
+GPS på kartan, ankarslarm och offlinepaket. En däckskamrat till papperskartorna, inte en certifierad plotter. Inget konto.
 
 --- Keywords (max 100, commas, no spaces after commas) ---
-sailing,coastal,GPS,chart,anchor,offline,OpenSeaMap,passage,navigation,boat
+segling,kust,GPS,karta,ankare,offline,OpenSeaMap,rutt,navigering,båt
 
 --- Description (max 4000) ---
-SeaCheck is a personal coastal navigation companion for small-boat sailing — a deck-side aid to paper charts, not a replacement for official nautical charts.
+SeaCheck byggde jag för min egen småbåtssegling. En däckscompanion till papperssjökort, inte en ersättare.
 
-Who it is for
-• Coastal sailors who want GPS on a chart, passage sketches, and anchor alarms without a cloud account
-• Skippers who download OpenSeaMap regions on Wi‑Fi for offline use underway
+Jag använder den för fart, koordinater, snabb kartposition utan att gå ner, ruttutkast och ankaralarm. Jag delar den ifall en annan kustseglare har nytta av den. Ingen lansering, inget supportlöfte, på egen risk.
 
-What you need
-• An Android or iPhone / iPad with GPS
-• Optional: Wi‑Fi to download offline chart packs
-• No sign-up, no Nextcloud server, no license key
+Inte för primärnavigering
+Endast navigeringshjälp. Inte en certifierad plotter. Kartorna bygger på OpenSeaMap / OpenStreetMap-volontärdata och kan vara inaktuella. Ha alltid officiella, korrigerade sjökort ombord.
 
-What the app does
-• GPS on chart — COG, SOG, bearing
-• Passage planning, waypoints, GPX export
-• Offline region packs (OpenSeaMap base + seamarks)
-• Optional online depth overlay (GEBCO WMS — online only)
-• Anchor, arrival, and off-course alarms
-• Track recording
-• English and German UI (plus additional EU languages)
+Funktioner
+• GPS på kartan: COG, SOG, bäring
+• Passagerplanering, waypoints, GPX-export
+• Offline-regionpaket (nedladdning via Wi‑Fi)
+• Ankar-, ankomst- och kursavvikelsealarm
+• Spårinspelning
+• ui en / de
 
-Important — not for primary navigation
-Aid to navigation only. Maps use OpenSeaMap / OpenStreetMap volunteer data and may be outdated. Always carry official, corrected nautical charts.
+Gratis. Inga annonser. Ingen analytics. Data stannar på din enhet.
 
-Privacy
-• No third-party analytics or advertising SDKs
-• Passages, tracks, and GPS history stay on your device
-• Online map tile and optional Overpass lookups may reveal map areas you view (see privacy policy)
-
-Publisher: Software by Design GbR, Schleswig, Germany · info@software-by-design.de
+Byggd av Alexander Mäule / Software by Design GbR, Schleswig, Tyskland (sidoprojekt).
 
 --- What's New (this version) ---
-• Fixed a crash after fresh install / onboarding
-• Chart download no longer blacks out other tabs on Android
-• Clearer download progress and cancel while saving offline packs
+• Fixade en krasch efter nyinstallation / onboarding
+• Tydligare nedladdningsförlopp och avbryt vid sparande av offlinepaket
 
 --- Support URL ---
 https://software-by-design.de

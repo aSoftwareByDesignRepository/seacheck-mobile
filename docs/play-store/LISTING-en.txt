@@ -6,7 +6,7 @@ Category (Store settings): Maps & Navigation
 Tags (optional): sailing · coastal · GPS · SOG · offline map
 Visibility: UNLISTED (share link only)
 Release notes v0.1.12: paste release-notes/0.1.12.txt into Play Console
-  (format: <en-US>…</en-US><de-DE>…</de-DE>, max 500 chars per locale)
+ (format: <en-US>…</en-US><de-DE>…</de-DE>, max 500 chars per locale)
 Copy each block into Play Console → Main store listing.
 Tone: personal project shared as-is — not a product launch.
 
@@ -14,18 +14,18 @@ Tone: personal project shared as-is — not a product launch.
 SeaCheck
 
 --- Short description (max 80 characters) ---
-GPS on the chart, anchor alarm, offline maps — a deck-side companion.
+GPS on the chart, anchor alarm, offline maps. A deck-side companion.
 
 --- Full description (max 4000 characters) ---
-SeaCheck is something I built for my own small-boat sailing — a deck-side companion to paper charts, not a replacement for them.
+SeaCheck is something I built for my own small-boat sailing. It is a deck-side companion to paper charts, not a replacement for them.
 
-I use it for boat speed, coordinates, a quick chart position without going below, passage sketches, and anchor alarms. I'm sharing it in case another coastal sailor finds it useful. No launch, no support promise — use at your own risk.
+I use it for boat speed, coordinates, a quick chart position without going below, passage sketches, and anchor alarms. I'm sharing it in case another coastal sailor finds it useful. No launch, no support promise. Use at your own risk.
 
 NOT FOR PRIMARY NAVIGATION
 Aid to navigation only. Not a certified chart plotter. Maps use OpenSeaMap / OpenStreetMap volunteer data and may be outdated. Always carry official, corrected nautical charts.
 
 FEATURES
-• GPS on chart — COG, SOG, bearing
+• GPS on chart: COG, SOG, bearing
 • Passage planning, waypoints, GPX export
 • Offline region packs (Wi‑Fi download)
 • Anchor, arrival, and off-course alarms

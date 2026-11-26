@@ -1,20 +1,17 @@
-SeaCheck habe ich für mein eigenes kleines Boot gebaut — ein Begleiter zu den Papierkarten an Deck, kein Ersatz dafür.
+SeaCheck habe ich für mein eigenes kleines Boot gebaut. Ein Begleiter zu den Papierkarten an Deck, kein Ersatz dafür.
 
-Ich nutze es für Fahrt, Koordinaten, schnelle Positionsanzeige ohne unter Deck zu gehen, Törnskizzen und Ankeralarme. Ich stelle es einfach bereit, falls es anderen Küstenseglern hilft. Kein Launch, kein Support-Versprechen — Nutzung auf eigene Verantwortung.
+Ich nutze es für Fahrt, Koordinaten, schnelle Positionsanzeige ohne unter Deck zu gehen, Törnskizzen und Ankeralarme. Ich stelle es einfach bereit, falls es anderen Küstenseglern hilft. Kein Launch, kein Support-Versprechen. Nutzung auf eigene Verantwortung.
 
 NICHT FÜR HAUPTNAVIGATION
 Nur Navigationshilfe. Kein zertifizierter Kartenplotter. Karten aus OpenSeaMap/OpenStreetMap-Freiwilligendaten, können veraltet sein. Immer offizielle, berichtigte Seekarten mitführen.
 
 FUNKTIONEN
-• GPS auf der Karte — Kurs, Fahrt, Peilung
+• GPS auf der Karte: Kurs, Fahrt, Peilung
 • Törnplanung, Wegpunkte, GPX-Export
 • Offline-Regionenpakete (WLAN)
 • Anker-, Ankunfts- und Abweichungsalarme
 • Track-Aufzeichnung
 • DE / EN Oberfläche
-
-OPTIONALER HINTERGRUND-STANDORT
-Ankeralarme und Track-Aufzeichnung können deine Position weiter überwachen, während die App im Hintergrund läuft oder der Bildschirm aus ist. Du kannst die Hintergrund-Standort-Freigabe („Immer zulassen“) verweigern — Karte, Instrumente und Planung funktionieren weiter, solange die App geöffnet ist. Standortdaten verlassen das Gerät nicht.
 
 Kostenlos. Keine Werbung. Keine Analyse-SDKs. Daten bleiben auf dem Gerät.
 

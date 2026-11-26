@@ -1,12 +1,12 @@
-SeaCheck byggde jag för min egen småbåtssegling — en däckscompanion till papperssjökort, inte en ersättare.
+SeaCheck byggde jag för min egen småbåtssegling. En däckscompanion till papperssjökort, inte en ersättare.
 
-Jag använder den för fart, koordinater, snabb kartposition utan att gå ner, ruttutkast och ankaralarm. Jag delar den ifall en annan kustseglare har nytta av den. Ingen lansering, inget supportlöfte — på egen risk.
+Jag använder den för fart, koordinater, snabb kartposition utan att gå ner, ruttutkast och ankaralarm. Jag delar den ifall en annan kustseglare har nytta av den. Ingen lansering, inget supportlöfte, på egen risk.
 
 INTE FÖR PRIMÄRNAVIGERING
 Endast navigeringshjälp. Inte en certifierad plotter. Kartorna bygger på OpenSeaMap / OpenStreetMap-volontärdata och kan vara inaktuella. Ha alltid officiella, korrigerade sjökort ombord.
 
 FUNKTIONER
-• GPS på kartan — COG, SOG, bäring
+• GPS på kartan: COG, SOG, bäring
 • Passagerplanering, waypoints, GPX-export
 • Offline-regionpaket (nedladdning via Wi‑Fi)
 • Ankar-, ankomst- och kursavvikelsealarm

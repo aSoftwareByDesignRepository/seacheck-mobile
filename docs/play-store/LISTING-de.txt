@@ -1,30 +1,30 @@
 Version: 0.1.12
 Build: 12
-=== GOOGLE PLAY LISTING — DEUTSCH (de-DE) ===
+=== GOOGLE PLAY LISTING: DEUTSCH (de-DE) ===
 Paketname: de.softwarebydesign.seacheck
 Kategorie (Store-Einstellungen): Karten & Navigation
 Tags (optional): Segeln · Küste · GPS · SOG · Offline-Karte
 Sichtbarkeit: UNLISTED (nur per Link teilen)
 Versionshinweise v0.1.12: release-notes/0.1.12.txt in die Play Console einfügen
-  (Format: <en-US>…</en-US><de-DE>…</de-DE>, max. 500 Zeichen pro Sprache)
-Ton: persönliches Projekt, weitergegeben wie besehen — kein Produkt-Launch.
+ (Format: <en-US>…</en-US><de-DE>…</de-DE>, max. 500 Zeichen pro Sprache)
+Ton: persönliches Projekt, weitergegeben wie besehen: kein Produkt-Launch.
 
 --- App-Name (max. 30 Zeichen) ---
 SeaCheck
 
 --- Kurzbeschreibung (max. 80 Zeichen) ---
-Persönliche Küsten-Nav — GPS, Fahrt, Offline-Karte. Begleiter zu Papierkarten.
+Persönliche Küsten-Nav: GPS, Fahrt, Offline-Karte. Begleiter zu Papierkarten.
 
 --- Vollständige Beschreibung ---
-SeaCheck habe ich für mein eigenes kleines Boot gebaut — ein Begleiter zu den Papierkarten an Deck, kein Ersatz dafür.
+SeaCheck habe ich für mein eigenes kleines Boot gebaut. Ein Begleiter zu den Papierkarten an Deck, kein Ersatz dafür.
 
-Ich nutze es für Fahrt, Koordinaten, schnelle Positionsanzeige ohne unter Deck zu gehen, Törnskizzen und Ankeralarme. Ich stelle es einfach bereit, falls es anderen Küstenseglern hilft. Kein Launch, kein Support-Versprechen — Nutzung auf eigene Verantwortung.
+Ich nutze es für Fahrt, Koordinaten, schnelle Positionsanzeige ohne unter Deck zu gehen, Törnskizzen und Ankeralarme. Ich stelle es einfach bereit, falls es anderen Küstenseglern hilft. Kein Launch, kein Support-Versprechen. Nutzung auf eigene Verantwortung.
 
 NICHT FÜR HAUPTNAVIGATION
 Nur Navigationshilfe. Kein zertifizierter Kartenplotter. Karten aus OpenSeaMap/OpenStreetMap-Freiwilligendaten, können veraltet sein. Immer offizielle, berichtigte Seekarten mitführen.
 
 FUNKTIONEN
-• GPS auf der Karte — Kurs, Fahrt, Peilung
+• GPS auf der Karte: Kurs, Fahrt, Peilung
 • Törnplanung, Wegpunkte, GPX-Export
 • Offline-Regionenpakete (WLAN)
 • Anker-, Ankunfts- und Abweichungsalarme

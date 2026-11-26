@@ -1,8 +1,8 @@
-=== APP STORE CONNECT — DEUTSCH ===
+=== APP STORE CONNECT: DEUTSCH ===
 Bundle-ID: de.softwarebydesign.seacheck
 Version: 0.1.12
 Build: 12
-Kategorie: Navigation (primär). Sekundär: Dienstprogramme, falls angeboten.
+Kategorie: Navigation (primär). Sekundär, Dienstprogramme, falls angeboten.
 
 --- Name (max 30) ---
 SeaCheck
@@ -11,13 +11,13 @@ SeaCheck
 Küsten-Navigationshilfe
 
 --- Werbetext (max 170, optional) ---
-GPS auf der Karte, Offline-OpenSeaMap-Pakete, Ankeralarm — Begleiter zu Papierkarten. Kein zertifizierter Plotter. Kein Konto.
+GPS auf der Karte, Offline-OpenSeaMap-Pakete, Ankeralarm: Begleiter zu Papierkarten. Kein zertifizierter Plotter. Kein Konto.
 
 --- Stichwörter (max 100, Kommas, keine Leerzeichen nach Kommas) ---
 Segeln,Küste,GPS,Karte,Anker,offline,OpenSeaMap,Törn,Navigation,Boot
 
 --- Beschreibung (max 4000) ---
-SeaCheck ist eine persönliche Küsten-Navigationshilfe für kleine Boote — eine Hilfe neben Papierkarten, kein Ersatz für amtliche Seekarten.
+SeaCheck ist eine persönliche Küsten-Navigationshilfe für kleine Boote: eine Hilfe neben Papierkarten, kein Ersatz für amtliche Seekarten.
 
 Für wen
 • Küstensegler mit GPS auf der Karte, Törnskizzen und Ankeralarm ohne Cloud-Konto
@@ -29,15 +29,15 @@ Was Sie brauchen
 • Keine Anmeldung, kein Nextcloud-Server, kein Lizenzschlüssel
 
 Funktionen
-• GPS auf der Karte — Kurs, Fahrt, Peilung
+• GPS auf der Karte: Kurs, Fahrt, Peilung
 • Törnplanung, Wegpunkte, GPX-Export
 • Offline-Regionen (OpenSeaMap-Basis + Seezeichen)
-• Optionales Online-Tiefen-Overlay (GEBCO WMS — nur online)
+• Optionales Online-Tiefen-Overlay (GEBCO WMS, nur online)
 • Anker-, Ankunfts- und Abweichungsalarme
 • Track-Aufzeichnung
 • Deutsch- und Englisch-Oberfläche (weitere EU-Sprachen)
 
-Wichtig — nicht für die Hauptnavigation
+Wichtig, nicht für die Hauptnavigation
 Nur Navigationshilfe. Karten aus OpenSeaMap/OpenStreetMap-Freiwilligendaten können veraltet sein. Immer amtliche, berichtigte Seekarten mitführen.
 
 Datenschutz
