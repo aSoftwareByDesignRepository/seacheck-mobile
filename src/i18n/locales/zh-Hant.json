@@ -665,7 +665,7 @@
     "sectionPackCountActive": "共 %{count} 個海圖包 · 此裝置上 %{active} 個",
     "packs": {
       "kielBay": {
-        "name": "基爾灣（測試）",
+        "name": "Kieler Bucht (test)",
         "description": "用於基爾周邊碼頭和水面測試的小型海圖包。"
       },
       "kattegatNorth": {

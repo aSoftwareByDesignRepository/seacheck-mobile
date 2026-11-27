@@ -660,7 +660,7 @@
     "sectionPackCountActive": "%{count} paquetes · %{active} en este dispositivo",
     "packs": {
       "kielBay": {
-        "name": "Kieler Bucht (prueba)",
+        "name": "Kieler Bucht (test)",
         "description": "Paquete pequeño para UAT en el muelle y en el agua alrededor de Kiel."
       },
       "kattegatNorth": {

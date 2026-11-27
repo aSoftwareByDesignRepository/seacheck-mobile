@@ -125,7 +125,7 @@
     "displaySummary": "Design, Kartendaten, Koordinaten und Kartenverhalten",
     "themeLabel": "Design",
     "themes": {
-      "system": "System",
+      "system": "Systembereich",
       "light": "Hell",
       "dark": "Dunkel",
       "redNight": "Rot-Nacht",
@@ -173,7 +173,7 @@
     "instrumentReadoutsHint": "Optionale Zusatzwerte unter SOG und Kurs. Alarme funktionieren unabhängig davon.",
     "panelSide": "Instrumentenpanel-Seite",
     "panelSideHint": "Im Querformat teilen sich Karte und Instrumente den Bildschirm. Wählen Sie, an welcher Seite das Instrumentenpanel liegt.",
-    "panelSideAuto": "Auto",
+    "panelSideAuto": "Automatisch",
     "panelSidePort": "Backbord (links)",
     "panelSideStarboard": "Steuerbord (rechts)",
     "mapBehaviourTitle": "Kartenverhalten",
@@ -660,7 +660,7 @@
     "sectionPackCountActive": "%{count} Pakete · %{active} auf diesem Gerät",
     "packs": {
       "kielBay": {
-        "name": "Kieler Bucht (Test)",
+        "name": "Kieler Bucht (test)",
         "description": "Kleines Paket für UAT rund um Kiel."
       },
       "kattegatNorth": {

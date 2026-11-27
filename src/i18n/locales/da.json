@@ -125,7 +125,7 @@
     "displaySummary": "Tema, kortdata, koordinater og kortadfærd",
     "themeLabel": "Tema",
     "themes": {
-      "system": "System",
+      "system": "System (modul)",
       "light": "Lys",
       "dark": "Mørk",
       "redNight": "Rød nat",
@@ -173,7 +173,7 @@
     "instrumentReadoutsHint": "Valgfri ekstra værdier under hastighed og kurs. Alarmer virker uanset.",
     "panelSide": "Instrumentpanel side",
     "panelSideHint": "På tabletlandskab sidder kortet og instrumenterne side om side. Vælg hvilken kant der holder instrumentpanelet.",
-    "panelSideAuto": "Auto",
+    "panelSideAuto": "Automatisk",
     "panelSidePort": "Bagbord (venstre)",
     "panelSideStarboard": "Styrbord (højre)",
     "mapBehaviourTitle": "Kortadfærd",

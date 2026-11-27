@@ -665,7 +665,7 @@
     "sectionPackCountActive": "Пакеты %{count} · %{active} на этом устройстве",
     "packs": {
       "kielBay": {
-        "name": "Килер Бухт (тест)",
+        "name": "Kieler Bucht (test)",
         "description": "Небольшая упаковка для причала и подводного UAT вокруг Киля."
       },
       "kattegatNorth": {

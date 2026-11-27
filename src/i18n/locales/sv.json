@@ -125,7 +125,7 @@
     "displaySummary": "Tema, kartdata, koordinater och kartbeteende",
     "themeLabel": "Tema",
     "themes": {
-      "system": "System",
+      "system": "System (modul)",
       "light": "Ljust",
       "dark": "Mörkt",
       "redNight": "Röd natt",
@@ -173,7 +173,7 @@
     "instrumentReadoutsHint": "Valfria extravärden under hastighet och kurs. Larm fungerar oavsett.",
     "panelSide": "Instrumentpanelens sida",
     "panelSideHint": "På surfplattelandskap sitter kartan och instrumenten sida vid sida. Välj vilken kant som håller instrumentpanelen.",
-    "panelSideAuto": "Auto",
+    "panelSideAuto": "Bil",
     "panelSidePort": "Babord (vänster)",
     "panelSideStarboard": "Styrbord (höger)",
     "mapBehaviourTitle": "Kartbeteende",

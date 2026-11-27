@@ -173,7 +173,7 @@
     "instrumentReadoutsHint": "Optionele extra waarden onder snelheid en koers. Alarmen werken hoe dan ook.",
     "panelSide": "Zijkant instrumentenpaneel",
     "panelSideHint": "In het tabletlandschap staan de kaart en de instrumenten naast elkaar. Kies welke rand het instrumentenpaneel vasthoudt.",
-    "panelSideAuto": "Auto",
+    "panelSideAuto": "Automatisch",
     "panelSidePort": "Bakboord (links)",
     "panelSideStarboard": "Stuurboord (rechts)",
     "mapBehaviourTitle": "Kaartgedrag",

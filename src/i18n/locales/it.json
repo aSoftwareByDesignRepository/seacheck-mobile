@@ -173,7 +173,7 @@
     "instrumentReadoutsHint": "Valori opzionali aggiuntivi sotto velocità e rotta. Gli allarmi funzionano comunque.",
     "panelSide": "Lato quadro strumenti",
     "panelSideHint": "Nella modalità tablet, la mappa e gli strumenti si trovano fianco a fianco. Scegli quale bordo sostiene il cruscotto.",
-    "panelSideAuto": "Auto",
+    "panelSideAuto": "Automatico",
     "panelSidePort": "Babordo (a sinistra)",
     "panelSideStarboard": "Tribordo (a destra)",
     "mapBehaviourTitle": "Comportamento della mappa",
@@ -660,7 +660,7 @@
     "sectionPackCountActive": "%{count} pacchetti · %{active} su questo dispositivo",
     "packs": {
       "kielBay": {
-        "name": "Kieler Bucht (prova)",
+        "name": "Kieler Bucht (test)",
         "description": "Piccolo pacchetto per UAT in banchina e in acqua intorno a Kiel."
       },
       "kattegatNorth": {
